@@ -4,6 +4,9 @@ import com.opencsv.CSVReader;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.repository.RepaymentRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.io.FileReader;
@@ -36,7 +39,6 @@ public class RepaymentService {
 
         try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
             String[] line;
-            reader.readNext(); // skip header
             while ((line = reader.readNext()) != null) {
                 Repayment repayment = Repayment.builder()
                         .customerId(line[0])
@@ -55,7 +57,7 @@ public class RepaymentService {
                         .lpdb(line[13])
                         .createdAt(Date.from(Instant.now()))
                         .build();
-                repayments.add(repayment);
+                saveRepayment(repayment);
             }
 
             repaymentRepository.deleteAll(); // bisa juga pakai custom delete by condition kalau tidak mau hapus semua
@@ -70,5 +72,13 @@ public class RepaymentService {
     }
     public Repayment findAll() {
         return repaymentRepository.findAll().getFirst();
+    }
+    public Page<Repayment> findName(String name, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return repaymentRepository.findByNameContainingIgnoreCase(name, pageable);
+    }
+
+    public Long countAll() {
+        return repaymentRepository.count();
     }
 }
