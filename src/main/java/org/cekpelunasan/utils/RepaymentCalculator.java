@@ -19,20 +19,37 @@ public class RepaymentCalculator {
         // Bagian Tagihan
 
 
-        return "📄 *Informasi Nasabah*\n" +
-                "No SPK\t\t\t: " + formatText(repayment.getCustomerId()) + "\n" +
-                "Nama\t\t\t\t\t: " + formatText(repayment.getName()) + "\n" +
-                "Alamat\t\t\t: " + formatText(repayment.getAddress()) + "\n" +
-                "Produk\t\t\t: " + formatText(repayment.getProduct()) + "\n" +
-                "Plafond\t\t\t: " + formatRupiah(repayment.getPlafond()) + "\n\n" +
+        return """
+📄 *Informasi Nasabah*
+───────────────
+🆔 *No SPK*        : `%s`
+👤 *Nama*           : %s
+🏡 *Alamat*         : %s
+📦 *Produk*         : %s
+💸 *Plafond*        : %s
 
-// Bagian Tagihan
-                "💰 *Rincian Tagihan*\n" +
-                "Baki Debet\t\t: " + formatRupiah(bakidebet) + "\n" +
-                "Tunggakan\t\t: " + formatRupiah(tunggakan) + "\n" +
-                "Penalty +" + penaltyMap.get("multiplier") + "\t\t: " + formatRupiah(penaltyMap.get("penalty")) + "\n" +
-                "Denda\t\t\t: " + formatRupiah(denda) + "\n" +
-                "Total\t\t\t: *" + formatRupiah(total) + "*";
+💰 *Rincian Tagihan*
+───────────────
+🏦 *Baki Debet*     : %s
+📉 *Tunggakan*      : %s
+⏱ *Penalty +%s*     : %s
+⚠️ *Denda*           : %s
+💳 *Total Tagihan*  : *%s*
+""".formatted(
+                formatText(repayment.getCustomerId().toString()),
+                formatText(repayment.getName()),
+                formatText(repayment.getAddress()),
+                formatText(repayment.getProduct()),
+                formatRupiah(repayment.getPlafond()),
+
+                formatRupiah(bakidebet),
+                formatRupiah(tunggakan),
+                penaltyMap.get("multiplier"),
+                formatRupiah(penaltyMap.get("penalty")),
+                formatRupiah(denda),
+                formatRupiah(total)
+        );
+
     }
 
     private String formatRupiah(Long amount) {
