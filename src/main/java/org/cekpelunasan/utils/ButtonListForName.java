@@ -45,9 +45,7 @@ public class ButtonListForName {
         }
 
         // Tambahkan pagination baris pertama
-        if (!paginationRow.isEmpty()) {
-            rows.add(paginationRow);
-        }
+        rows.add(paginationRow);
 
         // ========== 🔘 DATA BUTTONS (2 per row) ==========
 

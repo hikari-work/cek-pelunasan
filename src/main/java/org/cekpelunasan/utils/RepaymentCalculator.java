@@ -36,7 +36,7 @@ public class RepaymentCalculator {
 ⚠️ *Denda*           : %s
 💳 *Total Tagihan*  : *%s*
 """.formatted(
-                formatText(repayment.getCustomerId().toString()),
+                formatText(repayment.getCustomerId()),
                 formatText(repayment.getName()),
                 formatText(repayment.getAddress()),
                 formatText(repayment.getProduct()),

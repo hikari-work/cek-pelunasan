@@ -29,7 +29,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
@@ -302,7 +301,7 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
                 .append("🏡 *Alamat*      : ").append(dto.getAddress()).append("\n")
                 .append("💰 *Plafond*     : ").append(formatRupiah(dto.getPlafond())).append("\n\n"));
 
-    };
+    }
 
     private void handleFindName(String chatId, String text) {
         String name = text.replace("/fi ", "");
@@ -344,14 +343,19 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
         Repayment latest = repaymentService.findAll();
         String systemLoad = new SystemUtils().getSystemUtils();
         String status = String.format(
-                "🔧 **Status Bot - Pelunasan Bot** 🔧\n\n" +
-                        "Bot sedang **aktif** dan siap menerima perintah. Berikut adalah informasi terkini:\n\n" +
-                        "- **Waktu Terakhir Update**: 📅 *%s*\n" +
-                        "- **Jumlah Pengguna Terdaftar**: 📊 *%d*\n" +
-                        "- **Total Data Pelunasan**: 📦 *%d*\n" +
-                        "- **Load System**: ⚙️ *%s*\n\n" +
-                        "Jika kamu ingin mencoba fitur lainnya, ketik `/help` untuk mendapatkan panduan lengkap! 🚀\n\n" +
-                        "🔋 *Bot Dalam Keadaan Sehat*",
+                """
+                        🔧 **Status Bot - Pelunasan Bot** 🔧
+                        
+                        Bot sedang **aktif** dan siap menerima perintah. Berikut adalah informasi terkini:
+                        
+                        - **Waktu Terakhir Update**: 📅 *%s*
+                        - **Jumlah Pengguna Terdaftar**: 📊 *%d*
+                        - **Total Data Pelunasan**: 📦 *%d*
+                        - **Load System**: ⚙️ *%s*
+                        
+                        Jika kamu ingin mencoba fitur lainnya, ketik `/help` untuk mendapatkan panduan lengkap! 🚀
+                        
+                        🔋 *Bot Dalam Keadaan Sehat*""",
                 latest.getCreatedAt(), userService.countUsers(), repaymentService.countAll(), systemLoad
         );
         sendMessage(chatId, status);
@@ -370,9 +374,11 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
             String result = new RepaymentCalculator().calculate(repayment, penalty);
             sendMessage(chatId, result);
         } catch (Exception e) {
-            sendMessage(chatId, "❌ **Terjadi Kesalahan** ❌\n" +
-                    "\n" +
-                    "Perintah yang kamu masukkan tidak dikenali. Pastikan kamu sudah mengikuti format yang benar. Untuk bantuan lebih lanjut, ketik `/help`!\n");
+            sendMessage(chatId, """
+                    ❌ **Terjadi Kesalahan** ❌
+                    
+                    Perintah yang kamu masukkan tidak dikenali. Pastikan kamu sudah mengikuti format yang benar. Untuk bantuan lebih lanjut, ketik `/help`!
+                    """);
             log.error("Error perintah /pl", e);
         }
     }
