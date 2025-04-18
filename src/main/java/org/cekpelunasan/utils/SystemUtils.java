@@ -7,10 +7,7 @@ public class SystemUtils {
 
     public String getSystemUtils() {
         OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-        // Mengambil CPU load
         double cpuLoad = osBean.getCpuLoad() * 100;
-
-        // Mengambil memori
         long totalMemory = osBean.getTotalMemorySize() / (1024 * 1024); // MB
         long freeMemory = osBean.getFreeMemorySize() / (1024 * 1024); // MB
         long usedMemory = totalMemory - freeMemory;

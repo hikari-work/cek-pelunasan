@@ -14,22 +14,24 @@ public class UserService {
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
-
-    public void insertNewUser(Long chatId) {
-        if (userRepository.findById(chatId).isEmpty()) {
-            userRepository.save(User.builder()
-                    .chatId(chatId)
-                    .build());
-        }
-
-    }
-    public List<User> findAllUsers() {
-        return userRepository.findAll();
-    }
-    public Long countUsers() {
-        return userRepository.count();
+    public void insertNewUsers(Long chatId) {
+        userRepository.save(User.builder()
+                        .chatId(chatId)
+                .build());
     }
     public User findUser(Long chatId) {
         return userRepository.findById(chatId).orElse(null);
+    }
+
+    public Long countUsers() {
+        return userRepository.count();
+    }
+
+    public List<User> findAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public void deleteUser(Long chatId) {
+        userRepository.deleteById(chatId);
     }
 }

@@ -21,7 +21,6 @@ public class PreRun {
     }
     @EventListener(ApplicationReadyEvent.class)
     public void initData() {
-
         User user = User.builder()
                 .chatId(botOwner)
                 .username("ADMIN")
