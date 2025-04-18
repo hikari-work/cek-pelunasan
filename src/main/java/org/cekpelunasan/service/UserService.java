@@ -26,7 +26,7 @@ public class UserService {
     public List<User> findAllUsers() {
         return userRepository.findAll();
     }
-    public Long countUsers() {
+    public String countUsers() {
         return userRepository.count();
     }
     public User findUser(Long chatId) {

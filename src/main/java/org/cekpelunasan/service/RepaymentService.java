@@ -78,7 +78,7 @@ public class RepaymentService {
         return repaymentRepository.findByNameContainingIgnoreCase(name, pageable);
     }
 
-    public Long countAll() {
-        return repaymentRepository.count();
+    public int countAll() {
+        return Math.toIntExact(repaymentRepository.count());
     }
 }
