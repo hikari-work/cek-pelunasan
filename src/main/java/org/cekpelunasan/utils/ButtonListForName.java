@@ -14,8 +14,6 @@ public class ButtonListForName {
     public InlineKeyboardMarkup dynamicButtonName(Page<Repayment> names, int currentPage, String query) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
 
-        // ========== ⬆️ PAGINATION ROW ==========
-
         InlineKeyboardRow paginationRow = new InlineKeyboardRow();
 
         int totalElements = (int) names.getTotalElements();
