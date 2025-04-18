@@ -2,11 +2,13 @@ package org.cekpelunasan.bot;
 
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.entity.User;
+import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.RepaymentService;
 import org.cekpelunasan.service.UserService;
 import org.cekpelunasan.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -37,6 +39,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class TelegramMainBot implements SpringLongPollingBot, LongPollingSingleThreadUpdateConsumer {
     ExecutorService executorService = Executors.newFixedThreadPool(10);
 
+    @Autowired
+    private AuthorizedChats authorizedChats;
 
     private static final Logger log = LoggerFactory.getLogger(TelegramMainBot.class);
 
@@ -73,20 +77,27 @@ public class TelegramMainBot implements SpringLongPollingBot, LongPollingSingleT
             String text = update.getMessage().getText();
             if (text.startsWith(".id")) {
                 sendMessage(chatId, "ID Anda: " + chatId);
+                log.info("User Id {} Generated Id", chatId);
                 return;
             }
             if (!text.startsWith("/") && !chatId.equals(ownerId)) {
                 forwardUserMessageToOwner(update);
+                log.info("User {} Send Message To Admin", chatId);
             }
         }
         if (update.hasMessage() && update.getMessage().hasText()) {
-            if (userService.findUser(update.getMessage().getChatId()) != null) {
+            if (authorizedChats.isAuthorized(update.getMessage().getChatId()) || userService.findUser(update.getMessage().getChatId()) != null) {
                 handleCommandMessage(update);
+                if (!authorizedChats.isAuthorized(update.getMessage().getChatId())) {
+                    authorizedChats.addAuthorizedChat(update.getMessage().getChatId());
+                }
             } else {
                 sendUnauthorizedMessage(update.getMessage().getChatId().toString());
+                log.info("User {} Unauthorized", update.getMessage().getChatId());
             }
         } else if (update.hasCallbackQuery()) {
             handleCallback(update);
+            log.info("User {} Send Callback", update.getCallbackQuery().getFrom().getId());
         }
 
     }
@@ -98,16 +109,21 @@ public class TelegramMainBot implements SpringLongPollingBot, LongPollingSingleT
         if (chatId.equals(ownerId)) {
             if (text.startsWith("/upload ")) {
                 handleUploadCommand(chatId, text);
+                log.info("Updated Database");
             } else if (text.startsWith("/broadcast ")) {
                 handleBroadcastUser(text.replace("/broadcast ", ""));
+                log.info("Broadcast Message");
             } else if (update.getMessage().isReply()) {
                 forwardReplyToOriginalUser(update);
+                log.info("Forward Message To User");
             } else if (text.startsWith("/auth ")) {
                 Long newUsers = Long.parseLong(text.replace("/auth ", "").trim());
                 try {
                     userService.insertNewUser(newUsers);
+                    log.info("User {} Authenticated", newUsers);
                 } catch (Exception e) {
                     sendMessage(chatId, "Error");
+                    log.error("Error authenticating user: {}", e.getMessage());
                 }
             }
         }
@@ -125,21 +141,26 @@ Berikut beberapa perintah yang bisa kamu pakai:
 /id - Buat kamu yang belum diizinkan pakai bot ini
 /help - Kalau kamu butuh bimbingan hidup (atau cuma mau lihat perintah)
 
-📌 *Kalau kamu belum terdaftar*, jangan baper. Ketik `/id`, kirim ke admin, dan sabar tunggu restu. 🧘‍♂️
+📌 *Kalau kamu belum terdaftar*, jangan baper. Ketik `.id`, kirim ke admin, dan sabar tunggu restu. 🧘‍♂️
 
 📌 Kalau mau curhat bisa langsung ke admin ya, kirim aja disini, siapa tahu mau ramalan zodiak kamu
 
 Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
 """
 );
+            log.info("User {} Started Bot", chatId);
         } else if (text.equals("/help")) {
             handleHelpCommand(chatId);
+            log.info("User {} Help", chatId);
         } else if (text.equals("/status")) {
             handleStatusCommand(chatId);
+            log.info("User {} Status", chatId);
         } else if (text.startsWith("/pl")) {
             handlePlCommand(chatId, text);
+            log.info("User {} Search By SPK {}", chatId, text.replace("/pl ", ""));
         } else if (text.startsWith("/fi")) {
             handleFindName(chatId, text);
+            log.info("User {} Search By Name {}", chatId, text.replace("/fi ", ""));
         }
     }
     public void handleHelpCommand(String chatId) {
@@ -242,6 +263,7 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
     }
 
     private void handlePelunasanCallback(Update update, String chatId, String data) {
+        long start = System.currentTimeMillis();
         try {
             Long customerId = Long.parseLong(data.split("_")[1]);
             Repayment repayment = repaymentService.findRepaymentById(customerId);
@@ -255,7 +277,7 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
 
             telegramClient.execute(EditMessageText.builder()
                     .chatId(chatId)
-                    .text(result)
+                    .text(result + "\n\nEksekusi dalam " + (System.currentTimeMillis() - start) + "ms")
                     .messageId(update.getCallbackQuery().getMessage().getMessageId())
                     .replyMarkup(new BackKeybaordUtils().backButton(data))
                     .parseMode("Markdown")
@@ -268,6 +290,7 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
     }
 
     private void handlePaginationCallback(Update update, String chatId, String data) {
+        long start = System.currentTimeMillis();
         int page = Integer.parseInt(data.split("_")[2]);
         String query = data.split("_")[1];
         Integer messageId = update.getCallbackQuery().getMessage().getMessageId();
@@ -284,7 +307,7 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
         try {
             telegramClient.execute(EditMessageText.builder()
                     .messageId(messageId)
-                    .text(messageBuilder.toString())
+                    .text(messageBuilder + "\n\nEksekusi dalam " + (System.currentTimeMillis() - start) + "ms")
                     .replyMarkup(new ButtonListForName().dynamicButtonName(repayments, page, query))
                     .chatId(chatId)
                             .parseMode("Markdown")
@@ -304,11 +327,26 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
     }
 
     private void handleFindName(String chatId, String text) {
+        long start = System.currentTimeMillis();
         String name = text.replace("/fi ", "");
+        if (text.equals("/fi")) {
+            String message = """
+            ❌ **Informasi** ❌
+            
+            Command `/fi` untuk mecari nasabah berdasarkan nama. Contoh: `/fi Budi`. Bukan Mencari yang tidak ada...
+            """;
+            sendMessage(chatId, message);
+            return;
+        }
         Page<Repayment> repayments = repaymentService.findName(name, 0, 5);
 
         if (repayments.isEmpty()) {
-            sendMessage(chatId, "Data tidak ditemukan.");
+            String messageEmpty = String.format("""
+                    ❌ **Informasi** ❌
+                    
+                    Gawat, data `%s` tidak ditemukan, Periksa Ejaan Anda, atau gunakan kata lebih sedikit
+                    """, name);
+            sendMessage(chatId, messageEmpty);
             return;
         }
 
@@ -318,7 +356,7 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
         try {
             telegramClient.execute(SendMessage.builder()
                     .chatId(chatId)
-                    .text(messageBuilder.toString())
+                    .text(messageBuilder + "\n\nEksekusi dalam " + (System.currentTimeMillis() - start) + "ms")
                     .replyMarkup(new ButtonListForName().dynamicButtonName(repayments, 0, name))
                     .parseMode("Markdown")
                     .build());
@@ -328,18 +366,20 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
     }
 
     private void handleUploadCommand(String chatId, String text) {
+        long start = System.currentTimeMillis();
         String link = text.split(" ", 2)[1];
         String fileName = link.substring(link.lastIndexOf("/") + 1);
 
         sendMessage(chatId, "Sedang mengunduh file: " + fileName);
         if (downloadAndProcessCsv(link, fileName)) {
-            sendMessage(chatId, "✅ File berhasil diproses ke database: " + fileName);
+            sendMessage(chatId, "✅ File berhasil diproses ke database: " + fileName + "\n\nEksekusi dalam " + (System.currentTimeMillis() - start) + "ms");
         } else {
             sendMessage(chatId, "❌ Gagal memproses file: " + fileName);
         }
     }
 
     private void handleStatusCommand(String chatId) {
+        long start = System.currentTimeMillis();
         Repayment latest = repaymentService.findAll();
         String systemLoad = new SystemUtils().getSystemUtils();
         String status = String.format(
@@ -355,13 +395,15 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
                         
                         Jika kamu ingin mencoba fitur lainnya, ketik `/help` untuk mendapatkan panduan lengkap! 🚀
                         
-                        🔋 *Bot Dalam Keadaan Sehat*""",
-                latest.getCreatedAt(), userService.countUsers(), repaymentService.countAll(), systemLoad
+                        🔋 *Bot Dalam Keadaan Sehat* 
+                        Eksekusi dalam %s ms""",
+                latest.getCreatedAt(), userService.countUsers(), repaymentService.countAll(), systemLoad, System.currentTimeMillis()-start
         );
         sendMessage(chatId, status);
     }
 
     private void handlePlCommand(String chatId, String text) {
+        long start = System.currentTimeMillis();
         try {
             Long customerId = Long.parseLong(text.split(" ")[1]);
             Repayment repayment = repaymentService.findRepaymentById(customerId);
@@ -372,14 +414,14 @@ Yuk, langsung aja dicoba. Jangan cuma dibaca doang. 😉
 
             Map<String, Long> penalty = new PenaltyUtils().penalty(repayment.getStartDate(), repayment.getPenaltyLoan(), repayment.getProduct());
             String result = new RepaymentCalculator().calculate(repayment, penalty);
-            sendMessage(chatId, result);
-        } catch (Exception e) {
+            sendMessage(chatId, result + "\n\nEksekusi dalam " + (System.currentTimeMillis() - start) + "ms");
+        } catch (ArrayIndexOutOfBoundsException e) {
             sendMessage(chatId, """
-                    ❌ **Terjadi Kesalahan** ❌
+                    ❌ **Informasi** ❌
                     
-                    Perintah yang kamu masukkan tidak dikenali. Pastikan kamu sudah mengikuti format yang benar. Untuk bantuan lebih lanjut, ketik `/help`!
+                    Gunakan `/pl <No SPK>` untuk mencari SPK dan melakukan penghitungan Pelunasan. Sekali lagi, mencari SPK bukan mencari PL...
                     """);
-            log.error("Error perintah /pl", e);
+            log.error("Mengirimkan Perintah PL", e);
         }
     }
 
