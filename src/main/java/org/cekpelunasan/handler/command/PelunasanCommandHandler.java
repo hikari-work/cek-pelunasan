@@ -1,6 +1,7 @@
 package org.cekpelunasan.handler.command;
 
 import org.cekpelunasan.entity.Repayment;
+import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.RepaymentService;
 import org.cekpelunasan.utils.PenaltyUtils;
 import org.cekpelunasan.utils.RepaymentCalculator;
@@ -13,12 +14,18 @@ import java.util.Map;
 @Component
 public class PelunasanCommandHandler implements CommandProcessor {
 
-    private final CommandHandler commandHandler;
     private final RepaymentService repaymentService;
+    private final AuthorizedChats authService;
+    private final MessageTemplate messageTemplateService;
 
-    public PelunasanCommandHandler(CommandHandler commandHandler, RepaymentService repaymentService) {
-        this.commandHandler = commandHandler;
+    public PelunasanCommandHandler(
+            RepaymentService repaymentService,
+            AuthorizedChats authService,
+            MessageTemplate messageTemplateService
+    ) {
         this.repaymentService = repaymentService;
+        this.authService = authService;
+        this.messageTemplateService = messageTemplateService;
     }
 
     @Override
@@ -33,8 +40,8 @@ public class PelunasanCommandHandler implements CommandProcessor {
         long chatId = update.getMessage().getChatId();
         String message = update.getMessage().getText();
 
-        if (!commandHandler.isAuthorized(chatId)) {
-            sendMessage(chatId, commandHandler.sendUnauthorizedMessage(), telegramClient);
+        if (!authService.isAuthorized(chatId)) {
+            sendMessage(chatId, messageTemplateService.authorizedMessage(), telegramClient);
             return;
         }
 
@@ -75,13 +82,11 @@ public class PelunasanCommandHandler implements CommandProcessor {
         }
     }
 
-
-
     private void sendUsageInstruction(long chatId, TelegramClient telegramClient) {
         String instruction = """
-                ‼ **Informasi** ‼
+                ‼ *Informasi* ‼
                 
-                Gunakan `/pl <No SPK>` untuk mencari SPK dan melakukan penghitungan Pelunasan. Sekali lagi, mencari SPK bukan mencari PL...
+                Gunakan `/pl <No SPK>` untuk mencari SPK dan melakukan penghitungan Pelunasan.
                 """;
         sendMessage(chatId, instruction, telegramClient);
     }

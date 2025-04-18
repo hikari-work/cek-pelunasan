@@ -1,6 +1,5 @@
 package org.cekpelunasan.handler.command;
-
-import org.cekpelunasan.service.UserService;
+import org.cekpelunasan.service.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -9,15 +8,17 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 @Component
 public class AuthCommandHandler implements CommandProcessor {
 
+    private final AuthorizedChats authorizedChats1;
     @Value("${telegram.bot.owner}")
     private Long ownerId;
 
     private final UserService userService;
-    private final CommandHandler commandHandler;
+    private final MessageTemplate messageTemplateService;
 
-    public AuthCommandHandler(UserService userService, CommandHandler commandHandler) {
+    public AuthCommandHandler(UserService userService, MessageTemplate messageTemplateService, AuthorizedChats authorizedChats1) {
         this.userService = userService;
-        this.commandHandler = commandHandler;
+        this.messageTemplateService = messageTemplateService;
+        this.authorizedChats1 = authorizedChats1;
     }
 
     @Override
@@ -31,21 +32,23 @@ public class AuthCommandHandler implements CommandProcessor {
         String[] parts = update.getMessage().getText().split(" ");
 
         if (!senderId.equals(ownerId)) {
-            sendMessage(senderId, "❌ Kamu tidak punya izin untuk perintah ini.", telegramClient);
+            sendMessage(senderId, messageTemplateService.notAdminUsers(), telegramClient);
             return;
         }
 
         if (parts.length < 2) {
-            sendMessage(senderId, "⚠️ Format salah. Contoh: /auth 123456789", telegramClient);
+            sendMessage(senderId, messageTemplateService.notValidDeauthFormat(), telegramClient);
             return;
         }
 
         try {
             long chatIdTarget = Long.parseLong(parts[1]);
-            userService.insertNewUser(chatIdTarget);
-            sendMessage(chatIdTarget, commandHandler.sendWelcomeMessage(), telegramClient);
+            userService.insertNewUsers(chatIdTarget);
+            sendMessage(chatIdTarget, messageTemplateService.authorizedMessage(), telegramClient);
+            authorizedChats1.addAuthorizedChat(chatIdTarget);
+            sendMessage(ownerId, "Sukses", telegramClient);
         } catch (NumberFormatException e) {
-            sendMessage(senderId, "❌ ID harus berupa angka.", telegramClient);
+            sendMessage(senderId, messageTemplateService.notValidNumber(), telegramClient);
         }
     }
 }

@@ -1,6 +1,7 @@
 package org.cekpelunasan.handler.command;
 
 import org.cekpelunasan.entity.Repayment;
+import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.RepaymentService;
 import org.cekpelunasan.utils.ButtonListForName;
 import org.cekpelunasan.utils.RupiahFormatUtils;
@@ -13,13 +14,20 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 public class FindNamesHandler implements CommandProcessor {
 
     private final RepaymentService repaymentService;
+    private final AuthorizedChats authService;
+    private final MessageTemplate messageTemplateService;
+
     private static final int PAGE_SIZE = 5;
     private static final int FIRST_PAGE = 0;
-    private final CommandHandler commandHandler;
 
-    public FindNamesHandler(RepaymentService repaymentService, CommandHandler commandHandler) {
-        this.commandHandler = commandHandler;
+    public FindNamesHandler(
+            RepaymentService repaymentService,
+            AuthorizedChats authService,
+            MessageTemplate messageTemplateService
+    ) {
         this.repaymentService = repaymentService;
+        this.authService = authService;
+        this.messageTemplateService = messageTemplateService;
     }
 
     @Override
@@ -33,8 +41,9 @@ public class FindNamesHandler implements CommandProcessor {
         String text = update.getMessage().getText();
         Long chatId = update.getMessage().getChatId();
         String keyword = extractKeyword(text);
-        if (!commandHandler.isAuthorized(chatId)) {
-            sendMessage(chatId, commandHandler.sendUnauthorizedMessage(), telegramClient);
+
+        if (!authService.isAuthorized(chatId)) {
+            sendMessage(chatId, messageTemplateService.unathorizedMessage(), telegramClient);
             return;
         }
 
@@ -65,13 +74,7 @@ public class FindNamesHandler implements CommandProcessor {
     }
 
     private void sendUsageInstruction(Long chatId, TelegramClient telegramClient) {
-        String message = """
-                ❌ *Informasi* ❌
-                
-                Command `/fi` digunakan untuk mencari nasabah berdasarkan nama.
-                Contoh: `/fi Budi`
-                """;
-        sendMessage(chatId, message, telegramClient);
+        sendMessage(chatId, messageTemplateService.fiCommandHelper(), telegramClient);
     }
 
     private void sendNoDataFoundMessage(Long chatId, String keyword, TelegramClient telegramClient) {

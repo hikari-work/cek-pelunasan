@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command;
 
+import org.cekpelunasan.service.AuthorizedChats;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
@@ -7,7 +8,8 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 @Component
 public class StartCommandHandler implements CommandProcessor {
 
-    private final CommandHandler commandHandler;
+    private final AuthorizedChats authService;
+    private final MessageTemplate messageTemplateService;
 
     private static final String START_MESSAGE = """
             👋 *Halo! Selamat datang di Bot Pelunasan.*
@@ -27,8 +29,9 @@ public class StartCommandHandler implements CommandProcessor {
             Yuk, langsung aja dicoba.
             """;
 
-    public StartCommandHandler(CommandHandler commandHandler) {
-        this.commandHandler = commandHandler;
+    public StartCommandHandler(AuthorizedChats authService, MessageTemplate messageTemplateService) {
+        this.authService = authService;
+        this.messageTemplateService = messageTemplateService;
     }
 
     @Override
@@ -36,21 +39,16 @@ public class StartCommandHandler implements CommandProcessor {
         return "/start";
     }
 
+
     @Override
     public void process(Update update, TelegramClient telegramClient) {
+
+
         Long chatId = update.getMessage().getChatId();
-        if (commandHandler.isAuthorized(chatId)) {
-            sendWelcomeMessage(chatId, telegramClient);
+        if (authService.isAuthorized(chatId)) {
+            sendMessage(chatId, START_MESSAGE, telegramClient);
         } else {
-            sendUnauthorizedMessage(chatId, telegramClient);
+            sendMessage(chatId, messageTemplateService.unathorizedMessage(), telegramClient);
         }
-    }
-
-    private void sendWelcomeMessage(Long chatId, TelegramClient telegramClient) {
-        sendMessage(chatId, START_MESSAGE, telegramClient);
-    }
-
-    private void sendUnauthorizedMessage(Long chatId, TelegramClient telegramClient) {
-        sendMessage(chatId, commandHandler.sendUnauthorizedMessage(), telegramClient);
     }
 }

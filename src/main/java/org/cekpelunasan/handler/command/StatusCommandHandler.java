@@ -32,16 +32,24 @@ public class StatusCommandHandler implements CommandProcessor {
         long startTime = System.currentTimeMillis();
 
         Repayment latestRepayment = repaymentService.findAll();
-        int totalUsers = Integer.parseInt(userService.countUsers());
+        Long totalUsers = userService.countUsers();
         int totalRepayments = repaymentService.countAll();
         String systemLoad = new SystemUtils().getSystemUtils();
         long executionTime = System.currentTimeMillis() - startTime;
 
-        String statusMessage = buildStatusMessage(latestRepayment, totalUsers, totalRepayments, systemLoad, executionTime);
+        String statusMessage = buildStatusMessage(latestRepayment,
+                totalUsers,
+                totalRepayments,
+                systemLoad,
+                executionTime);
         sendMessage(chatId, statusMessage, telegramClient);
     }
 
-    private String buildStatusMessage(Repayment latest, int totalUsers, int totalRepayments, String systemLoad, long executionTime) {
+    private String buildStatusMessage(Repayment latest,
+                                      long totalUsers,
+                                      int totalRepayments,
+                                      String systemLoad,
+                                      long executionTime) {
         return String.format("""
                 🔧 **Status Bot - Pelunasan Bot** 🔧
                 
