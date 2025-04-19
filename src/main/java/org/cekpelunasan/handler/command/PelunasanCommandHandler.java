@@ -46,7 +46,7 @@ public class PelunasanCommandHandler implements CommandProcessor {
             String message = update.getMessage().getText().trim();
 
             if (!authService.isAuthorized(chatId)) {
-                sendMessage(chatId, messageTemplateService.authorizedMessage(), telegramClient);
+                sendMessage(chatId, messageTemplateService.unathorizedMessage(), telegramClient);
                 return;
             }
 
