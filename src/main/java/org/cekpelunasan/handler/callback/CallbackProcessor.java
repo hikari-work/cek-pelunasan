@@ -9,8 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
+import java.util.concurrent.CompletableFuture;
 
 
 public interface CallbackProcessor {
@@ -19,7 +18,7 @@ public interface CallbackProcessor {
 
     String getCallBackData();
 
-    void process(Update update, TelegramClient telegramClient);
+    CompletableFuture<Void> process(Update update, TelegramClient telegramClient);
 
     default void editMessageWithMarkup(Long chatId, int messageId, String text, TelegramClient telegramClient, InlineKeyboardMarkup replyMarkup) {
         try {

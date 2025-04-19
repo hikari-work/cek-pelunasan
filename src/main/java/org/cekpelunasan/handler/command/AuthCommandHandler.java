@@ -1,14 +1,19 @@
 package org.cekpelunasan.handler.command;
+
 import org.cekpelunasan.service.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+import java.util.concurrent.CompletableFuture;
 
 @Component
 public class AuthCommandHandler implements CommandProcessor {
 
     private final AuthorizedChats authorizedChats1;
+
     @Value("${telegram.bot.owner}")
     private Long ownerId;
 
@@ -27,28 +32,42 @@ public class AuthCommandHandler implements CommandProcessor {
     }
 
     @Override
-    public void process(Update update, TelegramClient telegramClient) {
-        Long senderId = update.getMessage().getChatId();
-        String[] parts = update.getMessage().getText().split(" ");
+    @Async
+    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+        return CompletableFuture.runAsync(() -> {
+            Long senderId = update.getMessage().getChatId();
+            String[] parts = update.getMessage().getText().split(" ");
 
-        if (!senderId.equals(ownerId)) {
-            sendMessage(senderId, messageTemplateService.notAdminUsers(), telegramClient);
-            return;
-        }
+            if (!senderId.equals(ownerId)) {
+                sendMessage(senderId, messageTemplateService.notAdminUsers(), telegramClient);
+                return;
+            }
 
-        if (parts.length < 2) {
-            sendMessage(senderId, messageTemplateService.notValidDeauthFormat(), telegramClient);
-            return;
-        }
+            if (parts.length < 2) {
+                sendMessage(senderId, messageTemplateService.notValidDeauthFormat(), telegramClient);
+                return;
+            }
 
+            try {
+                long chatIdTarget = Long.parseLong(parts[1]);
+                userService.insertNewUsers(chatIdTarget);
+                authorizedChats1.addAuthorizedChat(chatIdTarget);
+                sendMessage(chatIdTarget, messageTemplateService.authorizedMessage(), telegramClient);
+                sendMessage(ownerId, "Sukses", telegramClient);
+            } catch (NumberFormatException e) {
+                sendMessage(senderId, messageTemplateService.notValidNumber(), telegramClient);
+            }
+        });
+    }
+
+    public void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
         try {
-            long chatIdTarget = Long.parseLong(parts[1]);
-            userService.insertNewUsers(chatIdTarget);
-            sendMessage(chatIdTarget, messageTemplateService.authorizedMessage(), telegramClient);
-            authorizedChats1.addAuthorizedChat(chatIdTarget);
-            sendMessage(ownerId, "Sukses", telegramClient);
-        } catch (NumberFormatException e) {
-            sendMessage(senderId, messageTemplateService.notValidNumber(), telegramClient);
+            telegramClient.execute(org.telegram.telegrambots.meta.api.methods.send.SendMessage.builder()
+                    .chatId(chatId.toString())
+                    .text(text)
+                    .build());
+        } catch (Exception e) {
+            log.error("Error Sending Message");
         }
     }
 }

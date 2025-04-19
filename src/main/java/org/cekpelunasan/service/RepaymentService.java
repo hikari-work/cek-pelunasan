@@ -4,6 +4,7 @@ import com.opencsv.CSVReader;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.repository.RepaymentRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,9 +27,6 @@ public class RepaymentService {
         this.repaymentRepository = repaymentRepository;
     }
 
-    public void saveRepayment(Repayment repayment) {
-        repaymentRepository.save(repayment);
-    }
 
     public Repayment findRepaymentById(Long id) {
         return repaymentRepository.findById(id).orElse(null);
@@ -57,9 +55,8 @@ public class RepaymentService {
                         .lpdb(line[13])
                         .createdAt(Date.from(Instant.now()))
                         .build();
-                saveRepayment(repayment);
+                repayments.add(repayment);
             }
-
             repaymentRepository.deleteAll(); // bisa juga pakai custom delete by condition kalau tidak mau hapus semua
             repaymentRepository.saveAll(repayments); // simpan sekaligus
             log.info("✅ Upload selesai: {} data disimpan", repayments.size());
@@ -73,6 +70,7 @@ public class RepaymentService {
     public Repayment findAll() {
         return repaymentRepository.findAll().getFirst();
     }
+    @Cacheable(value = "repayment", key = "#name")
     public Page<Repayment> findName(String name, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return repaymentRepository.findByNameContainingIgnoreCase(name, pageable);
