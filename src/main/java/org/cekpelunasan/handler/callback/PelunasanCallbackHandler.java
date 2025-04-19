@@ -2,7 +2,7 @@ package org.cekpelunasan.handler.callback;
 
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.service.RepaymentService;
-import org.cekpelunasan.utils.BackKeybaordUtils;
+import org.cekpelunasan.utils.BackKeyboardUtils;
 import org.cekpelunasan.utils.PenaltyUtils;
 import org.cekpelunasan.utils.RepaymentCalculator;
 import org.springframework.scheduling.annotation.Async;
@@ -57,7 +57,7 @@ public class PelunasanCallbackHandler implements CallbackProcessor {
                 String result = new RepaymentCalculator().calculate(repayment, penalty);
                 String response = result + "\n\n_Eksekusi dalam " + (System.currentTimeMillis() - start) + "ms_";
 
-                editMessageWithMarkup(chatId, messageId, response, telegramClient, new BackKeybaordUtils().backButton(data));
+                editMessageWithMarkup(chatId, messageId, response, telegramClient, new BackKeyboardUtils().backButton(data));
 
             } catch (NumberFormatException e) {
                 sendMessage(chatId, "❌ Format ID tidak valid.", telegramClient);

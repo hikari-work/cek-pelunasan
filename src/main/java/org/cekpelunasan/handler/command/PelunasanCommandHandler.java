@@ -5,10 +5,12 @@ import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.RepaymentService;
 import org.cekpelunasan.utils.PenaltyUtils;
 import org.cekpelunasan.utils.RepaymentCalculator;
+import org.cekpelunasan.utils.SendPhotoKeyboard;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.Map;
@@ -80,7 +82,7 @@ public class PelunasanCommandHandler implements CommandProcessor {
                 String result = new RepaymentCalculator().calculate(repayment, penalty);
                 result += "\n\n_Eksekusi dalam " + (System.currentTimeMillis() - start) + "ms_";
 
-                sendMessage(chatId, result, telegramClient);
+                sendMessage(chatId, result, telegramClient, new SendPhotoKeyboard().sendPhotoButton(customerId));
 
             } catch (NumberFormatException e) {
                 sendMessage(chatId, "❗ *Format ID tidak valid*", telegramClient);
@@ -97,6 +99,18 @@ public class PelunasanCommandHandler implements CommandProcessor {
                     .build());
         } catch (Exception e) {
             log.error("Error Sending Message", e);
+        }
+    }
+    public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
+        try {
+            telegramClient.execute(SendMessage.builder()
+                    .chatId(chatId.toString())
+                    .text(text)
+                    .replyMarkup(markup)
+                    .parseMode("Markdown")
+                    .build());
+        } catch (Exception e) {
+            log.error("Error");
         }
     }
 }
