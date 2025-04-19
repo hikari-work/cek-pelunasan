@@ -53,7 +53,6 @@ public class FindNamesHandler implements CommandProcessor {
                 sendMessage(chatId, messageTemplateService.unathorizedMessage(), telegramClient);
                 return;
             }
-
             if (keyword.isEmpty()) {
                 sendMessage(chatId, messageTemplateService.fiCommandHelper(), telegramClient);
                 return;

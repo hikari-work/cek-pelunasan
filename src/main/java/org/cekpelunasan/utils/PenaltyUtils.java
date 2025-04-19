@@ -1,10 +1,13 @@
 package org.cekpelunasan.utils;
 
+import org.springframework.stereotype.Component;
+
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+@Component
 public class PenaltyUtils {
 
     public Map<String, Long> penalty(String startDate, Long amount, String product) {

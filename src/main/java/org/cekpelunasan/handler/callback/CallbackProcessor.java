@@ -3,7 +3,9 @@ package org.cekpelunasan.handler.callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -42,6 +44,17 @@ public interface CallbackProcessor {
                     .build());
         } catch (TelegramApiException e) {
             log.info("Error sending message: {}", e.getMessage());
+        }
+    }
+    default void sendPhoto(Long chatId, String text, InputFile inputFile, TelegramClient telegramClient) {
+        try {
+            telegramClient.execute(SendPhoto.builder()
+                            .chatId(chatId)
+                            .caption(text)
+                            .photo(inputFile)
+                    .build());
+        } catch (TelegramApiException e) {
+            log.info("Error sending photo: {}", e.getMessage());
         }
     }
 
