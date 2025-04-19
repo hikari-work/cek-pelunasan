@@ -5,6 +5,7 @@ import org.cekpelunasan.handler.command.CommandHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
@@ -47,14 +48,20 @@ public class TelegramMainBot implements SpringLongPollingBot, LongPollingSingleT
 
     @Override
     public void consume(Update update) {
+        handleAsync(update);
+    }
+    @Async
+    public void handleAsync(Update update) {
         try {
             if (update.hasMessage() && update.getMessage().hasText()) {
                 commandHandler.handle(update, telegramClient);
-            } else {
+            } else if (update.hasCallbackQuery()) {
                 callbackHandler.handle(update, telegramClient);
+            } else {
+                log.warn("Received an update that is neither a message nor a callback query: {}", update);
             }
         } catch (Exception e) {
-            log.error("Error while processing update: {}", e.getMessage(), e);
+            log.error("Error Handling Update", e);
         }
     }
 }

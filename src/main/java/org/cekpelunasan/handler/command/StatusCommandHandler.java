@@ -4,9 +4,12 @@ import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.service.RepaymentService;
 import org.cekpelunasan.service.UserService;
 import org.cekpelunasan.utils.SystemUtils;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+import java.util.concurrent.CompletableFuture;
 
 @Component
 public class StatusCommandHandler implements CommandProcessor {
@@ -25,24 +28,40 @@ public class StatusCommandHandler implements CommandProcessor {
     }
 
     @Override
-    public void process(Update update, TelegramClient telegramClient) {
-        if (update.getMessage() == null) return;
+    @Async
+    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+        if (update.getMessage() == null) {
+            return CompletableFuture.completedFuture(null);
+        }
 
         long chatId = update.getMessage().getChatId();
         long startTime = System.currentTimeMillis();
 
-        Repayment latestRepayment = repaymentService.findAll();
-        Long totalUsers = userService.countUsers();
-        int totalRepayments = repaymentService.countAll();
-        String systemLoad = new SystemUtils().getSystemUtils();
-        long executionTime = System.currentTimeMillis() - startTime;
+        CompletableFuture<Repayment> latestRepaymentFuture = CompletableFuture.supplyAsync(repaymentService::findAll);
+        CompletableFuture<Long> totalUsersFuture = CompletableFuture.supplyAsync(userService::countUsers);
+        CompletableFuture<Integer> totalRepaymentsFuture = CompletableFuture.supplyAsync(repaymentService::countAll);
+        CompletableFuture<String> systemLoadFuture = CompletableFuture.supplyAsync(() -> new SystemUtils().getSystemUtils());
 
-        String statusMessage = buildStatusMessage(latestRepayment,
-                totalUsers,
-                totalRepayments,
-                systemLoad,
-                executionTime);
-        sendMessage(chatId, statusMessage, telegramClient);
+        return CompletableFuture.allOf(latestRepaymentFuture, totalUsersFuture, totalRepaymentsFuture, systemLoadFuture)
+                .thenComposeAsync(aVoid -> {
+                    try {
+                        Repayment latestRepayment = latestRepaymentFuture.get();
+                        Long totalUsers = totalUsersFuture.get();
+                        int totalRepayments = totalRepaymentsFuture.get();
+                        String systemLoad = systemLoadFuture.get();
+                        long executionTime = System.currentTimeMillis() - startTime;
+
+                        String statusMessage = buildStatusMessage(latestRepayment,
+                                totalUsers,
+                                totalRepayments,
+                                systemLoad,
+                                executionTime);
+                        sendMessage(chatId, statusMessage, telegramClient);
+                    } catch (Exception e) {
+                        log.error("Error Send Message");
+                    }
+                    return CompletableFuture.completedFuture(null);
+                });
     }
 
     private String buildStatusMessage(Repayment latest,

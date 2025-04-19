@@ -1,8 +1,11 @@
 package org.cekpelunasan.handler.command;
 
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+import java.util.concurrent.CompletableFuture;
 
 @Component
 public class HelpCommandHandler implements CommandProcessor {
@@ -18,10 +21,13 @@ public class HelpCommandHandler implements CommandProcessor {
     }
 
     @Override
-    public void process(Update update, TelegramClient telegramClient) {
-        if (isHelpCommand(update)) {
-            sendHelpMessage(update.getMessage().getChatId(), telegramClient);
-        }
+    @Async
+    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+        return CompletableFuture.runAsync(() -> {
+            if (isHelpCommand(update)) {
+                sendHelpMessage(update.getMessage().getChatId(), telegramClient);
+            }
+        });
     }
 
     private boolean isHelpCommand(Update update) {

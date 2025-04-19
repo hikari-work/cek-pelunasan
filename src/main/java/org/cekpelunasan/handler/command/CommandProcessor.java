@@ -10,11 +10,13 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface CommandProcessor {
     Logger log = LoggerFactory.getLogger(CommandProcessor.class);
 
     String getCommand();
-    void process(Update update, TelegramClient telegramClient);
+    CompletableFuture<Void> process(Update update, TelegramClient telegramClient);
     default void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
         try {
             telegramClient.execute(SendMessage.builder()
@@ -24,18 +26,6 @@ public interface CommandProcessor {
                     .build());
         } catch (TelegramApiException e) {
             log.info("Error sending message: {}", e.getMessage());
-        }
-    }
-    default void sendMessageWithReplyMarkup(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup replyMarkup) {
-        try {
-            telegramClient.execute(SendMessage.builder()
-                    .chatId(chatId)
-                    .text(text)
-                    .replyMarkup(replyMarkup)
-                    .parseMode("Markdown")
-                    .build());
-        } catch (TelegramApiException e) {
-            log.info("Error sending message With Markup: {}", e.getMessage());
         }
     }
     default void copyMessage(Long fromChatId, Integer messageId, Long toChatId, TelegramClient bot) {

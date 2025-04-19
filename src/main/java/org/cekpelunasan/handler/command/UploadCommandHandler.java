@@ -6,6 +6,7 @@ import org.cekpelunasan.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
@@ -14,6 +15,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.*;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 public class UploadCommandHandler implements CommandProcessor {
@@ -40,40 +42,40 @@ public class UploadCommandHandler implements CommandProcessor {
     }
 
     @Override
-    public void process(Update update, TelegramClient telegramClient) {
-        long chatId = update.getMessage().getChatId();
-        String text = update.getMessage().getText();
-        long start = System.currentTimeMillis();
+    @Async
+    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+        return CompletableFuture.runAsync(() -> {
+            long chatId = update.getMessage().getChatId();
+            String text = update.getMessage().getText();
+            long start = System.currentTimeMillis();
 
-        if (!botOwner.equalsIgnoreCase(String.valueOf(chatId))) {
-            return;
-        }
-
-        try {
-            String url = text.split(" ", 2)[1];
-            String fileName = url.substring(url.lastIndexOf("/") + 1);
-
-            sendMessage(chatId, "⏳ *Sedang mengunduh dan memproses file...*", telegramClient);
-
-            List<User> allUsers = userService.findAllUsers();
-            broadcastToUsers(allUsers,
-                    "⚠ *Sedang melakukan update data, mohon jangan kirim perintah apapun...*",
-                    telegramClient);
-
-            if (downloadAndProcessFile(url, fileName)) {
-                String successMsg = String.format("✅ *File berhasil diproses:* %s\n\n_Eksekusi dalam %dms_",
-                        fileName, System.currentTimeMillis() - start);
-                sendMessage(chatId, successMsg, telegramClient);
-                broadcastToUsers(allUsers, successMsg, telegramClient);
-            } else {
-                String failMsg = "❌ *Gagal memproses file. Coba lagi nanti.*";
-                sendMessage(chatId, failMsg, telegramClient);
-                broadcastToUsers(allUsers, "⚠ *Gagal update. Akan dicoba ulang.*", telegramClient);
+            if (!botOwner.equalsIgnoreCase(String.valueOf(chatId))) {
+                return;
             }
 
-        } catch (ArrayIndexOutOfBoundsException e) {
-            sendMessage(chatId, "❗ *Format salah.*\nGunakan `/upload <link_csv>`", telegramClient);
-        }
+            try {
+                String url = text.split(" ", 2)[1];
+                String fileName = url.substring(url.lastIndexOf("/") + 1);
+
+                sendMessage(chatId, "⏳ *Sedang mengunduh dan memproses file...*", telegramClient);
+
+                List<User> allUsers = userService.findAllUsers();
+                broadcastToUsers(allUsers,
+                        "⚠ *Sedang melakukan update data, mohon jangan kirim perintah apapun...*",
+                        telegramClient);
+
+                if (downloadAndProcessFile(url, fileName)) {
+                    String successMsg = String.format("✅ *File berhasil diproses:*\n\n_Eksekusi dalam %dms_",
+                            System.currentTimeMillis() - start);
+                    broadcastToUsers(allUsers, successMsg, telegramClient);
+                } else {
+                    broadcastToUsers(allUsers, "⚠ *Gagal update. Akan dicoba ulang.*", telegramClient);
+                }
+
+            } catch (ArrayIndexOutOfBoundsException e) {
+                sendMessage(chatId, "❗ *Format salah.*\nGunakan `/upload <link_csv>`", telegramClient);
+            }
+        });
     }
 
     private void broadcastToUsers(List<User> users, String message, TelegramClient client) {
@@ -97,7 +99,6 @@ public class UploadCommandHandler implements CommandProcessor {
             if (fileName.endsWith(".csv")) {
                 repaymentService.parseCsvAndSaveIntoDatabase(output);
             }
-
             return true;
         } catch (Exception e) {
             log.error("❌ Gagal memproses file dari URL: {}", fileUrl, e);

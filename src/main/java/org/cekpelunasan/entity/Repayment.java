@@ -5,13 +5,13 @@ import lombok.*;
 
 import java.util.Date;
 
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Entity(name = "repayment")
+@Table(name = "repayment", indexes = {@Index(name = "name_idx", columnList = "name")})
 public class Repayment {
 
     @Id
