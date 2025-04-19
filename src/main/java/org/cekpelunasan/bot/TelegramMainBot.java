@@ -58,10 +58,10 @@ public class TelegramMainBot implements SpringLongPollingBot, LongPollingSingleT
             } else if (update.hasCallbackQuery()) {
                 callbackHandler.handle(update, telegramClient);
             } else {
-                log.warn("Received an update that is neither a message nor a callback query: {}", update);
+                log.warn("Received an update that is neither a message nor a callback query: {}", update.getMessage());
             }
         } catch (Exception e) {
-            log.error("Error Handling Update", e);
+            log.error("Error Handling Update {}", e.getMessage());
         }
     }
 }
