@@ -1,5 +1,7 @@
-package org.cekpelunasan.handler.command;
+package org.cekpelunasan.handler.command.handler;
 
+import org.cekpelunasan.handler.command.CommandProcessor;
+import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +13,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-public class DeleteUserAccessCommand implements CommandProcessor{
+public class DeleteUserAccessCommand implements CommandProcessor {
 
     private final AuthorizedChats authorizedChats;
 
@@ -30,6 +32,13 @@ public class DeleteUserAccessCommand implements CommandProcessor{
     @Override
     public String getCommand() {
         return "/deauth";
+    }
+
+    @Override
+    public String getDescription() {
+        return """
+                Gunakan Command ini untuk menghapus izin user.
+                """;
     }
 
     @Override

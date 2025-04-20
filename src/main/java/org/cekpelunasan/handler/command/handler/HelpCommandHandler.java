@@ -1,5 +1,9 @@
-package org.cekpelunasan.handler.command;
+package org.cekpelunasan.handler.command.handler;
 
+import org.cekpelunasan.handler.command.CommandProcessor;
+import org.cekpelunasan.handler.command.template.GenerateHelpMessage;
+import org.cekpelunasan.handler.command.template.MessageTemplate;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -10,14 +14,23 @@ import java.util.concurrent.CompletableFuture;
 @Component
 public class HelpCommandHandler implements CommandProcessor {
     private final MessageTemplate messageTemplate;
+    private final GenerateHelpMessage generateHelpMessage;
 
-    public HelpCommandHandler(MessageTemplate messageTemplate) {
+    public HelpCommandHandler(MessageTemplate messageTemplate, @Lazy GenerateHelpMessage generateHelpMessage) {
         this.messageTemplate = messageTemplate;
+        this.generateHelpMessage = generateHelpMessage;
     }
 
     @Override
     public String getCommand() {
         return "/help";
+    }
+
+    @Override
+    public String getDescription() {
+        return """
+                Menampilkan pesan Ini
+                """;
     }
 
     @Override
@@ -36,6 +49,7 @@ public class HelpCommandHandler implements CommandProcessor {
     }
 
     private void sendHelpMessage(Long chatId, TelegramClient telegramClient) {
-        sendMessage(chatId, messageTemplate.helpMessage(), telegramClient);
+        String helpMessage = generateHelpMessage.generateHelpText();
+        sendMessage(chatId, helpMessage, telegramClient);
     }
 }

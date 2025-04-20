@@ -1,4 +1,4 @@
-package org.cekpelunasan.utils;
+package org.cekpelunasan.utils.button;
 
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;

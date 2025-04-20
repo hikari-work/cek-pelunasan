@@ -1,8 +1,9 @@
-package org.cekpelunasan.handler.callback;
+package org.cekpelunasan.handler.callback.pagination;
 
 import org.cekpelunasan.entity.Repayment;
+import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.service.RepaymentService;
-import org.cekpelunasan.utils.ButtonListForName;
+import org.cekpelunasan.utils.button.ButtonListForName;
 import org.cekpelunasan.utils.RupiahFormatUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;
@@ -13,11 +14,11 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
-public class PaginationCallbackHandler implements CallbackProcessor {
+public class PaginationPelunasanCallbackHandler implements CallbackProcessor {
 
     private final RepaymentService repaymentService;
 
-    public PaginationCallbackHandler(RepaymentService repaymentService) {
+    public PaginationPelunasanCallbackHandler(RepaymentService repaymentService) {
         this.repaymentService = repaymentService;
     }
 

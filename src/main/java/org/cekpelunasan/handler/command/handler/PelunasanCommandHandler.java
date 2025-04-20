@@ -1,11 +1,13 @@
-package org.cekpelunasan.handler.command;
+package org.cekpelunasan.handler.command.handler;
 
 import org.cekpelunasan.entity.Repayment;
+import org.cekpelunasan.handler.command.CommandProcessor;
+import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.RepaymentService;
 import org.cekpelunasan.utils.PenaltyUtils;
 import org.cekpelunasan.utils.RepaymentCalculator;
-import org.cekpelunasan.utils.SendPhotoKeyboard;
+import org.cekpelunasan.utils.button.SendPhotoKeyboard;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -36,6 +38,14 @@ public class PelunasanCommandHandler implements CommandProcessor {
     @Override
     public String getCommand() {
         return "/pl";
+    }
+
+    @Override
+    public String getDescription() {
+        return """
+                Gunakan command ini untuk menghitung pelunasan
+                berdasarkan ID SPK yang anda kirimkan
+                """;
     }
 
     @Override

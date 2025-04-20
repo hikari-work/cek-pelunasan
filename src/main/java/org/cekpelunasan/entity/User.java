@@ -2,6 +2,8 @@ package org.cekpelunasan.entity;
 
 import jakarta.annotation.Nullable;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import lombok.*;
 
@@ -17,5 +19,14 @@ public class User {
     private Long chatId;
 
     @Nullable
-    private String username;
+    private String userCode;
+
+    @Nullable
+    private String branch;
+
+    @Nullable
+    @Enumerated(EnumType.STRING)
+    private AccountOfficerRoles roles;
+
+
 }

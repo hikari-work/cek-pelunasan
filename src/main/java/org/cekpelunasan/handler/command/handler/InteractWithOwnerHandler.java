@@ -1,5 +1,6 @@
-package org.cekpelunasan.handler.command;
+package org.cekpelunasan.handler.command.handler;
 
+import org.cekpelunasan.handler.command.CommandProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,14 @@ public class InteractWithOwnerHandler implements CommandProcessor {
     @Override
     public String getCommand() {
         return "/id";
+    }
+
+    @Override
+    public String getDescription() {
+        return """
+                Gunakan command ini untuk generate User Id anda
+                untuk kebutuhan Authorization
+                """;
     }
 
     @Override
