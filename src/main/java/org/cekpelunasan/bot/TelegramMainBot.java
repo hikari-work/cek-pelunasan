@@ -1,5 +1,8 @@
 package org.cekpelunasan.bot;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.cekpelunasan.handler.callback.CallbackHandler;
 import org.cekpelunasan.handler.command.CommandHandler;
 import org.slf4j.Logger;
@@ -22,16 +25,18 @@ public class TelegramMainBot implements SpringLongPollingBot, LongPollingSingleT
     private final CommandHandler commandHandler;
     private final CallbackHandler callbackHandler;
     private final TelegramClient telegramClient;
+    private final MeterRegistry meterRegistry;
 
     private final String botToken;
 
     public TelegramMainBot(
             CommandHandler commandHandler,
-            CallbackHandler callbackHandler,
+            CallbackHandler callbackHandler, MeterRegistry meterRegistry,
             @Value("${telegram.bot.token}") String botToken
     ) {
         this.commandHandler = commandHandler;
         this.callbackHandler = callbackHandler;
+        this.meterRegistry = meterRegistry;
         this.botToken = botToken;
         this.telegramClient = new OkHttpTelegramClient(botToken);
     }
@@ -52,7 +57,13 @@ public class TelegramMainBot implements SpringLongPollingBot, LongPollingSingleT
     }
     @Async
     public void handleAsync(Update update) {
+        // Define the counter and timer metrics
+        Counter updateCounter = meterRegistry.counter("telegram_bot_update_count");
+        Timer.Sample sample = Timer.start(meterRegistry);
+
         try {
+            updateCounter.increment(); // Increment the counter on each update
+
             if (update.hasMessage() && update.getMessage().hasText()) {
                 commandHandler.handle(update, telegramClient);
             } else if (update.hasCallbackQuery()) {
@@ -62,6 +73,8 @@ public class TelegramMainBot implements SpringLongPollingBot, LongPollingSingleT
             }
         } catch (Exception e) {
             log.error("Error Handling Update {}", e.getMessage());
+        } finally {
+            sample.stop(meterRegistry.timer("telegram_bot_update_response_time"));
         }
     }
 }
