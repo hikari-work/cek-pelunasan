@@ -69,7 +69,6 @@ public class PelunasanCallbackHandler implements CallbackProcessor {
     }
 
     private Long parseCustomerId(String data) {
-        // Format expected: pelunasan_<id>
         String[] parts = data.split("_");
         if (parts.length < 2) throw new NumberFormatException("Format callback salah.");
         return Long.parseLong(parts[1]);

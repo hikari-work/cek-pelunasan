@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -43,7 +44,7 @@ public class UserService {
         userRepository.save(user);
     }
     @Transactional
-    public User findUserByChatId(Long chatId) {
-        return userRepository.findById(chatId).orElse(null);
+    public Optional<User> findUserByChatId(Long chatId) {
+        return userRepository.findById(chatId);
     }
 }

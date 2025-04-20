@@ -42,12 +42,14 @@ public class BillService {
                 .orElse(Collections.emptySet());
     }
 
-    public Page<Bills> findDueDateByAccountOfficer(String officer, String dueDate, int page, int size) {
-        return billsRepository.findByAccountOfficerAndDueDateLike(officer, dueDate, PageRequest.of(page, size));
+    public Page<Bills> findDueDateByAccountOfficer(String accountOfficer, String payDown, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size);
+        return billsRepository.findByAccountOfficerAndPayDown(accountOfficer, payDown, pageRequest);
     }
 
-    public Page<Bills> findDueDateByBranch(String branch, String dueDate, int page, int size) {
-        return billsRepository.findByBranchAndDueDateLike(branch, dueDate, PageRequest.of(page, size));
+    public Page<Bills> findBranchAndPayDown(String branch, String payDown, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size);
+        return billsRepository.findByBranchAndPayDownOrderByAccountOfficer(branch, payDown, pageRequest);
     }
 
     public Page<Bills> findByNameAndBranch(String name, String branch, int page, int size) {
@@ -60,6 +62,9 @@ public class BillService {
 
     public Page<Bills> findMinimalPaymentByAccountOfficer(String officer, int page, int size) {
         return billsRepository.findByMinInterestOrMinPrincipalIsGreaterThanAndAccountOfficer(0L, 0L, officer, PageRequest.of(page, size));
+    }
+    public Set<String> findAllAccountOfficer() {
+        return billsRepository.findDistinctByAccountOfficer();
     }
 
     public void parseCsvAndSaveIntoDatabase(Path path) {

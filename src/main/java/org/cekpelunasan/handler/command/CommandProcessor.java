@@ -26,7 +26,7 @@ public interface CommandProcessor {
                             .parseMode("Markdown")
                     .build());
         } catch (TelegramApiException e) {
-            log.info("Error sending message: {}", e.getMessage());
+            log.info(e.getMessage());
         }
     }
     default void copyMessage(Long fromChatId, Integer messageId, Long toChatId, TelegramClient bot) {
