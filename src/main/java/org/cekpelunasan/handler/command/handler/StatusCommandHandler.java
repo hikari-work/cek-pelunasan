@@ -32,6 +32,14 @@ public class StatusCommandHandler implements CommandProcessor {
     }
 
     @Override
+    public String getDescription() {
+        return """
+                Mengecek Status Server dan Database
+                serta user terdaftar
+                """;
+    }
+
+    @Override
     @Async
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         if (update.getMessage() == null) {

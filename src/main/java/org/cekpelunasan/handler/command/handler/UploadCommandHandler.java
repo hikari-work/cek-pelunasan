@@ -46,6 +46,13 @@ public class UploadCommandHandler implements CommandProcessor {
     }
 
     @Override
+    public String getDescription() {
+        return """
+                Upload data Pelunasan terbaru
+                """;
+    }
+
+    @Override
     @Async
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {

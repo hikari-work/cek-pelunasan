@@ -33,6 +33,14 @@ public class TagihWithNameCommandHandler implements CommandProcessor {
     }
 
     @Override
+    public String getDescription() {
+        return """
+                Mengembalikan list nama yang anda cari jika
+                anda tidak mengetahui ID SPK
+                """;
+    }
+
+    @Override
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
             long chatId = update.getMessage().getChatId();

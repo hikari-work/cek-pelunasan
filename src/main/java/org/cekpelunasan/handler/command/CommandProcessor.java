@@ -16,6 +16,7 @@ public interface CommandProcessor {
     Logger log = LoggerFactory.getLogger(CommandProcessor.class);
 
     String getCommand();
+    String getDescription();
     CompletableFuture<Void> process(Update update, TelegramClient telegramClient);
     default void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
         try {

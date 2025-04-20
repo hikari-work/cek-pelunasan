@@ -41,6 +41,14 @@ public class PelunasanCommandHandler implements CommandProcessor {
     }
 
     @Override
+    public String getDescription() {
+        return """
+                Gunakan command ini untuk menghitung pelunasan
+                berdasarkan ID SPK yang anda kirimkan
+                """;
+    }
+
+    @Override
     @Async
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {

@@ -31,6 +31,14 @@ public class TagihCommandHandler implements CommandProcessor {
     }
 
     @Override
+    public String getDescription() {
+        return """
+                Mengembalikan rincian tagihan berdasarkan
+                ID SPK yang anda kirimkan
+                """;
+    }
+
+    @Override
     @Async
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {

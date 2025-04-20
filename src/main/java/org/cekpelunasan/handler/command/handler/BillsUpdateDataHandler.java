@@ -41,6 +41,13 @@ public class BillsUpdateDataHandler implements CommandProcessor {
     }
 
     @Override
+    public String getDescription() {
+        return """
+                Gunakan Command ini untuk upload data tagihan harian.
+                """;
+    }
+
+    @Override
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
             log.info("Upadte");

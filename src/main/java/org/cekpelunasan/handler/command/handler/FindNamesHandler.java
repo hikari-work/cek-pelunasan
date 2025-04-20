@@ -43,6 +43,14 @@ public class FindNamesHandler implements CommandProcessor {
     }
 
     @Override
+    public String getDescription() {
+        return """
+                Gunakan command ini untuk mencari pelunasan 
+                berdasarkan yang anda kirim
+                """;
+    }
+
+    @Override
     @Async
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {

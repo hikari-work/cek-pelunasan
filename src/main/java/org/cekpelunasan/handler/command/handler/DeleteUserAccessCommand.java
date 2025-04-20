@@ -35,6 +35,13 @@ public class DeleteUserAccessCommand implements CommandProcessor {
     }
 
     @Override
+    public String getDescription() {
+        return """
+                Gunakan Command ini untuk menghapus izin user.
+                """;
+    }
+
+    @Override
     @Async
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {

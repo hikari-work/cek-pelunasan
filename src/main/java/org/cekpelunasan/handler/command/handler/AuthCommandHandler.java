@@ -34,6 +34,13 @@ public class AuthCommandHandler implements CommandProcessor {
     }
 
     @Override
+    public String getDescription() {
+        return """
+                Gunakan command ini untuk memberikan izin kepada user untuk menggunakan bot.
+                """;
+    }
+
+    @Override
     @Async
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {

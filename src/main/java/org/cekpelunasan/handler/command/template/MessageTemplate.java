@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.template;
 
+import org.cekpelunasan.handler.command.CommandProcessor;
 import org.springframework.stereotype.Service;
 
 @Service

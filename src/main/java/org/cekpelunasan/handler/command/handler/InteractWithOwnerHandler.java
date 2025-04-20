@@ -22,6 +22,14 @@ public class InteractWithOwnerHandler implements CommandProcessor {
     }
 
     @Override
+    public String getDescription() {
+        return """
+                Gunakan command ini untuk generate User Id anda
+                untuk kebutuhan Authorization
+                """;
+    }
+
+    @Override
     @Async
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
