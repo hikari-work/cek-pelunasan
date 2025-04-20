@@ -1,5 +1,6 @@
-package org.cekpelunasan.handler.command;
+package org.cekpelunasan.handler.command.handler;
 
+import org.cekpelunasan.handler.command.CommandProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

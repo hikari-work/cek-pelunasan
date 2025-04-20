@@ -32,7 +32,7 @@ public interface CallbackProcessor {
                     .parseMode("Markdown")
                     .build());
         } catch (TelegramApiException e) {
-            log.warn("Error Receiving Callback Data");
+            log.warn("Error Edit Callback Data", e);
         }
     }
     default void sendMessage(Long chatId, String text, TelegramClient telegramClient) {

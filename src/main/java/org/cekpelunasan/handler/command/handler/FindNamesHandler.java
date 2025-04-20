@@ -1,9 +1,11 @@
-package org.cekpelunasan.handler.command;
+package org.cekpelunasan.handler.command.handler;
 
 import org.cekpelunasan.entity.Repayment;
+import org.cekpelunasan.handler.command.CommandProcessor;
+import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.RepaymentService;
-import org.cekpelunasan.utils.ButtonListForName;
+import org.cekpelunasan.utils.button.ButtonListForName;
 import org.cekpelunasan.utils.RupiahFormatUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;
@@ -82,6 +84,8 @@ public class FindNamesHandler implements CommandProcessor {
 
             String footer = String.format("\n\nEksekusi dalam %dms", System.currentTimeMillis() - startTime);
             messageBuilder.append(footer);
+
+
 
             InlineKeyboardMarkup markup = new ButtonListForName().dynamicButtonName(repayments, FIRST_PAGE, keyword);
             sendMessage(chatId, messageBuilder.toString(), telegramClient, markup);

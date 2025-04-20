@@ -1,5 +1,7 @@
-package org.cekpelunasan.handler.command;
+package org.cekpelunasan.handler.command.handler;
 
+import org.cekpelunasan.handler.command.CommandProcessor;
+import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

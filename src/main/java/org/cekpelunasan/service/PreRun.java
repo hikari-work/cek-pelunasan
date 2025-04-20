@@ -2,6 +2,7 @@ package org.cekpelunasan.service;
 
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.repository.UserRepository;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -23,7 +24,8 @@ public class PreRun {
     public void initData() {
         User user = User.builder()
                 .chatId(botOwner)
-                .username("ADMIN")
+                .userCode("ADMIN")
+                .roles(AccountOfficerRoles.ADMIN)
                 .build();
         userRepository.save(user);
     }

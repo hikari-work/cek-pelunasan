@@ -1,6 +1,8 @@
-package org.cekpelunasan.handler.command;
+package org.cekpelunasan.handler.command.handler;
 
 import org.cekpelunasan.entity.User;
+import org.cekpelunasan.handler.command.CommandProcessor;
+import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.RepaymentService;
 import org.cekpelunasan.service.UserService;
 import org.slf4j.Logger;
@@ -27,13 +29,15 @@ public class UploadCommandHandler implements CommandProcessor {
     private final UserService userService;
 
     private final String botOwner;
+    private final MessageTemplate messageTemplate;
 
     public UploadCommandHandler(RepaymentService repaymentService,
                                 UserService userService,
-                                @Value("${telegram.bot.owner}") String botOwner) {
+                                @Value("${telegram.bot.owner}") String botOwner, MessageTemplate messageTemplate) {
         this.repaymentService = repaymentService;
         this.userService = userService;
         this.botOwner = botOwner;
+        this.messageTemplate = messageTemplate;
     }
 
     @Override
@@ -50,6 +54,7 @@ public class UploadCommandHandler implements CommandProcessor {
             long start = System.currentTimeMillis();
 
             if (!botOwner.equalsIgnoreCase(String.valueOf(chatId))) {
+                sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
                 return;
             }
 

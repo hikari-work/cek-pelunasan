@@ -1,4 +1,4 @@
-package org.cekpelunasan.handler.command;
+package org.cekpelunasan.handler.command.template;
 
 import org.springframework.stereotype.Service;
 
@@ -7,18 +7,21 @@ public class MessageTemplate {
 
     public String authorizedMessage() {
         return """
-                Selamat, Kamu Diterima untuk menggunakan Bot ini,
-                💍 Ini Cincin Untukmu, Cara Pakainya ada di `/help`
+                🎉 Selamat datang! Kamu berhasil terdaftar untuk menggunakan bot ini.
+                
+                💍 Nih, cincinnya buat kamu~ \s
+                Kepoin cara pakainya lewat /help ya!
+                
                 """;
     }
     public String unathorizedMessage() {
         return """
                 🚫 *Akses Ditolak* 🚫
                 
-                Kamu belum terdaftar untuk menggunakan bot ini.
-                Minta akses ke Admin untuk bisa menggunakan fitur-fitur yang tersedia.
-                Gunakan `.id` Kemudian salin dan kirim ke botnya,
-                Tunggu admin membalas untuk konfirmasi...
+                Kamu belum terdaftar untuk menggunakan bot ini. \s
+                Gunakan perintah `.id`, lalu kirim hasilnya ke bot. \s
+                Tunggu konfirmasi akses dari admin.
+                
                 """;
     }
     public String notAdminUsers() {
@@ -68,8 +71,12 @@ public class MessageTemplate {
         🔹 */fi [nama]* — Cari nasabah berdasarkan Nama.
         Contoh: `/fi Budi`
 
-        🔹 */next* dan */prev* — Navigasi halaman hasil pencarian.
+        🔹 *Next dan Prev* — Navigasi halaman hasil pencarian.
         Gunakan setelah pencarian untuk pindah halaman.
+        
+        🔹 */tagih* — Tampilkan tagihan, pencarian Berdasarkan No Spk
+        
+        🔹 */tgnama * — Tampilkan tagihan berdasarkan Nama.
 
         🔹 */status* — Tampilkan status bot, termasuk load sistem dan koneksi database.
 
