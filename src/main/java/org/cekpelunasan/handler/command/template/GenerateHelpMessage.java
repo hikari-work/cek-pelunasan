@@ -18,7 +18,7 @@ public class GenerateHelpMessage {
         }
     }
     public String generateHelpText() {
-        StringBuilder stringBuilder = new StringBuilder("*List Command*:\n");
+        StringBuilder stringBuilder = new StringBuilder("*List Command*:\n\n");
         for (CommandProcessor cp : commandMap.values()) {
             stringBuilder.append(cp.getCommand()).append(" - ").append(cp.getDescription()).append("\n");
         }

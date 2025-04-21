@@ -7,7 +7,6 @@ import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.Bill.BillService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -40,10 +39,9 @@ public class TagihCommandHandler implements CommandProcessor {
 
     @Override
     @Async
-    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
-            long chatId = update.getMessage().getChatId();
-            String[] parts = update.getMessage().getText().split(" ",2);
+            String[] parts = text.split(" ",2);
 
             if (!authorizedChats1.isAuthorized(chatId)) {
                 sendMessage(chatId, messageTemplate.unathorizedMessage(), telegramClient);
@@ -80,6 +78,9 @@ public class TagihCommandHandler implements CommandProcessor {
             💸 *Bunga:* Rp %,d
             💵 *Pokok:* Rp %,d
             🧾 *Angsuran:* Rp %,d
+            
+            🧾 *Tunggakan Pokok :* Rp %,d
+            🧾 *Tunggakan Bunga :* Rp %,d
 
             🔻 *Minimal Pokok:* Rp %,d
             🔻 *Minimal Bunga:* Rp %,d
@@ -94,6 +95,8 @@ public class TagihCommandHandler implements CommandProcessor {
                 bill.getInterest(),
                 bill.getPrincipal(),
                 bill.getInstallment(),
+                bill.getLastPrincipal(),
+                bill.getLastInterest(),
                 bill.getMinPrincipal(),
                 bill.getMinInterest(),
                 bill.getAccountOfficer()

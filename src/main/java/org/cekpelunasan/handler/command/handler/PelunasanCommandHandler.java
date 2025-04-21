@@ -11,7 +11,6 @@ import org.cekpelunasan.utils.button.SendPhotoKeyboard;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -50,12 +49,11 @@ public class PelunasanCommandHandler implements CommandProcessor {
 
     @Override
     @Async
-    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
-            if (update.getMessage() == null || update.getMessage().getText() == null) return;
+            if (text == null) return;
 
-            long chatId = update.getMessage().getChatId();
-            String message = update.getMessage().getText().trim();
+            String message = text.trim();
 
             if (!authService.isAuthorized(chatId)) {
                 sendMessage(chatId, messageTemplateService.unathorizedMessage(), telegramClient);
@@ -99,7 +97,7 @@ public class PelunasanCommandHandler implements CommandProcessor {
             }
         });
     }
-
+    @Override
     public void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
         try {
             telegramClient.execute(SendMessage.builder()
@@ -111,6 +109,7 @@ public class PelunasanCommandHandler implements CommandProcessor {
             log.error("Error Sending Message", e);
         }
     }
+
     public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
         try {
             telegramClient.execute(SendMessage.builder()

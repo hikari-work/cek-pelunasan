@@ -7,7 +7,6 @@ import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.InputStream;
@@ -28,7 +27,7 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 
     public BillsUpdateDataHandler(BillService billService,
                                   @Value("${telegram.bot.owner}") String botOwner,
-                                  UserService userService, MessageTemplate messageTemplate, MessageTemplate messageTemplate1) {
+                                  UserService userService, MessageTemplate messageTemplate1) {
         this.billService = billService;
         this.botOwner = botOwner;
         this.userService = userService;
@@ -48,11 +47,10 @@ public class BillsUpdateDataHandler implements CommandProcessor {
     }
 
     @Override
-    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
             log.info("Upadte");
-            long chatId = update.getMessage().getChatId();
-            String[] parts = update.getMessage().getText().split(" ", 2);
+            String[] parts = text.split(" ", 2);
 
             if (!botOwner.equalsIgnoreCase(String.valueOf(chatId))) {
                 sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
@@ -63,7 +61,7 @@ public class BillsUpdateDataHandler implements CommandProcessor {
                 log.info("Denied");
                 return;
             }
-            log.info("Command: {}", update.getMessage().getText());
+            log.info("Command: {}", text);
             String url = parts[1];
             String fileName = url.substring(url.lastIndexOf("/") + 1);
             long start = System.currentTimeMillis();

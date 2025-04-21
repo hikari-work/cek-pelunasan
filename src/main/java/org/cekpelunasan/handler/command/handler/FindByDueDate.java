@@ -1,6 +1,5 @@
 package org.cekpelunasan.handler.command.handler;
 
-import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.callback.pagination.PaginationBillsByNameCallbackHandler;
@@ -12,7 +11,6 @@ import org.cekpelunasan.utils.DateUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -45,9 +43,8 @@ public class FindByDueDate implements CommandProcessor {
     }
 
     @Override
-    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
-            long chatId = update.getMessage().getChatId();
 
             if (!authorizedChats.isAuthorized(chatId)) {
                 sendMessage(chatId, "🚫 Anda tidak memiliki akses untuk menggunakan command ini.", telegramClient);
@@ -78,11 +75,16 @@ public class FindByDueDate implements CommandProcessor {
                 return;
             }
 
-            StringBuilder builder = new StringBuilder("Halaman 1 dari " + billsPage.getTotalPages() + "\n📋 *Daftar Tagihan Jatuh Tempo Hari Ini:*\n\n");
-            billsPage.forEach(bills -> builder.append(messageBuilder(bills)));
+            StringBuilder builder = new StringBuilder("Halaman 1 dari " + (billsPage != null ? billsPage.getTotalPages() : 0) + "\n📋 *Daftar Tagihan Jatuh Tempo Hari Ini:*\n\n");
+            if (billsPage != null) {
+                billsPage.forEach(bills -> builder.append(messageBuilder(bills)));
+            }
 
-            InlineKeyboardMarkup markup = new PaginationBillsByNameCallbackHandler()
-                    .dynamicButtonName(billsPage, 0, userCode);
+            InlineKeyboardMarkup markup = null;
+            if (billsPage != null) {
+                markup = new PaginationBillsByNameCallbackHandler()
+                        .dynamicButtonName(billsPage, 0, userCode);
+            }
 
             sendMessage(chatId, builder.toString(), telegramClient, markup);
         });

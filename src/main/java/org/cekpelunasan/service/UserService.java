@@ -40,10 +40,6 @@ public class UserService {
         userRepository.deleteById(chatId);
     }
     @Transactional
-    public void addUser(User user) {
-        userRepository.save(user);
-    }
-    @Transactional
     public Optional<User> findUserByChatId(Long chatId) {
         return userRepository.findById(chatId);
     }

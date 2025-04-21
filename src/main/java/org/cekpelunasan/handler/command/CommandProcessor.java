@@ -6,7 +6,6 @@ import org.telegram.telegrambots.meta.api.methods.CopyMessage;
 import org.telegram.telegrambots.meta.api.methods.ForwardMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -17,7 +16,12 @@ public interface CommandProcessor {
 
     String getCommand();
     String getDescription();
-    CompletableFuture<Void> process(Update update, TelegramClient telegramClient);
+    default CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+        return CompletableFuture.completedFuture(null);
+    }
+    default CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+        return CompletableFuture.completedFuture(null);
+    }
     default void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
         try {
             telegramClient.execute(SendMessage.builder()

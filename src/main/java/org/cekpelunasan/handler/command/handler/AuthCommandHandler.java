@@ -6,7 +6,6 @@ import org.cekpelunasan.service.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -42,18 +41,17 @@ public class AuthCommandHandler implements CommandProcessor {
 
     @Override
     @Async
-    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
-            Long senderId = update.getMessage().getChatId();
-            String[] parts = update.getMessage().getText().split(" ");
+            String[] parts = text.split(" ");
 
-            if (!senderId.equals(ownerId)) {
-                sendMessage(senderId, messageTemplateService.notAdminUsers(), telegramClient);
+            if (chatId != ownerId) {
+                sendMessage(chatId, messageTemplateService.notAdminUsers(), telegramClient);
                 return;
             }
 
             if (parts.length < 2) {
-                sendMessage(senderId, messageTemplateService.notValidDeauthFormat(), telegramClient);
+                sendMessage(chatId, messageTemplateService.notValidDeauthFormat(), telegramClient);
                 return;
             }
 
@@ -64,7 +62,7 @@ public class AuthCommandHandler implements CommandProcessor {
                 sendMessage(chatIdTarget, messageTemplateService.authorizedMessage(), telegramClient);
                 sendMessage(ownerId, "Sukses", telegramClient);
             } catch (NumberFormatException e) {
-                sendMessage(senderId, messageTemplateService.notValidNumber(), telegramClient);
+                sendMessage(chatId, messageTemplateService.notValidNumber(), telegramClient);
             }
         });
     }
