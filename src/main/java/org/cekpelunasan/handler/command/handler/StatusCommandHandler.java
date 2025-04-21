@@ -8,7 +8,6 @@ import org.cekpelunasan.service.UserService;
 import org.cekpelunasan.utils.SystemUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -41,12 +40,7 @@ public class StatusCommandHandler implements CommandProcessor {
 
     @Override
     @Async
-    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-        if (update.getMessage() == null) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        long chatId = update.getMessage().getChatId();
+    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         long startTime = System.currentTimeMillis();
 
         CompletableFuture<Long> billCount = CompletableFuture.supplyAsync(billService::countAllBills);

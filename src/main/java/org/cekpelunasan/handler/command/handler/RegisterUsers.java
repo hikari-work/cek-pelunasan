@@ -7,7 +7,6 @@ import org.cekpelunasan.repository.UserRepository;
 import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.service.UserService;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.Optional;
@@ -39,10 +38,9 @@ public class RegisterUsers implements CommandProcessor {
     }
 
     @Override
-    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
-            long chatId = update.getMessage().getChatId();
-            String[] parts = update.getMessage().getText().split(" ");
+            String[] parts = text.split(" ");
 
             if (parts.length < 2) {
                 sendMessage(chatId, getHelp(), telegramClient);

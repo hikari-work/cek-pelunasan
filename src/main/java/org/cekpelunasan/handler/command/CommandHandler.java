@@ -21,11 +21,11 @@ public class CommandHandler {
     }
 
     @Async
-    public CompletableFuture<Void> handle(Update update, TelegramClient telegramClient) {
+    public void handle(Update update, TelegramClient telegramClient) {
         String command = update.getMessage().getText().split(" ")[0];
         CommandProcessor commandProcessor = processor.getOrDefault(command, processor.get("/id"));
-        commandProcessor.process(update, telegramClient);
-        return CompletableFuture.completedFuture(null);
+        commandProcessor.process(update.getMessage().getChatId(),update.getMessage().getText(), telegramClient);
+        CompletableFuture.completedFuture(null);
 
     }
 

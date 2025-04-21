@@ -7,7 +7,6 @@ import org.cekpelunasan.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -43,16 +42,15 @@ public class DeleteUserAccessCommand implements CommandProcessor {
 
     @Override
     @Async
-    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
-            Long senderId = update.getMessage().getChatId();
-            String[] parts = update.getMessage().getText().split(" ");
-            if (!senderId.equals(ownerId)) {
-                sendMessage(senderId, messageTemplate.notAdminUsers(), telegramClient);
+            String[] parts = text.split(" ");
+            if (chatId != ownerId) {
+                sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
                 return;
             }
             if (parts.length < 2) {
-                sendMessage(senderId, messageTemplate.notValidDeauthFormat(), telegramClient);
+                sendMessage(chatId, messageTemplate.notValidDeauthFormat(), telegramClient);
                 return;
             }
             try {
@@ -62,7 +60,7 @@ public class DeleteUserAccessCommand implements CommandProcessor {
                 sendMessage(target, messageTemplate.unathorizedMessage(), telegramClient);
                 sendMessage(ownerId, "Sukses", telegramClient);
             } catch (NumberFormatException e) {
-                sendMessage(update.getMessage().getChatId(), messageTemplate.notValidNumber(), telegramClient);
+                sendMessage(chatId, messageTemplate.notValidNumber(), telegramClient);
             }
         });
     }

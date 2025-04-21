@@ -1,6 +1,5 @@
 package org.cekpelunasan.handler.command.template;
 
-import org.cekpelunasan.handler.command.CommandProcessor;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -8,12 +7,15 @@ public class MessageTemplate {
 
     public String authorizedMessage() {
         return """
-                🎉 Selamat datang! Kamu berhasil terdaftar untuk menggunakan bot ini.
-                
-                💍 Nih, cincinnya buat kamu~ \s
-                Kepoin cara pakainya lewat /help ya!
-                
-                """;
+            ✨ Yeay! Pendaftaran kamu berhasil! 🎉
+            
+            🤖 Bot ini sekarang resmi jadi partner kamu~
+            💍 Nih, cincin virtualnya... *cling* 💫
+            
+            Mau tau jurus-jurus rahasianya? Langsung cek /help ya! 📜
+            
+            Selamat berpetualang! 🚀
+            """;
     }
     public String unathorizedMessage() {
         return """
@@ -60,34 +62,4 @@ public class MessageTemplate {
                 """;
     }
 
-    public String helpMessage() {
-        return """
-        🆘 *Panduan Penggunaan Bot Pelunasan* 🆘
-
-        Berikut ini adalah daftar perintah yang dapat kamu gunakan:
-
-        🔹 */pl [nomor]* — Cari nasabah berdasarkan nomor SPK.
-        Contoh: `/pl 117204000345`
-
-        🔹 */fi [nama]* — Cari nasabah berdasarkan Nama.
-        Contoh: `/fi Budi`
-
-        🔹 *Next dan Prev* — Navigasi halaman hasil pencarian.
-        Gunakan setelah pencarian untuk pindah halaman.
-        
-        🔹 */tagih* — Tampilkan tagihan, pencarian Berdasarkan No Spk
-        
-        🔹 */tgnama * — Tampilkan tagihan berdasarkan Nama.
-
-        🔹 */status* — Tampilkan status bot, termasuk load sistem dan koneksi database.
-
-        🔹 */help* — Tampilkan pesan bantuan ini.
-
-        ℹ️ *Catatan*: Gunakan kata kunci yang spesifik untuk hasil pencarian terbaik.
-        
-        🔐 Data yang ditampilkan bersifat pribadi. Gunakan dengan bijak.
-
-        🙏 Terima kasih telah menggunakan Pelunasan Bot!
-        """;
-    }
 }

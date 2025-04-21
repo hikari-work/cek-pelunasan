@@ -11,7 +11,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -45,18 +44,16 @@ public class FindNamesHandler implements CommandProcessor {
     @Override
     public String getDescription() {
         return """
-                Gunakan command ini untuk mencari pelunasan 
+                Gunakan command ini untuk mencari pelunasan
                 berdasarkan yang anda kirim
                 """;
     }
 
     @Override
     @Async
-    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
             long startTime = System.currentTimeMillis();
-            String text = update.getMessage().getText();
-            Long chatId = update.getMessage().getChatId();
             String keyword = extractKeyword(text);
 
             if (!authService.isAuthorized(chatId)) {
