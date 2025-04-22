@@ -43,7 +43,7 @@ public class BillsByNameCalculatorCallbackHandler implements CallbackProcessor {
             String query = parts[1];
             if (query.length() == 3) {
                 Page<Bills> dueDateByAccountOfficer = billService.findDueDateByAccountOfficer(query, dateUtils.converterDate(LocalDateTime.now()), Integer.parseInt(parts[2]), 5);
-                StringBuilder sb = new StringBuilder("📅 *Tagihan Jatuh Tempo Hari Ini*\n\n");
+                StringBuilder sb = new StringBuilder("📅 *Tagihan Jatuh Bayar Hari Ini*\n\n");
                 dueDateByAccountOfficer.forEach(bills -> {
                     sb.append(messageBuilder(bills));
                 });
@@ -52,7 +52,7 @@ public class BillsByNameCalculatorCallbackHandler implements CallbackProcessor {
             }
             if (query.length() == 4) {
                 Page<Bills> dueDateByAccountOfficer = billService.findBranchAndPayDown(query, dateUtils.converterDate(LocalDateTime.now()), Integer.parseInt(parts[2]), 5);
-                StringBuilder sb = new StringBuilder("📅 *Tagihan Jatuh Tempo Hari Ini*\n\n");
+                StringBuilder sb = new StringBuilder("📅 *Tagihan Jatuh Bayar Hari Ini*\n\n");
                 dueDateByAccountOfficer.forEach(bills -> {
                     sb.append(messageBuilder(bills));
                 });

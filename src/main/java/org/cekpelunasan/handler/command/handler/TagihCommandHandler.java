@@ -63,7 +63,7 @@ public class TagihCommandHandler implements CommandProcessor {
                 sendMessage(chatId, buildBillMessage(bills) + "\nEksekusi dalam " + (System.currentTimeMillis() - start) + " ms", telegramClient);
 
             } catch (Exception e) {
-                log.error("Error");
+                log.error("Error", e);
             }
         });
     }
@@ -73,14 +73,19 @@ public class TagihCommandHandler implements CommandProcessor {
             \uD83D\uDCC5 *No SPK:* %s
             \uD83C\uDFE0 *Alamat:* %s
 
-            💰 *Plafond:* Rp %,d
-            📉 *Baki Debet:* Rp %,d
+            💰 *Plafond\t\t\t\t:* Rp %,d
+            📉 *Baki Debet\t\t:* Rp %,d
+            🗓️ *Realisasi:* %s
+            🗓️ *Jatuh Tempo:* %s
+            
             💸 *Bunga:* Rp %,d
             💵 *Pokok:* Rp %,d
             🧾 *Angsuran:* Rp %,d
             
-            🧾 *Tunggakan Pokok :* Rp %,d
-            🧾 *Tunggakan Bunga :* Rp %,d
+            📅 *OD:* %s
+            📅 *Kolektibilitas:* %s
+            
+            🧾 *Total Bayar :* Rp %,d
 
             🔻 *Minimal Pokok:* Rp %,d
             🔻 *Minimal Bunga:* Rp %,d
@@ -92,16 +97,17 @@ public class TagihCommandHandler implements CommandProcessor {
                 bill.getAddress(),
                 bill.getPlafond(),
                 bill.getDebitTray(),
+                bill.getRealization(),
+                bill.getDueDate(),
                 bill.getInterest(),
                 bill.getPrincipal(),
                 bill.getInstallment(),
-                bill.getLastPrincipal(),
-                bill.getLastInterest(),
+                bill.getDayLate(),
+                bill.getCollectStatus(),
+                bill.getFullPayment(),
                 bill.getMinPrincipal(),
                 bill.getMinInterest(),
                 bill.getAccountOfficer()
         );
     }
-
-
 }
