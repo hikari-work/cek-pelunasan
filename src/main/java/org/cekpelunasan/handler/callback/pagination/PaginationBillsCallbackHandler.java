@@ -15,9 +15,11 @@ import java.util.concurrent.CompletableFuture;
 @Component
 public class PaginationBillsCallbackHandler implements CallbackProcessor {
     private final BillService billService;
+    private final ButtonListForBills buttonListForBills;
 
-    public PaginationBillsCallbackHandler(BillService billService) {
+    public PaginationBillsCallbackHandler(BillService billService, ButtonListForBills buttonListForBills) {
         this.billService = billService;
+        this.buttonListForBills = buttonListForBills;
     }
 
     @Override
@@ -28,38 +30,43 @@ public class PaginationBillsCallbackHandler implements CallbackProcessor {
     @Override
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
-            log.info("Data Masuk");
             long start = System.currentTimeMillis();
             String[] parts = update.getCallbackQuery().getData().split("_", 4);
             String query = parts[1];
             String branch = parts[2];
             int page = Integer.parseInt(parts[3]);
+
             long chatId = update.getCallbackQuery().getMessage().getChatId();
-            var messageId = update.getCallbackQuery().getMessage().getMessageId();
+            int messageId = update.getCallbackQuery().getMessage().getMessageId();
+
             Page<Bills> bills = billService.findByNameAndBranch(query, branch, page, 5);
-            log.info("Page {}", page);
-            log.info("Branch {}", branch);
-            log.info("Query {}", query);
             if (bills.isEmpty()) {
                 sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
                 return;
             }
-            StringBuilder message = new StringBuilder("📄 Halaman ").append(page + 1).append(" dari ").append(bills.getTotalPages()).append("\n\n");
-            buildRepaymentList(bills, message);
-            message.append("\n\n_Eksekusi dalam ").append(System.currentTimeMillis() - start).append("ms_");
-            editMessageWithMarkup(chatId,
-                    messageId,
-                    message.toString(),
-                    telegramClient,
-                    new ButtonListForBills().dynamicButtonName(bills, page, query, branch));
+
+            String message = buildBillsMessage(bills, page, start);
+            var markup = buttonListForBills.dynamicButtonName(bills, page, query, branch);
+
+            editMessageWithMarkup(chatId, messageId, message, telegramClient, markup);
         });
     }
-    private void buildRepaymentList(Page<Bills> repayments, StringBuilder builder) {
-        RupiahFormatUtils rupiahFormatter = new RupiahFormatUtils();
-        repayments.forEach(dto -> builder.append("📄 *Informasi Nasabah*\n")
-                .append("🔢 *No SPK*      : `").append(dto.getNoSpk()).append("`\n")
-                .append("👤 *Nama*        : ").append(dto.getName()).append("\n")
-                .append("🏡 *Alamat*      : ").append(dto.getAddress()).append("\n")
-                .append("💰 *Plafond*     : ").append(rupiahFormatter.formatRupiah(dto.getPlafond())).append("\n\n"));
+
+    private String buildBillsMessage(Page<Bills> bills, int page, long startTime) {
+        StringBuilder builder = new StringBuilder("📄 Halaman ")
+                .append(page + 1).append(" dari ").append(bills.getTotalPages()).append("\n\n");
+
+        RupiahFormatUtils formatter = new RupiahFormatUtils();
+        bills.forEach(bill -> builder.append("📄 *Informasi Nasabah*\n")
+                .append("🔢 *No SPK*      : `").append(bill.getNoSpk()).append("`\n")
+                .append("👤 *Nama*        : ").append(bill.getName()).append("\n")
+                .append("🏡 *Alamat*      : ").append(bill.getAddress()).append("\n")
+                .append("💰 *Plafond*     : ").append(formatter.formatRupiah(bill.getPlafond())).append("\n\n"));
+
+        builder.append("\n\n_Eksekusi dalam ")
+                .append(System.currentTimeMillis() - startTime)
+                .append("ms_");
+
+        return builder.toString();
     }
 }

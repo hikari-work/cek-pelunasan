@@ -26,13 +26,13 @@ public class UploadCommandHandler implements CommandProcessor {
 
     private final RepaymentService repaymentService;
     private final UserService userService;
-
     private final String botOwner;
     private final MessageTemplate messageTemplate;
 
     public UploadCommandHandler(RepaymentService repaymentService,
                                 UserService userService,
-                                @Value("${telegram.bot.owner}") String botOwner, MessageTemplate messageTemplate) {
+                                @Value("${telegram.bot.owner}") String botOwner,
+                                MessageTemplate messageTemplate) {
         this.repaymentService = repaymentService;
         this.userService = userService;
         this.botOwner = botOwner;
@@ -46,67 +46,78 @@ public class UploadCommandHandler implements CommandProcessor {
 
     @Override
     public String getDescription() {
-        return """
-                Upload data Pelunasan terbaru
-                """;
+        return "Upload data Pelunasan terbaru";
     }
 
     @Override
     @Async
     public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
-            long start = System.currentTimeMillis();
+            if (isNotAdmin(chatId, telegramClient)) return;
 
-            if (!botOwner.equalsIgnoreCase(String.valueOf(chatId))) {
-                sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
-                return;
-            }
+            String fileUrl = extractFileUrl(text, chatId, telegramClient);
+            if (fileUrl == null) return;
 
-            try {
-                String url = text.split(" ", 2)[1];
-                String fileName = url.substring(url.lastIndexOf("/") + 1);
+            List<User> allUsers = userService.findAllUsers();
+            notifyUsers(allUsers, "⚠ *Sedang melakukan update data, mohon jangan kirim perintah apapun...*", telegramClient);
 
-                sendMessage(chatId, "⏳ *Sedang mengunduh dan memproses file...*", telegramClient);
-
-                List<User> allUsers = userService.findAllUsers();
-                broadcastToUsers(allUsers,
-                        "⚠ *Sedang melakukan update data, mohon jangan kirim perintah apapun...*",
-                        telegramClient);
-
-                if (downloadAndProcessFile(url, fileName)) {
-                    String successMsg = String.format("✅ *File berhasil diproses:*\n\n_Eksekusi dalam %dms_",
-                            System.currentTimeMillis() - start);
-                    broadcastToUsers(allUsers, successMsg, telegramClient);
-                } else {
-                    broadcastToUsers(allUsers, "⚠ *Gagal update. Akan dicoba ulang.*", telegramClient);
-                }
-
-            } catch (ArrayIndexOutOfBoundsException e) {
-                sendMessage(chatId, "❗ *Format salah.*\nGunakan `/upload <link_csv>`", telegramClient);
-            }
+            processFileAndNotifyUsers(fileUrl, allUsers, telegramClient);
         });
     }
 
-    private void broadcastToUsers(List<User> users, String message, TelegramClient client) {
-        for (User user : users) {
+    private boolean isNotAdmin(long chatId, TelegramClient telegramClient) {
+        if (!botOwner.equals(String.valueOf(chatId))) {
+            sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
+            return true;
+        }
+        return false;
+    }
+
+    private String extractFileUrl(String text, long chatId, TelegramClient telegramClient) {
+        try {
+            return text.split(" ", 2)[1];
+        } catch (ArrayIndexOutOfBoundsException e) {
+            sendMessage(chatId, "❗ *Format salah.*\nGunakan `/upload <link_csv>`", telegramClient);
+            return null;
+        }
+    }
+
+    private void processFileAndNotifyUsers(String fileUrl, List<User> allUsers, TelegramClient telegramClient) {
+        String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        sendMessage(allUsers.getFirst().getChatId(), "⏳ *Sedang mengunduh dan memproses file...*", telegramClient);
+
+        boolean success = downloadAndProcessFile(fileUrl, fileName);
+        String resultMessage = success
+                ? String.format("✅ *File berhasil diproses:*\n\n_Eksekusi dalam %dms_", System.currentTimeMillis())
+                : "⚠ *Gagal update. Akan dicoba ulang.*";
+
+        notifyUsers(allUsers, resultMessage, telegramClient);
+    }
+
+    private void notifyUsers(List<User> users, String message, TelegramClient client) {
+        users.forEach(user -> {
             sendMessage(user.getChatId(), message, client);
-            try {
-                Thread.sleep(DELAY_BETWEEN_USERS_MS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.warn("Thread interrupted saat delay antar user", e);
-            }
+            delayBetweenUsers();
+        });
+    }
+
+    private void delayBetweenUsers() {
+        try {
+            Thread.sleep(DELAY_BETWEEN_USERS_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Thread interrupted saat delay antar user", e);
         }
     }
 
     private boolean downloadAndProcessFile(String fileUrl, String fileName) {
         try (InputStream inputStream = new URL(fileUrl).openStream()) {
-            Path output = Paths.get("files", fileName);
-            Files.createDirectories(output.getParent());
-            Files.copy(inputStream, output, StandardCopyOption.REPLACE_EXISTING);
+            Path outputPath = Paths.get("files", fileName);
+            Files.createDirectories(outputPath.getParent());
+            Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
 
             if (fileName.endsWith(".csv")) {
-                repaymentService.parseCsvAndSaveIntoDatabase(output);
+                repaymentService.parseCsvAndSaveIntoDatabase(outputPath);
             }
             return true;
         } catch (Exception e) {

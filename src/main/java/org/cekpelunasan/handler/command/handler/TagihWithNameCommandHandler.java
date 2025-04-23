@@ -17,12 +17,12 @@ import java.util.concurrent.CompletableFuture;
 public class TagihWithNameCommandHandler implements CommandProcessor {
 
     private final BillService billService;
-    private final AuthorizedChats authorizedChats1;
+    private final AuthorizedChats authorizedChats;
     private final MessageTemplate messageTemplate;
 
-    public TagihWithNameCommandHandler(BillService billService, AuthorizedChats authorizedChats1, MessageTemplate messageTemplate) {
+    public TagihWithNameCommandHandler(BillService billService, AuthorizedChats authorizedChats, MessageTemplate messageTemplate) {
         this.billService = billService;
-        this.authorizedChats1 = authorizedChats1;
+        this.authorizedChats = authorizedChats;
         this.messageTemplate = messageTemplate;
     }
 
@@ -33,33 +33,21 @@ public class TagihWithNameCommandHandler implements CommandProcessor {
 
     @Override
     public String getDescription() {
-        return """
-                Mengembalikan list nama yang anda cari jika
-                anda tidak mengetahui ID SPK
-                """;
+        return "Mengembalikan list nama yang anda cari jika anda tidak mengetahui ID SPK";
     }
 
     @Override
     public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
-            String[] parts = text.split(" ", 2);
-
-            if (!authorizedChats1.isAuthorized(chatId)) {
+            if (!authorizedChats.isAuthorized(chatId)) {
                 sendMessage(chatId, messageTemplate.unathorizedMessage(), telegramClient);
                 return;
             }
 
-            if (parts.length < 2) {
-                sendMessage(chatId, "❌ *Format tidak valid*\n\nContoh: /tgnama 1234567890", telegramClient);
-                return;
-            }
-
-            String name = parts[1].trim();
+            String name = extractName(text, chatId, telegramClient);
+            if (name == null) return;
 
             Set<String> branches = billService.listAllBrach();
-
-
-            log.info("🔍 Nama: {} | Ditemukan {} cabang", name, branches.size());
 
             if (branches.isEmpty()) {
                 sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
@@ -67,10 +55,25 @@ public class TagihWithNameCommandHandler implements CommandProcessor {
             }
 
             if (branches.size() > 1) {
-                InlineKeyboardMarkup markup = new ButtonListForSelectBranch().dynamicSelectBranch(branches, name);
-                sendMessage(chatId, "⚠ *Terdapat lebih dari satu cabang dengan nama yang sama*\n\nSilakan pilih cabang yang sesuai:", telegramClient, markup);
+                sendMessageWithBranchSelection(chatId, name, branches, telegramClient);
             }
         });
+    }
+
+    private String extractName(String text, long chatId, TelegramClient telegramClient) {
+        String[] parts = text.split(" ", 2);
+
+        if (parts.length < 2) {
+            sendMessage(chatId, "❌ *Format tidak valid*\n\nContoh: /tgnama 1234567890", telegramClient);
+            return null;
+        }
+
+        return parts[1].trim();
+    }
+
+    private void sendMessageWithBranchSelection(long chatId, String name, Set<String> branches, TelegramClient telegramClient) {
+        InlineKeyboardMarkup markup = new ButtonListForSelectBranch().dynamicSelectBranch(branches, name);
+        sendMessage(chatId, "⚠ *Terdapat lebih dari satu cabang dengan nama yang sama*\n\nSilakan pilih cabang yang sesuai:", telegramClient, markup);
     }
 
     public void sendMessage(Long chatId, String text, TelegramClient telegramClient) {

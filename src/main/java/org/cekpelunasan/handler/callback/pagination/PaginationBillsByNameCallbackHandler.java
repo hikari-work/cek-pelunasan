@@ -13,43 +13,36 @@ import java.util.List;
 @Component
 public class PaginationBillsByNameCallbackHandler {
 
-    public InlineKeyboardMarkup dynamicButtonName(Page<Bills> names, int currentPage, String query) {
+    public InlineKeyboardMarkup dynamicButtonName(Page<Bills> page, int currentPage, String query) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
+        rows.add(buildPaginationRow(page, currentPage, query));
+        return InlineKeyboardMarkup.builder().keyboard(rows).build();
+    }
 
-        InlineKeyboardRow paginationRow = new InlineKeyboardRow();
+    private InlineKeyboardRow buildPaginationRow(Page<?> page, int currentPage, String query) {
+        InlineKeyboardRow row = new InlineKeyboardRow();
 
-        int totalElements = (int) names.getTotalElements();
-        int currentElement = currentPage * names.getSize() + 1;
-        int maxElement = currentPage * names.getSize() + names.getNumberOfElements();
+        int total = (int) page.getTotalElements();
+        int from = currentPage * page.getSize() + 1;
+        int to = from + page.getNumberOfElements() - 1;
 
-        if (names.hasPrevious()) {
-            InlineKeyboardButton prev = InlineKeyboardButton.builder()
-                    .text("⬅ Prev")
-                    .callbackData("pagebills_" + query + "_" + (currentPage - 1))
-                    .build();
-            paginationRow.add(prev);
+        if (page.hasPrevious()) {
+            row.add(buildButton("⬅ Prev", "pagebills_" + query + "_" + (currentPage - 1)));
         }
 
-        InlineKeyboardButton middle = InlineKeyboardButton.builder()
-                .text(currentElement + " - " + maxElement + " / " + totalElements)
-                .callbackData("noop")
-                .build();
-        paginationRow.add(middle);
+        row.add(buildButton(from + " - " + to + " / " + total, "noop"));
 
-        if (names.hasNext()) {
-            InlineKeyboardButton next = InlineKeyboardButton.builder()
-                    .text("Next ➡")
-                    .callbackData("pagebills_" + query + "_" + (currentPage + 1))
-                    .build();
-            paginationRow.add(next);
+        if (page.hasNext()) {
+            row.add(buildButton("Next ➡", "pagebills_" + query + "_" + (currentPage + 1)));
         }
 
-        // Tambahkan pagination baris pertama
-        rows.add(paginationRow);
+        return row;
+    }
 
-
-        return InlineKeyboardMarkup.builder()
-                .keyboard(rows)
+    private InlineKeyboardButton buildButton(String text, String callbackData) {
+        return InlineKeyboardButton.builder()
+                .text(text)
+                .callbackData(callbackData)
                 .build();
     }
 }

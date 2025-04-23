@@ -16,51 +16,54 @@ public class ButtonListForBills {
     public InlineKeyboardMarkup dynamicButtonName(Page<Bills> names, int currentPage, String query, String branch) {
         List<InlineKeyboardRow> rows = new ArrayList<>();
 
-        InlineKeyboardRow paginationRow = new InlineKeyboardRow();
+        rows.add(buildPaginationRow(names, currentPage, query, branch));
+        rows.addAll(buildDataButtons(names.getContent(), currentPage, query, branch));
 
-        int totalElements = (int) names.getTotalElements();
-        int currentElement = currentPage * names.getSize() + 1;
-        int maxElement = currentPage * names.getSize() + names.getNumberOfElements();
+        return InlineKeyboardMarkup.builder()
+                .keyboard(rows)
+                .build();
+    }
 
-        if (names.hasPrevious()) {
-            InlineKeyboardButton prev = InlineKeyboardButton.builder()
+    private InlineKeyboardRow buildPaginationRow(Page<Bills> page, int currentPage, String query, String branch) {
+        InlineKeyboardRow row = new InlineKeyboardRow();
+
+        int totalElements = (int) page.getTotalElements();
+        int currentElement = currentPage * page.getSize() + 1;
+        int maxElement = currentPage * page.getSize() + page.getNumberOfElements();
+
+        if (page.hasPrevious()) {
+            row.add(InlineKeyboardButton.builder()
                     .text("⬅ Prev")
-                    .callbackData("paging_" + query + "_" +  branch + "_" + (currentPage - 1))
-                    .build();
-            paginationRow.add(prev);
+                    .callbackData("paging_" + query + "_" + branch + "_" + (currentPage - 1))
+                    .build());
         }
 
-        InlineKeyboardButton middle = InlineKeyboardButton.builder()
+        row.add(InlineKeyboardButton.builder()
                 .text(currentElement + " - " + maxElement + " / " + totalElements)
                 .callbackData("noop")
-                .build();
-        paginationRow.add(middle);
+                .build());
 
-        if (names.hasNext()) {
-            InlineKeyboardButton next = InlineKeyboardButton.builder()
+        if (page.hasNext()) {
+            row.add(InlineKeyboardButton.builder()
                     .text("Next ➡")
-                    .callbackData("paging_" + query + "_" +  branch + "_" + (currentPage + 1))
-                    .build();
-            paginationRow.add(next);
+                    .callbackData("paging_" + query + "_" + branch + "_" + (currentPage + 1))
+                    .build());
         }
 
-        // Tambahkan pagination baris pertama
-        rows.add(paginationRow);
+        return row;
+    }
 
-        // ========== 🔘 DATA BUTTONS (2 per row) ==========
-
+    private List<InlineKeyboardRow> buildDataButtons(List<Bills> dataList, int currentPage, String query, String branch) {
+        List<InlineKeyboardRow> rows = new ArrayList<>();
         InlineKeyboardRow currentRow = new InlineKeyboardRow();
-        List<Bills> dataList = names.getContent();
 
         for (int i = 0; i < dataList.size(); i++) {
-            Bills name = dataList.get(i);
+            Bills bill = dataList.get(i);
 
-            InlineKeyboardButton button = InlineKeyboardButton.builder()
-                    .text(name.getName())
-                    .callbackData("tagihan_" + name.getNoSpk() + "_" + query + "_" + branch + "_" +currentPage)
-                    .build();
-
-            currentRow.add(button);
+            currentRow.add(InlineKeyboardButton.builder()
+                    .text(bill.getName())
+                    .callbackData("tagihan_" + bill.getNoSpk() + "_" + query + "_" + branch + "_" + currentPage)
+                    .build());
 
             if (currentRow.size() == 2 || i == dataList.size() - 1) {
                 rows.add(currentRow);
@@ -68,8 +71,6 @@ public class ButtonListForBills {
             }
         }
 
-        return InlineKeyboardMarkup.builder()
-                .keyboard(rows)
-                .build();
+        return rows;
     }
 }

@@ -33,15 +33,15 @@ public class InteractWithOwnerHandler implements CommandProcessor {
     @Async
     public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
+            String text = update.getMessage().getText();
+            Long chatId = update.getMessage().getChatId();
+            log.info("Get message {}", update.getMessage().getText());
             Message message = update.getMessage();
-            if (message == null) return;
 
-            if (message.getText().equals(".id")) {
-                sendMessage(message.getChatId(), "ID Kamu `" + message.getChatId() + "`", telegramClient);
+            if (text.equals(getCommand())) {
+                sendMessage(chatId, "ID Kamu `" + chatId + "`", telegramClient);
                 return;
             }
-
-            Long chatId = message.getChatId();
             Integer messageId = message.getMessageId();
 
             if (!chatId.equals(ownerId)) {
@@ -56,4 +56,40 @@ public class InteractWithOwnerHandler implements CommandProcessor {
             }
         });
     }
+    public void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
+        try {
+            telegramClient.execute(org.telegram.telegrambots.meta.api.methods.send.SendMessage.builder()
+                    .chatId(chatId.toString())
+                    .text(text)
+                    .parseMode("Markdown")
+                    .build());
+        } catch (Exception e) {
+            log.error("Gagal kirim pesan", e);
+        }
+    }
+
+    public void forwardMessage(Long fromChatId, Long toChatId, Integer messageId, TelegramClient telegramClient) {
+        try {
+            telegramClient.execute(org.telegram.telegrambots.meta.api.methods.ForwardMessage.builder()
+                    .chatId(toChatId.toString())
+                    .fromChatId(fromChatId.toString())
+                    .messageId(messageId)
+                    .build());
+        } catch (Exception e) {
+            log.error("Gagal forward pesan", e);
+        }
+    }
+
+    public void copyMessage(Long fromChatId, Integer messageId, Long toChatId, TelegramClient telegramClient) {
+        try {
+            telegramClient.execute(org.telegram.telegrambots.meta.api.methods.CopyMessage.builder()
+                    .chatId(toChatId.toString())
+                    .fromChatId(fromChatId.toString())
+                    .messageId(messageId)
+                    .build());
+        } catch (Exception e) {
+            log.error("Gagal copy pesan", e);
+        }
+    }
+
 }

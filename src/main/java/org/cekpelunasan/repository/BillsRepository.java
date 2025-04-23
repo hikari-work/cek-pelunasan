@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -25,6 +24,11 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 
     Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(Long minInterest, Long minPrincipal, String branch, Pageable pageable);
 
+    @Query("""
+    SELECT b FROM Bills b
+    WHERE b.accountOfficer = :accountOfficer
+    AND (b.minInterest + b.minPrincipal) > 0
+    """)
     Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndAccountOfficer(Long minInterest, Long minPrincipal, String accountOfficer, Pageable pageable);
 
 

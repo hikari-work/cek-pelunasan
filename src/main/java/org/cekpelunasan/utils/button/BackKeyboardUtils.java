@@ -4,32 +4,43 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class BackKeyboardUtils {
 
     public InlineKeyboardMarkup backButton(String query) {
-        int page = Integer.parseInt(query.split("_")[3]);
-        String queryName = query.split("_")[2];
-        String numberAccount = query.split("_")[1];
-        List<InlineKeyboardRow> rows = new ArrayList<>();
-        InlineKeyboardRow inlineKeyboardButtons = new InlineKeyboardRow();
+        String[] parts = query.split("_");
 
-        InlineKeyboardButton backButton = InlineKeyboardButton.builder()
+        if (parts.length < 4) {
+            throw new IllegalArgumentException("Invalid query format: " + query);
+        }
+
+        String customerId = parts[1];
+        String queryName = parts[2];
+        int page = Integer.parseInt(parts[3]);
+
+        InlineKeyboardRow row = new InlineKeyboardRow(List.of(
+                buildBackButton(queryName, page),
+                buildPhotoButton(customerId)
+        ));
+
+        return InlineKeyboardMarkup.builder()
+                .keyboard(Collections.singletonList(row))
+                .build();
+    }
+
+    private InlineKeyboardButton buildBackButton(String queryName, int page) {
+        return InlineKeyboardButton.builder()
                 .text("🔙 Kembali")
                 .callbackData("page_" + queryName + "_" + page)
                 .build();
+    }
 
-        InlineKeyboardButton photoButton = InlineKeyboardButton.builder()
+    private InlineKeyboardButton buildPhotoButton(String customerId) {
+        return InlineKeyboardButton.builder()
                 .text("📸 Kirim Gambar")
-                .callbackData("photo_" + Long.parseLong(numberAccount))
-                .build();
-        inlineKeyboardButtons.add(backButton);
-        inlineKeyboardButtons.add(photoButton);
-        rows.add(inlineKeyboardButtons);
-        return InlineKeyboardMarkup.builder()
-                .keyboard(rows)
+                .callbackData("photo_" + customerId)
                 .build();
     }
 }
