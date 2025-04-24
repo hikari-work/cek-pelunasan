@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 public class InfoCifCommandHandler implements CommandProcessor {
     private final CustomerHistoryService customerHistoryService;
 
-    public InfoCifCommandHandler(CustomerHistoryService customerHistoryService, CustomerHistoryService customerHistoryService1) {
+    public InfoCifCommandHandler(CustomerHistoryService customerHistoryService1) {
         this.customerHistoryService = customerHistoryService1;
     }
 

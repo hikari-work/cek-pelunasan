@@ -2,7 +2,6 @@ package org.cekpelunasan.handler.command.handler;
 
 import org.cekpelunasan.entity.CreditHistory;
 import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingButton;
-import org.cekpelunasan.handler.callback.pagination.PaginationToCanvasing;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.AuthorizedChats;
@@ -20,14 +19,12 @@ public class CanvasingCommandHandler implements CommandProcessor {
     private final AuthorizedChats authorizedChats1;
     private final MessageTemplate messageTemplate;
     private final CreditHistoryService creditHistoryService;
-    private final PaginationToCanvasing paginationToCanvasing;
     private final PaginationCanvassingButton paginationCanvassingButton;
 
-    public CanvasingCommandHandler(AuthorizedChats authorizedChats1, MessageTemplate messageTemplate, CreditHistoryService creditHistoryService, PaginationToCanvasing paginationToCanvasing, PaginationCanvassingButton paginationCanvassingButton) {
+    public CanvasingCommandHandler(AuthorizedChats authorizedChats1, MessageTemplate messageTemplate, CreditHistoryService creditHistoryService, PaginationCanvassingButton paginationCanvassingButton) {
         this.authorizedChats1 = authorizedChats1;
         this.messageTemplate = messageTemplate;
         this.creditHistoryService = creditHistoryService;
-        this.paginationToCanvasing = paginationToCanvasing;
         this.paginationCanvassingButton = paginationCanvassingButton;
     }
 
@@ -64,13 +61,11 @@ public class CanvasingCommandHandler implements CommandProcessor {
                 return;
             }
             StringBuilder messageBuilder = new StringBuilder(String.format("\uD83D\uDCC4 Halaman 1 dari %d\n\n", creditHistories.getTotalPages()));
-            creditHistories.forEach(dto -> {
-                messageBuilder.append("📄 *Informasi Nasabah*\n")
-                        .append("🔢 *No CIF*      : `").append(dto.getCustomerId()).append("`\n")
-                        .append("👤 *Nama*        : ").append(dto.getName()).append("\n")
-                        .append("🏡 *Alamat*      : ").append(dto.getAddress()).append("\n")
-                        .append("💰 *No HP*     : ").append(dto.getPhone()).append("\n\n");
-            });
+            creditHistories.forEach(dto -> messageBuilder.append("📄 *Informasi Nasabah*\n")
+                    .append("🔢 *No CIF*      : `").append(dto.getCustomerId()).append("`\n")
+                    .append("👤 *Nama*        : ").append(dto.getName()).append("\n")
+                    .append("🏡 *Alamat*      : ").append(dto.getAddress()).append("\n")
+                    .append("💰 *No HP*     : ").append(dto.getPhone()).append("\n\n"));
             InlineKeyboardMarkup markup = paginationCanvassingButton.dynamicButtonName(creditHistories, 0, address);
             sendMessage(chatId, messageBuilder.toString(), telegramClient, markup);
         });

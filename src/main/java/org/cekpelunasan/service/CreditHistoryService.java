@@ -56,7 +56,7 @@ public class CreditHistoryService {
                         try {
                             saveAll(batcToSave);
                         } catch (Exception e) {
-                            log.error("Error", e.getMessage());
+                            log.error("Error {}", e.getMessage());
                         } finally {
                             semaphore.release();
                         }
@@ -73,7 +73,7 @@ public class CreditHistoryService {
                     try {
                         saveAll(batchToSave);
                     } catch (Exception e) {
-                        log.error("Error Save", e.getMessage());
+                        log.error("Error Save {}", e.getMessage());
                     } finally {
                         semaphore.release();
                     }

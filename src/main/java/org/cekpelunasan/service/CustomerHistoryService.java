@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -30,7 +29,7 @@ public class CustomerHistoryService {
         if (result.isEmpty()) {
             return Collections.emptyList();
         }
-        Object[] row = result.get(0); // Mengambil baris pertama
+        Object[] row = result.getFirst(); // Mengambil baris pertama
         return Arrays.stream(row)
                 .map(val -> val != null ? ((Number) val).longValue() : 0L)
                 .collect(Collectors.toList());
