@@ -24,6 +24,7 @@ public class CallbackHandler {
     public CompletableFuture<Void> handle(Update update, TelegramClient telegramClient) {
         if (update.hasCallbackQuery()) {
             String callbackData = update.getCallbackQuery().getData().split("_")[0];
+            System.out.println(update.getCallbackQuery().getData());
             CallbackProcessor callbackProcessor = processorMap.getOrDefault(callbackData, processorMap.get("none"));
             callbackProcessor.process(update, telegramClient);
         }
