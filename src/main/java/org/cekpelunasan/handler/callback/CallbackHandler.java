@@ -21,7 +21,6 @@ public class CallbackHandler {
         this.processorMap = processorList.stream().collect(Collectors.toMap(CallbackProcessor::getCallBackData, c -> c));
     }
     @Async
-    @SuppressWarnings("unused")
     public CompletableFuture<Void> handle(Update update, TelegramClient telegramClient) {
         if (update.hasCallbackQuery()) {
             String callbackData = update.getCallbackQuery().getData().split("_")[0];

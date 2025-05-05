@@ -36,6 +36,7 @@ public class CustomerHistoryService {
     }
 
     public void parseCsvAndSaveIntoDatabase(Path path) {
+        customerHistoryRepository.deleteAll();
 
         final int BATCH_SIZE = 500;
         final int MAX_CONCURRENT_TASK = 10;

@@ -1,5 +1,6 @@
 package org.cekpelunasan.utils;
 
+import org.cekpelunasan.entity.Repayment;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -9,25 +10,58 @@ import java.util.WeakHashMap;
 
 @Component
 public class PenaltyUtils {
+    private static final String DG_PRODUCT_SUFFIX = "DG";
+    private static final String FLM_PRODUCT_SUFFIX = "FLM";
+    private static final int YEAR_2025 = 2025;
+    private static final int DEFAULT_MULTIPLIER = 0;
+    private static final int DG_MULTIPLIER = 1;
+    private static final int FLM_HIGH_MULTIPLIER = 3;
+    private static final int FLM_LOW_MULTIPLIER = 6;
+    private static final int HIGH_PENALTY = 2;
+    private static final int LOW_PENALTY = 1;
 
-    public Map<String, Long> penalty(String startDate, Long amount, String product) {
-        LocalDateTime now = LocalDateTime.now();
+    public Map<String, Long> penalty(String startDate, Long amount, String product, Repayment repayment) {
         LocalDateTime start = DateUtils.converterDate(startDate);
-        long monthsBetween = ChronoUnit.MONTHS.between(start, now);
+        long monthsBetween = calculateMonthsBetween(start);
+        int year = extractYear(repayment);
+        
+        int multiplier = calculateMultiplier(product, monthsBetween, year);
+        int penalty = calculatePenalty(multiplier);
+        
+        return createPenaltyMap(multiplier, amount * penalty);
+    }
 
-        int multiplier = product.endsWith("DG") ? 1 :
-                product.endsWith("FLM") ? (monthsBetween >= 12 ? 3 : 6) : 0;
+    private long calculateMonthsBetween(LocalDateTime start) {
+        return ChronoUnit.MONTHS.between(start, LocalDateTime.now());
+    }
 
-        int penalty;
-        if (multiplier == 6) {
-            penalty = 2;
-        } else {
-            penalty = 1;
+    private int extractYear(Repayment repayment) {
+        return Integer.parseInt(repayment.getStartDate().substring(0, 4));
+    }
+
+    private int calculateMultiplier(String product, long monthsBetween, int year) {
+        if (product.endsWith(DG_PRODUCT_SUFFIX)) {
+            return DG_MULTIPLIER;
         }
-        Map<String, Long> map = new WeakHashMap<>();
-        map.put("multiplier", Long.parseLong(String.valueOf(multiplier)));
-        map.put("penalty", amount * penalty);
-        return map;
+        if (product.endsWith(FLM_PRODUCT_SUFFIX)) {
+            return calculateFlmMultiplier(monthsBetween, year);
+        }
+        return DEFAULT_MULTIPLIER;
+    }
 
+    private int calculateFlmMultiplier(long monthsBetween, int year) {
+        long threshold = (year == YEAR_2025) ? 11 : 12;
+        return monthsBetween >= threshold ? FLM_HIGH_MULTIPLIER : FLM_LOW_MULTIPLIER;
+    }
+
+    private int calculatePenalty(int multiplier) {
+        return multiplier == FLM_LOW_MULTIPLIER ? HIGH_PENALTY : LOW_PENALTY;
+    }
+
+    private Map<String, Long> createPenaltyMap(int multiplier, long penaltyAmount) {
+        Map<String, Long> map = new WeakHashMap<>();
+        map.put("multiplier", (long) multiplier);
+        map.put("penalty", penaltyAmount);
+        return map;
     }
 }

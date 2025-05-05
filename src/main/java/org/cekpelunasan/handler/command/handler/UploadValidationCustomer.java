@@ -76,7 +76,7 @@ public class UploadValidationCustomer implements CommandProcessor {
         try {
             return text.split(" ", 2)[1];
         } catch (ArrayIndexOutOfBoundsException e) {
-            sendMessage(chatId, "❗ *Format salah.*\nGunakan `/upload <link_csv>`", telegramClient);
+            sendMessage(chatId, "❗ *Format salah.*\nGunakan `/validupload <link_csv>`", telegramClient);
             return null;
         }
     }

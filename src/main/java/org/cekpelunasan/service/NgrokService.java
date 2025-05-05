@@ -47,7 +47,6 @@ public class NgrokService {
             return restTemplate.getForObject(ngrokApiUrl, String.class);
         } catch (RestClientException e) {
             logger.error("Failed to connect to ngrok API: {}", e.getMessage());
-            // Try alternative port if default fails
             try {
                 String alternativeUrl = ngrokApiUrl.replace("4040", "3030");
                 return restTemplate.getForObject(alternativeUrl, String.class);

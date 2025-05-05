@@ -109,6 +109,6 @@ public class ImageGeneratorUtils {
     }
 
     private Map<String, Long> getPenalty(Repayment repayment) {
-        return penaltyUtils.penalty(repayment.getStartDate(), repayment.getPenaltyLoan(), repayment.getProduct());
+        return penaltyUtils.penalty(repayment.getStartDate(), repayment.getPenaltyLoan(), repayment.getProduct(), repayment);
     }
 }
