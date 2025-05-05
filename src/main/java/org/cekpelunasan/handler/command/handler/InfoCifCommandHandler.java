@@ -32,7 +32,7 @@ public class InfoCifCommandHandler implements CommandProcessor {
     public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
         return CompletableFuture.runAsync(() -> {
             String cif = text.replace("/infocif ", "");
-            String[] collectLabels = {"02", "03", "04", "05"};
+            String[] collectLabels = {"01","02", "03", "04", "05"};
             List<Long> customerIdAndReturnListOfCollectNumber = customerHistoryService.findCustomerIdAndReturnListOfCollectNumber(cif);
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("📄 *Ringkasan Kolektibilitas untuk CustomerID: ").append(cif).append("*\n\n");
