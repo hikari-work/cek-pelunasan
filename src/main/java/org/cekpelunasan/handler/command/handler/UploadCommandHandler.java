@@ -85,10 +85,11 @@ public class UploadCommandHandler implements CommandProcessor {
     private void processFileAndNotifyUsers(String fileUrl, List<User> allUsers, TelegramClient telegramClient) {
         String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
         sendMessage(allUsers.getFirst().getChatId(), "⏳ *Sedang mengunduh dan memproses file...*", telegramClient);
+        long start = System.currentTimeMillis();
 
         boolean success = downloadAndProcessFile(fileUrl, fileName);
         String resultMessage = success
-                ? String.format("✅ *File berhasil diproses:*\n\n_Eksekusi dalam %dms_", System.currentTimeMillis())
+                ? String.format("✅ *File berhasil diproses:*\n\n_Eksekusi dalam %dms_", (System.currentTimeMillis()-start))
                 : "⚠ *Gagal update. Akan dicoba ulang.*";
 
         notifyUsers(allUsers, resultMessage, telegramClient);
