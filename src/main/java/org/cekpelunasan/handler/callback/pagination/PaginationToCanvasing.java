@@ -10,6 +10,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -36,16 +38,17 @@ public class PaginationToCanvasing implements CallbackProcessor {
             String address = data[1];
             Long chatId = update.getCallbackQuery().getMessage().getChatId();
             int page = Integer.parseInt(data[2]);
-            Page<CreditHistory> creditHistoriesPage = creditHistoryService.findCreditHistoryByAddress(address, page);
+            List<String> addressList = Arrays.asList(address.split(" "));
+            Page<CreditHistory> creditHistoriesPage = creditHistoryService.searchAddressByKeywords(addressList, page);
             log.info("Data = {}", update.getCallbackQuery().getData());
             if (creditHistoriesPage.isEmpty()) {
                 sendMessage(chatId, String.format("""
                         Data dengan alamat %s Tidak Ditemukan
                         """, address), telegramClient);
-                log.info("Data EMpty");
+                log.info("Data Empty");
                 return;
             }
-            StringBuilder messageBuilder = new StringBuilder(String.format("\uD83D\uDCC4 Halaman 1 dari %d\n\n", creditHistoriesPage.getTotalPages()));
+            StringBuilder messageBuilder = new StringBuilder(String.format("\uD83D\uDCC4 Halaman "+ (page + 1) +" dari %d\n\n", creditHistoriesPage.getTotalPages()));
             creditHistoriesPage.forEach(dto -> messageBuilder.append("📄 *Informasi Nasabah*\n")
                     .append("🔢 *No CIF*      : `").append(dto.getCustomerId()).append("`\n")
                     .append("👤 *Nama*        : ").append(dto.getName()).append("\n")

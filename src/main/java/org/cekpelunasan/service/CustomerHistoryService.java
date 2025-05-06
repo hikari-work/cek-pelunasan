@@ -36,10 +36,9 @@ public class CustomerHistoryService {
     }
 
     public void parseCsvAndSaveIntoDatabase(Path path) {
-        customerHistoryRepository.deleteAll();
 
         final int BATCH_SIZE = 500;
-        final int MAX_CONCURRENT_TASK = 10;
+        final int MAX_CONCURRENT_TASK = Runtime.getRuntime().availableProcessors() * 2;
 
         ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
         Semaphore semaphore = new Semaphore(MAX_CONCURRENT_TASK);

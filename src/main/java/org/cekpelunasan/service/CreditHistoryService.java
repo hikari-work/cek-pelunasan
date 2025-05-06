@@ -1,12 +1,17 @@
 package org.cekpelunasan.service;
 
 import com.opencsv.CSVReader;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.cekpelunasan.entity.CreditHistory;
 import org.cekpelunasan.repository.CreditHistoryRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.io.FileReader;
@@ -27,14 +32,41 @@ public class CreditHistoryService {
         this.creditHistoryRepository = creditHistoryRepository;
     }
 
+public Page<CreditHistory> searchAddressByKeywords(List<String> keywords, int page) {
+    log.info("Searching for address with keywords: {}", keywords);
+    Specification<CreditHistory> specification = (root, query, cb) -> {
+        query.distinct(true);
+
+        // Create subquery for status 'A'
+        Subquery<String> subquery = query.subquery(String.class);
+        Root<CreditHistory> subRoot = subquery.from(CreditHistory.class);
+        subquery.select(subRoot.get("customerId"))
+                .where(cb.equal(cb.upper(subRoot.get("status")), "A"));
+        
+        // Create address predicates with case-insensitive comparison
+        List<Predicate> predicates = keywords.stream()
+                .map(String::trim)
+                .filter(word -> !word.isEmpty())
+                .map(word -> cb.like(
+                    cb.upper(root.get("address")), 
+                    "%" + word.toUpperCase() + "%"))
+                .toList();
+        
+        // Use AND to ensure all keywords are present in the address
+        Predicate addressCondition = cb.and(predicates.toArray(new Predicate[0]));
+        Predicate notInSubQuery = cb.not(root.get("customerId").in(subquery));
+        
+        return cb.and(addressCondition, notInSubQuery);
+    };
+    
+    Pageable pageable = PageRequest.of(page, 5);
+    Page<CreditHistory> results = creditHistoryRepository.findAll(specification, pageable);
+    log.info("Query returned {} results", results.getTotalElements());
+    
+    return results;
+}
     public void saveAll(List<CreditHistory> creditHistories) {
         creditHistoryRepository.saveAll(creditHistories);
-    }
-
-    public Page<CreditHistory> findCreditHistoryByAddress(String address, int page) {
-        PageRequest pageRequest = PageRequest.of(page, 5);
-        System.out.println(address);
-        return creditHistoryRepository.findByAddressLikeIgnoreCase(address, pageRequest);
     }
     public void parseCsvAndSaveIt(Path path) {
         creditHistoryRepository.deleteAll();

@@ -12,6 +12,8 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -52,7 +54,8 @@ public class CanvasingCommandHandler implements CommandProcessor {
                 sendMessage(chatId, "Alamat Harus Diisi", telegramClient);
                 return;
             }
-            Page<CreditHistory> creditHistories = creditHistoryService.findCreditHistoryByAddress(address, 0);
+            List<String> addressList = Arrays.stream(text.split(" ")).filter(s -> !s.equals("/canvasing")).toList();
+            Page<CreditHistory> creditHistories = creditHistoryService.searchAddressByKeywords(addressList, 0);
 
             if (creditHistories.isEmpty()) {
                 sendMessage(chatId, String.format("""
