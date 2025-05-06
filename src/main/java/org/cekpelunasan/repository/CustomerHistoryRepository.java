@@ -13,6 +13,7 @@ public interface CustomerHistoryRepository extends JpaRepository<CustomerHistory
 
     @Query(value = """
     SELECT
+        SUM(CASE WHEN collect_status = '01' THEN 1 ELSE 0 END),
         SUM(CASE WHEN collect_status = '02' THEN 1 ELSE 0 END),
         SUM(CASE WHEN collect_status = '03' THEN 1 ELSE 0 END),
         SUM(CASE WHEN collect_status = '04' THEN 1 ELSE 0 END),
