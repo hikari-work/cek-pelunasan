@@ -64,11 +64,28 @@ public class CanvasingCommandHandler implements CommandProcessor {
                 return;
             }
             StringBuilder messageBuilder = new StringBuilder(String.format("\uD83D\uDCC4 Halaman 1 dari %d\n\n", creditHistories.getTotalPages()));
-            creditHistories.forEach(dto -> messageBuilder.append("📄 *Informasi Nasabah*\n")
-                    .append("🔢 *No CIF*      : `").append(dto.getCustomerId()).append("`\n")
-                    .append("👤 *Nama*        : ").append(dto.getName()).append("\n")
-                    .append("🏡 *Alamat*      : ").append(dto.getAddress()).append("\n")
-                    .append("💰 *No HP*     : ").append(dto.getPhone()).append("\n\n"));
+            creditHistories.forEach(dto -> messageBuilder.append(String.format("""
+    🌟 *INFORMASI NASABAH*
+    ┏━━━━━━━━━━━━━━━━━━━
+    ┃
+    ┣ 👤 *%s*
+    ┃ ──────────────────
+    ┃
+    ┣ 📋 *Data Nasabah*
+    ┃ ┊ 🆔 CIF     : `%s`
+    ┃ ┊ 📍 Alamat  : %s
+    ┃ ┊ ☎️ Telepon : %s
+    ┃
+    ┗━━━━━━━━━━━━━━━━━━━
+
+    """,
+    formatName(dto.getName()),
+    dto.getCustomerId(),
+    formatAddress(dto.getAddress()),
+    formatPhoneNumber(dto.getPhone())
+)));
+
+
             InlineKeyboardMarkup markup = paginationCanvassingButton.dynamicButtonName(creditHistories, 0, address);
             sendMessage(chatId, messageBuilder.toString(), telegramClient, markup);
         });
@@ -86,6 +103,23 @@ public class CanvasingCommandHandler implements CommandProcessor {
         } catch (Exception e) {
             log.error("Error");
         }
+    }private String formatName(String name) {
+        return name.toUpperCase();
+    }
+
+    private String formatAddress(String address) {
+        return address.length() > 35 ? address.substring(0, 32) + "..." : address;
+    }
+
+    private String formatPhoneNumber(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            return "📵 Tidak tersedia";
+        }
+        String formatted = phone.startsWith("0") ? phone : "0" + phone;
+        return String.format("%s %s",
+                formatted.startsWith("08") ? "📱" : "☎️",
+                formatted.replaceAll("(\\d{4})(\\d{4})(\\d+)", "$1-$2-$3")
+        );
     }
 
 }

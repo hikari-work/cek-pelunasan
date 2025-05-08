@@ -9,7 +9,6 @@ import org.cekpelunasan.utils.SystemUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
-
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -74,28 +73,47 @@ public class StatusCommandHandler implements CommandProcessor {
     }
 
     private String buildStatusMessage(Repayment latest,
-                                      long totalUsers,
-                                      int totalRepayments,
-                                      long totalBills,
-                                      String systemLoad,
-                                      long executionTime) {
+                                  long totalUsers,
+                                  int totalRepayments,
+                                  long totalBills,
+                                  String systemLoad,
+                                  long executionTime) {
         return String.format("""
-                🔧 **Status Bot - Pelunasan Bot** 🔧
-                
-                Bot sedang **aktif** dan siap menerima perintah. Berikut adalah informasi terkini:
-                
-                - **Waktu Terakhir Update**: 📅 *%s*
-                - **Jumlah Pengguna Terdaftar**: 📊 *%d*
-                - **Total Data Pelunasan**: 📦 *%d*
-                - **Total Data Tagihan** : 📦  *%d*
-                - **Load System**: ⚙️ *%s*
-                
-                Jika kamu ingin mencoba fitur lainnya, ketik `/help` untuk mendapatkan panduan lengkap! 🚀
-                
-                🔋 *Bot Dalam Keadaan Sehat*
-                _Eksekusi dalam %d ms_
-                """,
-                latest.getCreatedAt(), totalUsers, totalRepayments, totalBills,systemLoad, executionTime
-        );
-    }
+        ⚡️ *PELUNASAN BOT STATUS*
+        ╔══════════════════════
+        ║ 🤖 Status: *ONLINE*
+        ╠══════════════════════
+        
+        📊 *STATISTIK SISTEM*
+        ┌────────────────────
+        │ 👥 Users     : %d
+        │ 📦 Pelunasan : %d
+        │ 💳 Tagihan   : %d
+        │ ⚙️ Load      : %s
+        └────────────────────
+        
+        📡 *INFORMASI SERVER*
+        ┌────────────────────
+        │ 🕒 Last Update: %s
+        │ 🔋 Health     : 100%%
+        └────────────────────
+        
+        🎯 *QUICK TIPS*
+        ┌────────────────────
+        │ • Ketik /help untuk bantuan
+        │ • Cek status setiap hari
+        │ • Update data secara rutin
+        └────────────────────
+        
+        ✨ _System is healthy and ready!_
+        ⏱️ _Generated in %dms_
+        """,
+        totalUsers,
+        totalRepayments,
+        totalBills,
+        systemLoad,
+                latest.getCreatedAt().toString(),
+        executionTime
+    );
+}
 }

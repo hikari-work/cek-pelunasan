@@ -14,34 +14,45 @@ public class RepaymentCalculator {
         Long denda = repayment.getPenaltyRepayment();
         Long total = bakidebet + tunggakan + denda + penaltyMap.get("penalty");
 
-        // Bagian Informasi
-
-        // Bagian Tagihan
-
-
-        return """
-📄 *Informasi Nasabah*
-───────────────
-🆔 *No SPK*        : `%s`
-👤 *Nama*           : %s
-🏡 *Alamat*         : %s
-📦 *Produk*         : %s
-💸 *Plafond*        : %s
-
-💰 *Rincian Tagihan*
-───────────────
-🏦 *Baki Debet*     : %s
-📉 *Tunggakan*      : %s
-⏱ *Penalty +%s*     : %s
-⚠️ *Denda*           : %s
-💳 *Total Tagihan*  : *%s*
-""".formatted(
+        return String.format("""
+    🏦 *RINCIAN PELUNASAN KREDIT*
+    ┏━━━━━━━━━━━━━━━━━━━━━━━
+    ┃ 📊 Status: %s
+    ┗━━━━━━━━━━━━━━━━━━━━━━━
+    
+    👤 *DATA NASABAH*
+    ┌────────────────────────
+    │ 🎫 SPK     : `%s`
+    │ 👨‍💼 Nama    : *%s*
+    │ 📍 Alamat  : %s
+    │ 💼 Produk  : %s
+    │ 💰 Plafond : %s
+    └────────────────────────
+    
+    💳 *RINCIAN TAGIHAN*
+    ┌────────────────────────
+    │ 📈 Baki Debet : %s
+    │ ⚠️ Tunggakan   : %s
+    │ ⏰ Penalty +%s : %s
+    │ 🚫 Denda      : %s
+    │
+    │ 📊 *TOTAL TAGIHAN*
+    │ 💵 %s
+    └────────────────────────
+    
+    ℹ️ *CATATAN PENTING*
+    ┌────────────────────────
+    │ • _Harap segera melunasi_
+    │ • _Hindari denda tambahan_
+    │ • _Tap SPK untuk menyalin_
+    └────────────────────────
+    """,
+                getStatusBadge(total),
                 formatText(repayment.getCustomerId()),
                 formatText(repayment.getName()),
                 formatText(repayment.getAddress()),
                 formatText(repayment.getProduct()),
                 formatRupiah(repayment.getPlafond()),
-
                 formatRupiah(bakidebet),
                 formatRupiah(tunggakan),
                 penaltyMap.get("multiplier"),
@@ -49,7 +60,12 @@ public class RepaymentCalculator {
                 formatRupiah(denda),
                 formatRupiah(total)
         );
+    }
 
+    private String getStatusBadge(Long total) {
+        if (total > 500_000_000) return "🔴 URGENT";
+        if (total > 100_000_000) return "🟡 PRIORITY";
+        return "🟢 NORMAL";
     }
 
     private String formatRupiah(Long amount) {

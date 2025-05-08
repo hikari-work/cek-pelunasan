@@ -80,12 +80,32 @@ public class FindNamesHandler implements CommandProcessor {
                     String.format("\uD83D\uDCC4 Halaman 1 dari %d\n\n", repayments.getTotalPages())
             );
 
-            repayments.forEach(dto -> messageBuilder.append("📄 *Informasi Nasabah*\n")
-                    .append("🔢 *No SPK*      : `").append(dto.getCustomerId()).append("`\n")
-                    .append("👤 *Nama*        : ").append(dto.getName()).append("\n")
-                    .append("🏡 *Alamat*      : ").append(dto.getAddress()).append("\n")
-                    .append("💰 *Plafond*     : ").append(new RupiahFormatUtils().formatRupiah(dto.getPlafond())).append("\n\n")
-            );
+            repayments.forEach(dto -> messageBuilder.append(String.format("""
+    📊 *INFORMASI NASABAH*
+    ╔═══════════════════════
+    ║ 👤 *%s*
+    ╠═══════════════════════
+    ║
+    ║ 📎 *DETAIL KREDIT*
+    ║ ┌─────────────────────
+    ║ │ 🔖 SPK    : `%s`
+    ║ │ 📍 Alamat : %s
+    ║ └─────────────────────
+    ║
+    ║ 💳 *RINCIAN PINJAMAN*
+    ║ ┌─────────────────────
+    ║ │ 💰 Plafond: %s
+    ║ │ 📅 Status : %s
+    ║ └─────────────────────
+    ╚═══════════════════════
+    
+    """,
+    dto.getName().toUpperCase(),
+    dto.getCustomerId(),
+    formatAddress(dto.getAddress()),
+    new RupiahFormatUtils().formatRupiah(dto.getPlafond()),
+    getStatusKredit(dto.getPlafond())
+)));
 
             String footer = String.format("\n\nEksekusi dalam %dms", System.currentTimeMillis() - startTime);
             messageBuilder.append(footer);
@@ -125,4 +145,14 @@ public class FindNamesHandler implements CommandProcessor {
             log.error("Error");
         }
     }
+
+private String formatAddress(String address) {
+    return address.length() > 35 ? address.substring(0, 32) + "..." : address;
+}
+
+private String getStatusKredit(long plafond) {
+    if (plafond >= 500_000_000) return "🔷 Premium";
+    if (plafond >= 100_000_000) return "🔶 Gold";
+    return "⭐️ Regular";
+}
 }
