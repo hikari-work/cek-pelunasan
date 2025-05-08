@@ -1,4 +1,4 @@
-package org.cekpelunasan.utils.button;
+package org.cekpelunasan.handler.callback.pagination;
 
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 @Component
-public class ButtonListForSelectBranch {
+public class SelectSavingsBranch {
 
     public InlineKeyboardMarkup dynamicSelectBranch(Set<String> branchName, String query) {
 
@@ -21,7 +21,7 @@ public class ButtonListForSelectBranch {
         for (int i = 0; i < branchList.size(); i++) {
             InlineKeyboardButton button = InlineKeyboardButton.builder()
                     .text(branchList.get(i))
-                    .callbackData("branch_" + branchList.get(i) + "_" + query)
+                    .callbackData("branchtab_" + branchList.get(i) + "_" + query)
                     .build();
             currentRow.add(button);
             if (currentRow.size() == 3 || i == branchList.size() -1) {

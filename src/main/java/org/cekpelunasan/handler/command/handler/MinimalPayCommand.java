@@ -77,16 +77,48 @@ public class MinimalPayCommand implements CommandProcessor {
                     return;
                 }
 
-                StringBuilder message = new StringBuilder("📋 *Daftar Tagihan Minimal Bayar:*\n\n");
+                StringBuilder message = new StringBuilder("""
+    📋 *DAFTAR TAGIHAN MINIMAL*
+    ═══════════════════════════
+    
+    """);
+
                 for (Bills bill : bills) {
-                    message.append("🔹 *No. SPK*: ").append("`").append(bill.getNoSpk()).append("`").append("\n")
-                            .append("👤 *Nama*: ").append(bill.getName()).append("\n")
-                            .append("🏠 *Alamat*: ").append(bill.getAddress()).append("\n")
-                            .append("💵 *Pokok*: Rp ").append(String.format("%,d", bill.getMinPrincipal())).append("\n")
-                            .append("💰 *Bunga*: Rp ").append(String.format("%,d", bill.getMinInterest())).append("\n")
-                            .append("🧾 *Total Minimal Bayar*: Rp ")
-                            .append(String.format("%,d", bill.getMinPrincipal() + bill.getMinInterest())).append("\n\n");
+                    message.append(String.format("""
+    🏦 *%s*
+    ┏━━━━━━━━━━━━━━━━━━━━━
+    ┃
+    ┣ 📎 *DATA KREDIT*
+    ┃ ┌─────────────────────
+    ┃ │ 🆔 SPK    : `%s`
+    ┃ │ 📍 Alamat : %s
+    ┃ └─────────────────────
+    ┃
+    ┣ 💰 *PEMBAYARAN MINIMAL*
+    ┃ ┌─────────────────────
+    ┃ │ 💵 Pokok  : %s
+    ┃ │ 💸 Bunga  : %s
+    ┃ │
+    ┃ │ 📊 *TOTAL*
+    ┃ │ 🔥 %s
+    ┃ └─────────────────────
+    ┗━━━━━━━━━━━━━━━━━━━━━
+
+    """,
+                            bill.getName().toUpperCase(),
+                            bill.getNoSpk(),
+                            formatAddress(bill.getAddress()),
+                            formatRupiah(bill.getMinPrincipal()),
+                            formatRupiah(bill.getMinInterest()),
+                            formatRupiah(bill.getMinPrincipal() + bill.getMinInterest())
+                    ));
                 }
+
+                message.append("""
+    ⚠️ *Catatan Penting*:
+    ▢ _Tap SPK untuk menyalin_
+    ▢ _Pembayaran harus dilakukan sebelum jatuh bayar_
+    """);
                 InlineKeyboardMarkup markup;
                 markup = paginationToMinimalPay
                         .dynamicButtonName(bills, 0, userCode);
@@ -106,5 +138,13 @@ public class MinimalPayCommand implements CommandProcessor {
         } catch (Exception e) {
             log.error("Error");
         }
+    }
+
+    private String formatAddress(String address) {
+        return address.length() > 30 ? address.substring(0, 27) + "..." : address;
+    }
+
+    private String formatRupiah(long amount) {
+        return String.format("Rp %,d", amount);
     }
 }

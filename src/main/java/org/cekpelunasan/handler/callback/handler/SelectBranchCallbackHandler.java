@@ -55,17 +55,34 @@ public class SelectBranchCallbackHandler implements CallbackProcessor {
     }
 
     private String buildMessage(Page<Bills> billsPage, long startTime) {
-        StringBuilder message = new StringBuilder("📄 Halaman 1 dari ").append(billsPage.getTotalPages()).append("\n\n");
+        StringBuilder message = new StringBuilder("""
+    🏦 *DAFTAR NASABAH*
+    ══════════════════
+    📋 Halaman 1 dari %d
+    """.formatted(billsPage.getTotalPages()));
 
-        billsPage.forEach(bill -> message.append("📄 *Informasi Nasabah*\n")
-                .append("🔢 *No SPK*      : `").append(bill.getNoSpk()).append("`\n")
-                .append("👤 *Nama*        : ").append(bill.getName()).append("\n")
-                .append("🏡 *Alamat*      : ").append(bill.getAddress()).append("\n")
-                .append("💰 *Plafond*     : ").append(new RupiahFormatUtils().formatRupiah(bill.getPlafond())).append("\n\n")
-        );
+billsPage.forEach(bill -> message.append("""
+    
+    🔷 *%s*
+    ────────────────
+    📎 *Detail Nasabah*
+    ▪️ ID SPK\t\t: `%s`
+    ▪️ Alamat\t\t: %s
+    
+    💰 *Informasi Kredit*
+    ▪️ Plafond\t\t: %s
+    ▪️ AO\t\t\t: %s
+    ────────────────
+    """.formatted(
+        bill.getName(),
+        bill.getNoSpk(),
+        bill.getAddress(),
+        new RupiahFormatUtils().formatRupiah(bill.getPlafond()),
+        bill.getAccountOfficer()
+    )
+));
 
-        long elapsed = System.currentTimeMillis() - startTime;
-        message.append(String.format("⏱ Eksekusi dalam %d ms", elapsed));
+message.append("\n⏱️ _Generated in ").append(System.currentTimeMillis() - startTime).append("ms_");
 
         return message.toString();
     }

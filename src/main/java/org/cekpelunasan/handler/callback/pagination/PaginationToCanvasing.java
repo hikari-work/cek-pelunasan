@@ -49,11 +49,22 @@ public class PaginationToCanvasing implements CallbackProcessor {
                 return;
             }
             StringBuilder messageBuilder = new StringBuilder(String.format("\uD83D\uDCC4 Halaman "+ (page + 1) +" dari %d\n\n", creditHistoriesPage.getTotalPages()));
-            creditHistoriesPage.forEach(dto -> messageBuilder.append("📄 *Informasi Nasabah*\n")
-                    .append("🔢 *No CIF*      : `").append(dto.getCustomerId()).append("`\n")
-                    .append("👤 *Nama*        : ").append(dto.getName()).append("\n")
-                    .append("🏡 *Alamat*      : ").append(dto.getAddress()).append("\n")
-                    .append("💰 *No HP*     : ").append(dto.getPhone()).append("\n\n"));
+            creditHistoriesPage.forEach(dto -> messageBuilder.append(String.format("""
+    👤 *%s*
+    ╔═══════════════════════
+    ║ 📊 *DATA NASABAH*
+    ║ ├─── 🆔 CIF   : `%s`
+    ║ ├─── 📍 Alamat: %s
+    ║ └─── 📱 Kontak: %s
+    ╚═══════════════════════
+    
+    """,
+    dto.getName(),
+    dto.getCustomerId(),
+    formatAddress(dto.getAddress()),
+    formatPhone(dto.getPhone())
+)));
+
             System.out.println(messageBuilder);
             InlineKeyboardMarkup markup = paginationCanvassingButton.dynamicButtonName(creditHistoriesPage, page, address);
             System.out.println(markup);
@@ -76,6 +87,14 @@ public class PaginationToCanvasing implements CallbackProcessor {
         } catch (Exception e) {
             log.error("Error");
         }
+    }
+    private String formatAddress(String address) {
+        return address.length() > 40 ? address.substring(0, 37) + "..." : address;
+    }
+
+    private String formatPhone(String phone) {
+        return phone == null || phone.isEmpty() ? "📵 Tidak tersedia" :
+                phone.startsWith("0") ? "☎️ " + phone : "☎️ 0" + phone;
     }
 
 }

@@ -55,20 +55,48 @@ public class PaginationPelunasanCallbackHandler implements CallbackProcessor {
     }
 
     private String buildRepaymentMessage(Page<Repayment> repayments, int page, long startTime) {
-        StringBuilder builder = new StringBuilder("📄 Halaman ")
-                .append(page + 1).append(" dari ").append(repayments.getTotalPages()).append("\n\n");
+        StringBuilder builder = new StringBuilder(String.format("""
+        🏦 *SISTEM INFORMASI KREDIT*
+        ═══════════════════════════
+        📊 Halaman %d dari %d
+        ───────────────────────────
+        
+        """, page + 1, repayments.getTotalPages()));
 
         RupiahFormatUtils formatter = new RupiahFormatUtils();
-        repayments.forEach(dto -> builder.append("📄 *Informasi Nasabah*\n")
-                .append("🔢 *No SPK*      : `").append(dto.getCustomerId()).append("`\n")
-                .append("👤 *Nama*        : ").append(dto.getName()).append("\n")
-                .append("🏡 *Alamat*      : ").append(dto.getAddress()).append("\n")
-                .append("💰 *Plafond*     : ").append(formatter.formatRupiah(dto.getPlafond())).append("\n\n"));
+        repayments.forEach(dto -> builder.append(String.format("""
+        🔷 *%s*
+        ┌────────────────────────
+        │ 📎 *DATA NASABAH*
+        │ └── 🔖 SPK    : `%s`
+        │ └── 📍 Alamat : %s
+        │
+        │ 💳 *INFORMASI KREDIT*
+        │ └── 💰 Plafond : %s
+        │ └── 📅 Status  : %s
+        └────────────────────────
+        
+        """,
+                dto.getName(),
+                dto.getCustomerId(),
+                dto.getAddress(),
+                formatter.formatRupiah(dto.getPlafond()),
+                getStatusKredit(dto.getPlafond())
+        )));
 
-        builder.append("\n\n_Eksekusi dalam ")
-                .append(System.currentTimeMillis() - startTime)
-                .append("ms_");
+        builder.append("""
+        ℹ️ *Informasi*
+        ▔▔▔▔▔▔▔▔▔▔▔
+        📌 _Tap SPK untuk menyalin_
+        ⚡️ _Proses: %dms_
+        """.formatted(System.currentTimeMillis() - startTime));
 
         return builder.toString();
+    }
+
+    private String getStatusKredit(long plafond) {
+        if (plafond > 500_000_000) return "🔴 Premium";
+        if (plafond > 100_000_000) return "🟡 Gold";
+        return "🟢 Regular";
     }
 }

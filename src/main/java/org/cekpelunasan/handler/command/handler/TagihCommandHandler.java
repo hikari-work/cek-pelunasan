@@ -69,45 +69,65 @@ public class TagihCommandHandler implements CommandProcessor {
     }
     public String buildBillMessage(Bills bill) {
         return String.format("""
-            \uD83D\uDC64 *Nama:* %s
-            \uD83D\uDCC5 *No SPK:* %s
-            \uD83C\uDFE0 *Alamat:* %s
+        🏦 *INFORMASI KREDIT*
+        ═══════════════════
+        
+        👤 *Detail Nasabah*
+        ▢ Nama\t\t: *%s*
+        ▢ No SPK\t: `%s`
+        ▢ Alamat\t: %s
+        
+        💳 *Informasi Pinjaman*
+        ▢ Plafond\t\t: %s
+        ▢ Baki Debet\t: %s
+        ▢ Realisasi\t\t: %s
+        ▢ Jatuh Tempo\t: %s
+        
+        💹 *Angsuran*
+        ▢ Bunga\t\t: %s
+        ▢ Pokok\t\t: %s
+        ▢ Total\t\t: %s
+        
+        ⚠️ *Tunggakan*
+        ▢ Bunga\t\t: %s
+        ▢ Pokok\t\t: %s
+        
+        📊 *Status Kredit*
+        ▢ Hari Tunggakan\t: %s hari
+        ▢ Kolektibilitas\t\t: %s
+        
+        💰 *Pembayaran*
+        ▢ Total Tagihan\t\t: %s
+        
+        ⚡️ *Minimal Bayar*
+        ▢ Pokok\t\t: %s
+        ▢ Bunga\t\t: %s
+        
+        👨‍💼 *Account Officer*: %s
+        ═══════════════════
+        """,
+            bill.getName(),
+            bill.getNoSpk(),
+            bill.getAddress(),
+            formatRupiah(bill.getPlafond()),
+            formatRupiah(bill.getDebitTray()),
+            bill.getRealization(),
+            bill.getDueDate(),
+            formatRupiah(bill.getInterest()),
+            formatRupiah(bill.getPrincipal()),
+            formatRupiah(bill.getInstallment()),
+            formatRupiah(bill.getLastInterest()),
+            formatRupiah(bill.getLastPrincipal()),
+            bill.getDayLate(),
+            bill.getCollectStatus(),
+            formatRupiah(bill.getFullPayment()),
+            formatRupiah(bill.getMinPrincipal()),
+            formatRupiah(bill.getMinInterest()),
+            bill.getAccountOfficer()
+    );
+}
 
-            💰 *Plafond\t\t\t\t:* Rp %,d
-            📉 *Baki Debet\t\t:* Rp %,d
-            🗓️ *Realisasi:* %s
-            🗓️ *Jatuh Tempo:* %s
-            
-            💸 *Bunga:* Rp %,d
-            💵 *Pokok:* Rp %,d
-            🧾 *Angsuran:* Rp %,d
-            
-            📅 *OD:* %s
-            📅 *Kolektibilitas:* %s
-            
-            🧾 *Total Bayar :* Rp %,d
-
-            🔻 *Minimal Pokok:* Rp %,d
-            🔻 *Minimal Bunga:* Rp %,d
-
-            👨‍💼 *Account Officer:* %s
-            """,
-                bill.getName(),
-                bill.getNoSpk(),
-                bill.getAddress(),
-                bill.getPlafond(),
-                bill.getDebitTray(),
-                bill.getRealization(),
-                bill.getDueDate(),
-                bill.getInterest(),
-                bill.getPrincipal(),
-                bill.getInstallment(),
-                bill.getDayLate(),
-                bill.getCollectStatus(),
-                bill.getFullPayment(),
-                bill.getMinPrincipal(),
-                bill.getMinInterest(),
-                bill.getAccountOfficer()
-        );
-    }
+private String formatRupiah(Long amount) {
+    return String.format("Rp %,d", amount);
+}
 }

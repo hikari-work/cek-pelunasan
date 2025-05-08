@@ -91,13 +91,44 @@ public class FindByDueDate implements CommandProcessor {
     }
 
     public String messageBuilder(Bills bills) {
-        return "*Nama:* " + bills.getName() + "\n" +
-                "• *ID SPK:* `" + bills.getNoSpk() + "`\n" +
-                "• *Alamat:* " + bills.getAddress() + "\n" +
-                "• *Tgl Jatuh Tempo:* " + bills.getPayDown() + "\n" +
-                "• *Total Tagihan:* Rp" + String.format("%,d", bills.getFullPayment()) + ",-\n" +
-                "• *AO:* " + bills.getAccountOfficer() + "\n\n";
-    }
+        return String.format("""
+        📋 *DETAIL TAGIHAN KREDIT*
+        ═══════════════════════
+        
+        👤 *%s*
+        ┌──────────────────────
+        │ 📎 *INFORMASI KREDIT*
+        │ ├─ 🔖 SPK      : `%s`
+        │ ├─ 📍 Alamat   : %s
+        │ └─ 📅 Jth Tempo: %s
+        │
+        │ 💰 *RINCIAN BIAYA*
+        │ ├─ 💸 Tagihan  : %s
+        │ └─ 👨‍💼 AO       : %s
+        └──────────────────────
+        
+        ℹ️ _Tap SPK untuk menyalin_
+        """,
+        bills.getName(),
+        bills.getNoSpk(),
+        formatAddress(bills.getAddress()),
+        formatDate(bills.getPayDown()),
+        formatRupiah(bills.getFullPayment()),
+        bills.getAccountOfficer()
+    );
+}
+
+private String formatAddress(String address) {
+    return address.length() > 30 ? address.substring(0, 27) + "..." : address;
+}
+
+private String formatDate(String date) {
+    return date != null ? date : "Tidak tersedia";
+}
+
+private String formatRupiah(long amount) {
+    return String.format("Rp %,d", amount);
+}
     public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
         try {
             telegramClient.execute(SendMessage.builder()
