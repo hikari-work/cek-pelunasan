@@ -7,29 +7,33 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Component
-public class ButtonListForSelectBranch {
+public class DirectMessageButton {
 
-	public InlineKeyboardMarkup dynamicSelectBranch(Set<String> branchName, String query) {
-
+	public InlineKeyboardMarkup selectServices(String query) {
 		List<InlineKeyboardRow> rows = new ArrayList<>();
-		InlineKeyboardRow currentRow = new InlineKeyboardRow();
-		List<String> branchList = new ArrayList<>(branchName);
+		InlineKeyboardRow inlineKeyboardButtons = new InlineKeyboardRow();
+		List<String> services = List.of("Pelunasan", "Tabungan");
 
-		for (int i = 0; i < branchList.size(); i++) {
+		for (String service : services) {
 			InlineKeyboardButton button = InlineKeyboardButton.builder()
-							.text(branchList.get(i))
-							.callbackData("branch_" + branchList.get(i) + "_" + query)
+							.text(service)
+							.callbackData("services_" + service + "_" + query)
 							.build();
-			currentRow.add(button);
-			if (currentRow.size() == 3 || i == branchList.size() - 1) {
-				rows.add(currentRow);
-				currentRow = new InlineKeyboardRow();
-			}
+			inlineKeyboardButtons.add(button);
 
+			if (inlineKeyboardButtons.size() == 2) {
+				rows.add(inlineKeyboardButtons);
+				inlineKeyboardButtons = new InlineKeyboardRow();
+			}
 		}
+
+		// Add the remaining buttons if any
+		if (!inlineKeyboardButtons.isEmpty()) {
+			rows.add(inlineKeyboardButtons);
+		}
+
 		return InlineKeyboardMarkup.builder()
 						.keyboard(rows)
 						.build();

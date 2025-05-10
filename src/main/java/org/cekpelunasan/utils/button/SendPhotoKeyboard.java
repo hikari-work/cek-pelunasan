@@ -10,18 +10,18 @@ import java.util.List;
 
 public class SendPhotoKeyboard {
 
-    public InlineKeyboardMarkup sendPhotoButton(Long query) {
-        List<InlineKeyboardRow> rows = new ArrayList<>();
-        InlineKeyboardRow inlineKeyboardButtons = new InlineKeyboardRow();
+	public InlineKeyboardMarkup sendPhotoButton(Long query) {
+		List<InlineKeyboardRow> rows = new ArrayList<>();
+		InlineKeyboardRow inlineKeyboardButtons = new InlineKeyboardRow();
 
-        InlineKeyboardButton photoButton = InlineKeyboardButton.builder()
-                .text("📸 Kirim Gambar")
-                .callbackData("photo_" + query)
-                .build();
-        inlineKeyboardButtons.add(photoButton);
-        rows.add(inlineKeyboardButtons);
-        return InlineKeyboardMarkup.builder()
-                .keyboard(rows)
-                .build();
-    }
+		InlineKeyboardButton photoButton = InlineKeyboardButton.builder()
+						.text("📸 Kirim Gambar")
+						.callbackData("photo_" + query)
+						.build();
+		inlineKeyboardButtons.add(photoButton);
+		rows.add(inlineKeyboardButtons);
+		return InlineKeyboardMarkup.builder()
+						.keyboard(rows)
+						.build();
+	}
 }

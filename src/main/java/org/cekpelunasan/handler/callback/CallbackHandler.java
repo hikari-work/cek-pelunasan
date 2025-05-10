@@ -14,21 +14,22 @@ import java.util.stream.Collectors;
 @Component
 public class CallbackHandler {
 
-    private final Map<String, CallbackProcessor> processorMap;
+	private final Map<String, CallbackProcessor> processorMap;
 
-    @Autowired
-    CallbackHandler(List<CallbackProcessor> processorList) {
-        this.processorMap = processorList.stream().collect(Collectors.toMap(CallbackProcessor::getCallBackData, c -> c));
-    }
-    @Async
-    public CompletableFuture<Void> handle(Update update, TelegramClient telegramClient) {
-        if (update.hasCallbackQuery()) {
-            String callbackData = update.getCallbackQuery().getData().split("_")[0];
-            System.out.println(update.getCallbackQuery().getData());
-            CallbackProcessor callbackProcessor = processorMap.getOrDefault(callbackData, processorMap.get("none"));
-            callbackProcessor.process(update, telegramClient);
-        }
-        return CompletableFuture.completedFuture(null);
-    }
+	@Autowired
+	CallbackHandler(List<CallbackProcessor> processorList) {
+		this.processorMap = processorList.stream().collect(Collectors.toMap(CallbackProcessor::getCallBackData, c -> c));
+	}
+
+	@Async
+	public CompletableFuture<Void> handle(Update update, TelegramClient telegramClient) {
+		if (update.hasCallbackQuery()) {
+			String callbackData = update.getCallbackQuery().getData().split("_")[0];
+			System.out.println(update.getCallbackQuery().getData());
+			CallbackProcessor callbackProcessor = processorMap.getOrDefault(callbackData, processorMap.get("none"));
+			callbackProcessor.process(update, telegramClient);
+		}
+		return CompletableFuture.completedFuture(null);
+	}
 
 }

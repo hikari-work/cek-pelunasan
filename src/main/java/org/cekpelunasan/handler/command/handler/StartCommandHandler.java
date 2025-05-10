@@ -12,38 +12,38 @@ import java.util.concurrent.CompletableFuture;
 @Component
 public class StartCommandHandler implements CommandProcessor {
 
-    private final AuthorizedChats authService;
-    private final MessageTemplate messageTemplateService;
+	private static final String START_MESSAGE = """
+					👋 *PONG!!!*
+					""";
+	private final AuthorizedChats authService;
+	private final MessageTemplate messageTemplateService;
 
-    private static final String START_MESSAGE = """
-            👋 *PONG!!!*
-            """;
+	public StartCommandHandler(AuthorizedChats authService, MessageTemplate messageTemplateService) {
+		this.authService = authService;
+		this.messageTemplateService = messageTemplateService;
+	}
 
-    public StartCommandHandler(AuthorizedChats authService, MessageTemplate messageTemplateService) {
-        this.authService = authService;
-        this.messageTemplateService = messageTemplateService;
-    }
+	@Override
+	public String getCommand() {
+		return "/start";
+	}
 
-    @Override
-    public String getCommand() {
-        return "/start";
-    }
+	@Override
+	public String getDescription() {
+		return """
+						Mengecek Bot Apakah Aktif
+						""";
+	}
 
-    @Override
-    public String getDescription() {
-        return """
-                Mengecek Bot Apakah Aktif
-                """;
-    }
-    @Override
-    @Async
-    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
-        return CompletableFuture.runAsync(() -> {
-            if (authService.isAuthorized(chatId)) {
-                sendMessage(chatId, START_MESSAGE, telegramClient);
-            } else {
-                sendMessage(chatId, messageTemplateService.unathorizedMessage(), telegramClient);
-            }
-        });
-    }
+	@Override
+	@Async
+	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+		return CompletableFuture.runAsync(() -> {
+			if (authService.isAuthorized(chatId)) {
+				sendMessage(chatId, START_MESSAGE, telegramClient);
+			} else {
+				sendMessage(chatId, messageTemplateService.unathorizedMessage(), telegramClient);
+			}
+		});
+	}
 }

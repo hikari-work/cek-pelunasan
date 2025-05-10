@@ -10,21 +10,22 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 @Component
 public class TelegramBot {
 
-    private final CommandHandler commandHandler;
-    private final CallbackHandler callbackHandler;
+	private final CommandHandler commandHandler;
+	private final CallbackHandler callbackHandler;
 
-    public TelegramBot(CommandHandler commandHandler, CallbackHandler callbackHandler) {
-        this.commandHandler = commandHandler;
-        this.callbackHandler = callbackHandler;
-    }
+	public TelegramBot(CommandHandler commandHandler, CallbackHandler callbackHandler) {
+		this.commandHandler = commandHandler;
+		this.callbackHandler = callbackHandler;
+	}
 
-    @Async
-    public void startBot(Update update, TelegramClient telegramClient) {
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            commandHandler.handle(update, telegramClient);
-        } if (update.hasCallbackQuery()) {
-            callbackHandler.handle(update, telegramClient);
-        }
+	@Async
+	public void startBot(Update update, TelegramClient telegramClient) {
+		if (update.hasMessage() && update.getMessage().hasText()) {
+			commandHandler.handle(update, telegramClient);
+		}
+		if (update.hasCallbackQuery()) {
+			callbackHandler.handle(update, telegramClient);
+		}
 
-    }
+	}
 }

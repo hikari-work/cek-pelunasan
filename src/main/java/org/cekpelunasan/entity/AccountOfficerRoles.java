@@ -2,7 +2,7 @@ package org.cekpelunasan.entity;
 
 public enum AccountOfficerRoles {
 
-    AO,
-    PIMP,
-    ADMIN
+	AO,
+	PIMP,
+	ADMIN
 }

@@ -14,42 +14,42 @@ import java.util.Date;
 @Table(name = "repayment", indexes = {@Index(name = "name_idx", columnList = "name")})
 public class Repayment {
 
-    @Id
-    @Column(name = "customer_id")
-    private String customerId;
+	@Id
+	@Column(name = "customer_id")
+	private String customerId;
 
-    private String product;
+	private String product;
 
-    private String name;
+	private String name;
 
-    private String address;
+	private String address;
 
-    private Long amount;
+	private Long amount;
 
-    private Long interest;
+	private Long interest;
 
-    private Long sistem;
+	private Long sistem;
 
-    @Column(name = "penalty_loan")
-    private Long penaltyLoan;
+	@Column(name = "penalty_loan")
+	private Long penaltyLoan;
 
-    @Column(name = "penalty_repayment")
-    private Long penaltyRepayment;
+	@Column(name = "penalty_repayment")
+	private Long penaltyRepayment;
 
-    @Column(name = "total_pay")
-    private Long totalPay;
+	@Column(name = "total_pay")
+	private Long totalPay;
 
-    private String branch;
+	private String branch;
 
-    @Column(name = "start_date")
-    private String startDate;
+	@Column(name = "start_date")
+	private String startDate;
 
-    private Long plafond;
+	private Long plafond;
 
-    private String lpdb;
+	private String lpdb;
 
-    @Temporal(TemporalType.DATE)
-    private Date createdAt;
+	@Temporal(TemporalType.DATE)
+	private Date createdAt;
 
 
 }

@@ -12,8 +12,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableAsync
 public class CekPelunasanApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(CekPelunasanApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(CekPelunasanApplication.class, args);
+	}
 
 }

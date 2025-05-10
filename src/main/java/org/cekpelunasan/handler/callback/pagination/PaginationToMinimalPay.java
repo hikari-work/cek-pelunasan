@@ -13,35 +13,36 @@ import java.util.List;
 @Component
 public class PaginationToMinimalPay {
 
-    public InlineKeyboardMarkup dynamicButtonName(Page<Bills> page, int currentPage, String query) {
-        List<InlineKeyboardRow> rows = new ArrayList<>();
-        rows.add(buildPaginationRow(page, currentPage, query));
-        return InlineKeyboardMarkup.builder().keyboard(rows).build();
-    }
-    private InlineKeyboardRow buildPaginationRow(Page<?> page, int currentPage, String query) {
-        InlineKeyboardRow row = new InlineKeyboardRow();
+	public InlineKeyboardMarkup dynamicButtonName(Page<Bills> page, int currentPage, String query) {
+		List<InlineKeyboardRow> rows = new ArrayList<>();
+		rows.add(buildPaginationRow(page, currentPage, query));
+		return InlineKeyboardMarkup.builder().keyboard(rows).build();
+	}
 
-        int total = (int) page.getTotalElements();
-        int from = currentPage * page.getSize() + 1;
-        int to = from + page.getNumberOfElements() - 1;
+	private InlineKeyboardRow buildPaginationRow(Page<?> page, int currentPage, String query) {
+		InlineKeyboardRow row = new InlineKeyboardRow();
 
-        if (page.hasPrevious()) {
-            row.add(buildButton("⬅ Prev", "minimal_" + query + "_" + (currentPage - 1)));
-        }
+		int total = (int) page.getTotalElements();
+		int from = currentPage * page.getSize() + 1;
+		int to = from + page.getNumberOfElements() - 1;
 
-        row.add(buildButton(from + " - " + to + " / " + total, "noop"));
+		if (page.hasPrevious()) {
+			row.add(buildButton("⬅ Prev", "minimal_" + query + "_" + (currentPage - 1)));
+		}
 
-        if (page.hasNext()) {
-            row.add(buildButton("Next ➡", "minimal_" + query + "_" + (currentPage + 1)));
-        }
+		row.add(buildButton(from + " - " + to + " / " + total, "noop"));
 
-        return row;
-    }
+		if (page.hasNext()) {
+			row.add(buildButton("Next ➡", "minimal_" + query + "_" + (currentPage + 1)));
+		}
 
-    private InlineKeyboardButton buildButton(String text, String callbackData) {
-        return InlineKeyboardButton.builder()
-                .text(text)
-                .callbackData(callbackData)
-                .build();
-    }
+		return row;
+	}
+
+	private InlineKeyboardButton buildButton(String text, String callbackData) {
+		return InlineKeyboardButton.builder()
+						.text(text)
+						.callbackData(callbackData)
+						.build();
+	}
 }

@@ -15,18 +15,18 @@ import lombok.*;
 @Entity(name = "users")
 public class User {
 
-    @Id
-    private Long chatId;
+	@Id
+	private Long chatId;
 
-    @Nullable
-    private String userCode;
+	@Nullable
+	private String userCode;
 
-    @Nullable
-    private String branch;
+	@Nullable
+	private String branch;
 
-    @Nullable
-    @Enumerated(EnumType.STRING)
-    private AccountOfficerRoles roles;
+	@Nullable
+	@Enumerated(EnumType.STRING)
+	private AccountOfficerRoles roles;
 
 
 }

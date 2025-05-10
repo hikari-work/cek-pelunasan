@@ -12,26 +12,26 @@ import java.util.Set;
 @Component
 public class SelectSavingsBranch {
 
-    public InlineKeyboardMarkup dynamicSelectBranch(Set<String> branchName, String query) {
+	public InlineKeyboardMarkup dynamicSelectBranch(Set<String> branchName, String query) {
 
-        List<InlineKeyboardRow> rows = new ArrayList<>();
-        InlineKeyboardRow currentRow = new InlineKeyboardRow();
-        List<String> branchList = new ArrayList<>(branchName);
+		List<InlineKeyboardRow> rows = new ArrayList<>();
+		InlineKeyboardRow currentRow = new InlineKeyboardRow();
+		List<String> branchList = new ArrayList<>(branchName);
 
-        for (int i = 0; i < branchList.size(); i++) {
-            InlineKeyboardButton button = InlineKeyboardButton.builder()
-                    .text(branchList.get(i))
-                    .callbackData("branchtab_" + branchList.get(i) + "_" + query)
-                    .build();
-            currentRow.add(button);
-            if (currentRow.size() == 3 || i == branchList.size() -1) {
-                rows.add(currentRow);
-                currentRow = new InlineKeyboardRow();
-            }
+		for (int i = 0; i < branchList.size(); i++) {
+			InlineKeyboardButton button = InlineKeyboardButton.builder()
+							.text(branchList.get(i))
+							.callbackData("branchtab_" + branchList.get(i) + "_" + query)
+							.build();
+			currentRow.add(button);
+			if (currentRow.size() == 3 || i == branchList.size() - 1) {
+				rows.add(currentRow);
+				currentRow = new InlineKeyboardRow();
+			}
 
-        }
-        return InlineKeyboardMarkup.builder()
-                .keyboard(rows)
-                .build();
-    }
+		}
+		return InlineKeyboardMarkup.builder()
+						.keyboard(rows)
+						.build();
+	}
 }

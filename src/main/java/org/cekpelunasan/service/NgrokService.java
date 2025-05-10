@@ -11,81 +11,81 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 public class NgrokService {
-    private static final Logger logger = LoggerFactory.getLogger(NgrokService.class);
+	private static final Logger logger = LoggerFactory.getLogger(NgrokService.class);
 
-    private final String botToken;
-    private final RestTemplate restTemplate;
-    
-    @Value("${ngrok.api.url:http://localhost:4040/api/tunnels}")
-    private String ngrokApiUrl;
+	private final String botToken;
+	private final RestTemplate restTemplate;
 
-    public NgrokService(@Value("${telegram.bot.token}") String botToken) {
-        this.restTemplate = new RestTemplate();
-        this.botToken = botToken;
-    }
+	@Value("${ngrok.api.url:http://localhost:4040/api/tunnels}")
+	private String ngrokApiUrl;
 
-    public void setWebhook() {
-        try {
-            // Attempt to get URL from ngrok
-            String tunnelJson = getTunnelInfo();
-            if (tunnelJson == null) {
-                logger.error("Failed to get tunnel information from ngrok");
-                return;
-            }
+	public NgrokService(@Value("${telegram.bot.token}") String botToken) {
+		this.restTemplate = new RestTemplate();
+		this.botToken = botToken;
+	}
 
-            String publicUrl = extractPublicUrl(tunnelJson);
-            if (publicUrl != null) {
-                setTelegramWebHook(publicUrl);
-            }
-        } catch (Exception e) {
-            logger.error("Error in setWebhook: {}", e.getMessage(), e);
-        }
-    }
+	public void setWebhook() {
+		try {
+			// Attempt to get URL from ngrok
+			String tunnelJson = getTunnelInfo();
+			if (tunnelJson == null) {
+				logger.error("Failed to get tunnel information from ngrok");
+				return;
+			}
 
-    private String getTunnelInfo() {
-        try {
-            return restTemplate.getForObject(ngrokApiUrl, String.class);
-        } catch (RestClientException e) {
-            logger.error("Failed to connect to ngrok API: {}", e.getMessage());
-            try {
-                String alternativeUrl = ngrokApiUrl.replace("4040", "3030");
-                return restTemplate.getForObject(alternativeUrl, String.class);
-            } catch (RestClientException ex) {
-                logger.error("Failed to connect to ngrok API on alternative port: {}", ex.getMessage());
-                return null;
-            }
-        }
-    }
+			String publicUrl = extractPublicUrl(tunnelJson);
+			if (publicUrl != null) {
+				setTelegramWebHook(publicUrl);
+			}
+		} catch (Exception e) {
+			logger.error("Error in setWebhook: {}", e.getMessage(), e);
+		}
+	}
 
-    private String extractPublicUrl(String tunnelJson) {
-        try {
-            JsonNode tunnelNode = new ObjectMapper().readTree(tunnelJson);
-            JsonNode tunnels = tunnelNode.get("tunnels");
-            
-            if (tunnels != null && tunnels.isArray() && !tunnels.isEmpty()) {
-                return tunnels.get(0).get("public_url").asText();
-            } else {
-                logger.error("No tunnels found in ngrok response");
-                return null;
-            }
-        } catch (Exception e) {
-            logger.error("Error extracting public URL: {}", e.getMessage());
-            return null;
-        }
-    }
+	private String getTunnelInfo() {
+		try {
+			return restTemplate.getForObject(ngrokApiUrl, String.class);
+		} catch (RestClientException e) {
+			logger.error("Failed to connect to ngrok API: {}", e.getMessage());
+			try {
+				String alternativeUrl = ngrokApiUrl.replace("4040", "3030");
+				return restTemplate.getForObject(alternativeUrl, String.class);
+			} catch (RestClientException ex) {
+				logger.error("Failed to connect to ngrok API on alternative port: {}", ex.getMessage());
+				return null;
+			}
+		}
+	}
 
-    private void setTelegramWebHook(String publicUrl) {
-        try {
-            String webHookPath = "/webhook";
-            String fullWebHookUrl = publicUrl + webHookPath;
-            String setWebHookUrl = String.format("https://api.telegram.org/bot%s/setWebhook?url=%s",
-                    botToken, fullWebHookUrl);
-            System.out.println(setWebHookUrl);
+	private String extractPublicUrl(String tunnelJson) {
+		try {
+			JsonNode tunnelNode = new ObjectMapper().readTree(tunnelJson);
+			JsonNode tunnels = tunnelNode.get("tunnels");
 
-            String response = restTemplate.getForObject(setWebHookUrl, String.class);
-            logger.info("Webhook set response: {}", response);
-        } catch (Exception e) {
-            logger.error("Error setting Telegram webhook: {}", e.getMessage());
-        }
-    }
+			if (tunnels != null && tunnels.isArray() && !tunnels.isEmpty()) {
+				return tunnels.get(0).get("public_url").asText();
+			} else {
+				logger.error("No tunnels found in ngrok response");
+				return null;
+			}
+		} catch (Exception e) {
+			logger.error("Error extracting public URL: {}", e.getMessage());
+			return null;
+		}
+	}
+
+	private void setTelegramWebHook(String publicUrl) {
+		try {
+			String webHookPath = "/webhook";
+			String fullWebHookUrl = publicUrl + webHookPath;
+			String setWebHookUrl = String.format("https://api.telegram.org/bot%s/setWebhook?url=%s",
+							botToken, fullWebHookUrl);
+			System.out.println(setWebHookUrl);
+
+			String response = restTemplate.getForObject(setWebHookUrl, String.class);
+			logger.info("Webhook set response: {}", response);
+		} catch (Exception e) {
+			logger.error("Error setting Telegram webhook: {}", e.getMessage());
+		}
+	}
 }

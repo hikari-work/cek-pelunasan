@@ -14,11 +14,11 @@ import lombok.*;
 @Entity(name = "customer_history")
 public class CustomerHistory {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private String customerId;
+	private String customerId;
 
-    private String collectStatus;
+	private String collectStatus;
 }

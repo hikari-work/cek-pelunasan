@@ -15,67 +15,69 @@ import java.util.concurrent.CompletableFuture;
 @Component
 public class SavingsFindCommandHandler implements CommandProcessor {
 
-    private final AuthorizedChats authorizedChats1;
-    private final SavingsService savingsService;
-    private final SelectSavingsBranch selectSavingsBranch;
+	private final AuthorizedChats authorizedChats1;
+	private final SavingsService savingsService;
+	private final SelectSavingsBranch selectSavingsBranch;
 
-    public SavingsFindCommandHandler(AuthorizedChats authorizedChats1, SavingsService savingsService, SelectSavingsBranch selectSavingsBranch) {
-        this.authorizedChats1 = authorizedChats1;
-        this.savingsService = savingsService;
-        this.selectSavingsBranch = selectSavingsBranch;
-    }
+	public SavingsFindCommandHandler(AuthorizedChats authorizedChats1, SavingsService savingsService, SelectSavingsBranch selectSavingsBranch) {
+		this.authorizedChats1 = authorizedChats1;
+		this.savingsService = savingsService;
+		this.selectSavingsBranch = selectSavingsBranch;
+	}
 
-    @Override
-    public String getCommand() {
-        return "/tab";
-    }
+	@Override
+	public String getCommand() {
+		return "/tab";
+	}
 
-    @Override
-    public String getDescription() {
-        return "";
-    }
+	@Override
+	public String getDescription() {
+		return "";
+	}
 
-    @Override
-    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
-        return CompletableFuture.runAsync(() -> {
-            if (!authorizedChats1.isAuthorized(chatId)) {
-                sendMessage(chatId, "Unauthorized", telegramClient);
-                return;
-            }
-            if (text.length() < 2) {
-                sendMessage(chatId, "Nama Harus Diisi", telegramClient);
-                return;
-            }
-            String name = text.replace("/tab ", "");
-            if (name.isEmpty()) {
-                sendMessage(chatId, "Nama Harus Diisi", telegramClient);
-                return;
-            }
-            Set<String> branches = savingsService.listAllBranch();
-            if (branches.isEmpty()) {
-                sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
-                return;
-            }
-            if (branches.size() > 1) {
-                sendMessageWithBrachSelection(chatId, name, branches, telegramClient);
-            }
+	@Override
+	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+		return CompletableFuture.runAsync(() -> {
+			if (!authorizedChats1.isAuthorized(chatId)) {
+				sendMessage(chatId, "Unauthorized", telegramClient);
+				return;
+			}
+			if (text.length() < 2) {
+				sendMessage(chatId, "Nama Harus Diisi", telegramClient);
+				return;
+			}
+			String name = text.replace("/tab ", "");
+			if (name.isEmpty()) {
+				sendMessage(chatId, "Nama Harus Diisi", telegramClient);
+				return;
+			}
+			Set<String> branches = savingsService.listAllBranch();
+			if (branches.isEmpty()) {
+				sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
+				return;
+			}
+			if (branches.size() > 1) {
+				sendMessageWithBrachSelection(chatId, name, branches, telegramClient);
+			}
 
-        });
-    }
-    private void sendMessageWithBrachSelection(long chatId, String name, Set<String> branches, TelegramClient telegramClient) {
-        InlineKeyboardMarkup markup = selectSavingsBranch.dynamicSelectBranch(branches, name);
-        sendMessage(chatId, "Silahkan pilih cabang", telegramClient, markup);
-    }
-    private void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
-        try {
-            telegramClient.execute(SendMessage.builder()
-                    .chatId(chatId.toString())
-                    .text(text)
-                    .parseMode("Markdown")
-                    .replyMarkup(markup)
-                    .build());
-        } catch (Exception e) {
-            log.error("❌ Gagal mengirim pesan ke chatId {}: {}", chatId, e.getMessage(), e);
-        }
-    }
+		});
+	}
+
+	private void sendMessageWithBrachSelection(long chatId, String name, Set<String> branches, TelegramClient telegramClient) {
+		InlineKeyboardMarkup markup = selectSavingsBranch.dynamicSelectBranch(branches, name);
+		sendMessage(chatId, "Silahkan pilih cabang", telegramClient, markup);
+	}
+
+	private void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
+		try {
+			telegramClient.execute(SendMessage.builder()
+							.chatId(chatId.toString())
+							.text(text)
+							.parseMode("Markdown")
+							.replyMarkup(markup)
+							.build());
+		} catch (Exception e) {
+			log.error("❌ Gagal mengirim pesan ke chatId {}: {}", chatId, e.getMessage(), e);
+		}
+	}
 }

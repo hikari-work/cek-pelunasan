@@ -7,15 +7,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
 public interface SavingsRepository extends JpaRepository<Savings, Long> {
-    List<Savings> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
-    Page<Savings> findByNameContainingIgnoreCaseAndBranch(String name, String branch, Pageable pageable);
+	Page<Savings> findByNameContainingIgnoreCaseAndBranch(String name, String branch, Pageable pageable);
 
-    @Query("SELECT DISTINCT b.branch FROM Savings b")
-    Set<String> findByBranch();
+	@Query("SELECT DISTINCT b.branch FROM Savings b")
+	Set<String> findByBranch();
+
+	Optional<Savings> findByTabId(String tabId);
 }

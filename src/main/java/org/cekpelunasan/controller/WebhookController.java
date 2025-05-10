@@ -12,19 +12,19 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 @RestController
 public class WebhookController {
 
-    private final TelegramClient telegramClient;
-    private final TelegramBot telegramBot;
+	private final TelegramClient telegramClient;
+	private final TelegramBot telegramBot;
 
-    public WebhookController(@Value("${telegram.bot.token}") String botToken, TelegramBot telegramBot) {
-        this.telegramClient = new OkHttpTelegramClient(botToken);
-        this.telegramBot = telegramBot;
-    }
+	public WebhookController(@Value("${telegram.bot.token}") String botToken, TelegramBot telegramBot) {
+		this.telegramClient = new OkHttpTelegramClient(botToken);
+		this.telegramBot = telegramBot;
+	}
 
-    // Webhook endpoint untuk menerima update dari Telegram
-    @PostMapping("/webhook")
-    public String webhook(@RequestBody Update update) {
-        System.out.println("Received update: " + update);
-        telegramBot.startBot(update, telegramClient);
-        return "Webhook is working!";
-    }
+	// Webhook endpoint untuk menerima update dari Telegram
+	@PostMapping("/webhook")
+	public String webhook(@RequestBody Update update) {
+		System.out.println("Received update: " + update);
+		telegramBot.startBot(update, telegramClient);
+		return "Webhook is working!";
+	}
 }

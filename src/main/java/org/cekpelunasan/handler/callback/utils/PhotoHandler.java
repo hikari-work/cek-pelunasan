@@ -18,33 +18,32 @@ import java.util.concurrent.CompletableFuture;
 public class PhotoHandler implements CallbackProcessor {
 
 
-    private final RepaymentService repaymentService;
+	private final RepaymentService repaymentService;
 
-    public PhotoHandler(RepaymentService repaymentService1) {
-        this.repaymentService = repaymentService1;
-    }
+	public PhotoHandler(RepaymentService repaymentService1) {
+		this.repaymentService = repaymentService1;
+	}
 
-    @Override
-    public String getCallBackData() {
-        return "photo";
-    }
+	@Override
+	public String getCallBackData() {
+		return "photo";
+	}
 
-    @Override
-    @Async
-    public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-        return CompletableFuture.runAsync(() -> {
-            long start = System.currentTimeMillis();
-            String data = update.getCallbackQuery().getData();
-            String[] parts = data.split("_");
-            String customerId = parts[1];
-            Repayment repayment = repaymentService.findRepaymentById(Long.parseLong(customerId));
-            ImageGeneratorUtils generatorUtils = new ImageGeneratorUtils(new RupiahFormatUtils(), new PenaltyUtils());
-            InputFile inputFile = generatorUtils.generateImages(repayment);
-            long chatId = update.getCallbackQuery().getMessage().getChatId();
+	@Override
+	@Async
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CompletableFuture.runAsync(() -> {
+			long start = System.currentTimeMillis();
+			String data = update.getCallbackQuery().getData();
+			String[] parts = data.split("_");
+			String customerId = parts[1];
+			Repayment repayment = repaymentService.findRepaymentById(Long.parseLong(customerId));
+			ImageGeneratorUtils generatorUtils = new ImageGeneratorUtils(new RupiahFormatUtils(), new PenaltyUtils());
+			InputFile inputFile = generatorUtils.generateImages(repayment);
+			long chatId = update.getCallbackQuery().getMessage().getChatId();
+			sendPhoto(chatId, "Done", inputFile, telegramClient);
 
-            sendPhoto(chatId, "Eksekusi Dalam " + (System.currentTimeMillis() - start) + " ms",inputFile, telegramClient);
 
-
-        });
-    }
+		});
+	}
 }

@@ -14,54 +14,52 @@ import java.util.concurrent.CompletableFuture;
 @Component
 public class DeleteUserAccessCommand implements CommandProcessor {
 
-    private final AuthorizedChats authorizedChats;
+	private final AuthorizedChats authorizedChats;
+	private final UserService userService;
+	private final MessageTemplate messageTemplate;
+	@Value("${telegram.bot.owner}")
+	private Long ownerId;
 
-    @Value("${telegram.bot.owner}")
-    private Long ownerId;
+	public DeleteUserAccessCommand(AuthorizedChats authorizedChats, UserService userService, MessageTemplate messageTemplate) {
+		this.authorizedChats = authorizedChats;
+		this.userService = userService;
+		this.messageTemplate = messageTemplate;
+	}
 
-    private final UserService userService;
-    private final MessageTemplate messageTemplate;
+	@Override
+	public String getCommand() {
+		return "/deauth";
+	}
 
-    public DeleteUserAccessCommand(AuthorizedChats authorizedChats, UserService userService, MessageTemplate messageTemplate) {
-        this.authorizedChats = authorizedChats;
-        this.userService = userService;
-        this.messageTemplate = messageTemplate;
-    }
+	@Override
+	public String getDescription() {
+		return """
+						Gunakan Command ini untuk menghapus izin user.
+						""";
+	}
 
-    @Override
-    public String getCommand() {
-        return "/deauth";
-    }
-
-    @Override
-    public String getDescription() {
-        return """
-                Gunakan Command ini untuk menghapus izin user.
-                """;
-    }
-
-    @Override
-    @Async
-    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
-        return CompletableFuture.runAsync(() -> {
-            String[] parts = text.split(" ");
-            if (chatId != ownerId) {
-                sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
-                return;
-            }
-            if (parts.length < 2) {
-                sendMessage(chatId, messageTemplate.notValidDeauthFormat(), telegramClient);
-                return;
-            }
-            try {
-                long target = Long.parseLong(parts[1]);
-                userService.deleteUser(target);
-                authorizedChats.deleteUser(target);
-                sendMessage(target, messageTemplate.unathorizedMessage(), telegramClient);
-                sendMessage(ownerId, "Sukses", telegramClient);
-            } catch (NumberFormatException e) {
-                sendMessage(chatId, messageTemplate.notValidNumber(), telegramClient);
-            }
-        });
-    }
+	@Override
+	@Async
+	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+		return CompletableFuture.runAsync(() -> {
+			String[] parts = text.split(" ");
+			if (chatId != ownerId) {
+				sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
+				return;
+			}
+			if (parts.length < 2) {
+				sendMessage(chatId, messageTemplate.notValidDeauthFormat(), telegramClient);
+				return;
+			}
+			try {
+				long target = Long.parseLong(parts[1]);
+				userService.deleteUser(target);
+				authorizedChats.deleteUser(target);
+				sendMessage(target, messageTemplate.unathorizedMessage(), telegramClient);
+				sendMessage(ownerId, "Sukses", telegramClient);
+			} catch (NumberFormatException e) {
+				sendMessage(chatId, messageTemplate.notValidNumber(), telegramClient);
+			}
+		});
+	}
 }
