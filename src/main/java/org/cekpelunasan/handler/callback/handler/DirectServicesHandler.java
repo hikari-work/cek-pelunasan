@@ -128,26 +128,48 @@ public class DirectServicesHandler implements CallbackProcessor {
 	}
 
 	private String savingData(String query) {
-		Optional<Savings> byId = savingsService.findById(query);
-		String message;
-		if (byId.isEmpty()) {
-			message = "❌ Data tabungan tidak ditemukan";
-		} else {
-			Savings savings = byId.get();
-			message = String.format("""
+		log.info("Fetching savings data for tabId: {}", query);
+		try {
+			Optional<Savings> byId = savingsService.findById(query);
+			String message;
+			if (byId.isEmpty()) {
+				log.warn("No savings data found for tabId: {}", query);
+				message = "❌ Data tabungan tidak ditemukan";
+			} else {
+				Savings savings = byId.get();
+				log.info("Savings data found for tabId: {}, name: {}", query, savings.getName());
+				
+				// Calculate values with null checks to avoid NullPointerException
+				long balance = savings.getBalance() != null ? savings.getBalance().longValue() : 0;
+				long transaction = savings.getTransaction() != null ? savings.getTransaction().longValue() : 0;
+				long minimumBalance = savings.getMinimumBalance() != null ? savings.getMinimumBalance().longValue() : 0;
+				long blockingBalance = savings.getBlockingBalance() != null ? savings.getBlockingBalance().longValue() : 0;
+				
+				long book = balance + transaction;
+				long effect = book - blockingBalance - minimumBalance;
+				
+				log.debug("Calculated values - Book: {}, Effect: {}, Block: {}", 
+						book, effect, blockingBalance);
+				
+				message = String.format("""
 											NoRek  : %s
 											Nama   : %s
 											Buku   : %s
 											Efek   : %s
 											Block  : %s
 											""",
-							formatText(savings.getTabId()),
-							formatText(savings.getName()),
-							formatRupiah(savings.getBalance().longValue() + savings.getTransaction().longValue()),
-							formatRupiah(savings.getBalance().longValue() + savings.getTransaction().longValue() - savings.getBlockingBalance().longValue() - savings.getMinimumBalance().longValue()),
-							formatRupiah(savings.getBlockingBalance().longValue())
-			);
+								formatText(savings.getTabId()),
+								formatText(savings.getName()),
+								formatRupiah(book),
+								formatRupiah(effect),
+								formatRupiah(blockingBalance)
+				);
+				log.debug("Formatted savings message successfully");
+			}
+			return message;
+		} catch (Exception e) {
+			log.error("Error fetching savings data for tabId: {}: {}", query, e.getMessage(), e);
+			return "❌ Error: Gagal memproses permintaan tabungan";
 		}
-		return message;
 	}
 }

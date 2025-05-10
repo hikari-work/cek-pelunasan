@@ -54,7 +54,7 @@ public class CanvasingCommandHandler implements CommandProcessor {
 				sendMessage(chatId, "Alamat Harus Diisi", telegramClient);
 				return;
 			}
-			List<String> addressList = Arrays.stream(text.split(" ")).filter(s -> !s.equals("/canvasing")).toList();
+			List<String> addressList = Arrays.stream(text.split(" ")).filter(s -> !s.equals(getCommand())).toList();
 			Page<CreditHistory> creditHistories = creditHistoryService.searchAddressByKeywords(addressList, 0);
 
 			if (creditHistories.isEmpty()) {
