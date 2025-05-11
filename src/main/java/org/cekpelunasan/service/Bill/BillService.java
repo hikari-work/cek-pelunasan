@@ -42,8 +42,8 @@ public class BillService {
 
 	public Set<String> findAllBillsByBranch(String branch) {
 		return billsRepository.findByBranch(branch)
-						.map(b -> Set.of(b.getBranch()))
-						.orElse(Collections.emptySet());
+			.map(b -> Set.of(b.getBranch()))
+			.orElse(Collections.emptySet());
 	}
 
 	public Page<Bills> findDueDateByAccountOfficer(String accountOfficer, String payDown, int page, int size) {
@@ -96,34 +96,34 @@ public class BillService {
 
 	private Bills mapToBill(String[] line) {
 		return Bills.builder()
-						.customerId(line[0])
-						.wilayah(line[1])
-						.branch(line[2])
-						.noSpk(line[3])
-						.officeLocation(line[4])
-						.product(line[5])
-						.name(line[6])
-						.address(line[7])
-						.payDown(line[8])
-						.realization(line[9])
-						.dueDate(line[10])
-						.collectStatus(line[11])
-						.dayLate(line[12])
-						.plafond(parseLong(line[13]))
-						.debitTray(parseLong(line[14]))
-						.interest(parseLong(line[15]))
-						.principal(parseLong(line[16]))
-						.installment(parseLong(line[17]))
-						.lastInterest(parseLong(line[18]))
-						.lastPrincipal(parseLong(line[19]))
-						.lastInstallment(parseLong(line[20]))
-						.fullPayment(parseLong(line[21]))
-						.minInterest(parseLong(line[22]))
-						.minPrincipal(parseLong(line[23]))
-						.penaltyInterest(parseLong(line[24]))
-						.penaltyPrincipal(parseLong(line[25]))
-						.accountOfficer(line[26])
-						.build();
+			.customerId(line[0])
+			.wilayah(line[1])
+			.branch(line[2])
+			.noSpk(line[3])
+			.officeLocation(line[4])
+			.product(line[5])
+			.name(line[6])
+			.address(line[7])
+			.payDown(line[8])
+			.realization(line[9])
+			.dueDate(line[10])
+			.collectStatus(line[11])
+			.dayLate(line[12])
+			.plafond(parseLong(line[13]))
+			.debitTray(parseLong(line[14]))
+			.interest(parseLong(line[15]))
+			.principal(parseLong(line[16]))
+			.installment(parseLong(line[17]))
+			.lastInterest(parseLong(line[18]))
+			.lastPrincipal(parseLong(line[19]))
+			.lastInstallment(parseLong(line[20]))
+			.fullPayment(parseLong(line[21]))
+			.minInterest(parseLong(line[22]))
+			.minPrincipal(parseLong(line[23]))
+			.penaltyInterest(parseLong(line[24]))
+			.penaltyPrincipal(parseLong(line[25]))
+			.accountOfficer(line[26])
+			.build();
 	}
 
 	private long parseLong(String value) {

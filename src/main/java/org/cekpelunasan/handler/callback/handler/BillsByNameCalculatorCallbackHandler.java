@@ -60,53 +60,53 @@ public class BillsByNameCalculatorCallbackHandler implements CallbackProcessor {
 
 	public String messageBuilder(Bills bills) {
 		return String.format("""
-										🏦 *INFORMASI NASABAH*
-										━━━━━━━━━━━━━━━━━━━
-										
-										👤 *%s*
-										▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-										
-										📋 *Detail Nasabah*
-										┌─────────────────
-										│ 🔖 ID SPK: `%s`
-										│ 📍 Alamat: %s
-										└─────────────────
-										
-										📅 *Informasi Tempo*
-										┌─────────────────
-										│ 📆 Jatuh Tempo: %s
-										└─────────────────
-										
-										💰 *Informasi Tagihan*
-										┌─────────────────
-										│ 💵 Total: %s
-										└─────────────────
-										
-										👨‍💼 *Account Officer*
-										┌─────────────────
-										│ 👔 AO: %s
-										└─────────────────
-										
-										⏱️ _Generated: %s_
-										""",
-						bills.getName(),
-						bills.getNoSpk(),
-						bills.getAddress(),
-						bills.getPayDown(),
-						String.format("Rp%,d,-", bills.getFullPayment()),
-						bills.getAccountOfficer(),
-						LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+				🏦 *INFORMASI NASABAH*
+				━━━━━━━━━━━━━━━━━━━
+				
+				👤 *%s*
+				▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+				
+				📋 *Detail Nasabah*
+				┌─────────────────
+				│ 🔖 ID SPK: `%s`
+				│ 📍 Alamat: %s
+				└─────────────────
+				
+				📅 *Informasi Tempo*
+				┌─────────────────
+				│ 📆 Jatuh Tempo: %s
+				└─────────────────
+				
+				💰 *Informasi Tagihan*
+				┌─────────────────
+				│ 💵 Total: %s
+				└─────────────────
+				
+				👨‍💼 *Account Officer*
+				┌─────────────────
+				│ 👔 AO: %s
+				└─────────────────
+				
+				⏱️ _Generated: %s_
+				""",
+			bills.getName(),
+			bills.getNoSpk(),
+			bills.getAddress(),
+			bills.getPayDown(),
+			String.format("Rp%,d,-", bills.getFullPayment()),
+			bills.getAccountOfficer(),
+			LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
 		);
 	}
 
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.replyMarkup(markup)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.replyMarkup(markup)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Error");
 		}

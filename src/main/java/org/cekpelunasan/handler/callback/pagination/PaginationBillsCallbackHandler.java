@@ -54,37 +54,37 @@ public class PaginationBillsCallbackHandler implements CallbackProcessor {
 
 	private String buildBillsMessage(Page<Bills> bills, int page, long startTime) {
 		StringBuilder builder = new StringBuilder(String.format("""
-						🏦 *DAFTAR NASABAH KREDIT*
-						══════════════════════
-						📋 Halaman %d dari %d
-						──────────────────────
-						
-						""", page + 1, bills.getTotalPages()));
+			🏦 *DAFTAR NASABAH KREDIT*
+			══════════════════════
+			📋 Halaman %d dari %d
+			──────────────────────
+			
+			""", page + 1, bills.getTotalPages()));
 
 		RupiahFormatUtils formatter = new RupiahFormatUtils();
 		bills.forEach(bill -> builder.append(String.format("""
-										🔷 *%s*
-										┌──────────────────┐
-										│ 📎 *Info Nasabah*
-										│ 🆔 SPK   : `%s`
-										│ 📍 Alamat: %s
-										│
-										│ 💰 *Info Kredit*
-										│ 💎 Plafond: %s
-										└──────────────────┘
-										
-										""",
-						bill.getName(),
-						bill.getNoSpk(),
-						bill.getAddress(),
-						formatter.formatRupiah(bill.getPlafond())
+				🔷 *%s*
+				┌──────────────────┐
+				│ 📎 *Info Nasabah*
+				│ 🆔 SPK   : `%s`
+				│ 📍 Alamat: %s
+				│
+				│ 💰 *Info Kredit*
+				│ 💎 Plafond: %s
+				└──────────────────┘
+				
+				""",
+			bill.getName(),
+			bill.getNoSpk(),
+			bill.getAddress(),
+			formatter.formatRupiah(bill.getPlafond())
 		)));
 
 		builder.append("""
-						────────────────────
-						⚡️ _Tap SPK untuk menyalin_
-						⏱️ _Diproses dalam %dms_
-						""".formatted(System.currentTimeMillis() - startTime));
+			────────────────────
+			⚡️ _Tap SPK untuk menyalin_
+			⏱️ _Diproses dalam %dms_
+			""".formatted(System.currentTimeMillis() - startTime));
 
 		return builder.toString();
 	}

@@ -79,7 +79,7 @@ public class NgrokService {
 			String webHookPath = "/webhook";
 			String fullWebHookUrl = publicUrl + webHookPath;
 			String setWebHookUrl = String.format("https://api.telegram.org/bot%s/setWebhook?url=%s",
-							botToken, fullWebHookUrl);
+				botToken, fullWebHookUrl);
 			System.out.println(setWebHookUrl);
 
 			String response = restTemplate.getForObject(setWebHookUrl, String.class);

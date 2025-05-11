@@ -21,10 +21,10 @@ public class NoContextCallbackHandler implements CallbackProcessor {
 		return CompletableFuture.runAsync(() -> {
 			String message = "🐊 Pap Dulu Dong Maniess";
 			AnswerCallbackQuery answerCallbackQuery = AnswerCallbackQuery.builder()
-							.showAlert(true)
-							.text(message)
-							.callbackQueryId(update.getCallbackQuery().getId())
-							.build();
+				.showAlert(true)
+				.text(message)
+				.callbackQueryId(update.getCallbackQuery().getId())
+				.build();
 			try {
 				telegramClient.execute(answerCallbackQuery);
 			} catch (TelegramApiException e) {

@@ -29,10 +29,10 @@ public interface CommandProcessor {
 	default void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId)
-							.text(text)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId)
+				.text(text)
+				.parseMode("Markdown")
+				.build());
 		} catch (TelegramApiException e) {
 			log.info(e.getMessage());
 		}
@@ -40,10 +40,10 @@ public interface CommandProcessor {
 
 	default void copyMessage(Long fromChatId, Integer messageId, Long toChatId, TelegramClient bot) {
 		CopyMessage copy = CopyMessage.builder()
-						.fromChatId(fromChatId)
-						.messageId(messageId)
-						.chatId(toChatId)
-						.build();
+			.fromChatId(fromChatId)
+			.messageId(messageId)
+			.chatId(toChatId)
+			.build();
 		try {
 			bot.execute(copy);
 		} catch (TelegramApiException e) {
@@ -54,10 +54,10 @@ public interface CommandProcessor {
 	default void forwardMessage(Long fromChatId, Long toChatId, Integer messageId, TelegramClient bot) {
 		try {
 			bot.execute(ForwardMessage.builder()
-							.fromChatId(fromChatId)
-							.chatId(toChatId)
-							.messageId(messageId)
-							.build());
+				.fromChatId(fromChatId)
+				.chatId(toChatId)
+				.messageId(messageId)
+				.build());
 		} catch (TelegramApiException e) {
 			log.info("Error forwarding message: {}", e.getMessage());
 		}

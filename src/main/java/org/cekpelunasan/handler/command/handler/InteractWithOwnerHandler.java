@@ -39,9 +39,9 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return """
-						Gunakan command ini untuk generate User Id anda
-						untuk kebutuhan Authorization
-						""";
+			Gunakan command ini untuk generate User Id anda
+			untuk kebutuhan Authorization
+			""";
 	}
 
 	@Override
@@ -75,7 +75,7 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 			}
 
 			if (message.getReplyToMessage() != null &&
-							message.getReplyToMessage().getForwardFrom() != null) {
+				message.getReplyToMessage().getForwardFrom() != null) {
 				Long originalUserId = message.getReplyToMessage().getForwardFrom().getId();
 				copyMessage(ownerId, messageId, originalUserId, telegramClient);
 			}
@@ -85,10 +85,10 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Gagal kirim pesan", e);
 		}
@@ -97,11 +97,11 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 	public void sendMessage(Long chatId, String text, InlineKeyboardMarkup inlineKeyboardMarkup, TelegramClient telegramClient) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.replyMarkup(inlineKeyboardMarkup)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.replyMarkup(inlineKeyboardMarkup)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Gagal kirim pesan", e);
 		}
@@ -110,10 +110,10 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 	public void forwardMessage(Long fromChatId, Long toChatId, Integer messageId, TelegramClient telegramClient) {
 		try {
 			telegramClient.execute(ForwardMessage.builder()
-							.chatId(toChatId.toString())
-							.fromChatId(fromChatId.toString())
-							.messageId(messageId)
-							.build());
+				.chatId(toChatId.toString())
+				.fromChatId(fromChatId.toString())
+				.messageId(messageId)
+				.build());
 		} catch (Exception e) {
 			log.error("Gagal forward pesan", e);
 		}
@@ -122,10 +122,10 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 	public void copyMessage(Long fromChatId, Integer messageId, Long toChatId, TelegramClient telegramClient) {
 		try {
 			telegramClient.execute(CopyMessage.builder()
-							.chatId(toChatId.toString())
-							.fromChatId(fromChatId.toString())
-							.messageId(messageId)
-							.build());
+				.chatId(toChatId.toString())
+				.fromChatId(fromChatId.toString())
+				.messageId(messageId)
+				.build());
 		} catch (Exception e) {
 			log.error("Gagal copy pesan", e);
 		}

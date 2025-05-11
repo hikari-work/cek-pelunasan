@@ -29,8 +29,8 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 	private final MessageTemplate messageTemplate;
 
 	public BillsUpdateDataHandler(BillService billService,
-																@Value("${telegram.bot.owner}") String botOwner,
-																UserService userService, MessageTemplate messageTemplate1) {
+								  @Value("${telegram.bot.owner}") String botOwner,
+								  UserService userService, MessageTemplate messageTemplate1) {
 		this.billService = billService;
 		this.botOwner = botOwner;
 		this.userService = userService;
@@ -45,8 +45,8 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return """
-						Gunakan Command ini untuk upload data tagihan harian.
-						""";
+			Gunakan Command ini untuk upload data tagihan harian.
+			""";
 	}
 
 	@Override

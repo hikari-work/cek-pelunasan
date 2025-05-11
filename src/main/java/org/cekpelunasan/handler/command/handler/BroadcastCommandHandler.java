@@ -25,8 +25,8 @@ public class BroadcastCommandHandler implements CommandProcessor {
 	private final MessageTemplate messageTemplate;
 
 	public BroadcastCommandHandler(UserService userService,
-																 @Value("${telegram.bot.owner}") String botOwner,
-																 MessageTemplate messageTemplate) {
+								   @Value("${telegram.bot.owner}") String botOwner,
+								   MessageTemplate messageTemplate) {
 		this.userService = userService;
 		this.botOwner = botOwner;
 		this.messageTemplate = messageTemplate;
@@ -40,9 +40,9 @@ public class BroadcastCommandHandler implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return """
-						Kirim pesan ke semua user terdaftar.
-						Format: /broadcast <pesan>
-						""";
+			Kirim pesan ke semua user terdaftar.
+			Format: /broadcast <pesan>
+			""";
 	}
 
 	@Override

@@ -25,9 +25,9 @@ public class PelunasanCommandHandler implements CommandProcessor {
 	private final MessageTemplate messageTemplateService;
 
 	public PelunasanCommandHandler(
-					RepaymentService repaymentService,
-					AuthorizedChats authService,
-					MessageTemplate messageTemplateService
+		RepaymentService repaymentService,
+		AuthorizedChats authService,
+		MessageTemplate messageTemplateService
 	) {
 		this.repaymentService = repaymentService;
 		this.authService = authService;
@@ -42,9 +42,9 @@ public class PelunasanCommandHandler implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return """
-						Gunakan command ini untuk menghitung pelunasan
-						berdasarkan ID SPK yang anda kirimkan
-						""";
+			Gunakan command ini untuk menghitung pelunasan
+			berdasarkan ID SPK yang anda kirimkan
+			""";
 	}
 
 	@Override
@@ -63,10 +63,10 @@ public class PelunasanCommandHandler implements CommandProcessor {
 			String[] tokens = message.split("\\s+");
 			if (tokens.length < 2) {
 				sendMessage(chatId, """
-								‼ *Informasi* ‼
-								
-								Gunakan `/pl <No SPK>` untuk mencari SPK dan melakukan penghitungan Pelunasan.
-								""", telegramClient);
+					‼ *Informasi* ‼
+					
+					Gunakan `/pl <No SPK>` untuk mencari SPK dan melakukan penghitungan Pelunasan.
+					""", telegramClient);
 				return;
 			}
 
@@ -82,10 +82,10 @@ public class PelunasanCommandHandler implements CommandProcessor {
 				}
 
 				Map<String, Long> penalty = new PenaltyUtils().penalty(
-								repayment.getStartDate(),
-								repayment.getPenaltyLoan(),
-								repayment.getProduct(),
-								repayment
+					repayment.getStartDate(),
+					repayment.getPenaltyLoan(),
+					repayment.getProduct(),
+					repayment
 				);
 
 				String result = new RepaymentCalculator().calculate(repayment, penalty);
@@ -103,10 +103,10 @@ public class PelunasanCommandHandler implements CommandProcessor {
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Error Sending Message", e);
 		}
@@ -115,11 +115,11 @@ public class PelunasanCommandHandler implements CommandProcessor {
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.replyMarkup(markup)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.replyMarkup(markup)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Error");
 		}

@@ -21,8 +21,8 @@ public class UserService {
 	@Transactional
 	public void insertNewUsers(Long chatId) {
 		userRepository.save(User.builder()
-						.chatId(chatId)
-						.build());
+			.chatId(chatId)
+			.build());
 	}
 
 

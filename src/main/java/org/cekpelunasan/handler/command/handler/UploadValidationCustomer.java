@@ -33,8 +33,8 @@ public class UploadValidationCustomer implements CommandProcessor {
 	private final CustomerHistoryService customerHistoryService;
 
 	public UploadValidationCustomer(UserService userService,
-																	@Value("${telegram.bot.owner}") String botOwner,
-																	MessageTemplate messageTemplate, CustomerHistoryService customerHistoryService) {
+									@Value("${telegram.bot.owner}") String botOwner,
+									MessageTemplate messageTemplate, CustomerHistoryService customerHistoryService) {
 		this.userService = userService;
 		this.botOwner = botOwner;
 		this.messageTemplate = messageTemplate;
@@ -90,8 +90,8 @@ public class UploadValidationCustomer implements CommandProcessor {
 
 		boolean success = downloadAndProcessFile(fileUrl, fileName);
 		String resultMessage = success
-						? "✅ *File berhasil diproses:*"
-						: "⚠ *Gagal update. Akan dicoba ulang.*";
+			? "✅ *File berhasil diproses:*"
+			: "⚠ *Gagal update. Akan dicoba ulang.*";
 
 		notifyUsers(allUsers, resultMessage, telegramClient);
 	}

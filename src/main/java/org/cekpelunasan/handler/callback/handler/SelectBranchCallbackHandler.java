@@ -56,30 +56,30 @@ public class SelectBranchCallbackHandler implements CallbackProcessor {
 
 	private String buildMessage(Page<Bills> billsPage, long startTime) {
 		StringBuilder message = new StringBuilder("""
-						🏦 *DAFTAR NASABAH*
-						══════════════════
-						📋 Halaman 1 dari %d
-						""".formatted(billsPage.getTotalPages()));
+			🏦 *DAFTAR NASABAH*
+			══════════════════
+			📋 Halaman 1 dari %d
+			""".formatted(billsPage.getTotalPages()));
 
 		billsPage.forEach(bill -> message.append("""
-										
-										🔷 *%s*
-										────────────────
-										📎 *Detail Nasabah*
-										▪️ ID SPK\t\t: `%s`
-										▪️ Alamat\t\t: %s
-										
-										💰 *Informasi Kredit*
-										▪️ Plafond\t\t: %s
-										▪️ AO\t\t\t: %s
-										────────────────
-										""".formatted(
-										bill.getName(),
-										bill.getNoSpk(),
-										bill.getAddress(),
-										new RupiahFormatUtils().formatRupiah(bill.getPlafond()),
-										bill.getAccountOfficer()
-						)
+				
+				🔷 *%s*
+				────────────────
+				📎 *Detail Nasabah*
+				▪️ ID SPK\t\t: `%s`
+				▪️ Alamat\t\t: %s
+				
+				💰 *Informasi Kredit*
+				▪️ Plafond\t\t: %s
+				▪️ AO\t\t\t: %s
+				────────────────
+				""".formatted(
+				bill.getName(),
+				bill.getNoSpk(),
+				bill.getAddress(),
+				new RupiahFormatUtils().formatRupiah(bill.getPlafond()),
+				bill.getAccountOfficer()
+			)
 		));
 
 		message.append("\n⏱️ _Generated in ").append(System.currentTimeMillis() - startTime).append("ms_");
@@ -91,10 +91,10 @@ public class SelectBranchCallbackHandler implements CallbackProcessor {
 		long chatId = update.getCallbackQuery().getMessage().getChatId();
 		try {
 			telegramClient.execute(org.telegram.telegrambots.meta.api.methods.send.SendMessage.builder()
-							.chatId(String.valueOf(chatId))
-							.text(text)
-							.parseMode("Markdown")
-							.build());
+				.chatId(String.valueOf(chatId))
+				.text(text)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Gagal mengirim pesan ke chatId {}: {}", chatId, e.getMessage(), e);
 		}

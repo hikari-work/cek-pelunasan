@@ -44,61 +44,61 @@ public class BillsCalculatorCallbackHandler implements CallbackProcessor {
 
 	public String buildBillMessage(Bills bill) {
 		return String.format("""
-										🏦 *INFORMASI KREDIT*
-										═══════════════════
-										
-										👤 *Detail Nasabah*
-										▢ Nama\t\t: *%s*
-										▢ No SPK\t: `%s`
-										▢ Alamat\t: %s
-										
-										💳 *Informasi Pinjaman*
-										▢ Plafond\t\t: %s
-										▢ Baki Debet\t: %s
-										▢ Realisasi\t\t: %s
-										▢ Jatuh Tempo\t: %s
-										
-										💹 *Angsuran*
-										▢ Bunga\t\t: %s
-										▢ Pokok\t\t: %s
-										▢ Total\t\t: %s
-										
-										⚠️ *Tunggakan*
-										▢ Bunga\t\t: %s
-										▢ Pokok\t\t: %s
-										
-										📊 *Status Kredit*
-										▢ Hari Tunggakan\t: %s hari
-										▢ Kolektibilitas\t\t: %s
-										
-										💰 *Pembayaran*
-										▢ Total Tagihan\t\t: %s
-										
-										⚡️ *Minimal Bayar*
-										▢ Pokok\t\t: %s
-										▢ Bunga\t\t: %s
-										
-										👨‍💼 *Account Officer*: %s
-										═══════════════════
-										""",
-						bill.getName(),
-						bill.getNoSpk(),
-						bill.getAddress(),
-						formatRupiah(bill.getPlafond()),
-						formatRupiah(bill.getDebitTray()),
-						bill.getRealization(),
-						bill.getDueDate(),
-						formatRupiah(bill.getInterest()),
-						formatRupiah(bill.getPrincipal()),
-						formatRupiah(bill.getInstallment()),
-						formatRupiah(bill.getLastInterest()),
-						formatRupiah(bill.getLastPrincipal()),
-						bill.getDayLate(),
-						bill.getCollectStatus(),
-						formatRupiah(bill.getFullPayment()),
-						formatRupiah(bill.getMinPrincipal()),
-						formatRupiah(bill.getMinInterest()),
-						bill.getAccountOfficer()
+				🏦 *INFORMASI KREDIT*
+				═══════════════════
+				
+				👤 *Detail Nasabah*
+				▢ Nama\t\t: *%s*
+				▢ No SPK\t: `%s`
+				▢ Alamat\t: %s
+				
+				💳 *Informasi Pinjaman*
+				▢ Plafond\t\t: %s
+				▢ Baki Debet\t: %s
+				▢ Realisasi\t\t: %s
+				▢ Jatuh Tempo\t: %s
+				
+				💹 *Angsuran*
+				▢ Bunga\t\t: %s
+				▢ Pokok\t\t: %s
+				▢ Total\t\t: %s
+				
+				⚠️ *Tunggakan*
+				▢ Bunga\t\t: %s
+				▢ Pokok\t\t: %s
+				
+				📊 *Status Kredit*
+				▢ Hari Tunggakan\t: %s hari
+				▢ Kolektibilitas\t\t: %s
+				
+				💰 *Pembayaran*
+				▢ Total Tagihan\t\t: %s
+				
+				⚡️ *Minimal Bayar*
+				▢ Pokok\t\t: %s
+				▢ Bunga\t\t: %s
+				
+				👨‍💼 *Account Officer*: %s
+				═══════════════════
+				""",
+			bill.getName(),
+			bill.getNoSpk(),
+			bill.getAddress(),
+			formatRupiah(bill.getPlafond()),
+			formatRupiah(bill.getDebitTray()),
+			bill.getRealization(),
+			bill.getDueDate(),
+			formatRupiah(bill.getInterest()),
+			formatRupiah(bill.getPrincipal()),
+			formatRupiah(bill.getInstallment()),
+			formatRupiah(bill.getLastInterest()),
+			formatRupiah(bill.getLastPrincipal()),
+			bill.getDayLate(),
+			bill.getCollectStatus(),
+			formatRupiah(bill.getFullPayment()),
+			formatRupiah(bill.getMinPrincipal()),
+			formatRupiah(bill.getMinInterest()),
+			bill.getAccountOfficer()
 		);
 	}
 

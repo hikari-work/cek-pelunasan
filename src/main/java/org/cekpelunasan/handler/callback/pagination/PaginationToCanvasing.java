@@ -43,26 +43,26 @@ public class PaginationToCanvasing implements CallbackProcessor {
 			log.info("Data = {}", update.getCallbackQuery().getData());
 			if (creditHistoriesPage.isEmpty()) {
 				sendMessage(chatId, String.format("""
-								Data dengan alamat %s Tidak Ditemukan
-								""", address), telegramClient);
+					Data dengan alamat %s Tidak Ditemukan
+					""", address), telegramClient);
 				log.info("Data Empty");
 				return;
 			}
 			StringBuilder messageBuilder = new StringBuilder(String.format("\uD83D\uDCC4 Halaman " + (page + 1) + " dari %d\n\n", creditHistoriesPage.getTotalPages()));
 			creditHistoriesPage.forEach(dto -> messageBuilder.append(String.format("""
-											👤 *%s*
-											╔═══════════════════════
-											║ 📊 *DATA NASABAH*
-											║ ├─── 🆔 CIF   : `%s`
-											║ ├─── 📍 Alamat: %s
-											║ └─── 📱 Kontak: %s
-											╚═══════════════════════
-											
-											""",
-							dto.getName(),
-							dto.getCustomerId(),
-							formatAddress(dto.getAddress()),
-							formatPhone(dto.getPhone())
+					👤 *%s*
+					╔═══════════════════════
+					║ 📊 *DATA NASABAH*
+					║ ├─── 🆔 CIF   : `%s`
+					║ ├─── 📍 Alamat: %s
+					║ └─── 📱 Kontak: %s
+					╚═══════════════════════
+					
+					""",
+				dto.getName(),
+				dto.getCustomerId(),
+				formatAddress(dto.getAddress()),
+				formatPhone(dto.getPhone())
 			)));
 
 			System.out.println(messageBuilder);
@@ -80,11 +80,11 @@ public class PaginationToCanvasing implements CallbackProcessor {
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.replyMarkup(markup)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.replyMarkup(markup)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Error");
 		}
@@ -96,7 +96,7 @@ public class PaginationToCanvasing implements CallbackProcessor {
 
 	private String formatPhone(String phone) {
 		return phone == null || phone.isEmpty() ? "📵 Tidak tersedia" :
-						phone.startsWith("0") ? "☎️ " + phone : "☎️ 0" + phone;
+			phone.startsWith("0") ? "☎️ " + phone : "☎️ 0" + phone;
 	}
 
 }

@@ -15,50 +15,50 @@ public class RepaymentCalculator {
 		Long total = bakidebet + tunggakan + denda + penaltyMap.get("penalty");
 
 		return String.format("""
-										🏦 *RINCIAN PELUNASAN KREDIT*
-										┏━━━━━━━━━━━━━━━━━━━━━━━
-										┃ 📊 Status: %s
-										┗━━━━━━━━━━━━━━━━━━━━━━━
-										
-										👤 *DATA NASABAH*
-										┌────────────────────────
-										│ 🎫 SPK     : `%s`
-										│ 👨‍💼 Nama    : *%s*
-										│ 📍 Alamat  : %s
-										│ 💼 Produk  : %s
-										│ 💰 Plafond : %s
-										└────────────────────────
-										
-										💳 *RINCIAN TAGIHAN*
-										┌────────────────────────
-										│ 📈 Baki Debet : %s
-										│ ⚠️ Tunggakan   : %s
-										│ ⏰ Penalty +%s : %s
-										│ 🚫 Denda      : %s
-										│
-										│ 📊 *TOTAL TAGIHAN*
-										│ 💵 %s
-										└────────────────────────
-										
-										ℹ️ *CATATAN PENTING*
-										┌────────────────────────
-										│ • _Harap segera melunasi_
-										│ • _Hindari denda tambahan_
-										│ • _Tap SPK untuk menyalin_
-										└────────────────────────
-										""",
-						getStatusBadge(total),
-						formatText(repayment.getCustomerId()),
-						formatText(repayment.getName()),
-						formatText(repayment.getAddress()),
-						formatText(repayment.getProduct()),
-						formatRupiah(repayment.getPlafond()),
-						formatRupiah(bakidebet),
-						formatRupiah(tunggakan),
-						penaltyMap.get("multiplier"),
-						formatRupiah(penaltyMap.get("penalty")),
-						formatRupiah(denda),
-						formatRupiah(total)
+				🏦 *RINCIAN PELUNASAN KREDIT*
+				┏━━━━━━━━━━━━━━━━━━━━━━━
+				┃ 📊 Status: %s
+				┗━━━━━━━━━━━━━━━━━━━━━━━
+				
+				👤 *DATA NASABAH*
+				┌────────────────────────
+				│ 🎫 SPK     : `%s`
+				│ 👨‍💼 Nama    : *%s*
+				│ 📍 Alamat  : %s
+				│ 💼 Produk  : %s
+				│ 💰 Plafond : %s
+				└────────────────────────
+				
+				💳 *RINCIAN TAGIHAN*
+				┌────────────────────────
+				│ 📈 Baki Debet : %s
+				│ ⚠️ Tunggakan   : %s
+				│ ⏰ Penalty +%s : %s
+				│ 🚫 Denda      : %s
+				│
+				│ 📊 *TOTAL TAGIHAN*
+				│ 💵 %s
+				└────────────────────────
+				
+				ℹ️ *CATATAN PENTING*
+				┌────────────────────────
+				│ • _Harap segera melunasi_
+				│ • _Hindari denda tambahan_
+				│ • _Tap SPK untuk menyalin_
+				└────────────────────────
+				""",
+			getStatusBadge(total),
+			formatText(repayment.getCustomerId()),
+			formatText(repayment.getName()),
+			formatText(repayment.getAddress()),
+			formatText(repayment.getProduct()),
+			formatRupiah(repayment.getPlafond()),
+			formatRupiah(bakidebet),
+			formatRupiah(tunggakan),
+			penaltyMap.get("multiplier"),
+			formatRupiah(penaltyMap.get("penalty")),
+			formatRupiah(denda),
+			formatRupiah(total)
 		);
 	}
 

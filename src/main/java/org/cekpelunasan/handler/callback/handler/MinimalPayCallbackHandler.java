@@ -67,33 +67,33 @@ public class MinimalPayCallbackHandler implements CallbackProcessor {
 			if (bills != null) {
 				for (Bills bill : bills) {
 					message.append(String.format("""
-													📑 *INFORMASI PEMBAYARAN*
-													═══════════════════════
-													
-													🎫 *Detail Kredit*
-													┌──────────────────┐
-													│ 🔐 SPK: `%s`
-													│ 👤 Nama: *%s*
-													│ 🏘️ Alamat: %s
-													└──────────────────┘
-													
-													💳 *Rincian Pembayaran*
-													┌──────────────────┐
-													│ 💎 Pokok    : %s
-													│ 💫 Bunga    : %s
-													│
-													│ 🔥 *TOTAL MINIMAL*
-													│ 💰 %s
-													└──────────────────┘
-													
-													⚡️ *Catatan*: _Pembayaran minimal harus dilakukan sebelum jatuh bayar_
-													""",
-									bill.getNoSpk(),
-									bill.getName(),
-									bill.getAddress(),
-									formatRupiah(bill.getMinPrincipal()),
-									formatRupiah(bill.getMinInterest()),
-									formatRupiah(bill.getMinPrincipal() + bill.getMinInterest())
+							📑 *INFORMASI PEMBAYARAN*
+							═══════════════════════
+							
+							🎫 *Detail Kredit*
+							┌──────────────────┐
+							│ 🔐 SPK: `%s`
+							│ 👤 Nama: *%s*
+							│ 🏘️ Alamat: %s
+							└──────────────────┘
+							
+							💳 *Rincian Pembayaran*
+							┌──────────────────┐
+							│ 💎 Pokok    : %s
+							│ 💫 Bunga    : %s
+							│
+							│ 🔥 *TOTAL MINIMAL*
+							│ 💰 %s
+							└──────────────────┘
+							
+							⚡️ *Catatan*: _Pembayaran minimal harus dilakukan sebelum jatuh bayar_
+							""",
+						bill.getNoSpk(),
+						bill.getName(),
+						bill.getAddress(),
+						formatRupiah(bill.getMinPrincipal()),
+						formatRupiah(bill.getMinInterest()),
+						formatRupiah(bill.getMinPrincipal() + bill.getMinInterest())
 					));
 				}
 			}

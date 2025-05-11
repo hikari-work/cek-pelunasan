@@ -49,23 +49,23 @@ public class SavingNextButtonCallbackHandler implements CallbackProcessor {
 
 	public String buildMessage(Page<Savings> savings, int page, long startTime) {
 		StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
-						.append("───────────────────\n")
-						.append("📄 Halaman ").append(page + 1).append(" dari ").append(savings.getTotalPages()).append("\n\n");
+			.append("───────────────────\n")
+			.append("📄 Halaman ").append(page + 1).append(" dari ").append(savings.getTotalPages()).append("\n\n");
 
 		savings.forEach(saving -> message.append("👤 *").append(saving.getName()).append("*\n")
-						.append("━━━━━━━━━━━━━━━━━━\n")
-						.append("📝 *Detail Rekening*\n")
-						.append("▫️ No. Rek: `").append(saving.getTabId()).append("`\n")
-						.append("▫️ Alamat: ").append(saving.getAddress()).append("\n\n")
-						.append("💰 *Informasi Saldo*\n")
-						.append("▫️ Saldo Buku: ").append(formatRupiah(saving.getBalance().add(saving.getTransaction()).longValue())).append("\n")
-						.append("▫️ Min. Saldo: ").append(formatRupiah(saving.getMinimumBalance().longValue())).append("\n")
-						.append("▫️ Block. Saldo: ").append(formatRupiah(saving.getBlockingBalance().longValue())).append("\n")
-						.append("➡️ *Saldo Efektif*: ")
-						.append(formatRupiah(saving.getBalance().add(saving.getTransaction()).longValue() -
-										saving.getMinimumBalance().longValue() -
-										saving.getBlockingBalance().longValue()))
-						.append("\n───────────────────\n\n"));
+			.append("━━━━━━━━━━━━━━━━━━\n")
+			.append("📝 *Detail Rekening*\n")
+			.append("▫️ No. Rek: `").append(saving.getTabId()).append("`\n")
+			.append("▫️ Alamat: ").append(saving.getAddress()).append("\n\n")
+			.append("💰 *Informasi Saldo*\n")
+			.append("▫️ Saldo Buku: ").append(formatRupiah(saving.getBalance().add(saving.getTransaction()).longValue())).append("\n")
+			.append("▫️ Min. Saldo: ").append(formatRupiah(saving.getMinimumBalance().longValue())).append("\n")
+			.append("▫️ Block. Saldo: ").append(formatRupiah(saving.getBlockingBalance().longValue())).append("\n")
+			.append("➡️ *Saldo Efektif*: ")
+			.append(formatRupiah(saving.getBalance().add(saving.getTransaction()).longValue() -
+				saving.getMinimumBalance().longValue() -
+				saving.getBlockingBalance().longValue()))
+			.append("\n───────────────────\n\n"));
 
 		message.append("⏱️ _Eksekusi dalam ").append(System.currentTimeMillis() - startTime).append("ms_");
 		return message.toString();

@@ -26,9 +26,9 @@ public class FindNamesHandler implements CommandProcessor {
 	private final MessageTemplate messageTemplateService;
 
 	public FindNamesHandler(
-					RepaymentService repaymentService,
-					AuthorizedChats authService,
-					MessageTemplate messageTemplateService
+		RepaymentService repaymentService,
+		AuthorizedChats authService,
+		MessageTemplate messageTemplateService
 	) {
 		this.repaymentService = repaymentService;
 		this.authService = authService;
@@ -43,9 +43,9 @@ public class FindNamesHandler implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return """
-						Gunakan command ini untuk mencari pelunasan
-						berdasarkan yang anda kirim
-						""";
+			Gunakan command ini untuk mencari pelunasan
+			berdasarkan yang anda kirim
+			""";
 	}
 
 	@Override
@@ -68,42 +68,42 @@ public class FindNamesHandler implements CommandProcessor {
 
 			if (repayments.isEmpty()) {
 				sendMessage(chatId, String.format("""
-								❌ *Informasi* ❌
-								
-								Data `%s` tidak ditemukan. Periksa ejaan atau gunakan kata kunci yang lebih singkat.
-								""", keyword), telegramClient);
+					❌ *Informasi* ❌
+					
+					Data `%s` tidak ditemukan. Periksa ejaan atau gunakan kata kunci yang lebih singkat.
+					""", keyword), telegramClient);
 				return;
 			}
 
 			StringBuilder messageBuilder = new StringBuilder(
-							String.format("\uD83D\uDCC4 Halaman 1 dari %d\n\n", repayments.getTotalPages())
+				String.format("\uD83D\uDCC4 Halaman 1 dari %d\n\n", repayments.getTotalPages())
 			);
 
 			repayments.forEach(dto -> messageBuilder.append(String.format("""
-											📊 *INFORMASI NASABAH*
-											╔═══════════════════════
-											║ 👤 *%s*
-											╠═══════════════════════
-											║
-											║ 📎 *DETAIL KREDIT*
-											║ ┌─────────────────────
-											║ │ 🔖 SPK    : `%s`
-											║ │ 📍 Alamat : %s
-											║ └─────────────────────
-											║
-											║ 💳 *RINCIAN PINJAMAN*
-											║ ┌─────────────────────
-											║ │ 💰 Plafond: %s
-											║ │ 📅 Status : %s
-											║ └─────────────────────
-											╚═══════════════════════
-											
-											""",
-							dto.getName().toUpperCase(),
-							dto.getCustomerId(),
-							formatAddress(dto.getAddress()),
-							new RupiahFormatUtils().formatRupiah(dto.getPlafond()),
-							getStatusKredit(dto.getPlafond())
+					📊 *INFORMASI NASABAH*
+					╔═══════════════════════
+					║ 👤 *%s*
+					╠═══════════════════════
+					║
+					║ 📎 *DETAIL KREDIT*
+					║ ┌─────────────────────
+					║ │ 🔖 SPK    : `%s`
+					║ │ 📍 Alamat : %s
+					║ └─────────────────────
+					║
+					║ 💳 *RINCIAN PINJAMAN*
+					║ ┌─────────────────────
+					║ │ 💰 Plafond: %s
+					║ │ 📅 Status : %s
+					║ └─────────────────────
+					╚═══════════════════════
+					
+					""",
+				dto.getName().toUpperCase(),
+				dto.getCustomerId(),
+				formatAddress(dto.getAddress()),
+				new RupiahFormatUtils().formatRupiah(dto.getPlafond()),
+				getStatusKredit(dto.getPlafond())
 			)));
 
 			String footer = String.format("\n\nEksekusi dalam %dms", System.currentTimeMillis() - startTime);
@@ -122,10 +122,10 @@ public class FindNamesHandler implements CommandProcessor {
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Error");
 		}
@@ -134,11 +134,11 @@ public class FindNamesHandler implements CommandProcessor {
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.replyMarkup(markup)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.replyMarkup(markup)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Error");
 		}

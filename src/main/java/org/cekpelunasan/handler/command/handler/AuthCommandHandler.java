@@ -34,8 +34,8 @@ public class AuthCommandHandler implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return """
-						Gunakan command ini untuk memberikan izin kepada user untuk menggunakan bot.
-						""";
+			Gunakan command ini untuk memberikan izin kepada user untuk menggunakan bot.
+			""";
 	}
 
 	@Override
@@ -69,9 +69,9 @@ public class AuthCommandHandler implements CommandProcessor {
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
 		try {
 			telegramClient.execute(org.telegram.telegrambots.meta.api.methods.send.SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.build());
 		} catch (Exception e) {
 			log.error("Error Sending Message");
 		}

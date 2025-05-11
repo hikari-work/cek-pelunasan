@@ -50,10 +50,10 @@ public class PelunasanCallbackHandler implements CallbackProcessor {
 				}
 
 				Map<String, Long> penalty = new PenaltyUtils().penalty(
-								repayment.getStartDate(),
-								repayment.getPenaltyLoan(),
-								repayment.getProduct(),
-								repayment
+					repayment.getStartDate(),
+					repayment.getPenaltyLoan(),
+					repayment.getProduct(),
+					repayment
 				);
 
 				String result = new RepaymentCalculator().calculate(repayment, penalty);

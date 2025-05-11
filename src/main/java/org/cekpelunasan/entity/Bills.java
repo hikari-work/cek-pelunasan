@@ -13,7 +13,7 @@ import lombok.*;
 @Builder
 @Entity
 @Table(name = "tagihan", indexes = {@Index(name = "idx_name", columnList = "name"),
-				@Index(name = "idx_branch", columnList = "branch")})
+	@Index(name = "idx_branch", columnList = "branch")})
 public class Bills {
 
 	private String customerId;

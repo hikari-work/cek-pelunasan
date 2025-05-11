@@ -71,11 +71,11 @@ public class SavingsFindCommandHandler implements CommandProcessor {
 	private void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.parseMode("Markdown")
-							.replyMarkup(markup)
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.parseMode("Markdown")
+				.replyMarkup(markup)
+				.build());
 		} catch (Exception e) {
 			log.error("❌ Gagal mengirim pesan ke chatId {}: {}", chatId, e.getMessage(), e);
 		}

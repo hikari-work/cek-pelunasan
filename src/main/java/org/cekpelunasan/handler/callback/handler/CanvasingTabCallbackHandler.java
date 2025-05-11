@@ -1,4 +1,5 @@
 package org.cekpelunasan.handler.callback.handler;
+
 import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingByTab;
@@ -49,24 +50,18 @@ public class CanvasingTabCallbackHandler implements CallbackProcessor {
 			}
 			StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
 				.append("───────────────────\n")
-				.append("📄 Halaman 1 dari ").append(savings.getTotalPages()).append("\n\n");
-
+				.append(String.format("📄 Halaman %s dari ", page + 1)).append(savings.getTotalPages()).append("\n\n");
 			savings.forEach(dto -> message.append(String.format("""
-            👤 *%s*
-            ╔═══════════════════════
-            ║ 📊 *DATA NASABAH*
-            ║ ├─── 🆔 CIF   : `%s`
-            ║ ├─── 📍 Alamat: %s
-            ║ └─── 💵 Saldo : %s
-            ╚═══════════════════════
-            """, dto.getName(), dto.getCif(), dto.getAddress(), new RupiahFormatUtils().formatRupiah(dto.getBalance().longValue()))));
+				👤 *%s*
+				╔═══════════════════════
+				║ 📊 *DATA NASABAH*
+				║ ├─── 🆔 CIF   : `%s`
+				║ ├─── 📍 Alamat: %s
+				║ └─── 💵 Saldo : %s
+				╚═══════════════════════
+				""", dto.getName(), dto.getCif(), dto.getAddress(), new RupiahFormatUtils().formatRupiah(dto.getBalance().longValue()))));
 			InlineKeyboardMarkup markup = paginationCanvassingByTab.dynamicButtonName(savings, page, query);
 			editMessageWithMarkup(update.getCallbackQuery().getMessage().getChatId(), update.getCallbackQuery().getMessage().getMessageId(), message.toString(), telegramClient, markup);
 		});
-	}
-
-	@Override
-	public void editMessageWithMarkup(Long chatId, int messageId, String text, TelegramClient telegramClient, InlineKeyboardMarkup replyMarkup) {
-		CallbackProcessor.super.editMessageWithMarkup(chatId, messageId, text, telegramClient, replyMarkup);
 	}
 }

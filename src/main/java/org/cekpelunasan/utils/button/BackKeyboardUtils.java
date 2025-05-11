@@ -21,26 +21,26 @@ public class BackKeyboardUtils {
 		int page = Integer.parseInt(parts[3]);
 
 		InlineKeyboardRow row = new InlineKeyboardRow(List.of(
-						buildBackButton(queryName, page),
-						buildPhotoButton(customerId)
+			buildBackButton(queryName, page),
+			buildPhotoButton(customerId)
 		));
 
 		return InlineKeyboardMarkup.builder()
-						.keyboard(Collections.singletonList(row))
-						.build();
+			.keyboard(Collections.singletonList(row))
+			.build();
 	}
 
 	private InlineKeyboardButton buildBackButton(String queryName, int page) {
 		return InlineKeyboardButton.builder()
-						.text("🔙 Kembali")
-						.callbackData("page_" + queryName + "_" + page)
-						.build();
+			.text("🔙 Kembali")
+			.callbackData("page_" + queryName + "_" + page)
+			.build();
 	}
 
 	private InlineKeyboardButton buildPhotoButton(String customerId) {
 		return InlineKeyboardButton.builder()
-						.text("📸 Kirim Gambar")
-						.callbackData("photo_" + customerId)
-						.build();
+			.text("📸 Kirim Gambar")
+			.callbackData("photo_" + customerId)
+			.build();
 	}
 }

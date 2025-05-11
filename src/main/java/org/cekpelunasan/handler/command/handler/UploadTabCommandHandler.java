@@ -49,7 +49,7 @@ public class UploadTabCommandHandler implements CommandProcessor {
 			}
 			List<User> allUser = userService.findAllUsers();
 			notifyUsers(allUser, "Sedang Upload Tabungan... \n" +
-							"Silahkan tunggu beberapa saat", telegramClient);
+				"Silahkan tunggu beberapa saat", telegramClient);
 			String fileUrl = extractFileUrl(text, chatId, telegramClient);
 			processFileAndNotifyUsers(fileUrl, allUser, telegramClient);
 		});
@@ -107,8 +107,8 @@ public class UploadTabCommandHandler implements CommandProcessor {
 
 		boolean success = downloadAndProcessFile(fileUrl, fileName);
 		String resultMessage = success
-						? String.format("✅ *File berhasil diproses:*\n\n_Eksekusi dalam %dms_", System.currentTimeMillis())
-						: "⚠ *Gagal update. Akan dicoba ulang.*";
+			? String.format("✅ *File berhasil diproses:*\n\n_Eksekusi dalam %dms_", System.currentTimeMillis())
+			: "⚠ *Gagal update. Akan dicoba ulang.*";
 
 		notifyUsers(allUsers, resultMessage, telegramClient);
 	}

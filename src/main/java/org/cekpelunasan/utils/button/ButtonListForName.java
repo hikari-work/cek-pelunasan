@@ -49,8 +49,8 @@ public class ButtonListForName {
 		for (int i = 0; i < data.size(); i++) {
 			Repayment r = data.get(i);
 			currentRow.add(buildButton(
-							r.getName(),
-							"pelunasan_" + r.getCustomerId() + "_" + query + "_" + currentPage
+				r.getName(),
+				"pelunasan_" + r.getCustomerId() + "_" + query + "_" + currentPage
 			));
 
 			if (currentRow.size() == 2 || i == data.size() - 1) {
@@ -63,8 +63,8 @@ public class ButtonListForName {
 
 	private InlineKeyboardButton buildButton(String text, String callbackData) {
 		return InlineKeyboardButton.builder()
-						.text(text)
-						.callbackData(callbackData)
-						.build();
+			.text(text)
+			.callbackData(callbackData)
+			.build();
 	}
 }

@@ -25,12 +25,12 @@ public interface CallbackProcessor {
 	default void editMessageWithMarkup(Long chatId, int messageId, String text, TelegramClient telegramClient, InlineKeyboardMarkup replyMarkup) {
 		try {
 			telegramClient.execute(EditMessageText.builder()
-							.chatId(chatId)
-							.text(text)
-							.replyMarkup(replyMarkup)
-							.messageId(messageId)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId)
+				.text(text)
+				.replyMarkup(replyMarkup)
+				.messageId(messageId)
+				.parseMode("Markdown")
+				.build());
 		} catch (TelegramApiException e) {
 			log.warn("Error Edit Callback Data", e);
 		}
@@ -39,10 +39,10 @@ public interface CallbackProcessor {
 	default void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId)
-							.text(text)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId)
+				.text(text)
+				.parseMode("Markdown")
+				.build());
 		} catch (TelegramApiException e) {
 			log.info("Error sending message: {}", e.getMessage());
 		}
@@ -51,10 +51,10 @@ public interface CallbackProcessor {
 	default void sendPhoto(Long chatId, String text, InputFile inputFile, TelegramClient telegramClient) {
 		try {
 			telegramClient.execute(SendPhoto.builder()
-							.chatId(chatId)
-							.caption(text)
-							.photo(inputFile)
-							.build());
+				.chatId(chatId)
+				.caption(text)
+				.photo(inputFile)
+				.build());
 		} catch (TelegramApiException e) {
 			log.info("Error sending photo: {}", e.getMessage());
 		}

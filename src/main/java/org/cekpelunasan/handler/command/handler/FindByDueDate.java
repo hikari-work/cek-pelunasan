@@ -83,7 +83,7 @@ public class FindByDueDate implements CommandProcessor {
 			InlineKeyboardMarkup markup = null;
 			if (billsPage != null) {
 				markup = new PaginationBillsByNameCallbackHandler()
-								.dynamicButtonName(billsPage, 0, userCode);
+					.dynamicButtonName(billsPage, 0, userCode);
 			}
 
 			sendMessage(chatId, builder.toString(), telegramClient, markup);
@@ -92,29 +92,29 @@ public class FindByDueDate implements CommandProcessor {
 
 	public String messageBuilder(Bills bills) {
 		return String.format("""
-										📋 *DETAIL TAGIHAN KREDIT*
-										═══════════════════════
-										
-										👤 *%s*
-										┌──────────────────────
-										│ 📎 *INFORMASI KREDIT*
-										│ ├─ 🔖 SPK      : `%s`
-										│ ├─ 📍 Alamat   : %s
-										│ └─ 📅 Jth Tempo: %s
-										│
-										│ 💰 *RINCIAN BIAYA*
-										│ ├─ 💸 Tagihan  : %s
-										│ └─ 👨‍💼 AO       : %s
-										└──────────────────────
-										
-										ℹ️ _Tap SPK untuk menyalin_
-										""",
-						bills.getName(),
-						bills.getNoSpk(),
-						formatAddress(bills.getAddress()),
-						formatDate(bills.getPayDown()),
-						formatRupiah(bills.getFullPayment()),
-						bills.getAccountOfficer()
+				📋 *DETAIL TAGIHAN KREDIT*
+				═══════════════════════
+				
+				👤 *%s*
+				┌──────────────────────
+				│ 📎 *INFORMASI KREDIT*
+				│ ├─ 🔖 SPK      : `%s`
+				│ ├─ 📍 Alamat   : %s
+				│ └─ 📅 Jth Tempo: %s
+				│
+				│ 💰 *RINCIAN BIAYA*
+				│ ├─ 💸 Tagihan  : %s
+				│ └─ 👨‍💼 AO       : %s
+				└──────────────────────
+				
+				ℹ️ _Tap SPK untuk menyalin_
+				""",
+			bills.getName(),
+			bills.getNoSpk(),
+			formatAddress(bills.getAddress()),
+			formatDate(bills.getPayDown()),
+			formatRupiah(bills.getFullPayment()),
+			bills.getAccountOfficer()
 		);
 	}
 
@@ -133,11 +133,11 @@ public class FindByDueDate implements CommandProcessor {
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.replyMarkup(markup)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.replyMarkup(markup)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Error");
 		}

@@ -25,10 +25,10 @@ public class MinimalPayCommand implements CommandProcessor {
 	private final PaginationToMinimalPay paginationToMinimalPay;
 
 	public MinimalPayCommand(
-					AuthorizedChats authorizedChats,
-					UserService userService,
-					BillService billService,
-					PaginationToMinimalPay paginationToMinimalPay) {
+		AuthorizedChats authorizedChats,
+		UserService userService,
+		BillService billService,
+		PaginationToMinimalPay paginationToMinimalPay) {
 		this.authorizedChats = authorizedChats;
 		this.userService = userService;
 		this.billService = billService;
@@ -43,8 +43,8 @@ public class MinimalPayCommand implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return """
-						Menampilkan daftar tagihan yang masih memiliki minimal bayar tersisa.
-						""";
+			Menampilkan daftar tagihan yang masih memiliki minimal bayar tersisa.
+			""";
 	}
 
 	@Override
@@ -78,50 +78,50 @@ public class MinimalPayCommand implements CommandProcessor {
 				}
 
 				StringBuilder message = new StringBuilder("""
-								📋 *DAFTAR TAGIHAN MINIMAL*
-								═══════════════════════════
-								
-								""");
+					📋 *DAFTAR TAGIHAN MINIMAL*
+					═══════════════════════════
+					
+					""");
 
 				for (Bills bill : bills) {
 					message.append(String.format("""
-													🏦 *%s*
-													┏━━━━━━━━━━━━━━━━━━━━━
-													┃
-													┣ 📎 *DATA KREDIT*
-													┃ ┌─────────────────────
-													┃ │ 🆔 SPK    : `%s`
-													┃ │ 📍 Alamat : %s
-													┃ └─────────────────────
-													┃
-													┣ 💰 *PEMBAYARAN MINIMAL*
-													┃ ┌─────────────────────
-													┃ │ 💵 Pokok  : %s
-													┃ │ 💸 Bunga  : %s
-													┃ │
-													┃ │ 📊 *TOTAL*
-													┃ │ 🔥 %s
-													┃ └─────────────────────
-													┗━━━━━━━━━━━━━━━━━━━━━
-													
-													""",
-									bill.getName().toUpperCase(),
-									bill.getNoSpk(),
-									formatAddress(bill.getAddress()),
-									formatRupiah(bill.getMinPrincipal()),
-									formatRupiah(bill.getMinInterest()),
-									formatRupiah(bill.getMinPrincipal() + bill.getMinInterest())
+							🏦 *%s*
+							┏━━━━━━━━━━━━━━━━━━━━━
+							┃
+							┣ 📎 *DATA KREDIT*
+							┃ ┌─────────────────────
+							┃ │ 🆔 SPK    : `%s`
+							┃ │ 📍 Alamat : %s
+							┃ └─────────────────────
+							┃
+							┣ 💰 *PEMBAYARAN MINIMAL*
+							┃ ┌─────────────────────
+							┃ │ 💵 Pokok  : %s
+							┃ │ 💸 Bunga  : %s
+							┃ │
+							┃ │ 📊 *TOTAL*
+							┃ │ 🔥 %s
+							┃ └─────────────────────
+							┗━━━━━━━━━━━━━━━━━━━━━
+							
+							""",
+						bill.getName().toUpperCase(),
+						bill.getNoSpk(),
+						formatAddress(bill.getAddress()),
+						formatRupiah(bill.getMinPrincipal()),
+						formatRupiah(bill.getMinInterest()),
+						formatRupiah(bill.getMinPrincipal() + bill.getMinInterest())
 					));
 				}
 
 				message.append("""
-								⚠️ *Catatan Penting*:
-								▢ _Tap SPK untuk menyalin_
-								▢ _Pembayaran harus dilakukan sebelum jatuh bayar_
-								""");
+					⚠️ *Catatan Penting*:
+					▢ _Tap SPK untuk menyalin_
+					▢ _Pembayaran harus dilakukan sebelum jatuh bayar_
+					""");
 				InlineKeyboardMarkup markup;
 				markup = paginationToMinimalPay
-								.dynamicButtonName(bills, 0, userCode);
+					.dynamicButtonName(bills, 0, userCode);
 
 				sendMessage(chatId, message.toString(), telegramClient, markup);
 			}
@@ -131,11 +131,11 @@ public class MinimalPayCommand implements CommandProcessor {
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.replyMarkup(markup)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.replyMarkup(markup)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Error");
 		}

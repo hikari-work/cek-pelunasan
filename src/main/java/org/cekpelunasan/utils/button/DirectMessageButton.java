@@ -18,9 +18,9 @@ public class DirectMessageButton {
 
 		for (String service : services) {
 			InlineKeyboardButton button = InlineKeyboardButton.builder()
-							.text(service)
-							.callbackData("services_" + service + "_" + query)
-							.build();
+				.text(service)
+				.callbackData("services_" + service + "_" + query)
+				.build();
 			inlineKeyboardButtons.add(button);
 
 			if (inlineKeyboardButtons.size() == 2) {
@@ -35,7 +35,7 @@ public class DirectMessageButton {
 		}
 
 		return InlineKeyboardMarkup.builder()
-						.keyboard(rows)
-						.build();
+			.keyboard(rows)
+			.build();
 	}
 }

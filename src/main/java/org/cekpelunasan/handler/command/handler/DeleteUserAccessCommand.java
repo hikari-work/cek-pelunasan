@@ -34,8 +34,8 @@ public class DeleteUserAccessCommand implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return """
-						Gunakan Command ini untuk menghapus izin user.
-						""";
+			Gunakan Command ini untuk menghapus izin user.
+			""";
 	}
 
 	@Override

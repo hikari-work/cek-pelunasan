@@ -33,9 +33,9 @@ public class UploadCommandHandler implements CommandProcessor {
 	private final MessageTemplate messageTemplate;
 
 	public UploadCommandHandler(RepaymentService repaymentService,
-															UserService userService,
-															@Value("${telegram.bot.owner}") String botOwner,
-															MessageTemplate messageTemplate) {
+								UserService userService,
+								@Value("${telegram.bot.owner}") String botOwner,
+								MessageTemplate messageTemplate) {
 		this.repaymentService = repaymentService;
 		this.userService = userService;
 		this.botOwner = botOwner;
@@ -91,8 +91,8 @@ public class UploadCommandHandler implements CommandProcessor {
 
 		boolean success = downloadAndProcessFile(fileUrl, fileName);
 		String resultMessage = success
-						? String.format("✅ *File berhasil diproses:*\n\n_Eksekusi dalam %dms_", System.currentTimeMillis())
-						: "⚠ *Gagal update. Akan dicoba ulang.*";
+			? String.format("✅ *File berhasil diproses:*\n\n_Eksekusi dalam %dms_", System.currentTimeMillis())
+			: "⚠ *Gagal update. Akan dicoba ulang.*";
 
 		notifyUsers(allUsers, resultMessage, telegramClient);
 	}

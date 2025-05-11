@@ -13,8 +13,8 @@ import java.util.concurrent.CompletableFuture;
 public class StartCommandHandler implements CommandProcessor {
 
 	private static final String START_MESSAGE = """
-					👋 *PONG!!!*
-					""";
+		👋 *PONG!!!*
+		""";
 	private final AuthorizedChats authService;
 	private final MessageTemplate messageTemplateService;
 
@@ -31,8 +31,8 @@ public class StartCommandHandler implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return """
-						Mengecek Bot Apakah Aktif
-						""";
+			Mengecek Bot Apakah Aktif
+			""";
 	}
 
 	@Override

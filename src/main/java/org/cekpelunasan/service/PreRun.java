@@ -24,10 +24,10 @@ public class PreRun {
 	@EventListener(ApplicationReadyEvent.class)
 	public void initData() {
 		User user = User.builder()
-						.chatId(botOwner)
-						.userCode("ADMIN")
-						.roles(AccountOfficerRoles.ADMIN)
-						.build();
+			.chatId(botOwner)
+			.userCode("ADMIN")
+			.roles(AccountOfficerRoles.ADMIN)
+			.build();
 		userRepository.save(user);
 	}
 }

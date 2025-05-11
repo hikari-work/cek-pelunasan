@@ -32,9 +32,9 @@ public class RegisterUsers implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return """
-						Gunakan Command Ini untuk mendaftarkan user
-						Berdasarkan User ID, Pimpinan atau AO
-						""";
+			Gunakan Command Ini untuk mendaftarkan user
+			Berdasarkan User ID, Pimpinan atau AO
+			""";
 	}
 
 	@Override
@@ -85,9 +85,9 @@ public class RegisterUsers implements CommandProcessor {
 
 	public String getHelp() {
 		return """
-						Gunakan /otor <kode cabang> atau
-						/otor <kode ao>
-						""";
+			Gunakan /otor <kode cabang> atau
+			/otor <kode ao>
+			""";
 	}
 
 	public boolean isNumber(String str) {

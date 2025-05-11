@@ -52,10 +52,10 @@ public class DirectServicesHandler implements CallbackProcessor {
 	private void processTabungan(String query, String callbackId, TelegramClient telegramClient) {
 		try {
 			AnswerCallbackQuery answerCallbackQuery = AnswerCallbackQuery.builder()
-							.text(savingData(query))
-							.callbackQueryId(callbackId)
-							.showAlert(true)
-							.build();
+				.text(savingData(query))
+				.callbackQueryId(callbackId)
+				.showAlert(true)
+				.build();
 			telegramClient.execute(answerCallbackQuery);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -67,22 +67,22 @@ public class DirectServicesHandler implements CallbackProcessor {
 		Repayment repayment = repaymentService.findRepaymentById(Long.parseLong(query));
 
 		String message = (repayment == null)
-						? "❌ Data pelunasan tidak ditemukan"
-						: calculate(repayment, new PenaltyUtils().penalty(
-						repayment.getStartDate(),
-						repayment.getPenaltyLoan(),
-						repayment.getProduct(),
-						repayment
+			? "❌ Data pelunasan tidak ditemukan"
+			: calculate(repayment, new PenaltyUtils().penalty(
+			repayment.getStartDate(),
+			repayment.getPenaltyLoan(),
+			repayment.getProduct(),
+			repayment
 		));
 		if (repayment != null) {
 			log.info("Data is {}", message);
 		}
 		try {
 			telegramClient.execute(AnswerCallbackQuery.builder()
-							.showAlert(true)
-							.text(message)
-							.callbackQueryId(callbackId)
-							.build());
+				.showAlert(true)
+				.text(message)
+				.callbackQueryId(callbackId)
+				.build());
 		} catch (TelegramApiException e) {
 			log.error("Failed to send callback: {}", e.getMessage());
 		}
@@ -95,22 +95,22 @@ public class DirectServicesHandler implements CallbackProcessor {
 		Long total = bakidebet + tunggakan + denda + penaltyMap.get("penalty");
 
 		return String.format("""
-										SPK  : %s
-										Nama : %s
-										BD   : %s
-										TG   : %s
-										B+%s : %s
-										DD   : %s
-										TTL  : %s
-										""",
-						formatText(repayment.getCustomerId()),
-						formatText(repayment.getName()),
-						formatRupiah(bakidebet),
-						formatRupiah(tunggakan),
-						penaltyMap.get("multiplier"),
-						formatRupiah(penaltyMap.get("penalty")),
-						formatRupiah(denda),
-						formatRupiah(total)
+				SPK  : %s
+				Nama : %s
+				BD   : %s
+				TG   : %s
+				B+%s : %s
+				DD   : %s
+				TTL  : %s
+				""",
+			formatText(repayment.getCustomerId()),
+			formatText(repayment.getName()),
+			formatRupiah(bakidebet),
+			formatRupiah(tunggakan),
+			penaltyMap.get("multiplier"),
+			formatRupiah(penaltyMap.get("penalty")),
+			formatRupiah(denda),
+			formatRupiah(total)
 		);
 	}
 
@@ -138,31 +138,31 @@ public class DirectServicesHandler implements CallbackProcessor {
 			} else {
 				Savings savings = byId.get();
 				log.info("Savings data found for tabId: {}, name: {}", query, savings.getName());
-				
+
 				// Calculate values with null checks to avoid NullPointerException
 				long balance = savings.getBalance() != null ? savings.getBalance().longValue() : 0;
 				long transaction = savings.getTransaction() != null ? savings.getTransaction().longValue() : 0;
 				long minimumBalance = savings.getMinimumBalance() != null ? savings.getMinimumBalance().longValue() : 0;
 				long blockingBalance = savings.getBlockingBalance() != null ? savings.getBlockingBalance().longValue() : 0;
-				
+
 				long book = balance + transaction;
 				long effect = book - blockingBalance - minimumBalance;
-				
-				log.debug("Calculated values - Book: {}, Effect: {}, Block: {}", 
-						book, effect, blockingBalance);
-				
+
+				log.debug("Calculated values - Book: {}, Effect: {}, Block: {}",
+					book, effect, blockingBalance);
+
 				message = String.format("""
-											NoRek  : %s
-											Nama   : %s
-											Buku   : %s
-											Efek   : %s
-											Block  : %s
-											""",
-								formatText(savings.getTabId()),
-								formatText(savings.getName()),
-								formatRupiah(book),
-								formatRupiah(effect),
-								formatRupiah(blockingBalance)
+						NoRek  : %s
+						Nama   : %s
+						Buku   : %s
+						Efek   : %s
+						Block  : %s
+						""",
+					formatText(savings.getTabId()),
+					formatText(savings.getName()),
+					formatRupiah(book),
+					formatRupiah(effect),
+					formatRupiah(blockingBalance)
 				);
 				log.debug("Formatted savings message successfully");
 			}

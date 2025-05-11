@@ -20,8 +20,8 @@ public class ButtonListForBills {
 		rows.addAll(buildDataButtons(names.getContent(), currentPage, query, branch));
 
 		return InlineKeyboardMarkup.builder()
-						.keyboard(rows)
-						.build();
+			.keyboard(rows)
+			.build();
 	}
 
 	private InlineKeyboardRow buildPaginationRow(Page<Bills> page, int currentPage, String query, String branch) {
@@ -33,21 +33,21 @@ public class ButtonListForBills {
 
 		if (page.hasPrevious()) {
 			row.add(InlineKeyboardButton.builder()
-							.text("⬅ Prev")
-							.callbackData("paging_" + query + "_" + branch + "_" + (currentPage - 1))
-							.build());
+				.text("⬅ Prev")
+				.callbackData("paging_" + query + "_" + branch + "_" + (currentPage - 1))
+				.build());
 		}
 
 		row.add(InlineKeyboardButton.builder()
-						.text(currentElement + " - " + maxElement + " / " + totalElements)
-						.callbackData("noop")
-						.build());
+			.text(currentElement + " - " + maxElement + " / " + totalElements)
+			.callbackData("noop")
+			.build());
 
 		if (page.hasNext()) {
 			row.add(InlineKeyboardButton.builder()
-							.text("Next ➡")
-							.callbackData("paging_" + query + "_" + branch + "_" + (currentPage + 1))
-							.build());
+				.text("Next ➡")
+				.callbackData("paging_" + query + "_" + branch + "_" + (currentPage + 1))
+				.build());
 		}
 
 		return row;
@@ -61,9 +61,9 @@ public class ButtonListForBills {
 			Bills bill = dataList.get(i);
 
 			currentRow.add(InlineKeyboardButton.builder()
-							.text(bill.getName())
-							.callbackData("tagihan_" + bill.getNoSpk() + "_" + query + "_" + branch + "_" + currentPage)
-							.build());
+				.text(bill.getName())
+				.callbackData("tagihan_" + bill.getNoSpk() + "_" + query + "_" + branch + "_" + currentPage)
+				.build());
 
 			if (currentRow.size() == 2 || i == dataList.size() - 1) {
 				rows.add(currentRow);

@@ -14,8 +14,8 @@ public class PaginationSavingsButton {
 
 	public InlineKeyboardMarkup keyboardMarkup(Page<Savings> page, String branch, int currentPage, String query) {
 		return InlineKeyboardMarkup.builder()
-						.keyboard(List.of(buildPaginationRow(page, currentPage, branch, query)))
-						.build();
+			.keyboard(List.of(buildPaginationRow(page, currentPage, branch, query)))
+			.build();
 	}
 
 	private InlineKeyboardRow buildPaginationRow(Page<?> page, int currentPage, String branch, String query) {
@@ -39,8 +39,8 @@ public class PaginationSavingsButton {
 
 	private InlineKeyboardButton buildButton(String text, String callbackData) {
 		return InlineKeyboardButton.builder()
-						.text(text)
-						.callbackData(callbackData)
-						.build();
+			.text(text)
+			.callbackData(callbackData)
+			.build();
 	}
 }

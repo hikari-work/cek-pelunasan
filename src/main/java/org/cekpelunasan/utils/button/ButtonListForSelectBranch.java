@@ -20,9 +20,9 @@ public class ButtonListForSelectBranch {
 
 		for (int i = 0; i < branchList.size(); i++) {
 			InlineKeyboardButton button = InlineKeyboardButton.builder()
-							.text(branchList.get(i))
-							.callbackData("branch_" + branchList.get(i) + "_" + query)
-							.build();
+				.text(branchList.get(i))
+				.callbackData("branch_" + branchList.get(i) + "_" + query)
+				.build();
 			currentRow.add(button);
 			if (currentRow.size() == 3 || i == branchList.size() - 1) {
 				rows.add(currentRow);
@@ -31,7 +31,7 @@ public class ButtonListForSelectBranch {
 
 		}
 		return InlineKeyboardMarkup.builder()
-						.keyboard(rows)
-						.build();
+			.keyboard(rows)
+			.build();
 	}
 }

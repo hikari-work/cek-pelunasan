@@ -15,13 +15,13 @@ public class SendPhotoKeyboard {
 		InlineKeyboardRow inlineKeyboardButtons = new InlineKeyboardRow();
 
 		InlineKeyboardButton photoButton = InlineKeyboardButton.builder()
-						.text("📸 Kirim Gambar")
-						.callbackData("photo_" + query)
-						.build();
+			.text("📸 Kirim Gambar")
+			.callbackData("photo_" + query)
+			.build();
 		inlineKeyboardButtons.add(photoButton);
 		rows.add(inlineKeyboardButtons);
 		return InlineKeyboardMarkup.builder()
-						.keyboard(rows)
-						.build();
+			.keyboard(rows)
+			.build();
 	}
 }

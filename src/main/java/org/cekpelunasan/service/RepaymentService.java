@@ -39,22 +39,22 @@ public class RepaymentService {
 			String[] line;
 			while ((line = reader.readNext()) != null) {
 				Repayment repayment = Repayment.builder()
-								.customerId(line[0])
-								.product(line[1])
-								.name(line[2])
-								.address(line[3])
-								.amount(Long.parseLong(line[4]))
-								.interest(Long.parseLong(line[5]))
-								.sistem(Long.parseLong(line[6]))
-								.penaltyLoan(Long.parseLong(line[7]))
-								.penaltyRepayment(Long.parseLong(line[8]))
-								.totalPay(Long.parseLong(line[9]))
-								.branch(line[10])
-								.startDate(line[11])
-								.plafond(Long.parseLong(line[12]))
-								.lpdb(line[13])
-								.createdAt(Date.from(Instant.now()))
-								.build();
+					.customerId(line[0])
+					.product(line[1])
+					.name(line[2])
+					.address(line[3])
+					.amount(Long.parseLong(line[4]))
+					.interest(Long.parseLong(line[5]))
+					.sistem(Long.parseLong(line[6]))
+					.penaltyLoan(Long.parseLong(line[7]))
+					.penaltyRepayment(Long.parseLong(line[8]))
+					.totalPay(Long.parseLong(line[9]))
+					.branch(line[10])
+					.startDate(line[11])
+					.plafond(Long.parseLong(line[12]))
+					.lpdb(line[13])
+					.createdAt(Date.from(Instant.now()))
+					.build();
 				repayments.add(repayment);
 			}
 			repaymentRepository.deleteAll(); // bisa juga pakai custom delete by condition kalau tidak mau hapus semua

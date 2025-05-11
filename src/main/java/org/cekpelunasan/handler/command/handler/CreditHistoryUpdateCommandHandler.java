@@ -66,8 +66,8 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 
 		boolean success = downloadAndProcessFile(fileUrl, fileName);
 		String resultMessage = success
-						? "✅ *File berhasil diproses:*"
-						: "⚠ *Gagal update. Akan dicoba ulang.*";
+			? "✅ *File berhasil diproses:*"
+			: "⚠ *Gagal update. Akan dicoba ulang.*";
 
 		notifyUsers(allUsers, resultMessage, telegramClient);
 	}

@@ -41,8 +41,8 @@ public class PaginationToMinimalPay {
 
 	private InlineKeyboardButton buildButton(String text, String callbackData) {
 		return InlineKeyboardButton.builder()
-						.text(text)
-						.callbackData(callbackData)
-						.build();
+			.text(text)
+			.callbackData(callbackData)
+			.build();
 	}
 }

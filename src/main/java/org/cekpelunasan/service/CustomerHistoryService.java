@@ -34,8 +34,8 @@ public class CustomerHistoryService {
 		}
 		Object[] row = result.getFirst(); // Mengambil baris pertama
 		return Arrays.stream(row)
-						.map(val -> val != null ? ((Number) val).longValue() : 0L)
-						.collect(Collectors.toList());
+			.map(val -> val != null ? ((Number) val).longValue() : 0L)
+			.collect(Collectors.toList());
 	}
 
 	public void parseCsvAndSaveIntoDatabase(Path path) {
@@ -103,8 +103,8 @@ public class CustomerHistoryService {
 
 	public CustomerHistory mapToCustomerHistory(String[] line) {
 		return CustomerHistory.builder()
-						.customerId(line[0])
-						.collectStatus(line[1])
-						.build();
+			.customerId(line[0])
+			.collectStatus(line[1])
+			.build();
 	}
 }

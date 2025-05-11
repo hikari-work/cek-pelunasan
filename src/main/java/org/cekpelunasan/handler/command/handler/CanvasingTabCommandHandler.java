@@ -45,60 +45,61 @@ public class CanvasingTabCommandHandler implements CommandProcessor {
 	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
-    return CompletableFuture.runAsync(() -> {
-        // Extract everything after the command
-        String address = text.length() > 8 ? text.substring(8).trim() : "";
-        
-        if (!authorizedChats1.isAuthorized(chatId)) {
-            sendMessage(chatId, "Kamu tidak memiliki akses ke fitur ini", telegramClient);
-            return;
-        }
-        
-        if (address.isEmpty()) {
-            sendMessage(chatId, "Format salah, silahkan gunakan /canvas <alamat>", telegramClient);
-            return;
-        }
+		return CompletableFuture.runAsync(() -> {
+			// Extract everything after the command
+			String address = text.length() > 8 ? text.substring(8).trim() : "";
 
-        // First split by comma, then by whitespace for each comma-separated part
-        List<String> addressList = Arrays.stream(address.split(","))
-                                    .flatMap(part -> Arrays.stream(part.trim().split("\\s+")))
-                                    .filter(s -> !s.isEmpty())
-                                    .collect(Collectors.toList());
-        
-        log.info("Searching with keywords: {}", addressList);
-        
-        Page<Savings> savingsPage = savingsService.findFilteredSavings(addressList, PageRequest.of(0, 5));
-        
-        if (savingsPage.isEmpty()) {
-            sendMessage(chatId, "Tidak ada data yang ditemukan", telegramClient);
-            return;
-        }
-        
-        StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
-                        .append("───────────────────\n")
-                        .append("📄 Halaman 1 dari ").append(savingsPage.getTotalPages()).append("\n\n");
-        
-        savingsPage.forEach(dto -> message.append(String.format("""
-            👤 *%s*
-            ╔═══════════════════════
-            ║ 📊 *DATA NASABAH*
-            ║ ├─── 🆔 CIF   : `%s`
-            ║ ├─── 📍 Alamat: %s
-            ║ └─── 💵 Saldo : %s
-            ╚═══════════════════════
-            """, dto.getName(), dto.getCif(), dto.getAddress(), new RupiahFormatUtils().formatRupiah(dto.getBalance().longValue()))));
-        
-        InlineKeyboardMarkup markup = paginationCanvassingByTab.dynamicButtonName(savingsPage, 0, address);
-        sendMessage(chatId, message.toString(), markup, telegramClient);
-    });
-}
-	public void sendMessage(Long chatId, String text,InlineKeyboardMarkup markup, TelegramClient telegramClient) {
+			if (!authorizedChats1.isAuthorized(chatId)) {
+				sendMessage(chatId, "Kamu tidak memiliki akses ke fitur ini", telegramClient);
+				return;
+			}
+
+			if (address.isEmpty()) {
+				sendMessage(chatId, "Format salah, silahkan gunakan /canvas <alamat>", telegramClient);
+				return;
+			}
+
+			// First split by comma, then by whitespace for each comma-separated part
+			List<String> addressList = Arrays.stream(address.split(","))
+				.flatMap(part -> Arrays.stream(part.trim().split("\\s+")))
+				.filter(s -> !s.isEmpty())
+				.collect(Collectors.toList());
+
+			log.info("Searching with keywords: {}", addressList);
+
+			Page<Savings> savingsPage = savingsService.findFilteredSavings(addressList, PageRequest.of(0, 5));
+
+			if (savingsPage.isEmpty()) {
+				sendMessage(chatId, "Tidak ada data yang ditemukan", telegramClient);
+				return;
+			}
+
+			StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
+				.append("───────────────────\n")
+				.append("📄 Halaman 1 dari ").append(savingsPage.getTotalPages()).append("\n\n");
+
+			savingsPage.forEach(dto -> message.append(String.format("""
+				👤 *%s*
+				╔═══════════════════════
+				║ 📊 *DATA NASABAH*
+				║ ├─── 🆔 CIF   : `%s`
+				║ ├─── 📍 Alamat: %s
+				║ └─── 💵 Saldo : %s
+				╚═══════════════════════
+				""", dto.getName(), dto.getCif(), dto.getAddress(), new RupiahFormatUtils().formatRupiah(dto.getBalance().longValue()))));
+
+			InlineKeyboardMarkup markup = paginationCanvassingByTab.dynamicButtonName(savingsPage, 0, address);
+			sendMessage(chatId, message.toString(), markup, telegramClient);
+		});
+	}
+
+	public void sendMessage(Long chatId, String text, InlineKeyboardMarkup markup, TelegramClient telegramClient) {
 		try {
 			telegramClient.execute(SendMessage.builder()
 				.chatId(chatId)
 				.text(text)
 				.parseMode("Markdown")
-					.replyMarkup(markup)
+				.replyMarkup(markup)
 				.build());
 		} catch (TelegramApiException e) {
 			log.info(e.getMessage());

@@ -41,16 +41,16 @@ public class CreditHistoryService {
 			Subquery<String> subquery = query.subquery(String.class);
 			Root<CreditHistory> subRoot = subquery.from(CreditHistory.class);
 			subquery.select(subRoot.get("customerId"))
-							.where(cb.equal(cb.upper(subRoot.get("status")), "A"));
+				.where(cb.equal(cb.upper(subRoot.get("status")), "A"));
 
 			// Create address predicates with case-insensitive comparison
 			List<Predicate> predicates = keywords.stream()
-							.map(String::trim)
-							.filter(word -> !word.isEmpty())
-							.map(word -> cb.like(
-											cb.upper(root.get("address")),
-											"%" + word.toUpperCase() + "%"))
-							.toList();
+				.map(String::trim)
+				.filter(word -> !word.isEmpty())
+				.map(word -> cb.like(
+					cb.upper(root.get("address")),
+					"%" + word.toUpperCase() + "%"))
+				.toList();
 
 			// Use AND to ensure all keywords are present in the address
 			Predicate addressCondition = cb.and(predicates.toArray(new Predicate[0]));
@@ -125,13 +125,13 @@ public class CreditHistoryService {
 
 	public CreditHistory mapToCreditHistory(String[] line) {
 		return CreditHistory.builder()
-						.date(Long.parseLong(line[0]))
-						.creditId(line[1])
-						.customerId(line[2])
-						.name(line[3])
-						.status(line[4])
-						.address(line[5])
-						.phone(line[6])
-						.build();
+			.date(Long.parseLong(line[0]))
+			.creditId(line[1])
+			.customerId(line[2])
+			.name(line[3])
+			.status(line[4])
+			.address(line[5])
+			.phone(line[6])
+			.build();
 	}
 }

@@ -33,7 +33,7 @@ public class InfoCifCommandHandler implements CommandProcessor {
 		return CompletableFuture.runAsync(() -> {
 			String cif = text.replace("/infocif ", "");
 			List<Long> collectCounts = customerHistoryService.findCustomerIdAndReturnListOfCollectNumber(cif);
-			
+
 			String message = formatCollectSummary(cif, collectCounts);
 			sendMessage(chatId, message, telegramClient);
 		});
@@ -42,37 +42,37 @@ public class InfoCifCommandHandler implements CommandProcessor {
 	private String formatCollectSummary(String cif, List<Long> counts) {
 		StringBuilder sb = new StringBuilder();
 		String[] statuses = {
-			"🌟 LANCAR", 
-			"⚜️ DALAM PERHATIAN", 
-			"⭐ KURANG LANCAR", 
-			"💫 DIRAGUKAN", 
+			"🌟 LANCAR",
+			"⚜️ DALAM PERHATIAN",
+			"⭐ KURANG LANCAR",
+			"💫 DIRAGUKAN",
 			"❗ MACET"
 		};
-		
+
 		long total = counts.stream().mapToLong(Long::valueOf).sum();
-		
+
 		sb.append("📊 *RINGKASAN KOLEKTIBILITAS*\n")
-		  .append("╔══════════════════════════\n")
-		  .append("║ 🆔 CIF: `").append(cif).append("`\n")
-		  .append("╠══════════════════════════\n")
-		  .append("║\n")
-		  .append("║ 📈 *STATUS KREDIT*\n")
-		  .append("║ ┌────────────────────────\n");
-		
+			.append("╔══════════════════════════\n")
+			.append("║ 🆔 CIF: `").append(cif).append("`\n")
+			.append("╠══════════════════════════\n")
+			.append("║\n")
+			.append("║ 📈 *STATUS KREDIT*\n")
+			.append("║ ┌────────────────────────\n");
+
 		for (int i = 0; i < counts.size(); i++) {
 			if (counts.get(i) > 0) {
 				double percent = (counts.get(i) * 100.0) / total;
-				sb.append(String.format("║ │ %s: %d hari (%.1f%%)\n", 
-				                        statuses[i], counts.get(i), percent));
+				sb.append(String.format("║ │ %s: %d hari (%.1f%%)\n",
+					statuses[i], counts.get(i), percent));
 			}
 		}
-		
+
 		sb.append("║ └────────────────────────\n")
-		  .append("╚══════════════════════════\n\n")
-		  .append("⚡️ _Data diperbarui: ")
-		  .append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM HH:mm")))
-		  .append("_");
-		
+			.append("╚══════════════════════════\n\n")
+			.append("⚡️ _Data diperbarui: ")
+			.append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM HH:mm")))
+			.append("_");
+
 		return sb.toString();
 	}
 }

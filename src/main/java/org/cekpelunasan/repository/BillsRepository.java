@@ -23,17 +23,17 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 	Page<Bills> findByNameContainingIgnoreCaseAndBranch(String name, String branch, Pageable pageable);
 
 	@Query("""
-					SELECT b FROM Bills b
-					WHERE b.branch = :branch
-					AND (b.minInterest + b.minPrincipal) > 0
-					""")
+		SELECT b FROM Bills b
+		WHERE b.branch = :branch
+		AND (b.minInterest + b.minPrincipal) > 0
+		""")
 	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(Long minInterest, Long minPrincipal, String branch, Pageable pageable);
 
 	@Query("""
-					SELECT b FROM Bills b
-					WHERE b.accountOfficer = :accountOfficer
-					AND (b.minInterest + b.minPrincipal) > 0
-					""")
+		SELECT b FROM Bills b
+		WHERE b.accountOfficer = :accountOfficer
+		AND (b.minInterest + b.minPrincipal) > 0
+		""")
 	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndAccountOfficer(Long minInterest, Long minPrincipal, String accountOfficer, Pageable pageable);
 
 

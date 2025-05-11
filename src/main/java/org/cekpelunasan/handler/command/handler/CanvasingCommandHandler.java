@@ -38,8 +38,8 @@ public class CanvasingCommandHandler implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return """
-						Mengembalikan List Nasabah yang pernah Kredit Namun tidak ambil lagi
-						""";
+			Mengembalikan List Nasabah yang pernah Kredit Namun tidak ambil lagi
+			""";
 	}
 
 	@Override
@@ -59,25 +59,25 @@ public class CanvasingCommandHandler implements CommandProcessor {
 
 			if (creditHistories.isEmpty()) {
 				sendMessage(chatId, String.format("""
-								Data dengan alamat %s Tidak Ditemukan
-								""", address), telegramClient);
+					Data dengan alamat %s Tidak Ditemukan
+					""", address), telegramClient);
 				return;
 			}
 			StringBuilder messageBuilder = new StringBuilder(String.format("\uD83D\uDCC4 Halaman 1 dari %d\n\n", creditHistories.getTotalPages()));
 			creditHistories.forEach(dto -> messageBuilder.append(String.format("""
-											👤 *%s*
-											 ╔═══════════════════════
-											 ║ 📊 *DATA NASABAH*
-											 ║ ├─── 🆔 CIF   : `%s`
-											 ║ ├─── 📍 Alamat: %s
-											 ║ └─── 📱 Kontak: %s
-											 ╚═══════════════════════
-											
-											""",
-							formatName(dto.getName()),
-							dto.getCustomerId(),
-							formatAddress(dto.getAddress()),
-							formatPhoneNumber(dto.getPhone())
+					👤 *%s*
+					 ╔═══════════════════════
+					 ║ 📊 *DATA NASABAH*
+					 ║ ├─── 🆔 CIF   : `%s`
+					 ║ ├─── 📍 Alamat: %s
+					 ║ └─── 📱 Kontak: %s
+					 ╚═══════════════════════
+					
+					""",
+				formatName(dto.getName()),
+				dto.getCustomerId(),
+				formatAddress(dto.getAddress()),
+				formatPhoneNumber(dto.getPhone())
 			)));
 
 
@@ -91,11 +91,11 @@ public class CanvasingCommandHandler implements CommandProcessor {
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
 		try {
 			telegramClient.execute(SendMessage.builder()
-							.chatId(chatId.toString())
-							.text(text)
-							.replyMarkup(markup)
-							.parseMode("Markdown")
-							.build());
+				.chatId(chatId.toString())
+				.text(text)
+				.replyMarkup(markup)
+				.parseMode("Markdown")
+				.build());
 		} catch (Exception e) {
 			log.error("Error");
 		}
@@ -115,8 +115,8 @@ public class CanvasingCommandHandler implements CommandProcessor {
 		}
 		String formatted = phone.startsWith("0") ? phone : "0" + phone;
 		return String.format("%s %s",
-						formatted.startsWith("08") ? "📱" : "☎️",
-						formatted.replaceAll("(\\d{4})(\\d{4})(\\d+)", "$1-$2-$3")
+			formatted.startsWith("08") ? "📱" : "☎️",
+			formatted.replaceAll("(\\d{4})(\\d{4})(\\d+)", "$1-$2-$3")
 		);
 	}
 

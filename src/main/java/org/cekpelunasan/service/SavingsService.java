@@ -20,6 +20,7 @@ import java.io.FileReader;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -28,195 +29,241 @@ import java.util.stream.Collectors;
 @Service
 public class SavingsService {
 
-    private static final Logger log = LoggerFactory.getLogger(SavingsService.class);
-    private final SavingsRepository savingsRepository;
-    private final EntityManager em;
+	private static final Logger log = LoggerFactory.getLogger(SavingsService.class);
+	private final SavingsRepository savingsRepository;
+	private final EntityManager em;
 
-    public SavingsService(SavingsRepository savingsRepository, EntityManager em) {
-        this.em = em;
-        this.savingsRepository = savingsRepository;
-    }
+	public SavingsService(SavingsRepository savingsRepository, EntityManager em) {
+		this.em = em;
+		this.savingsRepository = savingsRepository;
+	}
 
-    public void batchSavingAccounts(List<Savings> savingsList) {
-        savingsRepository.saveAll(savingsList);
-    }
+	public void batchSavingAccounts(List<Savings> savingsList) {
+		savingsRepository.saveAll(savingsList);
+	}
 
-    public Page<Savings> findByNameAndBranch(String name, String branch, int page) {
-        Pageable pageable = PageRequest.of(page, 5);
-        return savingsRepository.findByNameContainingIgnoreCaseAndBranch(name, branch, pageable);
-    }
+	public Page<Savings> findByNameAndBranch(String name, String branch, int page) {
+		Pageable pageable = PageRequest.of(page, 5);
+		return savingsRepository.findByNameContainingIgnoreCaseAndBranch(name, branch, pageable);
+	}
 
-    public void parseCsvAndSaveIntoDatabase(Path path) {
-        savingsRepository.deleteAll();
-        final int BATCH_SIZE = 1000;
-        final int MAX_CONCURRENT_TASK = Runtime.getRuntime().availableProcessors() * 2;
+	public void parseCsvAndSaveIntoDatabase(Path path) {
+		savingsRepository.deleteAll();
+		final int BATCH_SIZE = 1000;
+		final int MAX_CONCURRENT_TASK = Runtime.getRuntime().availableProcessors() * 2;
 
-        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-        Semaphore semaphore = new Semaphore(MAX_CONCURRENT_TASK);
-        List<Savings> currentBatch = new ArrayList<>(BATCH_SIZE);
-        int counter = 0;
+		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+		Semaphore semaphore = new Semaphore(MAX_CONCURRENT_TASK);
+		List<Savings> currentBatch = new ArrayList<>(BATCH_SIZE);
+		int counter = 0;
 
-        try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
-            String[] line;
-            while ((line = reader.readNext()) != null) {
-                currentBatch.add(mapToSavings(line));
-                if (currentBatch.size() >= BATCH_SIZE) {
-                    processBatch(currentBatch, executor, semaphore);
-                    counter += BATCH_SIZE;
-                    log.info("Submitted Batch {}", counter);
-                    currentBatch.clear();
-                }
-            }
-            
-            if (!currentBatch.isEmpty()) {
-                processBatch(currentBatch, executor, semaphore);
-                log.info("Submitted final batch: {}", counter + currentBatch.size());
-            }
-            
-            executor.shutdown();
-            log.info("CSV file parsed and data saved to database successfully.");
-        } catch (Exception e) {
-            log.error("Error parsing CSV file: {}", e.getMessage(), e);
-        }
-    }
-    
-    private void processBatch(List<Savings> batch, ExecutorService executor, Semaphore semaphore) throws InterruptedException {
-        List<Savings> batchToSave = new ArrayList<>(batch);
-        semaphore.acquire();
-        executor.submit(() -> {
-            try {
-                batchSavingAccounts(batchToSave);
-            } catch (Exception e) {
-                log.error("Error saving batch: {}", e.getMessage(), e);
-            } finally {
-                semaphore.release();
-            }
-        });
-    }
+		try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
+			String[] line;
+			while ((line = reader.readNext()) != null) {
+				currentBatch.add(mapToSavings(line));
+				if (currentBatch.size() >= BATCH_SIZE) {
+					processBatch(currentBatch, executor, semaphore);
+					counter += BATCH_SIZE;
+					log.info("Submitted Batch {}", counter);
+					currentBatch.clear();
+				}
+			}
 
-    public Savings mapToSavings(String[] line) {
-        return Savings.builder()
-                .branch(line[0])
-                .type(line[1])
-                .cif(line[2])
-                .tabId(line[3])
-                .name(line[4])
-                .address(line[5])
-                .balance(BigDecimal.valueOf(Long.parseLong(line[6])))
-                .transaction(BigDecimal.valueOf(Long.parseLong(line[7])))
-                .accountOfficer(line[8])
-                .phone(line[9])
-                .minimumBalance(BigDecimal.valueOf(Long.parseLong(line[10])))
-                .blockingBalance(BigDecimal.valueOf(Long.parseLong(line[11])))
-                .build();
-    }
+			if (!currentBatch.isEmpty()) {
+				processBatch(currentBatch, executor, semaphore);
+				log.info("Submitted final batch: {}", counter + currentBatch.size());
+			}
 
-    public Set<String> listAllBranch() {
-        return savingsRepository.findByBranch().stream()
-                .sorted()
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
+			executor.shutdown();
+			log.info("CSV file parsed and data saved to database successfully.");
+		} catch (Exception e) {
+			log.error("Error parsing CSV file: {}", e.getMessage(), e);
+		}
+	}
 
-    public Optional<Savings> findById(String id) {
-        log.info("Searching for account with ID: {}", id);
-        return savingsRepository.findByTabId(id);
-    }
-    
-    @Transactional
-    public Page<Savings> findFilteredSavings(List<String> addressKeywords, Pageable pageable) {
-        log.info("Starting findFilteredSavings with keywords: {} and page: {}", addressKeywords, pageable);
-        try {
-            CriteriaBuilder cb = em.getCriteriaBuilder();
-            
-            // Build and execute main query
-            List<Savings> resultList = executeMainQuery(addressKeywords, pageable, cb);
-            
-            // Execute count query
-            Long total = executeCountQuery(addressKeywords, cb);
-            
-            log.info("Query completed successfully. Found {} total records matching keywords.", total);
-            return new PageImpl<>(resultList, pageable, total);
-        } catch (Exception e) {
-            log.error("Error in findFilteredSavings: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to execute filtered savings query: " + e.getMessage(), e);
-        }
-    }
-    
-    private List<Savings> executeMainQuery(List<String> addressKeywords, Pageable pageable, CriteriaBuilder cb) {
-        CriteriaQuery<Savings> query = cb.createQuery(Savings.class);
-        Root<Savings> root = query.from(Savings.class);
-        
-        // Add CIF subquery with address conditions
-        Subquery<String> cifSubquery = buildCifSubquery(query, cb, addressKeywords);
-        
-        // Apply main where condition
-        query.select(root).where(root.get("cif").in(cifSubquery));
-        
-        // Execute with pagination
-        TypedQuery<Savings> typedQuery = em.createQuery(query);
-        typedQuery.setFirstResult((int) pageable.getOffset());
-        typedQuery.setMaxResults(pageable.getPageSize());
-        
-        return typedQuery.getResultList();
-    }
-    
-    private Long executeCountQuery(List<String> addressKeywords, CriteriaBuilder cb) {
-        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
-        Root<Savings> countRoot = countQuery.from(Savings.class);
-        
-        // Add CIF subquery with address conditions for the count query
-        Subquery<String> countCifSubquery = buildCifSubquery(countQuery, cb, addressKeywords);
-        
-        // Apply count selection and where condition
-        countQuery.select(cb.count(countRoot)).where(countRoot.get("cif").in(countCifSubquery));
-        
-        return em.createQuery(countQuery).getSingleResult();
-    }
-    
-    private <T> Subquery<String> buildCifSubquery(CriteriaQuery<T> parentQuery, CriteriaBuilder cb, List<String> addressKeywords) {
-        Subquery<String> cifSubquery = parentQuery.subquery(String.class);
-        Root<Savings> cifSubRoot = cifSubquery.from(Savings.class);
-        cifSubquery.select(cifSubRoot.get("cif"));
-        
-        // Add bills subquery
-        Subquery<String> tagihanSub = parentQuery.subquery(String.class);
-        Root<Bills> tagihanRoot = tagihanSub.from(Bills.class);
-        tagihanSub.select(tagihanRoot.get("customerId"))
-                .where(cb.isNotNull(tagihanRoot.get("customerId")));
-        
-        // Build address predicates
-        Predicate addressPredicate = buildAddressPredicates(cb, cifSubRoot, addressKeywords);
-        
-        // Add exclusion condition for accounts with bills
-        Predicate notInTagihan = cb.not(cifSubRoot.get("cif").in(tagihanSub));
-        
-        // Combine predicates and add to subquery
-        cifSubquery.where(cb.and(addressPredicate, notInTagihan));
-        cifSubquery.groupBy(cifSubRoot.get("cif"));
-        
-        return cifSubquery;
-    }
-    
-    private Predicate buildAddressPredicates(CriteriaBuilder cb, Root<Savings> root, List<String> addressKeywords) {
-        if (addressKeywords == null || addressKeywords.isEmpty()) {
-            return cb.conjunction(); // True predicate if no keywords
-        }
-        
-        List<Predicate> likePredicates = new ArrayList<>();
-        for (String keyword : addressKeywords) {
-            if (keyword != null && !keyword.trim().isEmpty()) {
-                log.debug("Adding LIKE predicate for keyword: '{}'", keyword.trim());
-                likePredicates.add(cb.like(
-                    cb.lower(root.get("address")), 
-                    "%" + keyword.trim().toLowerCase() + "%"));
-            }
-        }
-        
-        if (likePredicates.isEmpty()) {
-            return cb.conjunction(); // True predicate if all keywords were invalid
-        }
-        
-        // OR condition - match ANY of the specified keywords
-        return cb.and(likePredicates.toArray(new Predicate[0]));
-    }
+	private void processBatch(List<Savings> batch, ExecutorService executor, Semaphore semaphore) throws InterruptedException {
+		List<Savings> batchToSave = new ArrayList<>(batch);
+		semaphore.acquire();
+		executor.submit(() -> {
+			try {
+				batchSavingAccounts(batchToSave);
+			} catch (Exception e) {
+				log.error("Error saving batch: {}", e.getMessage(), e);
+			} finally {
+				semaphore.release();
+			}
+		});
+	}
+
+	public Savings mapToSavings(String[] line) {
+		return Savings.builder()
+			.branch(line[0])
+			.type(line[1])
+			.cif(line[2])
+			.tabId(line[3])
+			.name(line[4])
+			.address(line[5])
+			.balance(BigDecimal.valueOf(Long.parseLong(line[6])))
+			.transaction(BigDecimal.valueOf(Long.parseLong(line[7])))
+			.accountOfficer(line[8])
+			.phone(line[9])
+			.minimumBalance(BigDecimal.valueOf(Long.parseLong(line[10])))
+			.blockingBalance(BigDecimal.valueOf(Long.parseLong(line[11])))
+			.build();
+	}
+
+	public Set<String> listAllBranch() {
+		return savingsRepository.findByBranch().stream()
+			.sorted()
+			.collect(Collectors.toCollection(LinkedHashSet::new));
+	}
+
+	public Optional<Savings> findById(String id) {
+		log.info("Searching for account with ID: {}", id);
+		return savingsRepository.findByTabId(id);
+	}
+
+	@Transactional
+	public Page<Savings> findFilteredSavings(List<String> addressKeywords, Pageable pageable) {
+		log.info("Starting findFilteredSavings with keywords: {} and page: {}", addressKeywords, pageable);
+		try {
+			// Execute queries concurrently
+			CompletableFuture<List<Savings>> resultsFuture = CompletableFuture.supplyAsync(() -> {
+				CriteriaBuilder cb = em.getCriteriaBuilder();
+				return executeUniqueRecordsQuery(addressKeywords, pageable, cb);
+			});
+
+			CompletableFuture<Long> countFuture = CompletableFuture.supplyAsync(() -> {
+				CriteriaBuilder cb = em.getCriteriaBuilder();
+				return executeCountUniqueQuery(addressKeywords, cb);
+			});
+
+			// Wait for both queries to complete
+			CompletableFuture.allOf(resultsFuture, countFuture).join();
+
+			// Get results
+			List<Savings> resultList = resultsFuture.get();
+			Long total = countFuture.get();
+
+			log.info("Query completed successfully. Found {} unique CIFs matching keywords.", total);
+			return new PageImpl<>(resultList, pageable, total);
+		} catch (Exception e) {
+			log.error("Error in findFilteredSavings: {}", e.getMessage(), e);
+			throw new RuntimeException("Failed to execute filtered savings query: " + e.getMessage(), e);
+		}
+	}
+
+	private List<Savings> executeUniqueRecordsQuery(List<String> addressKeywords, Pageable pageable, CriteriaBuilder cb) {
+		// Time execution
+		long startTime = System.currentTimeMillis();
+
+		try {
+			// Create a subquery to get the minimum ID for each CIF
+			CriteriaQuery<Savings> query = cb.createQuery(Savings.class);
+			Root<Savings> root = query.from(Savings.class);
+
+			// Create subquery to get minimum ID for each matching CIF
+			Subquery<Long> minIdSubquery = buildMinIdSubquery(query, cb, addressKeywords);
+
+			// Main query selects all fields from Savings where ID is in the subquery
+			query.select(root)
+				.where(root.get("id").in(minIdSubquery));
+
+			// Apply pagination
+			TypedQuery<Savings> typedQuery = em.createQuery(query);
+			typedQuery.setFirstResult((int) pageable.getOffset());
+			typedQuery.setMaxResults(pageable.getPageSize());
+
+			List<Savings> result = typedQuery.getResultList();
+			log.debug("Executed record query in {} ms", System.currentTimeMillis() - startTime);
+			return result;
+		} catch (Exception e) {
+			log.error("Error executing unique records query: {}", e.getMessage(), e);
+			throw e;
+		}
+	}
+
+	private Subquery<Long> buildMinIdSubquery(CriteriaQuery<?> query, CriteriaBuilder cb, List<String> addressKeywords) {
+		Subquery<Long> minIdSubquery = query.subquery(Long.class);
+		Root<Savings> subRoot = minIdSubquery.from(Savings.class);
+
+		// Add address conditions to subquery
+		Predicate addressPredicate = buildAddressPredicates(cb, subRoot, addressKeywords);
+
+		// Add exclusion for accounts with bills
+		Subquery<String> billsSubquery = minIdSubquery.subquery(String.class);
+		Root<Bills> billsRoot = billsSubquery.from(Bills.class);
+		billsSubquery.select(billsRoot.get("customerId"))
+			.where(cb.isNotNull(billsRoot.get("customerId")));
+
+		Predicate notInBills = cb.not(subRoot.get("cif").in(billsSubquery));
+
+		// Select minimum ID for each CIF
+		minIdSubquery.select(cb.min(subRoot.get("id")))
+			.where(cb.and(addressPredicate, notInBills))
+			.groupBy(subRoot.get("cif"));
+
+		return minIdSubquery;
+	}
+
+	private Long executeCountUniqueQuery(List<String> addressKeywords, CriteriaBuilder cb) {
+		long startTime = System.currentTimeMillis();
+
+		try {
+			CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+			Root<Savings> countRoot = countQuery.from(Savings.class);
+
+			// Count distinct CIFs
+			countQuery.select(cb.countDistinct(countRoot.get("cif")));
+
+			// Add address filtering
+			Predicate addressPredicate = buildAddressPredicates(cb, countRoot, addressKeywords);
+
+			// Exclude accounts with bills
+			Subquery<String> billsSubquery = countQuery.subquery(String.class);
+			Root<Bills> billsRoot = billsSubquery.from(Bills.class);
+			billsSubquery.select(billsRoot.get("customerId"))
+				.where(cb.isNotNull(billsRoot.get("customerId")));
+
+			Predicate notInBills = cb.not(countRoot.get("cif").in(billsSubquery));
+
+			// Apply predicates
+			countQuery.where(cb.and(addressPredicate, notInBills));
+
+			Long result = em.createQuery(countQuery).getSingleResult();
+			log.debug("Executed count query in {} ms", System.currentTimeMillis() - startTime);
+			return result;
+		} catch (Exception e) {
+			log.error("Error executing count query: {}", e.getMessage(), e);
+			throw e;
+		}
+	}
+
+	private Predicate buildAddressPredicates(CriteriaBuilder cb, Root<Savings> root, List<String> addressKeywords) {
+		if (addressKeywords == null || addressKeywords.isEmpty()) {
+			return cb.conjunction(); // True predicate if no keywords
+		}
+
+		// Process keywords more efficiently
+		List<String> processedKeywords = addressKeywords.stream()
+			.filter(k -> k != null && !k.trim().isEmpty())
+			.map(String::trim)
+			.map(String::toLowerCase)
+			.toList();
+
+		if (processedKeywords.isEmpty()) {
+			return cb.conjunction(); // True predicate if all keywords were invalid
+		}
+
+		// Build predicates
+		List<Predicate> likePredicates = processedKeywords.stream()
+			.map(keyword -> {
+				log.debug("Adding LIKE predicate for keyword: '{}'", keyword);
+				return cb.like(cb.lower(root.get("address")), "%" + keyword + "%");
+			})
+			.toList();
+
+		// AND condition - ALL keywords must be present in the address
+		return cb.and(likePredicates.toArray(new Predicate[0]));
+	}
 }

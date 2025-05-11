@@ -56,40 +56,40 @@ public class PaginationPelunasanCallbackHandler implements CallbackProcessor {
 
 	private String buildRepaymentMessage(Page<Repayment> repayments, int page, long startTime) {
 		StringBuilder builder = new StringBuilder(String.format("""
-						🏦 *SISTEM INFORMASI KREDIT*
-						═══════════════════════════
-						📊 Halaman %d dari %d
-						───────────────────────────
-						
-						""", page + 1, repayments.getTotalPages()));
+			🏦 *SISTEM INFORMASI KREDIT*
+			═══════════════════════════
+			📊 Halaman %d dari %d
+			───────────────────────────
+			
+			""", page + 1, repayments.getTotalPages()));
 
 		RupiahFormatUtils formatter = new RupiahFormatUtils();
 		repayments.forEach(dto -> builder.append(String.format("""
-										🔷 *%s*
-										┌────────────────────────
-										│ 📎 *DATA NASABAH*
-										│ └── 🔖 SPK    : `%s`
-										│ └── 📍 Alamat : %s
-										│
-										│ 💳 *INFORMASI KREDIT*
-										│ └── 💰 Plafond : %s
-										│ └── 📅 Status  : %s
-										└────────────────────────
-										
-										""",
-						dto.getName(),
-						dto.getCustomerId(),
-						dto.getAddress(),
-						formatter.formatRupiah(dto.getPlafond()),
-						getStatusKredit(dto.getPlafond())
+				🔷 *%s*
+				┌────────────────────────
+				│ 📎 *DATA NASABAH*
+				│ └── 🔖 SPK    : `%s`
+				│ └── 📍 Alamat : %s
+				│
+				│ 💳 *INFORMASI KREDIT*
+				│ └── 💰 Plafond : %s
+				│ └── 📅 Status  : %s
+				└────────────────────────
+				
+				""",
+			dto.getName(),
+			dto.getCustomerId(),
+			dto.getAddress(),
+			formatter.formatRupiah(dto.getPlafond()),
+			getStatusKredit(dto.getPlafond())
 		)));
 
 		builder.append("""
-						ℹ️ *Informasi*
-						▔▔▔▔▔▔▔▔▔▔▔
-						📌 _Tap SPK untuk menyalin_
-						⚡️ _Proses: %dms_
-						""".formatted(System.currentTimeMillis() - startTime));
+			ℹ️ *Informasi*
+			▔▔▔▔▔▔▔▔▔▔▔
+			📌 _Tap SPK untuk menyalin_
+			⚡️ _Proses: %dms_
+			""".formatted(System.currentTimeMillis() - startTime));
 
 		return builder.toString();
 	}
