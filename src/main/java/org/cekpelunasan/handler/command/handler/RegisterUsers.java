@@ -6,6 +6,7 @@ import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.repository.UserRepository;
 import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.service.UserService;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -38,6 +39,7 @@ public class RegisterUsers implements CommandProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			String[] parts = text.split(" ");
@@ -100,7 +102,7 @@ public class RegisterUsers implements CommandProcessor {
 	}
 
 	public boolean isValidBranch(String branchCode) {
-		return billService.listAllBrach().contains(branchCode);
+		return billService.lisAllBranch().contains(branchCode);
 	}
 
 	public boolean isValidAO(String aoCode) {

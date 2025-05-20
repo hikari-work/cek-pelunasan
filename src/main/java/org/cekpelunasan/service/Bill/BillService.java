@@ -27,7 +27,7 @@ public class BillService {
 		this.billsRepository = billsRepository;
 	}
 
-	public Set<String> listAllBrach() {
+	public Set<String> lisAllBranch() {
 		return billsRepository.findDistinctBranchByBrach();
 	}
 
@@ -70,6 +70,9 @@ public class BillService {
 
 	public Set<String> findAllAccountOfficer() {
 		return billsRepository.findDistinctByAccountOfficer();
+	}
+	public Boolean isBillExists(String id) {
+		return billsRepository.existsByNameIsLikeIgnoreCase(id);
 	}
 
 	public void parseCsvAndSaveIntoDatabase(Path path) {

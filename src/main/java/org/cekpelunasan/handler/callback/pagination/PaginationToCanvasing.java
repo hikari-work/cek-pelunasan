@@ -54,8 +54,8 @@ public class PaginationToCanvasing implements CallbackProcessor {
 					╔═══════════════════════
 					║ 📊 *DATA NASABAH*
 					║ ├─── 🆔 CIF   : `%s`
-					║ ├─── 📍 Alamat: %s
-					║ └─── 📱 Kontak: %s
+					║ ├─── 📍 Alamat : %s
+					║ └─── 📱 Kontak : %s
 					╚═══════════════════════
 					
 					""",

@@ -26,7 +26,6 @@ public class NgrokService {
 
 	public void setWebhook() {
 		try {
-			// Attempt to get URL from ngrok
 			String tunnelJson = getTunnelInfo();
 			if (tunnelJson == null) {
 				logger.error("Failed to get tunnel information from ngrok");

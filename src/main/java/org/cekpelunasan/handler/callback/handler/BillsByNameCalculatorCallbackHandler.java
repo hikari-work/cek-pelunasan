@@ -5,7 +5,9 @@ import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.handler.callback.pagination.PaginationBillsByNameCallbackHandler;
 import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.utils.DateUtils;
+import org.cekpelunasan.utils.TagihanUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -20,11 +22,13 @@ public class BillsByNameCalculatorCallbackHandler implements CallbackProcessor {
 	private final BillService billService;
 	private final DateUtils dateUtils;
 	private final PaginationBillsByNameCallbackHandler paginationBillsByNameCallbackHandler;
+	private final TagihanUtils tagihanUtils;
 
-	public BillsByNameCalculatorCallbackHandler(BillService billService, DateUtils dateUtils, PaginationBillsByNameCallbackHandler paginationBillsByNameCallbackHandler) {
+	public BillsByNameCalculatorCallbackHandler(BillService billService, DateUtils dateUtils, PaginationBillsByNameCallbackHandler paginationBillsByNameCallbackHandler, TagihanUtils tagihanUtils1) {
 		this.billService = billService;
 		this.dateUtils = dateUtils;
 		this.paginationBillsByNameCallbackHandler = paginationBillsByNameCallbackHandler;
+		this.tagihanUtils = tagihanUtils1;
 	}
 
 	@Override
@@ -33,6 +37,7 @@ public class BillsByNameCalculatorCallbackHandler implements CallbackProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			var callback = update.getCallbackQuery();
@@ -40,63 +45,28 @@ public class BillsByNameCalculatorCallbackHandler implements CallbackProcessor {
 			String[] parts = data.split("_");
 
 			String query = parts[1];
-			if (query.length() == 3) {
-				Page<Bills> dueDateByAccountOfficer = billService.findDueDateByAccountOfficer(query, dateUtils.converterDate(LocalDateTime.now()), Integer.parseInt(parts[2]), 5);
+			if (query.length() == 3 || query.length() == 4) {
+				// Determine which service method to call based on query length
+				Page<Bills> billsPage = query.length() == 3 
+					? billService.findDueDateByAccountOfficer(query, dateUtils.converterDate(LocalDateTime.now()), Integer.parseInt(parts[2]), 5)
+					: billService.findBranchAndPayDown(query, dateUtils.converterDate(LocalDateTime.now()), Integer.parseInt(parts[2]), 5);
+				
+				// Build response message
 				StringBuilder sb = new StringBuilder("📅 *Tagihan Jatuh Bayar Hari Ini*\n\n");
-				dueDateByAccountOfficer.forEach(bills -> sb.append(messageBuilder(bills)));
-				editMessageWithMarkup(callback.getMessage().getChatId(), callback.getMessage().getMessageId(), sb.toString(), telegramClient, paginationBillsByNameCallbackHandler.dynamicButtonName(dueDateByAccountOfficer, Integer.parseInt(parts[2]), query));
-				return;
-			}
-			if (query.length() == 4) {
-				Page<Bills> dueDateByAccountOfficer = billService.findBranchAndPayDown(query, dateUtils.converterDate(LocalDateTime.now()), Integer.parseInt(parts[2]), 5);
-				StringBuilder sb = new StringBuilder("📅 *Tagihan Jatuh Bayar Hari Ini*\n\n");
-				dueDateByAccountOfficer.forEach(bills -> sb.append(messageBuilder(bills)));
-				editMessageWithMarkup(callback.getMessage().getChatId(), callback.getMessage().getMessageId(), sb.toString(), telegramClient, paginationBillsByNameCallbackHandler.dynamicButtonName(dueDateByAccountOfficer, Integer.parseInt(parts[2]), query));
+				billsPage.forEach(bills -> sb.append(tagihanUtils.billsCompact(bills)));
+				
+				// Update the message with pagination buttons
+				editMessageWithMarkup(
+					callback.getMessage().getChatId(), 
+					callback.getMessage().getMessageId(), 
+					sb.toString(), 
+					telegramClient, 
+					paginationBillsByNameCallbackHandler.dynamicButtonName(billsPage, Integer.parseInt(parts[2]), query)
+				);
 				return;
 			}
 			sendMessage(callback.getMessage().getChatId(), "❌ *Data tidak ditemukan*", telegramClient);
 		});
-	}
-
-	public String messageBuilder(Bills bills) {
-		return String.format("""
-				🏦 *INFORMASI NASABAH*
-				━━━━━━━━━━━━━━━━━━━
-				
-				👤 *%s*
-				▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-				
-				📋 *Detail Nasabah*
-				┌─────────────────
-				│ 🔖 ID SPK: `%s`
-				│ 📍 Alamat: %s
-				└─────────────────
-				
-				📅 *Informasi Tempo*
-				┌─────────────────
-				│ 📆 Jatuh Tempo: %s
-				└─────────────────
-				
-				💰 *Informasi Tagihan*
-				┌─────────────────
-				│ 💵 Total: %s
-				└─────────────────
-				
-				👨‍💼 *Account Officer*
-				┌─────────────────
-				│ 👔 AO: %s
-				└─────────────────
-				
-				⏱️ _Generated: %s_
-				""",
-			bills.getName(),
-			bills.getNoSpk(),
-			bills.getAddress(),
-			bills.getPayDown(),
-			String.format("Rp%,d,-", bills.getFullPayment()),
-			bills.getAccountOfficer(),
-			LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
-		);
 	}
 
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {

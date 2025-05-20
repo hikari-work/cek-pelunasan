@@ -6,6 +6,7 @@ import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.utils.RupiahFormatUtils;
 import org.cekpelunasan.utils.button.ButtonListForBills;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -28,6 +29,7 @@ public class SelectBranchCallbackHandler implements CallbackProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			long start = System.currentTimeMillis();

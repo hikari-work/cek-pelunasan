@@ -4,7 +4,7 @@ import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingByTab;
 import org.cekpelunasan.service.SavingsService;
-import org.cekpelunasan.utils.RupiahFormatUtils;
+import org.cekpelunasan.utils.CanvasingUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
@@ -21,10 +21,12 @@ import java.util.concurrent.CompletableFuture;
 public class CanvasingTabCallbackHandler implements CallbackProcessor {
 	private final SavingsService savingsService;
 	private final PaginationCanvassingByTab paginationCanvassingByTab;
+	private final CanvasingUtils canvasingUtils;
 
-	public CanvasingTabCallbackHandler(SavingsService savingsService1, PaginationCanvassingByTab paginationCanvassingByTab) {
+	public CanvasingTabCallbackHandler(SavingsService savingsService1, PaginationCanvassingByTab paginationCanvassingByTab, CanvasingUtils canvasingUtils) {
 		this.savingsService = savingsService1;
 		this.paginationCanvassingByTab = paginationCanvassingByTab;
+		this.canvasingUtils = canvasingUtils;
 	}
 
 	@Override
@@ -51,15 +53,7 @@ public class CanvasingTabCallbackHandler implements CallbackProcessor {
 			StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
 				.append("───────────────────\n")
 				.append(String.format("📄 Halaman %s dari ", page + 1)).append(savings.getTotalPages()).append("\n\n");
-			savings.forEach(dto -> message.append(String.format("""
-				👤 *%s*
-				╔═══════════════════════
-				║ 📊 *DATA NASABAH*
-				║ ├─── 🆔 CIF   : `%s`
-				║ ├─── 📍 Alamat: %s
-				║ └─── 💵 Saldo : %s
-				╚═══════════════════════
-				""", dto.getName(), dto.getCif(), dto.getAddress(), new RupiahFormatUtils().formatRupiah(dto.getBalance().longValue()))));
+			savings.forEach(dto -> message.append(canvasingUtils.canvasingTab(dto)));
 			InlineKeyboardMarkup markup = paginationCanvassingByTab.dynamicButtonName(savings, page, query);
 			editMessageWithMarkup(update.getCallbackQuery().getMessage().getChatId(), update.getCallbackQuery().getMessage().getMessageId(), message.toString(), telegramClient, markup);
 		});

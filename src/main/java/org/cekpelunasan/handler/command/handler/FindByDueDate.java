@@ -9,6 +9,7 @@ import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.service.UserService;
 import org.cekpelunasan.utils.DateUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -43,6 +44,7 @@ public class FindByDueDate implements CommandProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 
@@ -92,9 +94,6 @@ public class FindByDueDate implements CommandProcessor {
 
 	public String messageBuilder(Bills bills) {
 		return String.format("""
-				📋 *DETAIL TAGIHAN KREDIT*
-				═══════════════════════
-				
 				👤 *%s*
 				┌──────────────────────
 				│ 📎 *INFORMASI KREDIT*
@@ -102,7 +101,7 @@ public class FindByDueDate implements CommandProcessor {
 				│ ├─ 📍 Alamat   : %s
 				│ └─ 📅 Jth Tempo: %s
 				│
-				│ 💰 *RINCIAN BIAYA*
+				│ 💰 *RINCIAN*
 				│ ├─ 💸 Tagihan  : %s
 				│ └─ 👨‍💼 AO       : %s
 				└──────────────────────

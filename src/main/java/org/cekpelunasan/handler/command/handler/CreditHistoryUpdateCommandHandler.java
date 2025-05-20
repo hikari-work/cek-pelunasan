@@ -6,6 +6,7 @@ import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.CreditHistoryService;
 import org.cekpelunasan.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -21,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 @Component
 public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 
-	private static final long DELAY_BEETWEEN_USER = 500;
+	private static final long DELAY_BETWEEN_USER = 500;
 
 	private final String botOwner;
 	private final MessageTemplate messageTemplate;
@@ -46,6 +47,7 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			if (isNotAdmin(chatId, telegramClient)) return;
@@ -62,11 +64,11 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 
 	private void processFileAndNotifyUsers(String fileUrl, List<User> allUsers, TelegramClient telegramClient) {
 		String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-		sendMessage(allUsers.getFirst().getChatId(), "⏳ *Sedang mengunduh dan memproses file...*", telegramClient);
+		sendMessage(allUsers.getFirst().getChatId(), "⏳ *Sedang update database canvasing*", telegramClient);
 
 		boolean success = downloadAndProcessFile(fileUrl, fileName);
 		String resultMessage = success
-			? "✅ *File berhasil diproses:*"
+			? "✅ *Database berhasil di proses*"
 			: "⚠ *Gagal update. Akan dicoba ulang.*";
 
 		notifyUsers(allUsers, resultMessage, telegramClient);
@@ -98,7 +100,7 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 
 	private void delayBetweenUsers() {
 		try {
-			Thread.sleep(DELAY_BEETWEEN_USER);
+			Thread.sleep(DELAY_BETWEEN_USER);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			log.warn("Thread interrupted saat delay antar user", e);

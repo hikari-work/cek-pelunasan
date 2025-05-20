@@ -112,9 +112,11 @@ public class SavingsService {
 			.build();
 	}
 
-	public Set<String> listAllBranch() {
-		return savingsRepository.findByBranch().stream()
+	public Set<String> listAllBranch(String name) {
+		System.out.println(name);
+		return savingsRepository.findAllByNameContainingIgnoreCase(name).stream()
 			.sorted()
+			.peek(System.out::println)
 			.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
@@ -122,12 +124,14 @@ public class SavingsService {
 		log.info("Searching for account with ID: {}", id);
 		return savingsRepository.findByTabId(id);
 	}
-
+	@Transactional
+	public Boolean isExistTab(String name) {
+		return savingsRepository.existsByNameIsLikeIgnoreCase(name);
+	}
 	@Transactional
 	public Page<Savings> findFilteredSavings(List<String> addressKeywords, Pageable pageable) {
 		log.info("Starting findFilteredSavings with keywords: {} and page: {}", addressKeywords, pageable);
 		try {
-			// Execute queries concurrently
 			CompletableFuture<List<Savings>> resultsFuture = CompletableFuture.supplyAsync(() -> {
 				CriteriaBuilder cb = em.getCriteriaBuilder();
 				return executeUniqueRecordsQuery(addressKeywords, pageable, cb);
@@ -137,8 +141,6 @@ public class SavingsService {
 				CriteriaBuilder cb = em.getCriteriaBuilder();
 				return executeCountUniqueQuery(addressKeywords, cb);
 			});
-
-			// Wait for both queries to complete
 			CompletableFuture.allOf(resultsFuture, countFuture).join();
 
 			// Get results
@@ -154,22 +156,17 @@ public class SavingsService {
 	}
 
 	private List<Savings> executeUniqueRecordsQuery(List<String> addressKeywords, Pageable pageable, CriteriaBuilder cb) {
-		// Time execution
 		long startTime = System.currentTimeMillis();
 
 		try {
-			// Create a subquery to get the minimum ID for each CIF
 			CriteriaQuery<Savings> query = cb.createQuery(Savings.class);
 			Root<Savings> root = query.from(Savings.class);
 
-			// Create subquery to get minimum ID for each matching CIF
 			Subquery<Long> minIdSubquery = buildMinIdSubquery(query, cb, addressKeywords);
 
-			// Main query selects all fields from Savings where ID is in the subquery
 			query.select(root)
 				.where(root.get("id").in(minIdSubquery));
 
-			// Apply pagination
 			TypedQuery<Savings> typedQuery = em.createQuery(query);
 			typedQuery.setFirstResult((int) pageable.getOffset());
 			typedQuery.setMaxResults(pageable.getPageSize());
@@ -186,11 +183,8 @@ public class SavingsService {
 	private Subquery<Long> buildMinIdSubquery(CriteriaQuery<?> query, CriteriaBuilder cb, List<String> addressKeywords) {
 		Subquery<Long> minIdSubquery = query.subquery(Long.class);
 		Root<Savings> subRoot = minIdSubquery.from(Savings.class);
-
-		// Add address conditions to subquery
 		Predicate addressPredicate = buildAddressPredicates(cb, subRoot, addressKeywords);
 
-		// Add exclusion for accounts with bills
 		Subquery<String> billsSubquery = minIdSubquery.subquery(String.class);
 		Root<Bills> billsRoot = billsSubquery.from(Bills.class);
 		billsSubquery.select(billsRoot.get("customerId"))
@@ -213,10 +207,8 @@ public class SavingsService {
 			CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
 			Root<Savings> countRoot = countQuery.from(Savings.class);
 
-			// Count distinct CIFs
 			countQuery.select(cb.countDistinct(countRoot.get("cif")));
 
-			// Add address filtering
 			Predicate addressPredicate = buildAddressPredicates(cb, countRoot, addressKeywords);
 
 			// Exclude accounts with bills
@@ -241,10 +233,9 @@ public class SavingsService {
 
 	private Predicate buildAddressPredicates(CriteriaBuilder cb, Root<Savings> root, List<String> addressKeywords) {
 		if (addressKeywords == null || addressKeywords.isEmpty()) {
-			return cb.conjunction(); // True predicate if no keywords
+			return cb.conjunction();
 		}
 
-		// Process keywords more efficiently
 		List<String> processedKeywords = addressKeywords.stream()
 			.filter(k -> k != null && !k.trim().isEmpty())
 			.map(String::trim)
@@ -252,10 +243,9 @@ public class SavingsService {
 			.toList();
 
 		if (processedKeywords.isEmpty()) {
-			return cb.conjunction(); // True predicate if all keywords were invalid
+			return cb.conjunction();
 		}
 
-		// Build predicates
 		List<Predicate> likePredicates = processedKeywords.stream()
 			.map(keyword -> {
 				log.debug("Adding LIKE predicate for keyword: '{}'", keyword);
@@ -263,7 +253,6 @@ public class SavingsService {
 			})
 			.toList();
 
-		// AND condition - ALL keywords must be present in the address
 		return cb.and(likePredicates.toArray(new Predicate[0]));
 	}
 }

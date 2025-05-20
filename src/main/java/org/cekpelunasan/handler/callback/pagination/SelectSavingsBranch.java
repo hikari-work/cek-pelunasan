@@ -24,7 +24,7 @@ public class SelectSavingsBranch {
 				.callbackData("branchtab_" + branchList.get(i) + "_" + query)
 				.build();
 			currentRow.add(button);
-			if (currentRow.size() == 3 || i == branchList.size() - 1) {
+			if (currentRow.size() == 4 || i == branchList.size() - 1) {
 				rows.add(currentRow);
 				currentRow = new InlineKeyboardRow();
 			}

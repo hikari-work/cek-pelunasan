@@ -5,7 +5,7 @@ import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.RepaymentService;
-import org.cekpelunasan.utils.RupiahFormatUtils;
+import org.cekpelunasan.utils.TagihanUtils;
 import org.cekpelunasan.utils.button.ButtonListForName;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;
@@ -24,15 +24,17 @@ public class FindNamesHandler implements CommandProcessor {
 	private final RepaymentService repaymentService;
 	private final AuthorizedChats authService;
 	private final MessageTemplate messageTemplateService;
+	private final TagihanUtils tagihanUtils;
 
 	public FindNamesHandler(
 		RepaymentService repaymentService,
 		AuthorizedChats authService,
-		MessageTemplate messageTemplateService
-	) {
+		MessageTemplate messageTemplateService,
+		TagihanUtils tagihanUtils1) {
 		this.repaymentService = repaymentService;
 		this.authService = authService;
 		this.messageTemplateService = messageTemplateService;
+		this.tagihanUtils = tagihanUtils1;
 	}
 
 	@Override
@@ -79,32 +81,7 @@ public class FindNamesHandler implements CommandProcessor {
 				String.format("\uD83D\uDCC4 Halaman 1 dari %d\n\n", repayments.getTotalPages())
 			);
 
-			repayments.forEach(dto -> messageBuilder.append(String.format("""
-					📊 *INFORMASI NASABAH*
-					╔═══════════════════════
-					║ 👤 *%s*
-					╠═══════════════════════
-					║
-					║ 📎 *DETAIL KREDIT*
-					║ ┌─────────────────────
-					║ │ 🔖 SPK    : `%s`
-					║ │ 📍 Alamat : %s
-					║ └─────────────────────
-					║
-					║ 💳 *RINCIAN PINJAMAN*
-					║ ┌─────────────────────
-					║ │ 💰 Plafond: %s
-					║ │ 📅 Status : %s
-					║ └─────────────────────
-					╚═══════════════════════
-					
-					""",
-				dto.getName().toUpperCase(),
-				dto.getCustomerId(),
-				formatAddress(dto.getAddress()),
-				new RupiahFormatUtils().formatRupiah(dto.getPlafond()),
-				getStatusKredit(dto.getPlafond())
-			)));
+			repayments.forEach(dto -> messageBuilder.append(tagihanUtils.getAllPelunasan(dto)));
 
 			String footer = String.format("\n\nEksekusi dalam %dms", System.currentTimeMillis() - startTime);
 			messageBuilder.append(footer);
@@ -140,17 +117,8 @@ public class FindNamesHandler implements CommandProcessor {
 				.parseMode("Markdown")
 				.build());
 		} catch (Exception e) {
-			log.error("Error");
+			log.error("Error Sending Message");
 		}
 	}
 
-	private String formatAddress(String address) {
-		return address.length() > 35 ? address.substring(0, 32) + "..." : address;
-	}
-
-	private String getStatusKredit(long plafond) {
-		if (plafond >= 500_000_000) return "🔷 Premium";
-		if (plafond >= 100_000_000) return "🔶 Gold";
-		return "⭐️ Regular";
-	}
 }

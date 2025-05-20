@@ -7,7 +7,9 @@ import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.service.UserService;
+import org.cekpelunasan.utils.MinimalPayUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -23,16 +25,18 @@ public class MinimalPayCommand implements CommandProcessor {
 	private final UserService userService;
 	private final BillService billService;
 	private final PaginationToMinimalPay paginationToMinimalPay;
+	private final MinimalPayUtils minimalPayUtils;
 
 	public MinimalPayCommand(
 		AuthorizedChats authorizedChats,
 		UserService userService,
 		BillService billService,
-		PaginationToMinimalPay paginationToMinimalPay) {
+		PaginationToMinimalPay paginationToMinimalPay, MinimalPayUtils minimalPayUtils) {
 		this.authorizedChats = authorizedChats;
 		this.userService = userService;
 		this.billService = billService;
 		this.paginationToMinimalPay = paginationToMinimalPay;
+		this.minimalPayUtils = minimalPayUtils;
 	}
 
 	@Override
@@ -48,6 +52,7 @@ public class MinimalPayCommand implements CommandProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 
@@ -84,34 +89,7 @@ public class MinimalPayCommand implements CommandProcessor {
 					""");
 
 				for (Bills bill : bills) {
-					message.append(String.format("""
-							🏦 *%s*
-							┏━━━━━━━━━━━━━━━━━━━━━
-							┃
-							┣ 📎 *DATA KREDIT*
-							┃ ┌─────────────────────
-							┃ │ 🆔 SPK    : `%s`
-							┃ │ 📍 Alamat : %s
-							┃ └─────────────────────
-							┃
-							┣ 💰 *PEMBAYARAN MINIMAL*
-							┃ ┌─────────────────────
-							┃ │ 💵 Pokok  : %s
-							┃ │ 💸 Bunga  : %s
-							┃ │
-							┃ │ 📊 *TOTAL*
-							┃ │ 🔥 %s
-							┃ └─────────────────────
-							┗━━━━━━━━━━━━━━━━━━━━━
-							
-							""",
-						bill.getName().toUpperCase(),
-						bill.getNoSpk(),
-						formatAddress(bill.getAddress()),
-						formatRupiah(bill.getMinPrincipal()),
-						formatRupiah(bill.getMinInterest()),
-						formatRupiah(bill.getMinPrincipal() + bill.getMinInterest())
-					));
+					message.append(minimalPayUtils.minimalPay(bill));
 				}
 
 				message.append("""
@@ -141,11 +119,4 @@ public class MinimalPayCommand implements CommandProcessor {
 		}
 	}
 
-	private String formatAddress(String address) {
-		return address.length() > 30 ? address.substring(0, 27) + "..." : address;
-	}
-
-	private String formatRupiah(long amount) {
-		return String.format("Rp %,d", amount);
-	}
 }

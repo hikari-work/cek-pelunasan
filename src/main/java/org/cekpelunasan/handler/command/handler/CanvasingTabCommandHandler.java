@@ -5,7 +5,7 @@ import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingByTab;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.SavingsService;
-import org.cekpelunasan.utils.RupiahFormatUtils;
+import org.cekpelunasan.utils.CanvasingUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
@@ -25,11 +25,13 @@ public class CanvasingTabCommandHandler implements CommandProcessor {
 	private final AuthorizedChats authorizedChats1;
 	private final SavingsService savingsService;
 	private final PaginationCanvassingByTab paginationCanvassingByTab;
+	private final CanvasingUtils canvasingUtils;
 
-	public CanvasingTabCommandHandler(AuthorizedChats authorizedChats1, SavingsService savingsService, PaginationCanvassingByTab paginationCanvassingByTab) {
+	public CanvasingTabCommandHandler(AuthorizedChats authorizedChats1, SavingsService savingsService, PaginationCanvassingByTab paginationCanvassingByTab, CanvasingUtils canvasingUtils1) {
 		this.authorizedChats1 = authorizedChats1;
 		this.savingsService = savingsService;
 		this.paginationCanvassingByTab = paginationCanvassingByTab;
+		this.canvasingUtils = canvasingUtils1;
 	}
 
 	@Override
@@ -77,16 +79,7 @@ public class CanvasingTabCommandHandler implements CommandProcessor {
 			StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
 				.append("───────────────────\n")
 				.append("📄 Halaman 1 dari ").append(savingsPage.getTotalPages()).append("\n\n");
-
-			savingsPage.forEach(dto -> message.append(String.format("""
-				👤 *%s*
-				╔═══════════════════════
-				║ 📊 *DATA NASABAH*
-				║ ├─── 🆔 CIF   : `%s`
-				║ ├─── 📍 Alamat: %s
-				║ └─── 💵 Saldo : %s
-				╚═══════════════════════
-				""", dto.getName(), dto.getCif(), dto.getAddress(), new RupiahFormatUtils().formatRupiah(dto.getBalance().longValue()))));
+			savingsPage.forEach(dto -> message.append(canvasingUtils.canvasingTab(dto)));
 
 			InlineKeyboardMarkup markup = paginationCanvassingByTab.dynamicButtonName(savingsPage, 0, address);
 			sendMessage(chatId, message.toString(), markup, telegramClient);

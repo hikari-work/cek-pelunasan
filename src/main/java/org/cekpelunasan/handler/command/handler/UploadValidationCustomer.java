@@ -18,6 +18,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -61,7 +63,6 @@ public class UploadValidationCustomer implements CommandProcessor {
 			if (fileUrl == null) return;
 
 			List<User> allUsers = userService.findAllUsers();
-			notifyUsers(allUsers, "⚠ *Sedang melakukan update data, mohon jangan kirim perintah apapun...*", telegramClient);
 
 			processFileAndNotifyUsers(fileUrl, allUsers, telegramClient);
 		});
@@ -85,16 +86,19 @@ public class UploadValidationCustomer implements CommandProcessor {
 	}
 
 	private void processFileAndNotifyUsers(String fileUrl, List<User> allUsers, TelegramClient telegramClient) {
-		String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-		sendMessage(allUsers.getFirst().getChatId(), "⏳ *Sedang mengunduh dan memproses file...*", telegramClient);
+    String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
 
-		boolean success = downloadAndProcessFile(fileUrl, fileName);
-		String resultMessage = success
-			? "✅ *File berhasil diproses:*"
-			: "⚠ *Gagal update. Akan dicoba ulang.*";
+    boolean success = downloadAndProcessFile(fileUrl, fileName);
+    
+    // Format current date and time
+    String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
+    
+    String resultMessage = success
+        ? String.format("✅ *Update berhasil: Data Validasi CIF diperbarui pada %s*", currentDateTime)
+        : "⚠ *Gagal update. Data Validasi CIF, Akan dicoba ulang.*";
 
-		notifyUsers(allUsers, resultMessage, telegramClient);
-	}
+    notifyUsers(allUsers, resultMessage, telegramClient);
+}
 
 	private void notifyUsers(List<User> users, String message, TelegramClient client) {
 		users.forEach(user -> {

@@ -5,6 +5,7 @@ import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.Bill.BillService;
+import org.cekpelunasan.utils.TagihanUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
@@ -17,11 +18,13 @@ public class TagihCommandHandler implements CommandProcessor {
 	private final BillService billService;
 	private final AuthorizedChats authorizedChats1;
 	private final MessageTemplate messageTemplate;
+	private final TagihanUtils tagihanUtils;
 
-	public TagihCommandHandler(BillService billService, AuthorizedChats authorizedChats1, MessageTemplate messageTemplate) {
+	public TagihCommandHandler(BillService billService, AuthorizedChats authorizedChats1, MessageTemplate messageTemplate, TagihanUtils tagihanUtils1) {
 		this.billService = billService;
 		this.authorizedChats1 = authorizedChats1;
 		this.messageTemplate = messageTemplate;
+		this.tagihanUtils = tagihanUtils1;
 	}
 
 	@Override
@@ -60,7 +63,7 @@ public class TagihCommandHandler implements CommandProcessor {
 					sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
 					return;
 				}
-				sendMessage(chatId, buildBillMessage(bills) + "\nEksekusi dalam " + (System.currentTimeMillis() - start) + " ms", telegramClient);
+				sendMessage(chatId, tagihanUtils.detailBills(bills) + "\nEksekusi dalam " + (System.currentTimeMillis() - start) + " ms", telegramClient);
 
 			} catch (Exception e) {
 				log.error("Error", e);
@@ -68,67 +71,4 @@ public class TagihCommandHandler implements CommandProcessor {
 		});
 	}
 
-	public String buildBillMessage(Bills bill) {
-		return String.format("""
-				🏦 *INFORMASI KREDIT*
-				═══════════════════
-				
-				👤 *Detail Nasabah*
-				▢ Nama\t\t: *%s*
-				▢ No SPK\t: `%s`
-				▢ Alamat\t: %s
-				
-				💳 *Informasi Pinjaman*
-				▢ Plafond\t\t: %s
-				▢ Baki Debet\t: %s
-				▢ Realisasi\t\t: %s
-				▢ Jatuh Tempo\t: %s
-				
-				💹 *Angsuran*
-				▢ Bunga\t\t: %s
-				▢ Pokok\t\t: %s
-				▢ Total\t\t: %s
-				
-				⚠️ *Tunggakan*
-				▢ Bunga\t\t: %s
-				▢ Pokok\t\t: %s
-				
-				📊 *Status Kredit*
-				▢ Hari Tunggakan\t: %s hari
-				▢ Kolektibilitas\t\t: %s
-				
-				💰 *Pembayaran*
-				▢ Total Tagihan\t\t: %s
-				
-				⚡️ *Minimal Bayar*
-				▢ Pokok\t\t: %s
-				▢ Bunga\t\t: %s
-				
-				👨‍💼 *Account Officer*: %s
-				═══════════════════
-				""",
-			bill.getName(),
-			bill.getNoSpk(),
-			bill.getAddress(),
-			formatRupiah(bill.getPlafond()),
-			formatRupiah(bill.getDebitTray()),
-			bill.getRealization(),
-			bill.getDueDate(),
-			formatRupiah(bill.getInterest()),
-			formatRupiah(bill.getPrincipal()),
-			formatRupiah(bill.getInstallment()),
-			formatRupiah(bill.getLastInterest()),
-			formatRupiah(bill.getLastPrincipal()),
-			bill.getDayLate(),
-			bill.getCollectStatus(),
-			formatRupiah(bill.getFullPayment()),
-			formatRupiah(bill.getMinPrincipal()),
-			formatRupiah(bill.getMinInterest()),
-			bill.getAccountOfficer()
-		);
-	}
-
-	private String formatRupiah(Long amount) {
-		return String.format("Rp %,d", amount);
-	}
 }

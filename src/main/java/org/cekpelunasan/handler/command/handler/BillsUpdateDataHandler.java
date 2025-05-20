@@ -6,6 +6,7 @@ import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -15,6 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -50,6 +53,7 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			log.info("Upadte");
@@ -67,19 +71,18 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 			log.info("Command: {}", text);
 			String url = parts[1];
 			String fileName = url.substring(url.lastIndexOf("/") + 1);
-			long start = System.currentTimeMillis();
 
 			sendMessage(chatId, "⏳ *Sedang mengunduh dan memproses file...*", telegramClient);
 
 			try {
 				List<User> users = userService.findAllUsers();
-				broadcast(users, "⚠ *Sedang melakukan update data, mohon jangan kirim perintah apapun...*", telegramClient);
 
 				if (processCsvFile(url, fileName)) {
-					String msg = String.format("✅ *File berhasil diproses:*\n\n_Eksekusi dalam %dms_", System.currentTimeMillis() - start);
-					broadcast(users, msg, telegramClient);
+					broadcast(users, String.format("✅ *Database tagihan berhasil di update pada %s:*",
+						LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"))),
+						telegramClient);
 				} else {
-					broadcast(users, "⚠ *Gagal update. Akan dicoba ulang.*", telegramClient);
+					broadcast(users, "⚠ *Gagal update data Tagihan. Akan dicoba ulang.*", telegramClient);
 				}
 			} catch (Exception e) {
 				log.error("❌ Gagal memproses file CSV", e);
@@ -90,7 +93,6 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 
 	private boolean processCsvFile(String fileUrl, String fileName) {
 		if (!fileName.endsWith(".csv")) return false;
-
 		try (InputStream input = new URL(fileUrl).openStream()) {
 			Path filePath = Paths.get("files", fileName);
 			Files.createDirectories(filePath.getParent());

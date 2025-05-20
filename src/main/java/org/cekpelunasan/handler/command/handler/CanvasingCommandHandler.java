@@ -7,6 +7,7 @@ import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.CreditHistoryService;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -43,6 +44,7 @@ public class CanvasingCommandHandler implements CommandProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			String address = text.length() > 11 ? text.substring(11).trim() : "";
@@ -69,8 +71,8 @@ public class CanvasingCommandHandler implements CommandProcessor {
 					 ╔═══════════════════════
 					 ║ 📊 *DATA NASABAH*
 					 ║ ├─── 🆔 CIF   : `%s`
-					 ║ ├─── 📍 Alamat: %s
-					 ║ └─── 📱 Kontak: %s
+					 ║ ├─── 📍 Alamat : %s
+					 ║ └─── 📱 Kontak : %s
 					 ╚═══════════════════════
 					
 					""",

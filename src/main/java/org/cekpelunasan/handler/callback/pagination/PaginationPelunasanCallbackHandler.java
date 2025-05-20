@@ -3,7 +3,7 @@ package org.cekpelunasan.handler.callback.pagination;
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.service.RepaymentService;
-import org.cekpelunasan.utils.RupiahFormatUtils;
+import org.cekpelunasan.utils.TagihanUtils;
 import org.cekpelunasan.utils.button.ButtonListForName;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -17,10 +17,12 @@ public class PaginationPelunasanCallbackHandler implements CallbackProcessor {
 
 	private final RepaymentService repaymentService;
 	private final ButtonListForName buttonListForName;
+	private final TagihanUtils tagihanUtils;
 
-	public PaginationPelunasanCallbackHandler(RepaymentService repaymentService, ButtonListForName buttonListForName) {
+	public PaginationPelunasanCallbackHandler(RepaymentService repaymentService, ButtonListForName buttonListForName, TagihanUtils tagihanUtils1) {
 		this.repaymentService = repaymentService;
 		this.buttonListForName = buttonListForName;
+		this.tagihanUtils = tagihanUtils1;
 	}
 
 	@Override
@@ -31,7 +33,6 @@ public class PaginationPelunasanCallbackHandler implements CallbackProcessor {
 	@Override
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
-			long start = System.currentTimeMillis();
 
 			var callback = update.getCallbackQuery();
 			long chatId = callback.getMessage().getChatId();
@@ -47,14 +48,14 @@ public class PaginationPelunasanCallbackHandler implements CallbackProcessor {
 				return;
 			}
 
-			String message = buildRepaymentMessage(repayments, page, start);
+			String message = buildRepaymentMessage(repayments, page);
 			var keyboard = buttonListForName.dynamicButtonName(repayments, page, query);
 
 			editMessageWithMarkup(chatId, messageId, message, telegramClient, keyboard);
 		});
 	}
 
-	private String buildRepaymentMessage(Page<Repayment> repayments, int page, long startTime) {
+	private String buildRepaymentMessage(Page<Repayment> repayments, int page) {
 		StringBuilder builder = new StringBuilder(String.format("""
 			🏦 *SISTEM INFORMASI KREDIT*
 			═══════════════════════════
@@ -63,40 +64,15 @@ public class PaginationPelunasanCallbackHandler implements CallbackProcessor {
 			
 			""", page + 1, repayments.getTotalPages()));
 
-		RupiahFormatUtils formatter = new RupiahFormatUtils();
-		repayments.forEach(dto -> builder.append(String.format("""
-				🔷 *%s*
-				┌────────────────────────
-				│ 📎 *DATA NASABAH*
-				│ └── 🔖 SPK    : `%s`
-				│ └── 📍 Alamat : %s
-				│
-				│ 💳 *INFORMASI KREDIT*
-				│ └── 💰 Plafond : %s
-				│ └── 📅 Status  : %s
-				└────────────────────────
-				
-				""",
-			dto.getName(),
-			dto.getCustomerId(),
-			dto.getAddress(),
-			formatter.formatRupiah(dto.getPlafond()),
-			getStatusKredit(dto.getPlafond())
-		)));
+		repayments.forEach(dto -> builder.append(tagihanUtils.getAllPelunasan(dto)));
 
 		builder.append("""
 			ℹ️ *Informasi*
 			▔▔▔▔▔▔▔▔▔▔▔
 			📌 _Tap SPK untuk menyalin_
-			⚡️ _Proses: %dms_
-			""".formatted(System.currentTimeMillis() - startTime));
+			""");
 
 		return builder.toString();
 	}
 
-	private String getStatusKredit(long plafond) {
-		if (plafond > 500_000_000) return "🔴 Premium";
-		if (plafond > 100_000_000) return "🟡 Gold";
-		return "🟢 Regular";
-	}
 }

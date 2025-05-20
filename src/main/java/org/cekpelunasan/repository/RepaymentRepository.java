@@ -12,4 +12,6 @@ public interface RepaymentRepository extends JpaRepository<Repayment, Long> {
 
 
 	Page<Repayment> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+	Boolean existsByNameIsLikeIgnoreCase(String name);
 }

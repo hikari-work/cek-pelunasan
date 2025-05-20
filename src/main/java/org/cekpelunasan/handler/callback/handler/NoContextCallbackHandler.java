@@ -1,6 +1,7 @@
 package org.cekpelunasan.handler.callback.handler;
 
 import org.cekpelunasan.handler.callback.CallbackProcessor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -17,6 +18,7 @@ public class NoContextCallbackHandler implements CallbackProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			String message = "🐊 Pap Dulu Dong Maniess";

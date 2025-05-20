@@ -4,6 +4,7 @@ import org.cekpelunasan.handler.callback.pagination.SelectSavingsBranch;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.SavingsService;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -36,6 +37,7 @@ public class SavingsFindCommandHandler implements CommandProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			if (!authorizedChats1.isAuthorized(chatId)) {
@@ -51,21 +53,20 @@ public class SavingsFindCommandHandler implements CommandProcessor {
 				sendMessage(chatId, "Nama Harus Diisi", telegramClient);
 				return;
 			}
-			Set<String> branches = savingsService.listAllBranch();
+			Set<String> branches = savingsService.listAllBranch(name);
 			if (branches.isEmpty()) {
 				sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
 				return;
 			}
-			if (branches.size() > 1) {
-				sendMessageWithBrachSelection(chatId, name, branches, telegramClient);
-			}
+			log.info("Data ditemukan dalam beberapa cabang: {}", branches);
+			sendMessageWithBrachSelection(chatId, name, branches, telegramClient);
 
 		});
 	}
 
 	private void sendMessageWithBrachSelection(long chatId, String name, Set<String> branches, TelegramClient telegramClient) {
 		InlineKeyboardMarkup markup = selectSavingsBranch.dynamicSelectBranch(branches, name);
-		sendMessage(chatId, "Silahkan pilih cabang", telegramClient, markup);
+		sendMessage(chatId, "Data ditemukan dalam beberapa cabang", telegramClient, markup);
 	}
 
 	private void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {

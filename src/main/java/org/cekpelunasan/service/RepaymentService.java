@@ -81,4 +81,9 @@ public class RepaymentService {
 	public int countAll() {
 		return Math.toIntExact(repaymentRepository.count());
 	}
+
+	public Boolean isRepaymentExists(String name) {
+		return repaymentRepository.existsByNameIsLikeIgnoreCase(name);
+
+	}
 }

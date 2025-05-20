@@ -4,7 +4,9 @@ import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.handler.callback.pagination.PaginationSavingsButton;
 import org.cekpelunasan.service.SavingsService;
+import org.cekpelunasan.utils.SavingsUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -18,10 +20,12 @@ import java.util.concurrent.CompletableFuture;
 public class SavingsSelectBranchCallbackHandler implements CallbackProcessor {
 	private final SavingsService savingsService;
 	private final PaginationSavingsButton paginationSavingsButton;
+	private final SavingsUtils savingsUtils;
 
-	public SavingsSelectBranchCallbackHandler(SavingsService savingsService, PaginationSavingsButton paginationSavingsButton) {
+	public SavingsSelectBranchCallbackHandler(SavingsService savingsService, PaginationSavingsButton paginationSavingsButton, SavingsUtils savingsUtils) {
 		this.savingsService = savingsService;
 		this.paginationSavingsButton = paginationSavingsButton;
+		this.savingsUtils = savingsUtils;
 	}
 
 	@Override
@@ -30,6 +34,7 @@ public class SavingsSelectBranchCallbackHandler implements CallbackProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			String[] data = update.getCallbackQuery().getData().split("_");
@@ -57,27 +62,13 @@ public class SavingsSelectBranchCallbackHandler implements CallbackProcessor {
 	}
 
 	public String buildMessage(Page<Savings> savings, int page, long startTime) {
-		StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
-			.append("───────────────────\n")
-			.append("📄 Halaman ").append(page + 1).append(" dari ").append(savings.getTotalPages()).append("\n\n");
+    	StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
+        	.append("Halaman ").append(page + 1).append(" dari ").append(savings.getTotalPages()).append("\n\n");
 
-		savings.forEach(saving -> message.append("👤 *").append(saving.getName()).append("*\n")
-			.append("━━━━━━━━━━━━━━━━━━\n")
-			.append("📝 *Detail Rekening*\n")
-			.append("▫️ No. Rek: `").append(saving.getTabId()).append("`\n")
-			.append("▫️ Alamat: ").append(saving.getAddress()).append("\n\n")
-			.append("💰 *Informasi Saldo*\n")
-			.append("▫️ Saldo Buku: ").append(formatRupiah(saving.getBalance().add(saving.getTransaction()).longValue())).append("\n")
-			.append("▫️ Min. Saldo: ").append(formatRupiah(saving.getMinimumBalance().longValue())).append("\n")
-			.append("▫️ Block. Saldo: ").append(formatRupiah(saving.getBlockingBalance().longValue())).append("\n")
-			.append("➡️ *Saldo Efektif*: ")
-			.append(formatRupiah(saving.getBalance().add(saving.getTransaction()).longValue() -
-				saving.getMinimumBalance().longValue() -
-				saving.getBlockingBalance().longValue()))
-			.append("\n───────────────────\n\n"));
+    	savings.forEach(savingsUtils::getSavings);
 
-		message.append("⏱️ _Eksekusi dalam ").append(System.currentTimeMillis() - startTime).append("ms_");
-		return message.toString();
+    	message.append("⏱️ Waktu: ").append(System.currentTimeMillis() - startTime).append("ms");
+    	return message.toString();
 	}
 
 }

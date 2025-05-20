@@ -6,7 +6,9 @@ import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.handler.callback.pagination.PaginationToMinimalPay;
 import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.service.UserService;
+import org.cekpelunasan.utils.MinimalPayUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -21,11 +23,13 @@ public class MinimalPayCallbackHandler implements CallbackProcessor {
 	private final PaginationToMinimalPay paginationToMinimalPay;
 	private final BillService billService;
 	private final UserService userService;
+	private final MinimalPayUtils minimalPayUtils;
 
-	public MinimalPayCallbackHandler(PaginationToMinimalPay paginationToMinimalPay, BillService billService, UserService userService) {
+	public MinimalPayCallbackHandler(PaginationToMinimalPay paginationToMinimalPay, BillService billService, UserService userService, MinimalPayUtils minimalPayUtils1) {
 		this.paginationToMinimalPay = paginationToMinimalPay;
 		this.billService = billService;
 		this.userService = userService;
+		this.minimalPayUtils = minimalPayUtils1;
 	}
 
 	@Override
@@ -34,6 +38,7 @@ public class MinimalPayCallbackHandler implements CallbackProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			long chatId = update.getCallbackQuery().getMessage().getChatId();
@@ -66,35 +71,7 @@ public class MinimalPayCallbackHandler implements CallbackProcessor {
 			StringBuilder message = new StringBuilder("📋 *Daftar Tagihan Minimal Bayar:*\n\n");
 			if (bills != null) {
 				for (Bills bill : bills) {
-					message.append(String.format("""
-							📑 *INFORMASI PEMBAYARAN*
-							═══════════════════════
-							
-							🎫 *Detail Kredit*
-							┌──────────────────┐
-							│ 🔐 SPK: `%s`
-							│ 👤 Nama: *%s*
-							│ 🏘️ Alamat: %s
-							└──────────────────┘
-							
-							💳 *Rincian Pembayaran*
-							┌──────────────────┐
-							│ 💎 Pokok    : %s
-							│ 💫 Bunga    : %s
-							│
-							│ 🔥 *TOTAL MINIMAL*
-							│ 💰 %s
-							└──────────────────┘
-							
-							⚡️ *Catatan*: _Pembayaran minimal harus dilakukan sebelum jatuh bayar_
-							""",
-						bill.getNoSpk(),
-						bill.getName(),
-						bill.getAddress(),
-						formatRupiah(bill.getMinPrincipal()),
-						formatRupiah(bill.getMinInterest()),
-						formatRupiah(bill.getMinPrincipal() + bill.getMinInterest())
-					));
+					message.append(minimalPayUtils.minimalPay(bill));
 				}
 			}
 
@@ -103,7 +80,4 @@ public class MinimalPayCallbackHandler implements CallbackProcessor {
 		});
 	}
 
-	private String formatRupiah(long amount) {
-		return String.format("Rp %,d", amount);
-	}
 }

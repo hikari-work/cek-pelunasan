@@ -42,4 +42,6 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 
 	@Query("SELECT DISTINCT b.accountOfficer FROM Bills b")
 	Set<String> findDistinctByAccountOfficer();
+
+	Boolean existsByNameIsLikeIgnoreCase(String name);
 }

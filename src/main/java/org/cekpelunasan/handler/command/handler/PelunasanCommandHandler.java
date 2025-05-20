@@ -89,7 +89,6 @@ public class PelunasanCommandHandler implements CommandProcessor {
 				);
 
 				String result = new RepaymentCalculator().calculate(repayment, penalty);
-				result += "\n\n_Eksekusi dalam " + (System.currentTimeMillis() - start) + "ms_";
 
 				sendMessage(chatId, result, telegramClient, new SendPhotoKeyboard().sendPhotoButton(customerId));
 

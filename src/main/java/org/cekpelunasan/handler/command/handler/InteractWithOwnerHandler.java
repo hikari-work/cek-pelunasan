@@ -2,6 +2,9 @@ package org.cekpelunasan.handler.command.handler;
 
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.AuthorizedChats;
+import org.cekpelunasan.service.Bill.BillService;
+import org.cekpelunasan.service.RepaymentService;
+import org.cekpelunasan.service.SavingsService;
 import org.cekpelunasan.utils.button.DirectMessageButton;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -23,12 +26,18 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 
 	private final AuthorizedChats authorizedChats1;
 	private final DirectMessageButton directMessageButton;
+	private final SavingsService savingsService;
+	private final RepaymentService repaymentService;
+	private final BillService billService;
 	@Value("${telegram.bot.owner}")
 	private Long ownerId;
 
-	public InteractWithOwnerHandler(AuthorizedChats authorizedChats1, DirectMessageButton directMessageButton) {
+	public InteractWithOwnerHandler(AuthorizedChats authorizedChats1, DirectMessageButton directMessageButton, SavingsService savingsService, RepaymentService repaymentService, BillService billService1) {
 		this.authorizedChats1 = authorizedChats1;
 		this.directMessageButton = directMessageButton;
+		this.savingsService = savingsService;
+		this.repaymentService = repaymentService;
+		this.billService = billService1;
 	}
 
 	@Override
@@ -67,6 +76,9 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 					sendMessage(chatId, "Pilih salah satu action dibawah ini", directMessageButton.selectServices(id), telegramClient);
 					return;
 				}
+				CompletableFuture<Boolean> isTabExist = CompletableFuture.supplyAsync(() -> savingsService.isExistTab(text));
+				CompletableFuture<Boolean> isRepaymentExist = CompletableFuture.supplyAsync(() -> repaymentService.isRepaymentExists(text));
+				CompletableFuture<Boolean> isBillsExist = CompletableFuture.supplyAsync(() -> billService.isBillExists(text));
 			}
 
 			if (!chatId.equals(ownerId)) {

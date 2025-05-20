@@ -5,6 +5,7 @@ import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.utils.button.ButtonListForSelectBranch;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -37,6 +38,7 @@ public class TagihWithNameCommandHandler implements CommandProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			if (!authorizedChats.isAuthorized(chatId)) {
@@ -47,7 +49,7 @@ public class TagihWithNameCommandHandler implements CommandProcessor {
 			String name = extractName(text, chatId, telegramClient);
 			if (name == null) return;
 
-			Set<String> branches = billService.listAllBrach();
+			Set<String> branches = billService.lisAllBranch();
 
 			if (branches.isEmpty()) {
 				sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
