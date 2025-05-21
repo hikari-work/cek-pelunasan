@@ -1,11 +1,15 @@
 package org.cekpelunasan.handler.command.handler;
 
 import org.cekpelunasan.entity.KolekTas;
+import org.cekpelunasan.handler.callback.pagination.PaginationKolekTas;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.KolekTasService;
 import org.cekpelunasan.utils.KolekTasUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -14,10 +18,12 @@ import java.util.concurrent.CompletableFuture;
 public class KolekTasHandler implements CommandProcessor {
 	private final KolekTasService kolekTasService;
 	private final KolekTasUtils kolekTasUtils;
+	private final PaginationKolekTas paginationKolekTas;
 
-	public KolekTasHandler(KolekTasService kolekTasService, KolekTasUtils kolekTasUtils) {
+	public KolekTasHandler(KolekTasService kolekTasService, KolekTasUtils kolekTasUtils, PaginationKolekTas paginationKolekTas) {
 		this.kolekTasService = kolekTasService;
 		this.kolekTasUtils = kolekTasUtils;
+		this.paginationKolekTas = paginationKolekTas;
 	}
 
 	@Override
@@ -45,10 +51,22 @@ public class KolekTasHandler implements CommandProcessor {
 			Page<KolekTas> kolek = kolekTasService.findKolekByKelompok(data, 0, 5);
 			StringBuilder stringBuilder = new StringBuilder();
 			kolek.forEach(k -> stringBuilder.append(kolekTasUtils.buildKolekTas(k)));
-			sendMessage(chatId, stringBuilder.toString(), telegramClient);
+			sendMessageAndMarkup(chatId, stringBuilder.toString(), paginationKolekTas.dynamicButtonName(kolek, 0, data), telegramClient);
 		});
 	}
 	private boolean isValidKelompok(String text) {
 		return text.matches("^[a-zA-Z]{3}\\.\\d+$\n");
+	}
+	private void sendMessageAndMarkup(Long chatId, String text, InlineKeyboardMarkup inlineKeyboardMarkup, TelegramClient telegramClient) {
+		try {
+			telegramClient.execute(SendMessage.builder()
+				.chatId(chatId)
+				.text(text)
+				.parseMode("Markdown")
+					.replyMarkup(inlineKeyboardMarkup)
+				.build());
+		} catch (TelegramApiException e) {
+			log.info(e.getMessage());
+		}
 	}
 }

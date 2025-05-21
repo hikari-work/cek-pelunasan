@@ -6,6 +6,7 @@ import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.AuthorizedChats;
 import org.cekpelunasan.service.CreditHistoryService;
+import org.cekpelunasan.utils.FormatPhoneNumberUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -23,12 +24,14 @@ public class CanvasingCommandHandler implements CommandProcessor {
 	private final MessageTemplate messageTemplate;
 	private final CreditHistoryService creditHistoryService;
 	private final PaginationCanvassingButton paginationCanvassingButton;
+	private final FormatPhoneNumberUtils formatPhoneNumberUtils;
 
-	public CanvasingCommandHandler(AuthorizedChats authorizedChats1, MessageTemplate messageTemplate, CreditHistoryService creditHistoryService, PaginationCanvassingButton paginationCanvassingButton) {
+	public CanvasingCommandHandler(AuthorizedChats authorizedChats1, MessageTemplate messageTemplate, CreditHistoryService creditHistoryService, PaginationCanvassingButton paginationCanvassingButton, FormatPhoneNumberUtils formatPhoneNumberUtils) {
 		this.authorizedChats1 = authorizedChats1;
 		this.messageTemplate = messageTemplate;
 		this.creditHistoryService = creditHistoryService;
 		this.paginationCanvassingButton = paginationCanvassingButton;
+		this.formatPhoneNumberUtils = formatPhoneNumberUtils;
 	}
 
 	@Override
@@ -79,7 +82,7 @@ public class CanvasingCommandHandler implements CommandProcessor {
 				formatName(dto.getName()),
 				dto.getCustomerId(),
 				formatAddress(dto.getAddress()),
-				formatPhoneNumber(dto.getPhone())
+				formatPhoneNumberUtils.formatPhoneNumber(dto.getPhone())
 			)));
 
 
@@ -109,17 +112,6 @@ public class CanvasingCommandHandler implements CommandProcessor {
 
 	private String formatAddress(String address) {
 		return address.length() > 35 ? address.substring(0, 32) + "..." : address;
-	}
-
-	private String formatPhoneNumber(String phone) {
-		if (phone == null || phone.trim().isEmpty()) {
-			return "📵 Tidak tersedia";
-		}
-		String formatted = phone.startsWith("0") ? phone : "0" + phone;
-		return String.format("%s %s",
-			formatted.startsWith("08") ? "📱" : "☎️",
-			formatted.replaceAll("(\\d{4})(\\d{4})(\\d+)", "$1-$2-$3")
-		);
 	}
 
 }

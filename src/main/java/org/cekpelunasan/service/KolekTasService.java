@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class KolekTasService {
@@ -30,12 +29,11 @@ public class KolekTasService {
 		this.kolekTasRepository = kolekTasRepository;
 	}
 
-	public Page<KolekTas> findKolekByKelompok(String kelompok, int page, int size) {
-		return kolekTasRepository.findByKelompokIgnoreCase(kelompok, PageRequest.of(page, size));
-	}
-	public Page<KolekTas> findKolekByKantor(String kantor, int page, int size) {
-		return kolekTasRepository.findByKantorIgnoreCase(kantor, PageRequest.of(page, size));
-	}
+   public Page<KolekTas> findKolekByKelompok(String kelompok, int page, int size) {
+       // Adjust for 1-based page numbering if that's what client expects
+       int zeroBasedPage = page > 0 ? page - 1 : 0;
+       return kolekTasRepository.findByKelompokIgnoreCase(kelompok, PageRequest.of(zeroBasedPage, size));
+   }
 
 	public void saveAll(List<KolekTas> kolekTas) {
 		kolekTasRepository.saveAll(kolekTas);
@@ -88,7 +86,6 @@ public class KolekTasService {
 				});
 			}
 			executorService.shutdown();
-			executorService.awaitTermination(1, TimeUnit.HOURS);
 		} catch (Exception e) {
 			log.error("Gagal membaca file CSV: {}", e.getMessage(), e);
 		}

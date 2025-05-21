@@ -64,9 +64,7 @@ public class SavingsSelectBranchCallbackHandler implements CallbackProcessor {
 	public String buildMessage(Page<Savings> savings, int page, long startTime) {
     	StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
         	.append("Halaman ").append(page + 1).append(" dari ").append(savings.getTotalPages()).append("\n\n");
-
-    	savings.forEach(savingsUtils::getSavings);
-
+    	savings.forEach(saving -> message.append(savingsUtils.getSavings(saving)));
     	message.append("⏱️ Waktu: ").append(System.currentTimeMillis() - startTime).append("ms");
     	return message.toString();
 	}

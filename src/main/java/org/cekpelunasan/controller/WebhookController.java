@@ -20,10 +20,8 @@ public class WebhookController {
 		this.telegramBot = telegramBot;
 	}
 
-	// Webhook endpoint untuk menerima update dari Telegram
 	@PostMapping("/webhook")
 	public String webhook(@RequestBody Update update) {
-		System.out.println("Received update: " + update);
 		telegramBot.startBot(update, telegramClient);
 		return "Webhook is working!";
 	}

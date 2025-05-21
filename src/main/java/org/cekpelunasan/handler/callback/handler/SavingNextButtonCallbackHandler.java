@@ -57,7 +57,7 @@ public class SavingNextButtonCallbackHandler implements CallbackProcessor {
 			.append("───────────────────\n")
 			.append("📄 Halaman ").append(page + 1).append(" dari ").append(savings.getTotalPages()).append("\n\n");
 
-		savings.forEach(savingsUtils::getSavings);
+		savings.forEach(saving -> message.append(savingsUtils.getSavings(saving)));
 		message.append("⏱️ _Eksekusi dalam ").append(System.currentTimeMillis() - startTime).append("ms_");
 		return message.toString();
 	}
