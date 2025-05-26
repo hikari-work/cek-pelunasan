@@ -76,15 +76,13 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 					sendMessage(chatId, "Pilih salah satu action dibawah ini", directMessageButton.selectServices(id), telegramClient);
 					return;
 				}
-				CompletableFuture<Boolean> isTabExist = CompletableFuture.supplyAsync(() -> savingsService.isExistTab(text));
-				CompletableFuture<Boolean> isRepaymentExist = CompletableFuture.supplyAsync(() -> repaymentService.isRepaymentExists(text));
-				CompletableFuture<Boolean> isBillsExist = CompletableFuture.supplyAsync(() -> billService.isBillExists(text));
 			}
 
 			if (!chatId.equals(ownerId)) {
 				forwardMessage(chatId, ownerId, messageId, telegramClient);
 				return;
 			}
+			log.info("Message Is {}", message);
 			Long originalUserId = message.getReplyToMessage().getForwardFrom().getId();
 			log.info("Original message Is {}", originalUserId);
 			copyMessage(ownerId, messageId, originalUserId, telegramClient);
