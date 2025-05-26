@@ -85,12 +85,9 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 				forwardMessage(chatId, ownerId, messageId, telegramClient);
 				return;
 			}
-
-			if (message.getReplyToMessage() != null) {
-				Long originalUserId = message.getReplyToMessage().getForwardFrom().getId();
-				log.info("Original message Is {}", originalUserId);
-				copyMessage(ownerId, messageId, originalUserId, telegramClient);
-			}
+			Long originalUserId = message.getReplyToMessage().getForwardFrom().getId();
+			log.info("Original message Is {}", originalUserId);
+			copyMessage(ownerId, messageId, originalUserId, telegramClient);
 		});
 	}
 
