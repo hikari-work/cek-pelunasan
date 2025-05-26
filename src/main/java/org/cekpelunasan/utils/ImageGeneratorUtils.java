@@ -35,7 +35,7 @@ public class ImageGeneratorUtils {
 
 			setRenderingHints(g);
 			drawBackground(g);
-			drawTitle(g, "Rincian Pelunasan");
+			drawTitle(g);
 
 			g.setFont(new Font("Arial", Font.PLAIN, 22));
 			int y = 160;
@@ -72,21 +72,20 @@ public class ImageGeneratorUtils {
 		g.fillRect(0, 0, WIDTH, HEIGHT);
 	}
 
-	private void drawTitle(Graphics2D g, String title) {
+	private void drawTitle(Graphics2D g) {
 		g.setColor(Color.BLACK);
 		g.setFont(new Font("Arial", Font.BOLD, 36));
 		FontMetrics fm = g.getFontMetrics();
-		int x = (WIDTH - fm.stringWidth(title)) / 2;
-		g.drawString(title, x, 100);
+		int x = (WIDTH - fm.stringWidth("Rincian Pelunasan")) / 2;
+		g.drawString("Rincian Pelunasan", x, 100);
 	}
 
 	private void drawDetail(Graphics2D g, String label, String value, int y) {
 		FontMetrics metrics = g.getFontMetrics();
-		int labelX = MARGIN;
 		int valueX = WIDTH - MARGIN - metrics.stringWidth(value);
 
 		g.setColor(Color.BLACK);
-		g.drawString(label, labelX, y);
+		g.drawString(label, MARGIN, y);
 		g.drawString(":", COLON_X, y);
 		g.drawString(value, valueX, y);
 	}
