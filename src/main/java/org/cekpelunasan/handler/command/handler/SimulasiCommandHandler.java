@@ -63,11 +63,13 @@ public class SimulasiCommandHandler implements CommandProcessor {
 
 			SimulasiResult simulasi = simulasiService.getSimulasi(noSpk, nominal);
 			String response = String.format(
-				"📊 *Hasil Simulasi Pelunasan*\n\n" +
-					"🧾 No SPK: `%s`\n" +
-					"💰 Masuk Pokok: *Rp%s*\n" +
-					"🏦 Masuk Bunga: *Rp%s*\n" +
-					"⏳ Keterlambatan hingga: *%s*",
+				"""
+					📊 *Hasil Simulasi Pelunasan*
+					
+					🧾 No SPK: `%s`
+					💰 Masuk Pokok: *Rp%s*
+					🏦 Masuk Bunga: *Rp%s*
+					⏳ Keterlambatan hingga: *%s*""",
 				noSpk,
 				formatCurrency(simulasi.getMasukP()),
 				formatCurrency(simulasi.getMasukI()),
