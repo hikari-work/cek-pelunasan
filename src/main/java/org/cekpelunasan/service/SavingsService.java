@@ -103,13 +103,17 @@ public class SavingsService {
 			.tabId(line[3])
 			.name(line[4])
 			.address(line[5])
-			.balance(BigDecimal.valueOf(Long.parseLong(line[6])))
-			.transaction(BigDecimal.valueOf(Long.parseLong(line[7])))
+			.balance(parseBigDecimal(line[6]))
+			.transaction(parseBigDecimal(line[7]))
 			.accountOfficer(line[8])
 			.phone(line[9])
-			.minimumBalance(BigDecimal.valueOf(Long.parseLong(line[10])))
-			.blockingBalance(BigDecimal.valueOf(Long.parseLong(line[11])))
+			.minimumBalance(parseBigDecimal(line[10]))
+			.blockingBalance(parseBigDecimal(line[11]))
 			.build();
+	}
+
+	private BigDecimal parseBigDecimal(String value) {
+		return BigDecimal.valueOf(Long.parseLong(value));
 	}
 
 	public Set<String> listAllBranch(String name) {
@@ -124,26 +128,16 @@ public class SavingsService {
 		log.info("Searching for account with ID: {}", id);
 		return savingsRepository.findByTabId(id);
 	}
-	@Transactional
-	public Boolean isExistTab(String name) {
-		return savingsRepository.existsByNameIsLikeIgnoreCase(name);
-	}
+
+
 	@Transactional
 	public Page<Savings> findFilteredSavings(List<String> addressKeywords, Pageable pageable) {
 		log.info("Starting findFilteredSavings with keywords: {} and page: {}", addressKeywords, pageable);
 		try {
-			CompletableFuture<List<Savings>> resultsFuture = CompletableFuture.supplyAsync(() -> {
-				CriteriaBuilder cb = em.getCriteriaBuilder();
-				return executeUniqueRecordsQuery(addressKeywords, pageable, cb);
-			});
-
-			CompletableFuture<Long> countFuture = CompletableFuture.supplyAsync(() -> {
-				CriteriaBuilder cb = em.getCriteriaBuilder();
-				return executeCountUniqueQuery(addressKeywords, cb);
-			});
+			CompletableFuture<List<Savings>> resultsFuture = CompletableFuture.supplyAsync(() -> executeUniqueRecordsQuery(addressKeywords, pageable));
+			CompletableFuture<Long> countFuture = CompletableFuture.supplyAsync(() -> executeCountUniqueQuery(addressKeywords));
 			CompletableFuture.allOf(resultsFuture, countFuture).join();
 
-			// Get results
 			List<Savings> resultList = resultsFuture.get();
 			Long total = countFuture.get();
 
@@ -155,18 +149,16 @@ public class SavingsService {
 		}
 	}
 
-	private List<Savings> executeUniqueRecordsQuery(List<String> addressKeywords, Pageable pageable, CriteriaBuilder cb) {
+	private List<Savings> executeUniqueRecordsQuery(List<String> addressKeywords, Pageable pageable) {
 		long startTime = System.currentTimeMillis();
-
 		try {
+			CriteriaBuilder cb = em.getCriteriaBuilder();
 			CriteriaQuery<Savings> query = cb.createQuery(Savings.class);
 			Root<Savings> root = query.from(Savings.class);
 
 			Subquery<Long> minIdSubquery = buildMinIdSubquery(query, cb, addressKeywords);
 
-			query.select(root)
-				.where(root.get("id").in(minIdSubquery));
-
+			query.select(root).where(root.get("id").in(minIdSubquery));
 			TypedQuery<Savings> typedQuery = em.createQuery(query);
 			typedQuery.setFirstResult((int) pageable.getOffset());
 			typedQuery.setMaxResults(pageable.getPageSize());
@@ -180,46 +172,17 @@ public class SavingsService {
 		}
 	}
 
-	private Subquery<Long> buildMinIdSubquery(CriteriaQuery<?> query, CriteriaBuilder cb, List<String> addressKeywords) {
-		Subquery<Long> minIdSubquery = query.subquery(Long.class);
-		Root<Savings> subRoot = minIdSubquery.from(Savings.class);
-		Predicate addressPredicate = buildAddressPredicates(cb, subRoot, addressKeywords);
-
-		Subquery<String> billsSubquery = minIdSubquery.subquery(String.class);
-		Root<Bills> billsRoot = billsSubquery.from(Bills.class);
-		billsSubquery.select(billsRoot.get("customerId"))
-			.where(cb.isNotNull(billsRoot.get("customerId")));
-
-		Predicate notInBills = cb.not(subRoot.get("cif").in(billsSubquery));
-
-		// Select minimum ID for each CIF
-		minIdSubquery.select(cb.min(subRoot.get("id")))
-			.where(cb.and(addressPredicate, notInBills))
-			.groupBy(subRoot.get("cif"));
-
-		return minIdSubquery;
-	}
-
-	private Long executeCountUniqueQuery(List<String> addressKeywords, CriteriaBuilder cb) {
+	private Long executeCountUniqueQuery(List<String> addressKeywords) {
 		long startTime = System.currentTimeMillis();
-
 		try {
+			CriteriaBuilder cb = em.getCriteriaBuilder();
 			CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
 			Root<Savings> countRoot = countQuery.from(Savings.class);
 
 			countQuery.select(cb.countDistinct(countRoot.get("cif")));
 
 			Predicate addressPredicate = buildAddressPredicates(cb, countRoot, addressKeywords);
-
-			// Exclude accounts with bills
-			Subquery<String> billsSubquery = countQuery.subquery(String.class);
-			Root<Bills> billsRoot = billsSubquery.from(Bills.class);
-			billsSubquery.select(billsRoot.get("customerId"))
-				.where(cb.isNotNull(billsRoot.get("customerId")));
-
-			Predicate notInBills = cb.not(countRoot.get("cif").in(billsSubquery));
-
-			// Apply predicates
+			Predicate notInBills = buildNotInBillsPredicate(cb, countRoot, countQuery);
 			countQuery.where(cb.and(addressPredicate, notInBills));
 
 			Long result = em.createQuery(countQuery).getSingleResult();
@@ -229,6 +192,28 @@ public class SavingsService {
 			log.error("Error executing count query: {}", e.getMessage(), e);
 			throw e;
 		}
+	}
+
+	private Predicate buildNotInBillsPredicate(CriteriaBuilder cb, Root<Savings> root, CriteriaQuery<?> query) {
+		Subquery<String> billsSubquery = query.subquery(String.class);
+		Root<Bills> billsRoot = billsSubquery.from(Bills.class);
+		billsSubquery.select(billsRoot.get("customerId"))
+			.where(cb.isNotNull(billsRoot.get("customerId")));
+		return cb.not(root.get("cif").in(billsSubquery));
+	}
+
+	private Subquery<Long> buildMinIdSubquery(CriteriaQuery<?> query, CriteriaBuilder cb, List<String> addressKeywords) {
+		Subquery<Long> minIdSubquery = query.subquery(Long.class);
+		Root<Savings> subRoot = minIdSubquery.from(Savings.class);
+
+		Predicate addressPredicate = buildAddressPredicates(cb, subRoot, addressKeywords);
+		Predicate notInBills = buildNotInBillsPredicate(cb, subRoot, query);
+
+		minIdSubquery.select(cb.min(subRoot.get("id")))
+			.where(cb.and(addressPredicate, notInBills))
+			.groupBy(subRoot.get("cif"));
+
+		return minIdSubquery;
 	}
 
 	private Predicate buildAddressPredicates(CriteriaBuilder cb, Root<Savings> root, List<String> addressKeywords) {

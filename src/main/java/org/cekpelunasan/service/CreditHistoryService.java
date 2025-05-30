@@ -37,7 +37,7 @@ public class CreditHistoryService {
 		Specification<CreditHistory> specification = (root, query, cb) -> {
 			query.distinct(true);
 
-			// Create subquery for status 'A'
+
 			Subquery<String> subquery = query.subquery(String.class);
 			Root<CreditHistory> subRoot = subquery.from(CreditHistory.class);
 			subquery.select(subRoot.get("customerId"))
