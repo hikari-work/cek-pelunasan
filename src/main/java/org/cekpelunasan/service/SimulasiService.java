@@ -55,7 +55,7 @@ public class SimulasiService {
 			long[] resultFirst = kurangiTunggakan(targetFirst, remaining);
 			log.info("Isinya Apa aja {}", resultFirst);
 			remaining = resultFirst[0];
-			if (maxdate > 90) masukBunga =+ resultFirst[1]; else masukBunga =+ resultFirst[1];
+			if (maxdate > 90) masukPokok =+ resultFirst[1]; else masukBunga =+ resultFirst[1];
 			if (remaining > 0) {
 				long[] resultSecond = kurangiTunggakan(secondTarget, remaining);
 				remaining = resultSecond[0];
