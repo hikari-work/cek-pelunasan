@@ -34,7 +34,7 @@ public class SimulasiService {
 			long remaining = userInput;
 			long masukPokok = 0;
 			long masukBunga = 0;
-			List<Simulasi> simulasis = simulasiRepository.findBySpkOrderByKeterlambatanDesc(spk);
+			List<Simulasi> simulasis = simulasiRepository.findBySpkOrderByKeterlambatanDesc(spk).stream().filter(data -> data.getTunggakan() != 0).toList();
 			log.info("Simulasi menemukan {}", simulasis.size());
 			log.info("SPK adalah {}", spk);
 			if (simulasis.isEmpty()) {
@@ -63,6 +63,7 @@ public class SimulasiService {
 			}
 			long akhir = simulasiRepository.findBySpkOrderByKeterlambatanDesc(spk)
 				.stream()
+				.filter(data -> data.getTunggakan() != 0)
 				.mapToLong(Simulasi::getKeterlambatan)
 				.max()
 				.orElse(0L);
