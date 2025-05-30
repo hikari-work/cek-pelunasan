@@ -50,11 +50,17 @@ public class PenaltyUtils {
 	}
 
 	private int calculateFlmMultiplier(long monthsBetween, int year) {
+		if (monthsBetween < 3) {
+			return Integer.parseInt(String.valueOf(monthsBetween))/3;
+		}
 		long threshold = (year == YEAR_2025) ? 11 : 12;
 		return monthsBetween >= threshold ? FLM_HIGH_MULTIPLIER : FLM_LOW_MULTIPLIER;
 	}
 
 	private int calculatePenalty(int multiplier) {
+		if (multiplier < 3) {
+			return multiplier;
+		}
 		return multiplier == FLM_LOW_MULTIPLIER ? HIGH_PENALTY : LOW_PENALTY;
 	}
 

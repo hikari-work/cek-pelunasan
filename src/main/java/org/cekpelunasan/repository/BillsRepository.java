@@ -44,4 +44,5 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 	Set<String> findDistinctByAccountOfficer();
 
 	Boolean existsByNameIsLikeIgnoreCase(String name);
+
 }

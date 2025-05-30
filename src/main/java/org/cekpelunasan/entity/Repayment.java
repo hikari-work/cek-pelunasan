@@ -52,4 +52,6 @@ public class Repayment {
 	private Date createdAt;
 
 
+	private Long nextInterest;
+
 }
