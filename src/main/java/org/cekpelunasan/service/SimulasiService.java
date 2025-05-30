@@ -1,17 +1,27 @@
 package org.cekpelunasan.service;
 
+import com.opencsv.CSVReader;
 import org.cekpelunasan.entity.Simulasi;
 import org.cekpelunasan.entity.SimulasiResult;
 import org.cekpelunasan.repository.SimulasiRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.metrics.data.MetricsRepositoryMethodInvocationListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.io.FileReader;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 @Service
 public class SimulasiService {
 
+	private static final Logger log = LoggerFactory.getLogger(SimulasiService.class);
 	private final TransactionTemplate transactionTemplate;
 	private final SimulasiRepository simulasiRepository;
 
@@ -69,6 +79,60 @@ public class SimulasiService {
 			totalMasuk += kurangi;
 		}
 		return new long[]{totalMasuk, amount};
+	}
+	public void parseCsv(Path path) {
+		simulasiRepository.deleteAll();
+		final int BATCH_SIZE = 500;
+		final int MAX_CONCURRENT_TASK = 10;
+		ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+		Semaphore semaphore = new Semaphore(MAX_CONCURRENT_TASK);
+		List<Simulasi> currentBranch = new ArrayList<>(BATCH_SIZE);
+		try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
+			String[] line;
+			while ((line = reader.readNext()) != null) {
+				currentBranch.add(mapToSimulasi(line));
+				if (currentBranch.size() >= BATCH_SIZE) {
+					List<Simulasi> simulasiToSave = new ArrayList<>(currentBranch);
+					semaphore.acquire();
+					executorService.submit(() -> {
+						try {
+							simulasiRepository.saveAll(simulasiToSave);
+						} catch (Exception e) {
+							log.error("Error Saving");
+						} finally {
+							semaphore.release();
+						}
+					});
+					currentBranch.clear();
+				}
+			}
+			if (!currentBranch.isEmpty()) {
+				List<Simulasi> simulasiToSave = new ArrayList<>(currentBranch);
+				semaphore.acquire();
+				executorService.submit(() -> {
+					try {
+						simulasiRepository.saveAll(simulasiToSave);
+					} catch (Exception e) {
+						log.error("Error Saving");
+					} finally {
+						semaphore.release();
+					}
+				});
+				currentBranch.clear();
+			}
+
+		} catch (Exception e) {
+			log.error("Gagal membaca file CSV: {}", e.getMessage(), e);
+		}
+	}
+	public Simulasi mapToSimulasi(String[] lines) {
+		return Simulasi.builder()
+			.spk(lines[0])
+			.tanggal(lines[1])
+			.sequence(lines[2])
+			.denda(Long.parseLong(lines[3]))
+			.keterlambatan(Long.parseLong(lines[4]))
+			.build();
 	}
 
 
