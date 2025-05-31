@@ -12,7 +12,7 @@
 
     <groupId>org.belajar.springbootapp</groupId>
     <artifactId>cek-pelunasan</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0</version>
     <name>cek-pelunasan</name>
     <description>cek-pelunasan</description>
 
@@ -51,8 +51,10 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <version>1.18.30</version>
+            <scope>provided</scope>
         </dependency>
+
 
         <!-- Spring Boot Test for unit testing -->
         <dependency>
@@ -139,17 +141,23 @@
 
             <!-- Maven Compiler Plugin for Lombok annotation processor -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
                         </path>
                     </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>-processorpath</arg>
+                        <arg>${project.build.outputDirectory}</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 

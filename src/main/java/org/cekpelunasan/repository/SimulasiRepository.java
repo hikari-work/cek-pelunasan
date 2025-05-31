@@ -9,5 +9,5 @@ import java.util.List;
 @Repository
 public interface SimulasiRepository extends JpaRepository<Simulasi, String> {
 
-	List<Simulasi> findBySpkOrderByKeterlambatanDesc(String spk);
+	List<Simulasi> findBySpk(String spk);
 }
