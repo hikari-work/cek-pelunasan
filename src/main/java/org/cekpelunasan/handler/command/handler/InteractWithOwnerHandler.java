@@ -1,10 +1,10 @@
 package org.cekpelunasan.handler.command.handler;
 
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.service.AuthorizedChats;
+import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.Bill.BillService;
-import org.cekpelunasan.service.RepaymentService;
-import org.cekpelunasan.service.SavingsService;
+import org.cekpelunasan.service.repayment.RepaymentService;
+import org.cekpelunasan.service.savings.SavingsService;
 import org.cekpelunasan.utils.button.DirectMessageButton;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;

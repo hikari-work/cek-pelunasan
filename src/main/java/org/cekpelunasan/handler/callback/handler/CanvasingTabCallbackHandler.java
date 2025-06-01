@@ -3,7 +3,7 @@ package org.cekpelunasan.handler.callback.handler;
 import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingByTab;
-import org.cekpelunasan.service.SavingsService;
+import org.cekpelunasan.service.savings.SavingsService;
 import org.cekpelunasan.utils.CanvasingUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

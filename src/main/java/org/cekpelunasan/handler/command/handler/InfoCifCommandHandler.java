@@ -1,8 +1,8 @@
 package org.cekpelunasan.handler.command.handler;
 
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.service.AuthorizedChats;
-import org.cekpelunasan.service.CustomerHistoryService;
+import org.cekpelunasan.service.auth.AuthorizedChats;
+import org.cekpelunasan.service.customerhistory.CustomerHistoryService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.generics.TelegramClient;

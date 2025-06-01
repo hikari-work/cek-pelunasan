@@ -1,4 +1,4 @@
-package org.cekpelunasan.service;
+package org.cekpelunasan.service.kolektas;
 
 import com.opencsv.CSVReader;
 import org.cekpelunasan.entity.KolekTas;
@@ -30,7 +30,6 @@ public class KolekTasService {
 	}
 
    public Page<KolekTas> findKolekByKelompok(String kelompok, int page, int size) {
-       // Adjust for 1-based page numbering if that's what client expects
        int zeroBasedPage = page > 0 ? page - 1 : 0;
        return kolekTasRepository.findByKelompokIgnoreCase(kelompok, PageRequest.of(zeroBasedPage, size));
    }

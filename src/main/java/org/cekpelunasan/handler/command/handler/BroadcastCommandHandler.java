@@ -3,7 +3,7 @@ package org.cekpelunasan.handler.command.handler;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
-import org.cekpelunasan.service.UserService;
+import org.cekpelunasan.service.users.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;

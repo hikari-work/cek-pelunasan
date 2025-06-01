@@ -2,7 +2,7 @@ package org.cekpelunasan.handler.callback.pagination;
 
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
-import org.cekpelunasan.service.RepaymentService;
+import org.cekpelunasan.service.repayment.RepaymentService;
 import org.cekpelunasan.utils.TagihanUtils;
 import org.cekpelunasan.utils.button.ButtonListForName;
 import org.springframework.data.domain.Page;

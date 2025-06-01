@@ -71,9 +71,6 @@ public class BillService {
 	public Set<String> findAllAccountOfficer() {
 		return billsRepository.findDistinctByAccountOfficer();
 	}
-	public Boolean isBillExists(String id) {
-		return billsRepository.existsByNameIsLikeIgnoreCase(id);
-	}
 
 	public void parseCsvAndSaveIntoDatabase(Path path) {
 		billsRepository.deleteAll();

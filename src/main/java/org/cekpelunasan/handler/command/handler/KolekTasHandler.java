@@ -3,7 +3,7 @@ package org.cekpelunasan.handler.command.handler;
 import org.cekpelunasan.entity.KolekTas;
 import org.cekpelunasan.handler.callback.pagination.PaginationKolekTas;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.service.KolekTasService;
+import org.cekpelunasan.service.kolektas.KolekTasService;
 import org.cekpelunasan.utils.KolekTasUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;

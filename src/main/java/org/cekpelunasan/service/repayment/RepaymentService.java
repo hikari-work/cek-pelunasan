@@ -1,4 +1,4 @@
-package org.cekpelunasan.service;
+package org.cekpelunasan.service.repayment;
 
 import com.opencsv.CSVReader;
 import lombok.extern.slf4j.Slf4j;

@@ -13,6 +13,7 @@ public class SystemUtils {
 		long freeMemory = osBean.getFreeMemorySize() / (1024 * 1024); // MB
 		long usedMemory = totalMemory - freeMemory;
 
+
 		return String.format("%.2f%% | %dMB / %dMB", cpuLoad, usedMemory, totalMemory);
 	}
 }

@@ -3,7 +3,7 @@ package org.cekpelunasan.handler.callback.handler;
 import org.cekpelunasan.entity.KolekTas;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.handler.callback.pagination.PaginationKolekTas;
-import org.cekpelunasan.service.KolekTasService;
+import org.cekpelunasan.service.kolektas.KolekTasService;
 import org.cekpelunasan.utils.KolekTasUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;

@@ -2,8 +2,8 @@ package org.cekpelunasan.handler.command.handler;
 
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.service.SavingsService;
-import org.cekpelunasan.service.UserService;
+import org.cekpelunasan.service.savings.SavingsService;
+import org.cekpelunasan.service.users.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.generics.TelegramClient;

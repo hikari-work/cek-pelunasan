@@ -5,7 +5,7 @@ import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.repository.UserRepository;
 import org.cekpelunasan.service.Bill.BillService;
-import org.cekpelunasan.service.UserService;
+import org.cekpelunasan.service.users.UserService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.generics.TelegramClient;

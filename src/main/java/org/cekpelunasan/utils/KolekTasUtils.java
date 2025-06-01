@@ -6,7 +6,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class KolekTasUtils {
 
-	public KolekTasUtils() {
+	private final FormatPhoneNumberUtils formatPhoneNumberUtils;
+
+	public KolekTasUtils(FormatPhoneNumberUtils formatPhoneNumberUtils) {
+		this.formatPhoneNumberUtils = formatPhoneNumberUtils;
 	}
 
 	public String buildKolekTas(KolekTas kolekTas) {
@@ -27,23 +30,12 @@ public class KolekTasUtils {
         formatAddress(kolekTas.getAlamat()),
         kolekTas.getNominal(),
         kolekTas.getKelompok(),
-        formatPhoneNumber(kolekTas.getNoHp()),
+        formatPhoneNumberUtils.formatPhoneNumber(kolekTas.getNoHp()),
         kolekTas.getKolek()
     );
 }
 
 	private String formatAddress(String address) {
-    	return address.length() > 35 ? address.substring(0, 32) + "..." : address;
-	}
-
-	private String formatPhoneNumber(String phone) {
-    	if (phone == null || phone.trim().isEmpty()) {
-        	return "📵 Tidak tersedia";
-    	}
-    	String formatted = phone.startsWith("0") ? phone : "0" + phone;
-    	return String.format("%s %s",
-        	formatted.startsWith("08") ? "📱" : "☎️",
-        	formatted.replaceAll("(\\d{4})(\\d{4})(\\d+)", "$1-$2-$3")
-    	);
+    	return address.length() > 30 ? address.substring(0, 29) + "..." : address;
 	}
 }

@@ -1,4 +1,4 @@
-package org.cekpelunasan.service;
+package org.cekpelunasan.service.simulasi;
 
 import com.opencsv.CSVReader;
 import org.cekpelunasan.entity.Simulasi;
@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.FileReader;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -130,14 +133,18 @@ public class SimulasiService {
 					});
 			}
 		}
+		long dayOfLate = keterlambatan.stream()
+			.filter(data -> data.getTunggakan() > 0L)
+			.mapToLong(Simulasi::getKeterlambatan)
+			.max()
+			.orElse(0L);
+		log.info("Keterlambatan terbesar adalah {} hari", dayOfLate);
 		return SimulasiResult.builder()
 			.masukI(masukBunga.get())
 			.masukP(masukPokok.get())
-			.maxDate(keterlambatan.stream().filter(data -> data.getTunggakan() > 0L).mapToLong(Simulasi::getKeterlambatan).max().orElse(0L))
+			.maxDate(dayOfLate + lastDay())
 			.build();
 	}
-
-
 
 	public void parseCsv(Path path) {
 		simulasiRepository.deleteAll();
@@ -184,7 +191,7 @@ public class SimulasiService {
 			log.error("Gagal membaca file CSV: {}", e.getMessage(), e);
 		}
 	}
-	public Simulasi mapToSimulasi(String[] lines) {
+	private Simulasi mapToSimulasi(String[] lines) {
 		return Simulasi.builder()
 			.spk(lines[0])
 			.tanggal(lines[1])
@@ -194,7 +201,9 @@ public class SimulasiService {
 			.keterlambatan(Long.parseLong(lines[5]))
 			.build();
 	}
-
+	private long lastDay() {
+		return ChronoUnit.DAYS.between(LocalDate.now(), YearMonth.now().atEndOfMonth());
+	}
 
 }
 

@@ -2,7 +2,7 @@ package org.cekpelunasan.handler.callback.pagination;
 
 import org.cekpelunasan.entity.CreditHistory;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
-import org.cekpelunasan.service.CreditHistoryService;
+import org.cekpelunasan.service.credithistory.CreditHistoryService;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;

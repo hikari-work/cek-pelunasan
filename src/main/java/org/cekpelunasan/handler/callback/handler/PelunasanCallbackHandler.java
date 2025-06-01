@@ -2,7 +2,7 @@ package org.cekpelunasan.handler.callback.handler;
 
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
-import org.cekpelunasan.service.RepaymentService;
+import org.cekpelunasan.service.repayment.RepaymentService;
 import org.cekpelunasan.utils.PenaltyUtils;
 import org.cekpelunasan.utils.RepaymentCalculator;
 import org.cekpelunasan.utils.button.BackKeyboardUtils;

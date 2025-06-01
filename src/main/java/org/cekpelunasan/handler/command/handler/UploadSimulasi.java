@@ -2,8 +2,8 @@ package org.cekpelunasan.handler.command.handler;
 
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.service.SimulasiService;
-import org.cekpelunasan.service.UserService;
+import org.cekpelunasan.service.simulasi.SimulasiService;
+import org.cekpelunasan.service.users.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

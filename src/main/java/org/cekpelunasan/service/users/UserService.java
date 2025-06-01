@@ -1,4 +1,4 @@
-package org.cekpelunasan.service;
+package org.cekpelunasan.service.users;
 
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.repository.UserRepository;

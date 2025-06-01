@@ -1,4 +1,4 @@
-package org.cekpelunasan.service;
+package org.cekpelunasan.service.savings;
 
 import com.opencsv.CSVReader;
 import jakarta.persistence.EntityManager;

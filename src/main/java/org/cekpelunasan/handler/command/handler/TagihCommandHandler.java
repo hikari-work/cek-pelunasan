@@ -3,7 +3,7 @@ package org.cekpelunasan.handler.command.handler;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
-import org.cekpelunasan.service.AuthorizedChats;
+import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.utils.TagihanUtils;
 import org.springframework.scheduling.annotation.Async;

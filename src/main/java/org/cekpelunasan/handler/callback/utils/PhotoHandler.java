@@ -2,7 +2,7 @@ package org.cekpelunasan.handler.callback.utils;
 
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
-import org.cekpelunasan.service.RepaymentService;
+import org.cekpelunasan.service.repayment.RepaymentService;
 import org.cekpelunasan.utils.ImageGeneratorUtils;
 import org.cekpelunasan.utils.PenaltyUtils;
 import org.cekpelunasan.utils.RupiahFormatUtils;

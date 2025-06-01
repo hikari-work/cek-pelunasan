@@ -1,4 +1,4 @@
-package org.cekpelunasan.service;
+package org.cekpelunasan.service.credithistory;
 
 import com.opencsv.CSVReader;
 import jakarta.persistence.criteria.Predicate;
@@ -42,8 +42,6 @@ public class CreditHistoryService {
 			Root<CreditHistory> subRoot = subquery.from(CreditHistory.class);
 			subquery.select(subRoot.get("customerId"))
 				.where(cb.equal(cb.upper(subRoot.get("status")), "A"));
-
-			// Create address predicates with case-insensitive comparison
 			List<Predicate> predicates = keywords.stream()
 				.map(String::trim)
 				.filter(word -> !word.isEmpty())

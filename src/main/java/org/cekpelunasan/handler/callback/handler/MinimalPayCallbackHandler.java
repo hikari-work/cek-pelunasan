@@ -5,7 +5,7 @@ import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.handler.callback.pagination.PaginationToMinimalPay;
 import org.cekpelunasan.service.Bill.BillService;
-import org.cekpelunasan.service.UserService;
+import org.cekpelunasan.service.users.UserService;
 import org.cekpelunasan.utils.MinimalPayUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;
