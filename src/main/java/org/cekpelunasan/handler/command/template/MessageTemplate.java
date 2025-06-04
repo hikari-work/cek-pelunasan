@@ -23,7 +23,7 @@ public class MessageTemplate {
 			🚫 *Akses Ditolak* 🚫
 			
 			Kamu belum terdaftar untuk menggunakan bot ini. \s
-			Gunakan perintah `.id`, lalu kirim hasilnya ke bot. \s
+			Gunakan perintah `/id`, lalu kirim hasilnya ke bot. \s
 			Tunggu konfirmasi akses dari admin.
 			
 			""";

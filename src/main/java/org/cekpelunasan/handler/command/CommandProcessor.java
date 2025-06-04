@@ -4,7 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.methods.CopyMessage;
 import org.telegram.telegrambots.meta.api.methods.ForwardMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
@@ -60,6 +62,17 @@ public interface CommandProcessor {
 				.build());
 		} catch (TelegramApiException e) {
 			log.info("Error forwarding message: {}", e.getMessage());
+		}
+	}
+	default void sendDocument(Long chatId, String text, InputFile inputFile, TelegramClient telegramClient) {
+		try {
+			telegramClient.execute(SendDocument.builder()
+				.chatId(chatId)
+				.caption(text)
+				.document(inputFile)
+				.build());
+		} catch (TelegramApiException e) {
+			log.info("Error sending document: {}", e.getMessage());
 		}
 	}
 }

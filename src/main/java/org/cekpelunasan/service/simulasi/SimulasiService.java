@@ -7,7 +7,6 @@ import org.cekpelunasan.repository.SimulasiRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.GetFile;
 
 import java.io.FileReader;
 import java.nio.file.Path;
