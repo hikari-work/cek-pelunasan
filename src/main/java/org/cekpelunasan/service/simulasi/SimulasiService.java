@@ -204,6 +204,26 @@ public class SimulasiService {
 	private long lastDay() {
 		return ChronoUnit.DAYS.between(LocalDate.now(), YearMonth.now().atEndOfMonth());
 	}
+	public long minimalBayar(String spk) {
+		List<Simulasi> keterlambatan = findSimulasiBySpk(spk);
+		keterlambatan.sort(Comparator.comparing(Simulasi::getKeterlambatan).reversed());
+		long keterlambatanBesar = keterlambatan.getFirst().getKeterlambatan();
+		long minimalBayar = 0L;
+		AtomicLong minimal = new AtomicLong(minimalBayar);
+		keterlambatan.stream()
+			.forEach(addDay -> addDay.setKeterlambatan(addDay.getKeterlambatan() + lastDay()));
+		if (keterlambatanBesar > 90) {
+			keterlambatan.stream()
+				.filter(getPokok -> getPokok.getSequence().equals("P") || (getPokok.getSequence().equals("I") && getPokok.getKeterlambatan() > 90))
+				.forEach(minimalPokok -> minimal.addAndGet(minimalPokok.getTunggakan()));
+		}
+		if (keterlambatanBesar < 90) {
+			keterlambatan.stream()
+				.filter(getPokok -> getPokok.getSequence().equals("I") || (getPokok.getSequence().equals("P") && getPokok.getKeterlambatan() > 90))
+				.forEach(minimalPokok -> minimal.addAndGet(minimalPokok.getTunggakan()));
+		}
+		return minimal.get();
+	}
 
 }
 

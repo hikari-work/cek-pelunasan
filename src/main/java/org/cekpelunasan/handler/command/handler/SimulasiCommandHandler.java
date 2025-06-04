@@ -6,6 +6,7 @@ import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.simulasi.SimulasiService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -80,6 +81,7 @@ public class SimulasiCommandHandler implements CommandProcessor {
 			);
 			sendMessage(chatId, response, telegramClient);
 		});
+
 	}
 
 	private String formatCurrency(long amount) {
