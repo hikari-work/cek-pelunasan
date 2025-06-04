@@ -210,8 +210,6 @@ public class SimulasiService {
 		long keterlambatanBesar = keterlambatan.getFirst().getKeterlambatan();
 		long minimalBayar = 0L;
 		AtomicLong minimal = new AtomicLong(minimalBayar);
-		keterlambatan.stream()
-			.forEach(addDay -> addDay.setKeterlambatan(addDay.getKeterlambatan() + lastDay()));
 		if (keterlambatanBesar > 90) {
 			keterlambatan.stream()
 				.filter(getPokok -> getPokok.getSequence().equals("P") || (getPokok.getSequence().equals("I") && getPokok.getKeterlambatan() > 90))
