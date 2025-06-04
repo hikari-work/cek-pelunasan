@@ -7,6 +7,7 @@ import org.cekpelunasan.repository.SimulasiRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
 
 import java.io.FileReader;
 import java.nio.file.Path;
@@ -215,7 +216,7 @@ public class SimulasiService {
 				.filter(getPokok -> getPokok.getSequence().equals("P") || (getPokok.getSequence().equals("I") && getPokok.getKeterlambatan() > 90))
 				.forEach(minimalPokok -> minimal.addAndGet(minimalPokok.getTunggakan()));
 		}
-		if (keterlambatanBesar < 90) {
+		if (keterlambatanBesar <= 90) {
 			keterlambatan.stream()
 				.filter(getPokok -> getPokok.getSequence().equals("I") || (getPokok.getSequence().equals("P") && getPokok.getKeterlambatan() > 90))
 				.forEach(minimalPokok -> minimal.addAndGet(minimalPokok.getTunggakan()));

@@ -79,8 +79,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
-
-
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>2.25.0</version> <!-- Use latest -->
+        </dependency>
 
         <!-- Telegram Bots Client -->
         <dependency>
