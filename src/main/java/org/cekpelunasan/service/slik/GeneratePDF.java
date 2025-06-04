@@ -1,6 +1,7 @@
 package org.cekpelunasan.service.slik;
 
 
+import org.cekpelunasan.configuration.PdfService;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -41,6 +42,11 @@ import java.util.HashMap;
 public class GeneratePDF {
 
 	private static final Logger log = LoggerFactory.getLogger(GeneratePDF.class);
+	private final PdfService pdfService;
+
+	public GeneratePDF(PdfService pdfService) {
+		this.pdfService = pdfService;
+	}
 
 	public String sendBytesWithRestTemplate(byte[] fileBytes, String fileName) {
     	String url = "https://kredit.suryayudha.id/ideb/generate.php";
@@ -78,7 +84,7 @@ public class GeneratePDF {
 	public byte[] convertHtmlToPdf(String htmlContent) {
     	log.info("Converting HTML to PDF using Selenium headless browser...");
     	htmlContent = removeButtonsDiv(htmlContent);
-		htmlContent = fixImagePaths(htmlContent);
+		htmlContent = pdfService.embedLocalResourceImages(htmlContent);
     	Path tempHtmlFile = null;
     	try {
         	// Create temporary HTML file
@@ -168,25 +174,5 @@ public class GeneratePDF {
 			return htmlContent;
 		}
 	}
-	
-private String fixImagePaths(String htmlContent) {
-    try {
-        Document doc = Jsoup.parse(htmlContent);
-        for (Element img : doc.select("img")) {
-            String src = img.attr("src");
-            if (!src.startsWith("http") && !src.startsWith("data:")) {
-                // Convert relative path to absolute
-                Path imagePath = Path.of("src/main/resources/static/images", src);
-                if (Files.exists(imagePath)) {
-                    img.attr("src", imagePath.toUri().toString());
-                }
-            }
-        }
-        
-        return doc.html();
-    } catch (Exception e) {
-        log.warn("Error fixing image paths: {}", e.getMessage());
-        return htmlContent;
-    }
-}
+
 }
