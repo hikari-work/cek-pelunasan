@@ -33,7 +33,7 @@ public class PhotoHandler implements CallbackProcessor {
 	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
-			long start = System.currentTimeMillis();
+			log.info("Generating Photo For Pelunasan...");
 			String data = update.getCallbackQuery().getData();
 			String[] parts = data.split("_");
 			String customerId = parts[1];

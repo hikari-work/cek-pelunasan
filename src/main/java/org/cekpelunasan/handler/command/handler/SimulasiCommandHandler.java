@@ -6,7 +6,6 @@ import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.simulasi.SimulasiService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -50,6 +49,7 @@ public class SimulasiCommandHandler implements CommandProcessor {
 			String nominalStr = data[2];
 
 			if (!noSpk.matches("\\d{12}")) {
+				log.info("Not Matches...");
 				sendMessage(chatId, "❌ Nomor SPK harus berupa 12 digit angka.\nContoh yang benar: 123456789012", telegramClient);
 				return;
 			}

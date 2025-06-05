@@ -56,10 +56,11 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
-			log.info("Upadte");
+			log.info("Update Received...");
 			String[] parts = text.split(" ", 2);
 
 			if (!botOwner.equalsIgnoreCase(String.valueOf(chatId))) {
+				log.info("Not Admin {}", chatId);
 				sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
 				return;
 			}
@@ -68,7 +69,7 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 				log.info("Denied");
 				return;
 			}
-			log.info("Command: {}", text);
+			log.info("Command: {} Executed", text);
 			String url = parts[1];
 			String fileName = url.substring(url.lastIndexOf("/") + 1);
 
@@ -78,14 +79,16 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 				List<User> users = userService.findAllUsers();
 
 				if (processCsvFile(url, fileName)) {
+					log.info("Starting Broadcast....");
 					broadcast(users, String.format("✅ *Database tagihan berhasil di update pada %s:*",
 						LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"))),
 						telegramClient);
 				} else {
+					log.info("Update Failed....");
 					broadcast(users, "⚠ *Gagal update data Tagihan. Akan dicoba ulang.*", telegramClient);
 				}
 			} catch (Exception e) {
-				log.error("❌ Gagal memproses file CSV", e);
+				log.error("Gagal memproses file CSV");
 				sendMessage(chatId, "❌ Gagal memproses file", telegramClient);
 			}
 		});
@@ -100,13 +103,14 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 			billService.parseCsvAndSaveIntoDatabase(filePath);
 			return true;
 		} catch (Exception e) {
-			log.error("❌ Gagal memproses file dari URL: {}", fileUrl, e);
+			log.error("❌ Gagal memproses file dari URL: {}", fileUrl);
 			return false;
 		}
 	}
 
 	private void broadcast(List<User> users, String message, TelegramClient client) {
 		users.forEach(user -> {
+			log.info("Broadcasting to {}", user.getChatId());
 			sendMessage(user.getChatId(), message, client);
 			try {
 				Thread.sleep(DELAY_BETWEEN_USER);

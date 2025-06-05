@@ -58,7 +58,7 @@ public class SavingsFindCommandHandler implements CommandProcessor {
 				sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
 				return;
 			}
-			log.info("Data ditemukan dalam beberapa cabang: {}", branches);
+			log.info("Data ditemukan dalam beberapa cabang:");
 			sendMessageWithBrachSelection(chatId, name, branches, telegramClient);
 
 		});
@@ -66,14 +66,14 @@ public class SavingsFindCommandHandler implements CommandProcessor {
 
 	private void sendMessageWithBrachSelection(long chatId, String name, Set<String> branches, TelegramClient telegramClient) {
 		InlineKeyboardMarkup markup = selectSavingsBranch.dynamicSelectBranch(branches, name);
-		sendMessage(chatId, "Data ditemukan dalam beberapa cabang", telegramClient, markup);
+		sendMessage(chatId, telegramClient, markup);
 	}
 
-	private void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
+	private void sendMessage(Long chatId, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
 		try {
 			telegramClient.execute(SendMessage.builder()
 				.chatId(chatId.toString())
-				.text(text)
+				.text("Data ditemukan dalam beberapa cabang")
 				.parseMode("Markdown")
 				.replyMarkup(markup)
 				.build());

@@ -33,6 +33,7 @@ public class PelunasanCallbackHandler implements CallbackProcessor {
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			long start = System.currentTimeMillis();
+			log.info("Starting Calculating Pelunasan....");
 
 			var callback = update.getCallbackQuery();
 			var message = callback.getMessage();
@@ -45,6 +46,7 @@ public class PelunasanCallbackHandler implements CallbackProcessor {
 				Repayment repayment = repaymentService.findRepaymentById(customerId);
 
 				if (repayment == null) {
+					log.info("Repayment Not Found...");
 					sendMessage(chatId, "❌ Data tidak ditemukan.", telegramClient);
 					return;
 				}
@@ -59,11 +61,14 @@ public class PelunasanCallbackHandler implements CallbackProcessor {
 				String result = new RepaymentCalculator().calculate(repayment, penalty);
 				String response = result + "\n\n_Eksekusi dalam " + (System.currentTimeMillis() - start) + "ms_";
 
+				log.info("Sending Pelunasan...");
 				editMessageWithMarkup(chatId, messageId, response, telegramClient, new BackKeyboardUtils().backButton(data));
 
 			} catch (NumberFormatException e) {
+				log.info("Number Format SPK tidak valid....");
 				sendMessage(chatId, "❌ Format ID tidak valid.", telegramClient);
 			} catch (Exception e) {
+				log.warn("Ada Kesalahan...");
 				sendMessage(chatId, "⚠️ Terjadi kesalahan. Silakan coba lagi.", telegramClient);
 			}
 		});

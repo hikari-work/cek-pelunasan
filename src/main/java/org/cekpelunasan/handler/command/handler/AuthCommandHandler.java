@@ -45,22 +45,27 @@ public class AuthCommandHandler implements CommandProcessor {
 			String[] parts = text.split(" ");
 
 			if (chatId != ownerId) {
+				log.info("Chat ID {} Trying to Auth", chatId);
 				sendMessage(chatId, messageTemplateService.notAdminUsers(), telegramClient);
 				return;
 			}
 
 			if (parts.length < 2) {
+				log.info("Not Valid Auth Format");
 				sendMessage(chatId, messageTemplateService.notValidDeauthFormat(), telegramClient);
 				return;
 			}
 
 			try {
 				long chatIdTarget = Long.parseLong(parts[1]);
+				log.info("Trying Auth {}", chatIdTarget);
 				userService.insertNewUsers(chatIdTarget);
 				authorizedChats1.addAuthorizedChat(chatIdTarget);
 				sendMessage(chatIdTarget, messageTemplateService.authorizedMessage(), telegramClient);
+				log.info("Success Auth {}", chatIdTarget);
 				sendMessage(ownerId, "Sukses", telegramClient);
 			} catch (NumberFormatException e) {
+				log.info("Not Valid Number To Auth");
 				sendMessage(chatId, messageTemplateService.notValidNumber(), telegramClient);
 			}
 		});

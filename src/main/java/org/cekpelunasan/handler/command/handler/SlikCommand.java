@@ -59,34 +59,35 @@ public class SlikCommand implements CommandProcessor {
 				sendMessage(chatId, "KTP Harus 16 Digit", telegramClient);
 				return;
 			}
-			Message message = sendNotification(chatId, "Mengambil Data KTP", telegramClient);
+			Message message = sendNotification(chatId, telegramClient);
 			byte[] files = s3Connector.getFile("KTP_" + filename + ".txt");
 			if (files == null) {
-				System.out.println("File found: ");
+				log.info("File found: ");
 				editMessage(chatId, message.getMessageId(), "Data KTP `" + filename +"` tidak ada", telegramClient);
 			}
 			String s = generatePDF.sendBytesWithRestTemplate(files, filename + ".txt");
 			if (s == null || s.isEmpty()) {
-				System.out.println("File not found: " + filename);
+				log.info("File not found: " + filename);
 				editMessage(chatId, message.getMessageId(), "Data KTP `" + filename +"` tidak ada", telegramClient);
 				return;
 			}
 			byte[] bytes = generatePDF.convertHtmlToPdf(s);
 			editMessage(chatId, message.getMessageId(), "Data KTP `" + filename +"` Ditemukan....", telegramClient);
 			if (files == null || bytes.length == 0) {
-				System.out.println("File found: ");
+				log.info("File found: ");
 				sendMessage(chatId, "File not found: " + filename, telegramClient);
 			} else {
+				log.info("Sending Files....");
 				sendDocument(chatId, text.replace("/slik ", "").trim() + ".pdf", new InputFile(new ByteArrayInputStream(bytes), filename+".pdf"), telegramClient);
 			}
 
 		});
 	}
-	private Message sendNotification(Long chatId, String text, TelegramClient telegramClient) {
+	private Message sendNotification(Long chatId, TelegramClient telegramClient) {
 		try {
 			return telegramClient.execute(SendMessage.builder()
 				.chatId(chatId)
-				.text(text)
+				.text("Mengambil Data KTP")
 				.parseMode("Markdown")
 				.build());
 		} catch (Exception e) {

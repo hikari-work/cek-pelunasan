@@ -2,9 +2,6 @@ package org.cekpelunasan.handler.command.handler;
 
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.auth.AuthorizedChats;
-import org.cekpelunasan.service.Bill.BillService;
-import org.cekpelunasan.service.repayment.RepaymentService;
-import org.cekpelunasan.service.savings.SavingsService;
 import org.cekpelunasan.utils.button.DirectMessageButton;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -26,18 +23,12 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 
 	private final AuthorizedChats authorizedChats1;
 	private final DirectMessageButton directMessageButton;
-	private final SavingsService savingsService;
-	private final RepaymentService repaymentService;
-	private final BillService billService;
 	@Value("${telegram.bot.owner}")
 	private Long ownerId;
 
-	public InteractWithOwnerHandler(AuthorizedChats authorizedChats1, DirectMessageButton directMessageButton, SavingsService savingsService, RepaymentService repaymentService, BillService billService1) {
+	public InteractWithOwnerHandler(AuthorizedChats authorizedChats1, DirectMessageButton directMessageButton) {
 		this.authorizedChats1 = authorizedChats1;
 		this.directMessageButton = directMessageButton;
-		this.savingsService = savingsService;
-		this.repaymentService = repaymentService;
-		this.billService = billService1;
 	}
 
 	@Override
@@ -82,7 +73,6 @@ public class InteractWithOwnerHandler implements CommandProcessor {
 				forwardMessage(chatId, ownerId, messageId, telegramClient);
 				return;
 			}
-			log.info("Message Is {}", message);
 			Long originalUserId = message.getReplyToMessage().getForwardFrom().getId();
 			log.info("Original message Is {}", originalUserId);
 			copyMessage(ownerId, messageId, originalUserId, telegramClient);

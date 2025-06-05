@@ -53,6 +53,7 @@ public class DeleteUserAccessCommand implements CommandProcessor {
 			}
 			try {
 				long target = Long.parseLong(parts[1]);
+				log.info("{} Sudah ditendang", target);
 				userService.deleteUser(target);
 				authorizedChats.deleteUser(target);
 				sendMessage(target, messageTemplate.unathorizedMessage(), telegramClient);

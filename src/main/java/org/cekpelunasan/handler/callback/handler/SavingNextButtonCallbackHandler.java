@@ -36,6 +36,7 @@ public class SavingNextButtonCallbackHandler implements CallbackProcessor {
 	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
+			log.info("Generating Saving Data....");
 			String[] parts = update.getCallbackQuery().getData().split("_");
 			String query = parts[1];
 			String branch = parts[2];
@@ -44,6 +45,7 @@ public class SavingNextButtonCallbackHandler implements CallbackProcessor {
 			int messageId = update.getCallbackQuery().getMessage().getMessageId();
 			Page<Savings> savings = savingsService.findByNameAndBranch(query, branch, page);
 			if (savings.isEmpty()) {
+				log.info("Saving data Updated...");
 				sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
 				return;
 			}

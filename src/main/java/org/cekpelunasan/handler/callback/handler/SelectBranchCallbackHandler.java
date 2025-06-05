@@ -32,10 +32,12 @@ public class SelectBranchCallbackHandler implements CallbackProcessor {
 	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
+			log.info("Selecting Branch For...");
 			long start = System.currentTimeMillis();
 
 			String[] parts = update.getCallbackQuery().getData().split("_", 3);
 			if (parts.length < 3) {
+				log.error("Callback data Not Valid");
 				sendMessage(update, "❌ *Data callback tidak valid*", telegramClient);
 				return;
 			}
@@ -46,11 +48,13 @@ public class SelectBranchCallbackHandler implements CallbackProcessor {
 
 			Page<Bills> billsPage = billService.findByNameAndBranch(name, branch, 0, 5);
 			if (billsPage.isEmpty()) {
+				log.info("Bills Is Empty....");
 				sendMessage(update, "❌ *Data tidak ditemukan*", telegramClient);
 				return;
 			}
 
 			String message = buildMessage(billsPage, start);
+			log.info("Sending Message Bills...");
 			InlineKeyboardMarkup markup = new ButtonListForBills().dynamicButtonName(billsPage, 0, name, branch);
 			editMessageWithMarkup(chatId, update.getCallbackQuery().getMessage().getMessageId(), message, telegramClient, markup);
 		});

@@ -48,20 +48,19 @@ public class CanvasingTabCommandHandler implements CommandProcessor {
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
-			// Extract everything after the command
 			String address = text.length() > 8 ? text.substring(8).trim() : "";
 
 			if (!authorizedChats1.isAuthorized(chatId)) {
+				log.info("User Nor Auth...");
 				sendMessage(chatId, "Kamu tidak memiliki akses ke fitur ini", telegramClient);
 				return;
 			}
 
 			if (address.isEmpty()) {
+				log.info("Address Is Not Valid");
 				sendMessage(chatId, "Format salah, silahkan gunakan /canvas <alamat>", telegramClient);
 				return;
 			}
-
-			// First split by comma, then by whitespace for each comma-separated part
 			List<String> addressList = Arrays.stream(address.split(","))
 				.flatMap(part -> Arrays.stream(part.trim().split("\\s+")))
 				.filter(s -> !s.isEmpty())
@@ -72,9 +71,11 @@ public class CanvasingTabCommandHandler implements CommandProcessor {
 			Page<Savings> savingsPage = savingsService.findFilteredSavings(addressList, PageRequest.of(0, 5));
 
 			if (savingsPage.isEmpty()) {
+				log.info("Canvasing data is empty...");
 				sendMessage(chatId, "Tidak ada data yang ditemukan", telegramClient);
 				return;
 			}
+			log.info("Sending Cancasing...");
 
 			StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
 				.append("───────────────────\n")

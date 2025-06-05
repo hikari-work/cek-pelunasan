@@ -59,6 +59,7 @@ public class BroadcastCommandHandler implements CommandProcessor {
 				List<User> allUsers = userService.findAllUsers();
 
 				for (User user : allUsers) {
+					log.info("Broadcasting To {}", user.getChatId());
 					sendMessage(user.getChatId(), broadcastMessage, telegramClient);
 					try {
 						Thread.sleep(DELAY_BETWEEN_USERS_MS);
@@ -67,10 +68,10 @@ public class BroadcastCommandHandler implements CommandProcessor {
 						log.warn("Thread interrupted saat delay antar user", e);
 					}
 				}
-
 				sendMessage(chatId, "✅ Broadcast selesai ke " + allUsers.size() + " pengguna.", telegramClient);
 
 			} catch (ArrayIndexOutOfBoundsException e) {
+				log.info("Broadcast Format Failed");
 				sendMessage(chatId, "❗ *Format salah.*\nGunakan `/broadcast <pesan>`", telegramClient);
 			}
 		});

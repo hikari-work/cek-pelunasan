@@ -52,10 +52,12 @@ public class CanvasingCommandHandler implements CommandProcessor {
 		return CompletableFuture.runAsync(() -> {
 			String address = text.length() > 11 ? text.substring(11).trim() : "";
 			if (!authorizedChats1.isAuthorized(chatId)) {
+				log.info("Canvasing Is Not auth to user {}", chatId);
 				sendMessage(chatId, messageTemplate.unathorizedMessage(), telegramClient);
 				return;
 			}
 			if (address.isEmpty()) {
+				log.info("Address Is Empty");
 				sendMessage(chatId, "Alamat Harus Diisi", telegramClient);
 				return;
 			}
@@ -63,11 +65,13 @@ public class CanvasingCommandHandler implements CommandProcessor {
 			Page<CreditHistory> creditHistories = creditHistoryService.searchAddressByKeywords(addressList, 0);
 
 			if (creditHistories.isEmpty()) {
+				log.info("Data Canvasing {} Not Found", address);
 				sendMessage(chatId, String.format("""
 					Data dengan alamat %s Tidak Ditemukan
 					""", address), telegramClient);
 				return;
 			}
+			log.info("Sending Canvasing....");
 			StringBuilder messageBuilder = new StringBuilder(String.format("\uD83D\uDCC4 Halaman 1 dari %d\n\n", creditHistories.getTotalPages()));
 			creditHistories.forEach(dto -> messageBuilder.append(String.format("""
 					👤 *%s*

@@ -50,6 +50,7 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
+			log.info("Uplading Credit....");
 			if (isNotAdmin(chatId, telegramClient)) return;
 
 			String fileUrl = extractFileUrl(text, chatId, telegramClient);

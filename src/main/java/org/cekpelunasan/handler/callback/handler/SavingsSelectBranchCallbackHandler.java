@@ -37,6 +37,7 @@ public class SavingsSelectBranchCallbackHandler implements CallbackProcessor {
 	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
+			log.info("Selecting Branch For Savings");
 			String[] data = update.getCallbackQuery().getData().split("_");
 			String branchName = data[1];
 			String query = data[2];
@@ -44,9 +45,11 @@ public class SavingsSelectBranchCallbackHandler implements CallbackProcessor {
 			int messageId = update.getCallbackQuery().getMessage().getMessageId();
 			Page<Savings> savings = savingsService.findByNameAndBranch(query, branchName, 0);
 			if (savings.isEmpty()) {
+				log.info("Branch Tab is Not Found...");
 				sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
 				return;
 			}
+			log.info("Sending Savings Data");
 			InlineKeyboardMarkup markup = paginationSavingsButton.keyboardMarkup(savings, branchName, 0, query);
 			editMessageWithMarkup(chatId, messageId, buildMessage(savings, 0, System.currentTimeMillis()), telegramClient, markup);
 		});
