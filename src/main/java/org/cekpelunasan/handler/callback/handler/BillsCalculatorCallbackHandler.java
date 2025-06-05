@@ -31,17 +31,16 @@ public class BillsCalculatorCallbackHandler implements CallbackProcessor {
 	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		CompletableFuture.runAsync(() -> {
-			log.info("Update Received");
+			log.info("Bills Update Received");
 			String[] parts = update.getCallbackQuery().getData().split("_", 5);
-			log.info("Parts: {}", parts.length);
 			Bills bills = billService.getBillById(parts[1]);
 			log.info("Bill ID: {}", parts[1]);
 			if (bills == null) {
+				log.info("Bill ID Not Found");
 				sendMessage(update.getMessage().getChatId(), "❌ *Data tidak ditemukan*", telegramClient);
 				return;
 			}
-			log.info("Send Message");
-			log.info("Data {}", update.getCallbackQuery().getData());
+			log.info("Sending Bills Message Message");
 			editMessageWithMarkup(update.getCallbackQuery().getMessage().getChatId(), update.getCallbackQuery().getMessage().getMessageId(), tagihanUtils.detailBills(bills), telegramClient, new BackKeyboardButtonForBillsUtils().backButton(update.getCallbackQuery().getData()));
 		});
 		return CompletableFuture.completedFuture(null);

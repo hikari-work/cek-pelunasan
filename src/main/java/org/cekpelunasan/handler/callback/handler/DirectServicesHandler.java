@@ -38,12 +38,15 @@ public class DirectServicesHandler implements CallbackProcessor {
 	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
+			log.info("Direct Request Successfully Processed with query {}", update.getMessage().getText());
 			String[] data = update.getCallbackQuery().getData().split("_");
 			String query = data[1];
 			String dataMessage = data[2];
 			if (query.equals("Pelunasan")) {
+				log.info("Sending Pelunasan Callback");
 				processPelunasan(dataMessage, update.getCallbackQuery().getId(), telegramClient);
 			} else if (query.equals("Tabungan")) {
+				log.info("Sending Tabungan Callback");
 				processTabungan(dataMessage, update.getCallbackQuery().getId(), telegramClient);
 			}
 		});
@@ -75,7 +78,7 @@ public class DirectServicesHandler implements CallbackProcessor {
 			repayment
 		));
 		if (repayment != null) {
-			log.info("Data is {}", message);
+			log.info("Data is Found");
 		}
 		try {
 			telegramClient.execute(AnswerCallbackQuery.builder()
@@ -84,7 +87,7 @@ public class DirectServicesHandler implements CallbackProcessor {
 				.callbackQueryId(callbackId)
 				.build());
 		} catch (TelegramApiException e) {
-			log.error("Failed to send callback: {}", e.getMessage());
+			log.error("Failed to send callback: ");
 		}
 	}
 

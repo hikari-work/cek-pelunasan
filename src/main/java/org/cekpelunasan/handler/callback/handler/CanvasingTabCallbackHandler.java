@@ -38,6 +38,7 @@ public class CanvasingTabCallbackHandler implements CallbackProcessor {
 	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
+			log.info("Canvasing Request Process...");
 			String[] data = update.getCallbackQuery().getData().split("_");
 			String query = data[1];
 			int page = Integer.parseInt(data[2]);
@@ -50,6 +51,7 @@ public class CanvasingTabCallbackHandler implements CallbackProcessor {
 				sendMessage(update.getCallbackQuery().getMessage().getChatId(), "❌ *Data tidak ditemukan*", telegramClient);
 				return;
 			}
+			log.info("Sending Canvasing Request....");
 			StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
 				.append("───────────────────\n")
 				.append(String.format("📄 Halaman %s dari ", page + 1)).append(savings.getTotalPages()).append("\n\n");

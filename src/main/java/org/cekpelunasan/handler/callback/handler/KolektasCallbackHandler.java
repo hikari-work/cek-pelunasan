@@ -36,20 +36,26 @@ public class KolektasCallbackHandler implements CallbackProcessor {
 	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
+
+			log.info("Kolektas Received....");
+			log.info("Processing");
 			String data = update.getCallbackQuery().getData().split("_")[1].trim().toLowerCase();
 			Long chatId = update.getCallbackQuery().getMessage().getChatId();
 			int page = Integer.parseInt(update.getCallbackQuery().getData().split("_")[2]);
 			Integer messageId = update.getCallbackQuery().getMessage().getMessageId();
 			if (data.isEmpty()) {
+				log.info("Kolektas Parsing Text Is Not Successfull....");
 				sendMessage(chatId, "Data Tidak Boleh Kosong", telegramClient);
 				return;
 			}
 			if (isValidKelompok(data)) {
+				log.info("Group Is Not Valid");
 				sendMessage(chatId, "Data Tidak Valid", telegramClient);
 				return;
 			}
 			Page<KolekTas> kolek = kolekTasService.findKolekByKelompok(data, page + 1, 5);
 			StringBuilder stringBuilder = new StringBuilder();
+			log.info("Sending Kolek Tas For Group {}", data);
 			kolek.forEach(k -> stringBuilder.append(kolekTasUtils.buildKolekTas(k)));
 			InlineKeyboardMarkup markup = paginationKolekTas.dynamicButtonName(kolek,page , data);
 			editMessageWithMarkup(chatId, messageId, stringBuilder.toString(), telegramClient,markup);

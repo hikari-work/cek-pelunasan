@@ -46,16 +46,14 @@ public class BillsByNameCalculatorCallbackHandler implements CallbackProcessor {
 
 			String query = parts[1];
 			if (query.length() == 3 || query.length() == 4) {
-				// Determine which service method to call based on query length
+				log.info("Finding Bills By {}", query);
 				Page<Bills> billsPage = query.length() == 3 
 					? billService.findDueDateByAccountOfficer(query, dateUtils.converterDate(LocalDateTime.now()), Integer.parseInt(parts[2]), 5)
 					: billService.findBranchAndPayDown(query, dateUtils.converterDate(LocalDateTime.now()), Integer.parseInt(parts[2]), 5);
-				
-				// Build response message
+
 				StringBuilder sb = new StringBuilder("📅 *Tagihan Jatuh Bayar Hari Ini*\n\n");
 				billsPage.forEach(bills -> sb.append(tagihanUtils.billsCompact(bills)));
-				
-				// Update the message with pagination buttons
+				log.info("Updating Bills....");
 				editMessageWithMarkup(
 					callback.getMessage().getChatId(), 
 					callback.getMessage().getMessageId(), 

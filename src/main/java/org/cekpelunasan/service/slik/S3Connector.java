@@ -47,8 +47,7 @@ public void initializeS3Client() {
             .build();
         log.info("S3Client successfully initialized");
     } catch (Exception e) {
-        log.error("Failed to initialize S3Client: {}", e.getMessage(), e);
-        throw new RuntimeException("Failed to initialize S3 client", e);
+        log.error("Failed to initialize S3Client:");
     }
 }
 
@@ -60,6 +59,7 @@ public S3Client s3Client() {
 }
 
 	public byte[] getFile(String fileName) {
+		log.info("Searching for Files {}", fileName);
 		GetObjectRequest request = GetObjectRequest.builder().bucket(bucket).key(fileName).build();
 		try {
 			return s3Client().getObjectAsBytes(request).asByteArray();
@@ -67,13 +67,6 @@ public S3Client s3Client() {
 			log.info("Not Found: {}", e.awsErrorDetails().errorMessage());
 			return null;
 		}
-	}
-	@PostConstruct
-	public void printConfig() {
-		System.out.println("AK: " + accessKey);
-		System.out.println("SK: " + secretKey);
-		System.out.println("ID: " + accountId);
-		System.out.println("ENDPOINT: " + endpoint);
 	}
 
 }

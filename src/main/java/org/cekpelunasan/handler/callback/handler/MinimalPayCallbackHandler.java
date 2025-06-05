@@ -45,9 +45,11 @@ public class MinimalPayCallbackHandler implements CallbackProcessor {
 			String[] data = update.getCallbackQuery().getData().split("_");
 
 			int page = Integer.parseInt(data[2]);
+			log.info("Bills Callback Received...");
 
 			Optional<User> userOpt = userService.findUserByChatId(chatId);
 			if (userOpt.isEmpty()) {
+				log.info("User ID {} not Valid", chatId);
 				sendMessage(chatId, "❌ *User tidak ditemukan*", telegramClient);
 				return;
 			}
@@ -57,6 +59,7 @@ public class MinimalPayCallbackHandler implements CallbackProcessor {
 
 			Page<Bills> bills = null;
 			if (user.getRoles() != null) {
+				log.info("Finding Minimal Pay of {}", userCode);
 				bills = switch (user.getRoles()) {
 					case AO -> billService.findMinimalPaymentByAccountOfficer(userCode, page, 5);
 					case PIMP, ADMIN -> billService.findMinimalPaymentByBranch(userCode, page, 5);
@@ -64,6 +67,7 @@ public class MinimalPayCallbackHandler implements CallbackProcessor {
 			}
 
 			if (bills != null && bills.isEmpty()) {
+				log.info("Minimal Pay Is Empty....");
 				sendMessage(chatId, "❌ *Tidak ada tagihan dengan minimal bayar tersisa.*", telegramClient);
 				return;
 			}
