@@ -17,121 +17,218 @@ import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.ByteArrayInputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Handles SLIK commands for retrieving and processing KTP data.
+ * Provides functionality to search by KTP ID or by name.
+ */
 @Component
 public class SlikCommand implements CommandProcessor {
+    private static final String KTP_PREFIX = "KTP_";
+    private static final String KTP_EXTENSION = ".txt";
+    private static final String KTP_ID_PATTERN = "\\b\\d{16}\\b";
+    private static final String MARKDOWN_PARSE_MODE = "Markdown";
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    private static final String COMMAND_PREFIX = "/slik ";
+    private static final String LOADING_MESSAGE = "Mengambil Data KTP";
+    private static final String FILE_NOT_FOUND_FORMAT = "Data KTP `%s` tidak ada";
+    private static final String FILE_FOUND_FORMAT = "Data KTP `%s` Ditemukan....";
+    private static final String ERROR_MESSAGE = "SLIK Belum di request, Atau anda belum didaftarkan sebagai AO";
+    private static final String KTP_REQUIRED_MESSAGE = "No KTP Harus Diisi";
 
+    private final S3Connector s3Connector;
+    private final GeneratePDF generatePDF;
+    private final AuthorizedChats authorizedChats;
+    private final MessageTemplate messageTemplate;
+    private final UserService userService;
+    private final PDFReader pdfReader;
 
-	private final S3Connector s3Connector;
-	private final GeneratePDF generatePDF;
-	private final AuthorizedChats authorizedChats1;
-	private final MessageTemplate messageTemplate;
-	private final UserService userService;
-	private final PDFReader pDFReader;
-
-	public SlikCommand(S3Connector s3Connector, GeneratePDF generatePDF, AuthorizedChats authorizedChats1, MessageTemplate messageTemplate, UserService userService1, PDFReader pDFReader) {
-		this.s3Connector = s3Connector;
-		this.generatePDF = generatePDF;
-		this.authorizedChats1 = authorizedChats1;
-		this.messageTemplate = messageTemplate;
-		this.userService = userService1;
-		this.pDFReader = pDFReader;
-	}
-
-	@Override
-	public String getCommand() {
-		return "/slik";
-	}
-
-	@Override
-	public String getDescription() {
-		return "";
-	}
-
-	@Override
-	@Async
-	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
-		return CompletableFuture.runAsync(() -> {
-			if (!authorizedChats1.isAuthorized(chatId)) {
-				sendMessage(chatId, messageTemplate.unathorizedMessage(), telegramClient);
-				return;
-			}
-			String filename = text.replace("/slik ", "").trim();
-			if (filename.isEmpty()) {
-				sendMessage(chatId, "No KTP Harus Diisi", telegramClient);
-				return;
-			}
-			if (!filename.matches("\\b\\d{16}\\b")) {
-				String s = handleSlikByNameCommand(text.replace("/slik ", ""), chatId);
-				if (s == null) {
-					sendMessage(chatId, "SLIK Belum di request, Atau anda belum didaftarkan sebagai AO", telegramClient);
-					return;
-				}
-				sendMessage(chatId, s, telegramClient);
-				return;
-			}
-			Message message = sendNotification(chatId, telegramClient);
-			byte[] files = s3Connector.getFile("KTP_" + filename + ".txt");
-			if (files == null) {
-				log.info("File found: ");
-				editMessage(chatId, message.getMessageId(), "Data KTP `" + filename +"` tidak ada", telegramClient);
-			}
-			String s = generatePDF.sendBytesWithRestTemplate(files, filename + ".txt");
-			if (s == null || s.isEmpty()) {
-				log.info("File not found: {}", filename);
-				editMessage(chatId, message.getMessageId(), "Data KTP `" + filename +"` tidak ada", telegramClient);
-				return;
-			}
-			byte[] bytes = generatePDF.convertHtmlToPdf(s);
-			editMessage(chatId, message.getMessageId(), "Data KTP `" + filename +"` Ditemukan....", telegramClient);
-			if (files == null || bytes.length == 0) {
-				log.info("File not found: ");
-				sendMessage(chatId, "File not found: " + filename, telegramClient);
-			} else {
-				log.info("Sending Files....");
-				sendDocument(chatId, text.replace("/slik ", "").trim() + ".pdf", new InputFile(new ByteArrayInputStream(bytes), filename+".pdf"), telegramClient);
-			}
-
-		});
-	}
-	private Message sendNotification(Long chatId, TelegramClient telegramClient) {
-		try {
-			return telegramClient.execute(SendMessage.builder()
-				.chatId(chatId)
-				.text("Mengambil Data KTP")
-				.parseMode("Markdown")
-				.build());
-		} catch (Exception e) {
-			log.info(e.getMessage());
-			return null;
-		}
-	}
-	private void editMessage(Long chatId, Integer messageId, String text, TelegramClient telegramClient) {
-		try {
-			telegramClient.execute(EditMessageText.builder()
-				.chatId(chatId)
-				.text(text)
-				.messageId(messageId)
-				.parseMode("Markdown")
-				.build());
-		} catch (Exception e) {
-			log.info(e.getMessage());
-		}
-	}
-	public String handleSlikByNameCommand(String text, long chatId) {
-    log.info("Melakukan pencarian {}", text);
-    Optional<User> userByChatId = userService.findUserByChatId(chatId);
-    if (userByChatId.isEmpty()) {
-        return null;
+    public SlikCommand(
+            S3Connector s3Connector,
+            GeneratePDF generatePDF,
+            AuthorizedChats authorizedChats,
+            MessageTemplate messageTemplate,
+            UserService userService,
+            PDFReader pdfReader
+    ) {
+        this.s3Connector = s3Connector;
+        this.generatePDF = generatePDF;
+        this.authorizedChats = authorizedChats;
+        this.messageTemplate = messageTemplate;
+        this.userService = userService;
+        this.pdfReader = pdfReader;
     }
-    User user = userByChatId.get();
-    log.info("Pencarian dengan {}_{}", user.getUserCode(), text.trim());
-    List<String> list = s3Connector.listObjectFoundByName(user.getUserCode() + "_" + text.trim());
+
+    @Override
+    public String getCommand() {
+        return "/slik";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Retrieve KTP data by ID or search by name";
+    }
+
+    @Override
+    @Async
+    public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+        return CompletableFuture.runAsync(() -> {
+            if (!authorizedChats.isAuthorized(chatId)) {
+                sendMessage(chatId, messageTemplate.unathorizedMessage(), telegramClient);
+                return;
+            }
+            
+            String query = extractQuery(text);
+            if (query.isEmpty()) {
+                sendMessage(chatId, KTP_REQUIRED_MESSAGE, telegramClient);
+                return;
+            }
+            
+            if (isValidKtpId(query)) {
+                processSearchById(query, chatId, telegramClient);
+            } else {
+                processSearchByName(query, chatId, telegramClient);
+            }
+        });
+    }
     
-    if (list.isEmpty()) {
+    /**
+     * Extracts the search query from the command text.
+     */
+    private String extractQuery(String text) {
+        return text.replace(COMMAND_PREFIX, "").trim();
+    }
+    
+    /**
+     * Validates if the given text is a valid KTP ID (16 digits).
+     */
+    private boolean isValidKtpId(String text) {
+        return text.matches(KTP_ID_PATTERN);
+    }
+    
+    /**
+     * Processes a search by name query.
+     */
+    private void processSearchByName(String query, long chatId, TelegramClient telegramClient) {
+        String result = handleSlikByNameCommand(query, chatId);
+        if (result == null) {
+            sendMessage(chatId, ERROR_MESSAGE, telegramClient);
+            return;
+        }
+        sendMessage(chatId, result, telegramClient);
+    }
+    
+    /**
+     * Processes a search by KTP ID query.
+     */
+    private void processSearchById(String ktpId, long chatId, TelegramClient telegramClient) {
+        Message notification = sendNotification(chatId, telegramClient);
+        if (notification == null) {
+            return;
+        }
+        
+        String filename = KTP_PREFIX + ktpId + KTP_EXTENSION;
+        byte[] files = s3Connector.getFile(filename);
+        
+        if (files == null) {
+            log.info("File not found for KTP ID: {}", ktpId);
+            editMessage(chatId, notification.getMessageId(), 
+                    String.format(FILE_NOT_FOUND_FORMAT, ktpId), telegramClient);
+            return;
+        }
+        
+        processKtpFile(ktpId, files, chatId, notification.getMessageId(), telegramClient);
+    }
+
+    /**
+     * Processes a KTP file to generate and send a PDF.
+     */
+    private void processKtpFile(String ktpId, byte[] files, long chatId, int messageId, TelegramClient telegramClient) {
+        String htmlContent = generatePDF.sendBytesWithRestTemplate(files, ktpId + KTP_EXTENSION);
+        if (htmlContent == null || htmlContent.isEmpty()) {
+            log.info("Failed to generate HTML content for KTP ID: {}", ktpId);
+            editMessage(chatId, messageId, String.format(FILE_NOT_FOUND_FORMAT, ktpId), telegramClient);
+            return;
+        }
+        
+        byte[] pdfBytes = generatePDF.convertHtmlToPdf(htmlContent);
+        editMessage(chatId, messageId, String.format(FILE_FOUND_FORMAT, ktpId), telegramClient);
+        
+        if (pdfBytes == null || pdfBytes.length == 0) {
+            log.info("Failed to generate PDF for KTP ID: {}", ktpId);
+            sendMessage(chatId, "File not found: " + ktpId, telegramClient);
+            return;
+        }
+        
+        log.info("Sending PDF file for KTP ID: {}", ktpId);
+        InputFile pdfFile = new InputFile(new ByteArrayInputStream(pdfBytes), ktpId + ".pdf");
+        sendDocument(chatId, ktpId, pdfFile, telegramClient);
+    }
+
+    /**
+     * Sends a notification message to indicate loading is in progress.
+     */
+    private Message sendNotification(Long chatId, TelegramClient telegramClient) {
+        try {
+            return telegramClient.execute(SendMessage.builder()
+                    .chatId(chatId)
+                    .text(LOADING_MESSAGE)
+                    .parseMode(MARKDOWN_PARSE_MODE)
+                    .build());
+        } catch (Exception e) {
+            log.info("Error sending notification: {}", e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Updates an existing message with new text.
+     */
+    private void editMessage(Long chatId, Integer messageId, String text, TelegramClient telegramClient) {
+        try {
+            telegramClient.execute(EditMessageText.builder()
+                    .chatId(chatId)
+                    .text(text)
+                    .messageId(messageId)
+                    .parseMode(MARKDOWN_PARSE_MODE)
+                    .build());
+        } catch (Exception e) {
+            log.info("Error editing message: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * Handles the search by name command logic.
+     */
+    public String handleSlikByNameCommand(String text, long chatId) {
+        log.info("Searching for: {}", text);
+        Optional<User> userByChatId = userService.findUserByChatId(chatId);
+        
+        if (userByChatId.isEmpty()) {
+            return null;
+        }
+        
+        User user = userByChatId.get();
+        String searchKey = user.getUserCode() + "_" + text.trim();
+        log.info("Search key: {}", searchKey);
+        List<String> results = s3Connector.listObjectFoundByName(searchKey);
+        
+        if (results.isEmpty()) {
+            return buildNoResultsMessage(text);
+        }
+        
+        return buildSearchResultsMessage(text, results, user);
+    }
+    
+    /**
+     * Builds a message for when no search results are found.
+     */
+    private String buildNoResultsMessage(String query) {
         return String.format("""
             🔍 *HASIL PENCARIAN*
             ━━━━━━━━━━━━━━━━━━━
@@ -143,26 +240,43 @@ public class SlikCommand implements CommandProcessor {
             /otor <3 Huruf Inisial>
             
             _Silakan coba dengan kata kunci lain atau periksa penulisan karena pencarian case sensitive_
-            """, text);
+            """, query);
     }
     
-    StringBuilder builder = new StringBuilder(String.format("""
-        🔍 *HASIL PENCARIAN*
-        ━━━━━━━━━━━━━━━━━━━
+    /**
+     * Builds a message containing search results.
+     */
+    private String buildSearchResultsMessage(String query, List<String> documents, User user) {
+        StringBuilder builder = new StringBuilder(String.format("""
+            🔍 *HASIL PENCARIAN*
+            ━━━━━━━━━━━━━━━━━━━
+            
+            📝 Kata kunci: *%s*
+            🔢 Ditemukan: *%d dokumen*
+            👤 User: *%s*
+            
+            📋 *DAFTAR DOKUMEN*
+            """, query, documents.size(), user.getUserCode()));
         
-        📝 Kata kunci: *%s*
-        🔢 Ditemukan: *%d dokumen*
-        👤 User: *%s*
+        int counter = 1;
+        for (String contentKey : documents) {
+            log.info("Document: {}", contentKey);
+            String idNumber = pdfReader.generateIDNumber(s3Connector.getFile(contentKey));
+            builder.append(buildDocumentEntry(counter++, contentKey, idNumber));
+        }
         
-        📋 *DAFTAR DOKUMEN*
-        """, text, list.size(), user.getUserCode()));
+        builder.append("""
+            ℹ️ _Tap pada Command untuk menyalin dan mendapatkan File_
+            ⏱️ _Generated:""").append(LocalDateTime.now().format(DATE_FORMATTER)).append("_");
+        
+        return builder.toString();
+    }
     
-    int counter = 1;
-    for (String contentKey : list) {
-		log.info("Dokumen {}", contentKey);
-        String idNumber = pDFReader.generateIDNumber(s3Connector.getFile(contentKey));
-        
-        builder.append(String.format("""
+    /**
+     * Builds a single document entry for the search results.
+     */
+    private String buildDocumentEntry(int index, String contentKey, String idNumber) {
+        return String.format("""
             
             📄 *Dokumen #%d*
             ┌─────────────────────
@@ -172,19 +286,11 @@ public class SlikCommand implements CommandProcessor {
             │ 🪪 Original SLIK: %s
             └─────────────────────
             """, 
-            counter++,
+            index,
             contentKey,
             (idNumber != null ? "`" + idNumber + "`" : "_Tidak ditemukan_"),
             (idNumber != null ? "`/slik " + idNumber + "`" : "_Tidak ditemukan_"),
             (contentKey != null ? "`/doc " + contentKey + "`" : "_Tidak ditemukan_")
-        ));
+        );
     }
-    
-    builder.append("""
-        ℹ️ _Tap pada Command untuk menyalin dan mendapatkan File_
-        ⏱️ _Generated:""").append(java.time.LocalDateTime.now().format(
-            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))).append("_");
-    
-    return builder.toString();
-}
 }

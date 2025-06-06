@@ -38,7 +38,7 @@ public class DirectServicesHandler implements CallbackProcessor {
 	@Async
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
-			log.info("Direct Request Successfully Processed with query {}", update.getMessage().getText());
+			log.info("Direct Request Successfully Processed with query {}", update.getCallbackQuery().getData());
 			String[] data = update.getCallbackQuery().getData().split("_");
 			String query = data[1];
 			String dataMessage = data[2];
