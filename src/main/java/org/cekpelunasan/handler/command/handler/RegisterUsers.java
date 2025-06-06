@@ -59,11 +59,6 @@ public class RegisterUsers implements CommandProcessor {
 
 			User user = userOptional.get();
 
-			if (user.getRoles() != null) {
-				sendMessage(chatId, "⚠ *Anda sudah terdaftar sebagai " + user.getRoles() + "*", telegramClient);
-				return;
-			}
-
 			if (target.length() == 3 && isValidAO(target)) {
 				registerUser(user, AccountOfficerRoles.AO, target, "AO", chatId, telegramClient);
 				return;

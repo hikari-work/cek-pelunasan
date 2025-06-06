@@ -172,7 +172,7 @@ public class SlikCommand implements CommandProcessor {
             contentKey,
             (idNumber != null ? "`" + idNumber + "`" : "_Tidak ditemukan_"),
             (idNumber != null ? "`/slik " + idNumber + "`" : "_Tidak ditemukan_"),
-            (idNumber != null ? "`/doc " + contentKey + "`" : "_Tidak ditemukan_")
+            (contentKey != null ? "`/doc " + contentKey + "`" : "_Tidak ditemukan_")
         ));
     }
     
