@@ -137,8 +137,12 @@ public class SlikCommand implements CommandProcessor {
             ━━━━━━━━━━━━━━━━━━━
             
             ❌ *Tidak ditemukan hasil untuk "%s"*
+            Silahkan periksa lagi, apakah SLIK sudah di request atau belum?
+            atau kamu belum validasi AO? Kalau belum silahkan validasi dahulu...
+            Caranya :
+            /otor <3 Huruf Inisial>
             
-            _Silakan coba dengan kata kunci lain atau periksa penulisan_
+            _Silakan coba dengan kata kunci lain atau periksa penulisan karena pencarian case sensitive_
             """, text);
     }
     
