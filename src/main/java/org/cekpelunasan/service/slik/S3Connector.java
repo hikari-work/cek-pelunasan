@@ -8,10 +8,10 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.net.URI;
+import java.util.List;
 
 @Service
 public class S3Connector {
@@ -67,6 +67,17 @@ public S3Client s3Client() {
 			log.info("Not Found: {}", e.awsErrorDetails().errorMessage());
 			return null;
 		}
+	}
+	public List<String> listObjectFoundByName(String prefix) {
+		ListObjectsV2Request request = ListObjectsV2Request.builder()
+			.bucket(bucket)
+			.prefix(prefix)
+			.build();
+		ListObjectsV2Response response = s3Client.listObjectsV2(request);
+		return response.contents()
+			.stream()
+			.map(S3Object::key)
+			.toList();
 	}
 
 }

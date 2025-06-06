@@ -44,7 +44,6 @@ public class PdfService {
 
 						if (resource.exists()) {
 							try (InputStream is = resource.getInputStream()) {
-								// Read image bytes
 								ByteArrayOutputStream out = new ByteArrayOutputStream();
 								byte[] buffer = new byte[4096];
 								int bytesRead;
