@@ -32,7 +32,7 @@ public class RepaymentCalculator {
 				💳 *RINCIAN TAGIHAN*
 				┌────────────────────────
 				│ 📈 Baki Debet : %s
-				│ ⚠️ Tunggakan   : %s
+				│ ⚠️ Tunggakan   : `%s`
 				│ ⏰ Penalty +%s : %s
 				│ 🚫 Denda      : %s
 				│

@@ -90,9 +90,9 @@ public class SlikCommand implements CommandProcessor {
             }
             
             if (isValidKtpId(query)) {
-                processSearchById(query, chatId, telegramClient);
+                processSlikSearchById(query, chatId, telegramClient);
             } else {
-                processSearchByName(query, chatId, telegramClient);
+                processSlikSearchByName(query, chatId, telegramClient);
             }
         });
     }
@@ -114,7 +114,7 @@ public class SlikCommand implements CommandProcessor {
     /**
      * Processes a search by name query.
      */
-    private void processSearchByName(String query, long chatId, TelegramClient telegramClient) {
+    private void processSlikSearchByName(String query, long chatId, TelegramClient telegramClient) {
         String result = handleSlikByNameCommand(query, chatId);
         if (result == null) {
             sendMessage(chatId, ERROR_MESSAGE, telegramClient);
@@ -126,7 +126,7 @@ public class SlikCommand implements CommandProcessor {
     /**
      * Processes a search by KTP ID query.
      */
-    private void processSearchById(String ktpId, long chatId, TelegramClient telegramClient) {
+    private void processSlikSearchById(String ktpId, long chatId, TelegramClient telegramClient) {
         Message notification = sendNotification(chatId, telegramClient);
         if (notification == null) {
             return;

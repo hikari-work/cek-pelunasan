@@ -26,7 +26,7 @@ public class SavingsUtils {
 			.append("• Buku: ").append(rupiahFormatUtils.formatRupiah(bookBalance)).append("\n")
 			.append("• Min: ").append(rupiahFormatUtils.formatRupiah(minBalance)).append("\n")
 			.append("• Block: ").append(rupiahFormatUtils.formatRupiah(blockBalance)).append("\n")
-			.append("• Efektif: ").append(rupiahFormatUtils.formatRupiah(effectiveBalance)).append("\n\n");
+			.append("• Efektif: `").append(rupiahFormatUtils.formatRupiah(effectiveBalance)).append("`\n\n");
 		return message.toString();
 	}
 }
