@@ -5,6 +5,8 @@ import org.cekpelunasan.configuration.PdfService;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.Pdf;
 import org.openqa.selenium.PrintsPage;
 import org.openqa.selenium.print.PageMargin;
@@ -150,18 +152,27 @@ public class GeneratePDF {
 	}
 
 	private String removeButtonsDiv(String htmlContent) {
-		log.info("Removing Button...");
+		log.info("Processing HTML content...");
 		try {
 			Document doc = Jsoup.parse(htmlContent);
+
 			doc.select("div.text-right").forEach(element -> {
 				if (!element.select("button#print").isEmpty()) {
 					element.remove();
 				}
 			});
 
+			Elements divBlocks = doc.select("div[style*=grid-template-columns: 80px 80px 80px]");
+			for (Element block : divBlocks) {
+				Element clonedBlock = block.clone();
+				block.remove();
+
+				doc.body().appendChild(clonedBlock);
+			}
+
 			return doc.html();
 		} catch (Exception e) {
-			log.warn("Error removing print button div: {}", e.getMessage());
+			log.warn("Error processing HTML: {}", e.getMessage());
 			return htmlContent;
 		}
 	}
