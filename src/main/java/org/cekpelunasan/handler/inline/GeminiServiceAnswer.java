@@ -9,8 +9,10 @@ import org.telegram.telegrambots.meta.api.objects.inlinequery.result.InlineQuery
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Component
 public class GeminiServiceAnswer {
@@ -50,14 +52,12 @@ public class GeminiServiceAnswer {
 	}
 	public static String removeMarkdownSymbols(String text) {
 		if (text == null) return "";
-		return text
-			.replace("*", "")
-			.replace("_", "")
-			.replace("`", "")
-			.replace("[", "")
-			.replace("]", "")
-			.replace("\\", ""); // HAPUS backslash
+		String cleaned = text.replaceAll("[*_`\\[\\]\\\\]", "");
+		return Arrays.stream(cleaned.split("\n"))
+			.map(String::trim)
+			.collect(Collectors.joining("\n"));
 	}
+
 
 
 }
