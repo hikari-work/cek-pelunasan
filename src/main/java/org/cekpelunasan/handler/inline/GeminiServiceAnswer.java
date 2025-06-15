@@ -28,8 +28,8 @@ public class GeminiServiceAnswer {
 		CompletableFuture.supplyAsync(() -> geminiService.askGemini(text))
 			.thenAccept(answer -> {
 				InputTextMessageContent content = InputTextMessageContent.builder()
-					.messageText(escapeMarkdown(answer))
-					.parseMode("MarkdownV2")
+					.messageText(removeMarkdownSymbols(answer))
+					.parseMode("Markdown")
 					.build();
 				InlineQueryResultArticle inlineQueryResultArticle = InlineQueryResultArticle.builder()
 					.id(id)
@@ -48,11 +48,16 @@ public class GeminiServiceAnswer {
 				}
 			});
 	}
-	public static String escapeMarkdown(String text) {
-		return text.replace("_", "\\_")
-			.replace("*", "\\*")
-			.replace("[", "\\[")
-			.replace("`", "\\`");
+	public static String removeMarkdownSymbols(String text) {
+		if (text == null) return "";
+		return text
+			.replace("*", "")
+			.replace("_", "")
+			.replace("`", "")
+			.replace("[", "")
+			.replace("]", "")
+			.replace("\\", ""); // HAPUS backslash
 	}
+
 
 }
