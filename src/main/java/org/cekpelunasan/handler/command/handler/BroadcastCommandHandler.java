@@ -9,6 +9,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.CopyMessage;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.List;
@@ -47,20 +50,37 @@ public class BroadcastCommandHandler implements CommandProcessor {
 
 	@Override
 	@Async
-	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
+			Message message = update.getMessage();
+			long chatId = message.getChatId();
+
 			if (!botOwner.equalsIgnoreCase(String.valueOf(chatId))) {
 				sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
 				return;
 			}
 
+			// Harus balas pesan untuk di-copy
+			if (message.getReplyToMessage() == null) {
+				sendMessage(chatId, "❗ *Format salah.*\nBalas pesan yang mau di-broadcast, lalu ketik `/broadcast`", telegramClient);
+				return;
+			}
+
+			Integer messageIdToCopy = message.getReplyToMessage().getMessageId();
+
 			try {
-				String broadcastMessage = text.split(" ", 2)[1];
 				List<User> allUsers = userService.findAllUsers();
 
 				for (User user : allUsers) {
-					log.info("Broadcasting To {}", user.getChatId());
-					sendMessage(user.getChatId(), broadcastMessage, telegramClient);
+					log.info("Copying To {}", user.getChatId());
+					CopyMessage copyMessage = CopyMessage.builder()
+						.fromChatId(String.valueOf(chatId))
+						.messageId(messageIdToCopy)
+						.chatId(String.valueOf(user.getChatId()))
+						.build();
+
+					telegramClient.execute(copyMessage);
+
 					try {
 						Thread.sleep(DELAY_BETWEEN_USERS_MS);
 					} catch (InterruptedException e) {
@@ -68,12 +88,14 @@ public class BroadcastCommandHandler implements CommandProcessor {
 						log.warn("Thread interrupted saat delay antar user", e);
 					}
 				}
-				sendMessage(chatId, "✅ Broadcast selesai ke " + allUsers.size() + " pengguna.", telegramClient);
 
-			} catch (ArrayIndexOutOfBoundsException e) {
-				log.info("Broadcast Format Failed");
-				sendMessage(chatId, "❗ *Format salah.*\nGunakan `/broadcast <pesan>`", telegramClient);
+				sendMessage(chatId, "✅ Broadcast copyMessage selesai ke " + allUsers.size() + " pengguna.", telegramClient);
+
+			} catch (Exception e) {
+				log.error("Gagal broadcast copyMessage", e);
+				sendMessage(chatId, "❗ Gagal melakukan broadcast salinan pesan.", telegramClient);
 			}
 		});
 	}
+
 }
