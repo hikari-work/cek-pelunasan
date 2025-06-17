@@ -35,7 +35,7 @@ public class AddMetadataSlik implements CommandProcessor {
 			return CompletableFuture.runAsync(() -> sendMessage(chatId, "Hanya Admin yang dapat menggunakan command ini", telegramClient));
 		}
 		return CompletableFuture.runAsync(() ->{
-			String key = text.replace("/addmetadata ", "");
+			String key = text.replace("/adddata ", "");
 			if (key.isEmpty()) {
 				sendMessage(chatId, "Key Harus Diisi", telegramClient);
 				return;

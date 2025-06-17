@@ -12,7 +12,7 @@
 
     <groupId>org.belajar.springbootapp</groupId>
     <artifactId>cek-pelunasan</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <name>cek-pelunasan</name>
     <description>cek-pelunasan</description>
 
@@ -109,6 +109,7 @@
             <version>2.25.0</version> <!-- Use latest -->
         </dependency>
 
+
         <!-- Telegram Bots Client -->
         <dependency>
             <groupId>org.telegram</groupId>
@@ -138,6 +139,12 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <version>0.10.1</version>
+            </plugin>
+
 
             <!-- Maven Assembly Plugin to create jar-with-dependencies -->
             <plugin>

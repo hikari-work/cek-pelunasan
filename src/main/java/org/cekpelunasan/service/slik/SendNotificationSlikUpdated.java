@@ -150,14 +150,19 @@ public class SendNotificationSlikUpdated {
 	 * Tandai file S3 sebagai sudah dinotifikasi.
 	 */
 	private void markAsNotified(String key) {
-		Map<String, String> metadata = Map.of("x-is-notified", "yes");
 
+		HeadObjectResponse response = s3Connector.s3Client().headObject(HeadObjectRequest.builder()
+			.key("KTP_" + key + ".txt")
+			.bucket(bucket)
+			.build());
+		Map<String, String> metadataFromS3 = response.metadata();
+		metadataFromS3.put("x-is-notified", "yes");
 		CopyObjectRequest copyRequest = CopyObjectRequest.builder()
 			.sourceBucket(bucket)
 			.sourceKey(key)
 			.destinationBucket(bucket)
 			.destinationKey(key)
-			.metadata(metadata)
+			.metadata(metadataFromS3)
 			.metadataDirective(MetadataDirective.REPLACE)
 			.build();
 

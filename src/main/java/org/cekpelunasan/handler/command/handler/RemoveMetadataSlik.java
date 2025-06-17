@@ -35,7 +35,7 @@ public class RemoveMetadataSlik implements CommandProcessor {
 			return CompletableFuture.runAsync(() -> sendMessage(chatId, "Hanya Admin yang dapat menggunakan command ini", telegramClient));
 		}
 		return CompletableFuture.runAsync(() ->{
-			String key = text.replace("/remmetadata ", "");
+			String key = text.replace("/remdata ", "");
 			if (key.isEmpty()) {
 				sendMessage(chatId, "Key Harus Diisi", telegramClient);
 				return;
