@@ -155,26 +155,20 @@ public class GeneratePDF {
 		log.info("Processing HTML content...");
 		try {
 			Document doc = Jsoup.parse(htmlContent);
-
-			// 1. Hapus div yang mengandung tombol print
 			doc.select("div.text-right").forEach(element -> {
 				if (!element.select("button#print").isEmpty()) {
 					element.remove();
 				}
 			});
 
-			// 2. Pindahkan blok tanda tangan ke bawah dan posisikan ke kanan
 			Elements divBlocks = doc.select("div[style*=grid-template-columns: 80px 80px 80px]");
 			for (Element block : divBlocks) {
 				Element clonedBlock = block.clone();
 				block.remove();
 
-				// Bungkus dalam container dengan style right-align
 				Element wrapper = new Element("div");
 				wrapper.attr("style", "display: flex; justify-content: flex-end; margin-top: 20px;");
 				wrapper.appendChild(clonedBlock);
-
-				// Tambahkan ke akhir body
 				doc.body().appendChild(wrapper);
 			}
 

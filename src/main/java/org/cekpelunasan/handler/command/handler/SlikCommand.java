@@ -5,6 +5,7 @@ import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.slik.GeneratePDF;
+import org.cekpelunasan.service.slik.IsUserGetPermissionToViewResume;
 import org.cekpelunasan.service.slik.PDFReader;
 import org.cekpelunasan.service.slik.S3Connector;
 import org.cekpelunasan.service.users.UserService;
@@ -47,22 +48,24 @@ public class SlikCommand implements CommandProcessor {
     private final MessageTemplate messageTemplate;
     private final UserService userService;
     private final PDFReader pdfReader;
+	private final IsUserGetPermissionToViewResume isUserGetPermissionToViewResume;
 
-    public SlikCommand(
+	public SlikCommand(
             S3Connector s3Connector,
             GeneratePDF generatePDF,
             AuthorizedChats authorizedChats,
             MessageTemplate messageTemplate,
             UserService userService,
-            PDFReader pdfReader
-    ) {
+            PDFReader pdfReader,
+			IsUserGetPermissionToViewResume isUserGetPermissionToViewResume) {
         this.s3Connector = s3Connector;
         this.generatePDF = generatePDF;
         this.authorizedChats = authorizedChats;
         this.messageTemplate = messageTemplate;
         this.userService = userService;
         this.pdfReader = pdfReader;
-    }
+		this.isUserGetPermissionToViewResume = isUserGetPermissionToViewResume;
+	}
 
     @Override
     public String getCommand() {
@@ -73,7 +76,6 @@ public class SlikCommand implements CommandProcessor {
     public String getDescription() {
         return "Retrieve KTP data by ID or search by name";
     }
-
     @Override
     @Async
     public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
@@ -90,6 +92,10 @@ public class SlikCommand implements CommandProcessor {
             }
             
             if (isValidKtpId(query)) {
+				if (!isUserGetPermissionToViewResume.isUserGetPermissionToViewResume(query)) {
+					sendMessage(chatId, "Anda tidak memiliki izin untuk melihat resume KTP ini!", telegramClient);
+					return;
+				}
                 processSlikSearchById(query, chatId, telegramClient);
             } else {
                 processSlikSearchByName(query, chatId, telegramClient);

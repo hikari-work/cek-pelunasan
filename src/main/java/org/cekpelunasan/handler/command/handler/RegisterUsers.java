@@ -68,7 +68,6 @@ public class RegisterUsers implements CommandProcessor {
 				registerUser(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, telegramClient);
 				return;
 			}
-
 			sendMessage(chatId, "❌ *Format tidak valid*\n\nContoh: /otor 1234567890", telegramClient);
 		});
 	}
