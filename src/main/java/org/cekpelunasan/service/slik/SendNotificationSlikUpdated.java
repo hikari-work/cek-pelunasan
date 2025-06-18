@@ -152,7 +152,7 @@ public class SendNotificationSlikUpdated {
 	private void markAsNotified(String key) {
 
 		HeadObjectResponse response = s3Connector.s3Client().headObject(HeadObjectRequest.builder()
-			.key("KTP_" + key + ".txt")
+			.key(key)
 			.bucket(bucket)
 			.build());
 		Map<String, String> metadataFromS3 = response.metadata();
