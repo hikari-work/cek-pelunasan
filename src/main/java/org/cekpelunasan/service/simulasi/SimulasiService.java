@@ -58,23 +58,18 @@ public class SimulasiService {
         
         log.info("Max late days: {}, which results in {}", maxLateDay, maxLateDay <= LATE_PAYMENT_THRESHOLD);
 
-        // Determine payment sequence based on late days
         String firstSequence = maxLateDay <= LATE_PAYMENT_THRESHOLD ? SEQUENCE_INTEREST : SEQUENCE_PRINCIPAL;
         String secondSequence = maxLateDay <= LATE_PAYMENT_THRESHOLD ? SEQUENCE_PRINCIPAL : SEQUENCE_INTEREST;
-        
-        // Process first priority payments
+
         processPayments(keterlambatan, remainingBalance, 
                         firstSequence.equals(SEQUENCE_INTEREST) ? interestPayment : principalPayment, 
                         simulasi -> simulasi.getSequence().equals(firstSequence));
-        
-        // Process second priority payments if balance remains
         if (remainingBalance.get() > 0) {
             processPayments(keterlambatan, remainingBalance, 
                             secondSequence.equals(SEQUENCE_INTEREST) ? interestPayment : principalPayment, 
                             simulasi -> simulasi.getSequence().equals(secondSequence));
         }
 
-        // Calculate remaining late days
         long remainingLateDays = keterlambatan.stream()
                 .filter(data -> data.getTunggakan() > 0L)
                 .mapToLong(Simulasi::getKeterlambatan)
@@ -178,37 +173,69 @@ public class SimulasiService {
     
     public long minimalBayar(String spk) {
         List<Simulasi> records = findSimulasiBySpk(spk);
-        
         if (records.isEmpty()) {
             return 0L;
         }
-        
-        records.sort(Comparator.comparing(Simulasi::getKeterlambatan).reversed());
+		records.removeIf(sim -> {
+			log.info("Keterlambatan {} hari", sim.getKeterlambatan());
+			boolean toRemove = sim.getTunggakan() < 1;
+			if (toRemove) {
+				log.info("Tunggakan {} hari sudah dihapus", sim.getTunggakan());
+			}
+			return toRemove;
+		});
+
+		records.sort(Comparator.comparing(Simulasi::getKeterlambatan).reversed());
         long maxLateDay = records.getFirst().getKeterlambatan();
         AtomicLong minimumPayment = new AtomicLong(0L);
         
         if (maxLateDay > LATE_PAYMENT_THRESHOLD) {
-            records.stream()
-                .filter(this::isPrincipalOrLateInterest)
-                .forEach(record -> minimumPayment.addAndGet(record.getTunggakan()));
+
+			log.info("Hari terburuk  {}", maxLateDay);
+			records.stream()
+					.filter(simulasi -> simulasi.getSequence().equals(SEQUENCE_PRINCIPAL))
+						.forEach(record -> {
+							minimumPayment.addAndGet(record.getTunggakan());
+							record.setKeterlambatan(0L);
+						});
+			records.removeIf(sim -> {
+				log.info("Keterlambatan {} hari", sim.getKeterlambatan());
+				boolean toRemove = sim.getTunggakan() < 1;
+				if (toRemove) {
+					log.info("Tunggakan {} hari sudah dihapus", sim.getTunggakan());
+				}
+				return toRemove;
+			});
+			if (records.getFirst().getSequence().equals(SEQUENCE_INTEREST)) {
+				records
+					.forEach(simulasi -> simulasi.setKeterlambatan(simulasi.getKeterlambatan()
+						+ getDaysToEndOfMonth()));
+				records.stream()
+					.filter(simulasi -> simulasi.getSequence().equals(SEQUENCE_INTEREST) && simulasi.getKeterlambatan() > 90L)
+						.forEach(record -> {
+							minimumPayment.addAndGet(record.getTunggakan());
+							record.setKeterlambatan(0L);
+						});
+			}
         } else {
-            records.stream()
-                .filter(this::isInterestOrLatePrincipal)
-                .forEach(record -> minimumPayment.addAndGet(record.getTunggakan()));
+			log.info("Penambahan {}", getDaysToEndOfMonth());
+            records
+				.forEach(simulasi -> simulasi.setKeterlambatan(simulasi.getKeterlambatan()
+					+ getDaysToEndOfMonth()));
+			records.stream()
+				.filter(simulasi -> simulasi.getSequence().equals(SEQUENCE_INTEREST) && simulasi.getKeterlambatan() > 90L)
+					.forEach(record -> {
+						minimumPayment.addAndGet(record.getTunggakan());
+						record.setKeterlambatan(0L);
+					});
+			records.stream()
+				.filter(simulasi -> simulasi.getSequence().equals(SEQUENCE_PRINCIPAL) && simulasi.getKeterlambatan() > 90L)
+					.forEach(record -> {
+						minimumPayment.addAndGet(record.getTunggakan());
+						record.setKeterlambatan(0L);
+					});
         }
         
         return minimumPayment.get();
-    }
-    
-    private boolean isPrincipalOrLateInterest(Simulasi record) {
-        return record.getSequence().equals(SEQUENCE_PRINCIPAL) || 
-               (record.getSequence().equals(SEQUENCE_INTEREST) && 
-                record.getKeterlambatan() > LATE_PAYMENT_THRESHOLD);
-    }
-    
-    private boolean isInterestOrLatePrincipal(Simulasi record) {
-        return record.getSequence().equals(SEQUENCE_INTEREST) || 
-               (record.getSequence().equals(SEQUENCE_PRINCIPAL) && 
-                record.getKeterlambatan() > LATE_PAYMENT_THRESHOLD);
     }
 }

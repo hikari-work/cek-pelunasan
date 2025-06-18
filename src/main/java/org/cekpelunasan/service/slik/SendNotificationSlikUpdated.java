@@ -15,7 +15,7 @@ import software.amazon.awssdk.services.s3.model.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
 @Slf4j
 @Component
@@ -39,37 +39,59 @@ public class SendNotificationSlikUpdated {
 		return new OkHttpTelegramClient(botToken);
 	}
 
-	@Scheduled(fixedDelay = 10 * 60 * 1000) // 10 menit sekali
+	@Scheduled(fixedDelay = 10 * 60 * 1000)
 	public void run() {
-		log.info("== START SendNotificationSlikUpdated ==");
-
-		ListObjectsV2Request listRequest = ListObjectsV2Request.builder()
-			.bucket(bucket)
-			.build();
-
-		ListObjectsV2Response listResponse = s3Connector.s3Client().listObjectsV2(listRequest);
-
-		for (S3Object object : listResponse.contents()) {
-			String key = object.key();
-
-			if (!needsNotification(key)) {
-				continue;
+		BlockingQueue<S3Object> queue =  new LinkedBlockingQueue<>();
+		ExecutorService executorService = Executors.newFixedThreadPool(10);
+		String continuationToken = null;
+		do {
+			ListObjectsV2Request request = ListObjectsV2Request.builder()
+				.bucket(bucket)
+				.continuationToken(continuationToken)
+				.build();
+			ListObjectsV2Response response = s3Connector.s3Client().listObjectsV2(request);
+			for (S3Object object : response.contents()) {
+				if (object.key().contains(".pdf")){
+					queue.offer(object);
+				}
 			}
-
-			Optional<User> userOpt = findUserByKeyPrefix(key);
-			if (userOpt.isEmpty()) {
-				log.warn("No user found for key prefix: {}", key);
-				continue;
-			}
-
-			User user = userOpt.get();
-
-			String messageText = buildNotificationMessage(key);
-			sendTelegramNotification(user, messageText);
-			markAsNotified(key);
+			continuationToken = response.nextContinuationToken();
+		} while (continuationToken != null);
+		for (int i = 0; i < 10; i++) {
+			executorService.submit(() -> {
+				while (true){
+					try {
+						S3Object object = queue.poll(2, TimeUnit.SECONDS);
+						if (object == null) {
+							break;
+						}
+						String key = object.key();
+						if (!needsNotification(key)) {
+							continue;
+						}
+						Optional<User> userByKeyPrefix = findUserByKeyPrefix(key);
+						if (userByKeyPrefix.isEmpty()) {
+							log.warn("No User For Prefix {}", key);
+							continue;
+						}
+						String text = buildNotificationMessage(key);
+						sendTelegramNotification(userByKeyPrefix.get(), text);
+						markAsNotified(key);
+					} catch (InterruptedException e) {
+						log.error("Interrupted", e);
+					} catch (Exception e) {
+						log.error("Failed to send notification", e);
+					}
+				}
+				executorService.shutdown();
+				try {
+					executorService.awaitTermination(5, TimeUnit.MINUTES);
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
+			});
 		}
-
-		log.info("== END SendNotificationSlikUpdated ==");
+		log.info("Finished sending notifications");
 	}
 
 	/**
@@ -151,7 +173,6 @@ public class SendNotificationSlikUpdated {
 	 * Tandai file S3 sebagai sudah dinotifikasi.
 	 */
 	private void markAsNotified(String key) {
-
 		HeadObjectResponse response = s3Connector.s3Client().headObject(HeadObjectRequest.builder()
 			.key(key)
 			.bucket(bucket)
