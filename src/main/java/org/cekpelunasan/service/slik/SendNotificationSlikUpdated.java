@@ -123,7 +123,7 @@ public class SendNotificationSlikUpdated {
 				✅ Nama: `%s`
 				
 				Data SLIK telah *direquest*.""",
-			kode, nama
+			kode, nama.remove("_")
 		);
 	}
 
