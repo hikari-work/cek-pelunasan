@@ -155,7 +155,7 @@ public class SendNotificationSlikUpdated {
 			.key(key)
 			.bucket(bucket)
 			.build());
-		Map<String, String> metadataFromS3 = response.metadata();
+		Map<String, String> metadataFromS3 = new HashMap<>(response.metadata());
 		metadataFromS3.put("x-is-notified", "yes");
 		CopyObjectRequest copyRequest = CopyObjectRequest.builder()
 			.sourceBucket(bucket)
