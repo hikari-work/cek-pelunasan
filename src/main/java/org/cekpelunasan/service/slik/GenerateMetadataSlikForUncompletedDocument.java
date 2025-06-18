@@ -33,7 +33,7 @@ public class GenerateMetadataSlikForUncompletedDocument {
 		String objectKey = "KTP_" + key + ".txt";
 
 		Map<String, String> metadata = getObjectMetadata(objectKey);
-		metadata.put("x-isAccept", "yes");
+		metadata.put("x-isaccept", "yes");
 
 		copyObjectWithMetadata(objectKey, metadata);
 
@@ -47,7 +47,7 @@ public class GenerateMetadataSlikForUncompletedDocument {
 		String objectKey = "KTP_" + key + ".txt";
 
 		Map<String, String> metadata = getObjectMetadata(objectKey);
-		metadata.remove("x-isAccept");
+		metadata.remove("x-isaccept");
 
 		copyObjectWithMetadata(objectKey, metadata);
 
