@@ -5,6 +5,7 @@ import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.repository.UserRepository;
 import org.cekpelunasan.service.Bill.BillService;
+import org.cekpelunasan.service.slik.SendNotificationSlikUpdated;
 import org.cekpelunasan.service.users.UserService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -18,11 +19,13 @@ public class RegisterUsers implements CommandProcessor {
 	private final BillService billService;
 	private final UserService userService;
 	private final UserRepository userRepository;
+	private final SendNotificationSlikUpdated sendNotificationSlikUpdated;
 
-	public RegisterUsers(BillService billService, UserService userService, UserRepository userRepository) {
+	public RegisterUsers(BillService billService, UserService userService, UserRepository userRepository, SendNotificationSlikUpdated sendNotificationSlikUpdated1) {
 		this.billService = billService;
 		this.userService = userService;
 		this.userRepository = userRepository;
+		this.sendNotificationSlikUpdated = sendNotificationSlikUpdated1;
 	}
 
 	@Override
@@ -60,11 +63,13 @@ public class RegisterUsers implements CommandProcessor {
 			User user = userOptional.get();
 
 			if (target.length() == 3 && isValidAO(target)) {
+				sendNotificationSlikUpdated.run();
 				registerUser(user, AccountOfficerRoles.AO, target, "AO", chatId, telegramClient);
 				return;
 			}
 
 			if (isNumber(target) && isValidBranch(target)) {
+				sendNotificationSlikUpdated.run();
 				registerUser(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, telegramClient);
 				return;
 			}
