@@ -25,6 +25,7 @@ public class TagihanUtils {
 				▢ Nama\t\t: *%s*
 				▢ No SPK\t: `%s`
 				▢ Alamat\t: %s
+				▢ Produk\t: %s
 				
 				💳 *Informasi Pinjaman*
 				▢ Plafond\t\t: %s
@@ -58,6 +59,7 @@ public class TagihanUtils {
 			bill.getName(),
 			bill.getNoSpk(),
 			bill.getAddress(),
+			bill.getProduct(),
 			rupiahFormatUtils.formatRupiah(bill.getPlafond()),
 			rupiahFormatUtils.formatRupiah(bill.getDebitTray()),
 			bill.getRealization(),

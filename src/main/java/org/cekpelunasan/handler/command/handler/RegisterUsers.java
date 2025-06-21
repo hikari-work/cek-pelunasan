@@ -63,13 +63,13 @@ public class RegisterUsers implements CommandProcessor {
 			User user = userOptional.get();
 
 			if (target.length() == 3 && isValidAO(target)) {
-				sendNotificationSlikUpdated.run();
+				CompletableFuture.runAsync(sendNotificationSlikUpdated::run);
 				registerUser(user, AccountOfficerRoles.AO, target, "AO", chatId, telegramClient);
 				return;
 			}
 
 			if (isNumber(target) && isValidBranch(target)) {
-				sendNotificationSlikUpdated.run();
+				CompletableFuture.runAsync(sendNotificationSlikUpdated::run);
 				registerUser(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, telegramClient);
 				return;
 			}

@@ -12,7 +12,7 @@
 
     <groupId>org.belajar.springbootapp</groupId>
     <artifactId>cek-pelunasan</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
     <name>cek-pelunasan</name>
     <description>cek-pelunasan</description>
 
@@ -134,7 +134,6 @@
 
     <build>
         <plugins>
-            <!-- Spring Boot Maven Plugin to create executable jar -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
