@@ -8,13 +8,17 @@ Bot Telegram untuk memudahkan pengecekan informasi pelunasan nasabah, termasuk s
 - 📄 **Detail Informasi**: Menampilkan SPK, nama, alamat, produk, plafon, baki debet, tunggakan, denda, dan total tagihan.
 - 📊 **Statistik Sistem**: Menampilkan load system dan status koneksi database.
 - 🛡️ **Akses Terbatas**: Hanya pengguna yang terdaftar yang dapat menggunakan bot.
-- 🔀 **Perintah Bantuan**: `/help` untuk menampilkan daftar perintah yang tersedia.
+- 🎁 **Informasi Tagihan**: Menampilkan tagihan lengkap, dari Pengaruh NPL, Jatuh Bayar.
+- 🥽 **Simulasi**: Dapat melakukan Simulasi pembayaran, dan menghitung minimal bayar.
+- 🔐 **Sistem Layanan Informasi Keuangan**: Melakukan request untuk mendapatkan dokumen asli dan generate Resume nya, membatasi user melakukan generate.
+- 🧷 **Marketing Dana**: User dapat mencari Tabungan dan Kolek Tabungan Berjangka.
+- 😎 **GEMINI** : Disertai Inline untuk bertanya lewat AI
 
 ## 🚀 Cara Deploy
 
 ### 1. Persiapan
 
-- Pastikan Java 17+ dan Maven terinstal di sistem Anda.
+- Pastikan Java 21 dan Maven terinstal di sistem Anda.
 - Siapkan database MySql dengan skema yang sesuai.
 - Jika menggunakan PostgreSQL silahkan edit Driver sendiri di pom.xml
 
@@ -24,11 +28,27 @@ Bot Telegram untuk memudahkan pengecekan informasi pelunasan nasabah, termasuk s
 - Isi konfigurasi berikut:
 
 ```properties
-telegram.bot.token=YOUR_TELEGRAM_BOT_TOKEN
-telegram.bot.username=YOUR_BOT_USERNAME
-spring.datasource.url=jdbc:postgresql://localhost:5432/cek_pelunasan
-spring.datasource.username=YOUR_DB_USERNAME
-spring.datasource.password=YOUR_DB_PASSWORD
+telegram.bot.token=TELEGRAM_BOT_TOKEN
+telegram.bot.owner=TELEGRAM_BOT_OWNER
+spring.datasource.url=DATABASE_URL
+server.port=SERVER_PORT
+spring.datasource.hikari.maximum-pool-size=MAX_POOL
+spring.datasource.hikari.minimum-idle=2
+spring.jpa.hibernate.ddl-auto=update
+spring.servlet.multipart.max-file-size=20MB
+spring.servlet.multipart.max-request-size=20MB
+spring.jpa.properties.hibernate.jdbc.batch_size=BATCH_SIZE
+spring.jpa.properties.hibernate.order_inserts=true
+spring.jpa.properties.hibernate.order_updates=true
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+logging.level.org.hibernate.SQL=DEBUG
+r2.account.id=R2_ACCOUNT_ID
+r2.access.key=R2_ACCESS_ACCOUNT
+r2.secret.key=RE_SECRET_KEY
+r2.endpoint=r2.cloudflarestorage.com
+r2.bucket=R2_BUCKET_NAME
+gemini.key=GEMINI_KEY
+
 ```
 
 ### 3. Build dan Jalankan
@@ -38,6 +58,12 @@ spring.datasource.password=YOUR_DB_PASSWORD
 ```bash
 mvn clean package
 ```
+
+- Setup Ngrok untuk Menerima Webhook
+```bash
+ngrok http 9000
+```
+Sesuaikan dengan port server
 
 - Jalankan aplikasi:
 
