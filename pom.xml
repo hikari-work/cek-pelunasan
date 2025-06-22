@@ -12,7 +12,7 @@
 
     <groupId>org.belajar.springbootapp</groupId>
     <artifactId>cek-pelunasan</artifactId>
-    <version>1.1.2</version>
+    <version>1.2.2</version>
     <name>cek-pelunasan</name>
     <description>cek-pelunasan</description>
 
@@ -142,8 +142,6 @@
                 <artifactId>native-maven-plugin</artifactId>
                 <version>0.10.1</version>
             </plugin>
-
-
             <!-- Maven Assembly Plugin to create jar-with-dependencies -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

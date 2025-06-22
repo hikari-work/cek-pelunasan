@@ -236,9 +236,10 @@ public class SimulasiService {
         return minimumPayment.get();
     }
 	public List<Simulasi> addKeterlambatan(List<Simulasi> simulasis) {
-		simulasis
+		List<Simulasi> simulasiList = new ArrayList<>(simulasis);
+		simulasiList
 			.forEach(simulasi -> simulasi.setKeterlambatan(simulasi.getKeterlambatan()
 				+ getDaysToEndOfMonth()));
-		return simulasis;
+		return simulasiList;
 	}
 }
