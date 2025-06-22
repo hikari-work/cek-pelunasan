@@ -10,4 +10,6 @@ import java.util.List;
 public interface SimulasiRepository extends JpaRepository<Simulasi, String> {
 
 	List<Simulasi> findBySpk(String spk);
+
+	List<Simulasi> findBySpkAndSequenceIgnoreCase(String spk, String sequence);
 }

@@ -14,20 +14,16 @@ public class MinimalPayUtils {
 
 	public String minimalPay(Bills bill) {
 		return String.format("""
-							┌──────────────────┐
-							│ 🔐 SPK: `%s`
-							│ 👤 Nama: *%s*
-							│ 🏘️ Alamat: %s
-							└──────────────────┘
-							💳 *Rincian Pembayaran*
-							┌──────────────────┐
-							│ 💎 Pokok    : %s
-							│ 💫 Bunga    : %s
-							│
-							│ 🔥 *TOTAL MINIMAL*
-							│ 💰 %s
-							└──────────────────┘
-							""",
+            🔑 *SPK*: `%s`
+            👤 *Nama*: *%s*
+            🏠 *Alamat*: %s
+
+            💳 *Minimal Pembayaran*
+            • Pokok: %s
+            • Bunga: %s
+
+            💰 *TOTAL*: %s
+            """,
 			bill.getNoSpk(),
 			bill.getName(),
 			bill.getAddress(),
@@ -36,4 +32,5 @@ public class MinimalPayUtils {
 			rupiahFormatUtils.formatRupiah(bill.getMinPrincipal() + bill.getMinInterest())
 		);
 	}
+
 }

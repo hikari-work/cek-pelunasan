@@ -38,6 +38,12 @@ public class SimulasiService {
     private List<Simulasi> findSimulasiBySpk(String spk) {
         return simulasiRepository.findBySpk(spk);
     }
+	public int findTotalKeterlambatan(String spk, String sequence) {
+		List<Simulasi> bySpkAndSequence = simulasiRepository.findBySpkAndSequenceIgnoreCase(spk, sequence);
+		log.info("Total keterlambatan {} adalah", spk);
+		bySpkAndSequence.removeIf(sim -> sim.getTunggakan() < 1);
+		return bySpkAndSequence.size();
+	}
 
     public SimulasiResult getSimulasi(String spk, Long userInput) {
         List<Simulasi> keterlambatan = findSimulasiBySpk(spk);

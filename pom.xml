@@ -110,7 +110,6 @@
         </dependency>
 
 
-        <!-- Telegram Bots Client -->
         <dependency>
             <groupId>org.telegram</groupId>
             <artifactId>telegrambots-client</artifactId>

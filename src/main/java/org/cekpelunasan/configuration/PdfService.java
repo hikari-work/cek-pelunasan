@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Base64;
+import java.util.Objects;
 
 
 @Component
@@ -53,17 +54,16 @@ public class PdfService {
 								}
 
 								byte[] imageBytes = out.toByteArray();
-								String mimeType = resource.getFilename().endsWith(".png") ? "image/png" : "image/jpeg";
-
+								String mimeType = Objects.requireNonNull(resource.getFilename()).endsWith(".png") ? "image/png" : "image/jpeg";
 								String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-
 								img.attr("src", "data:" + mimeType + ";base64," + base64Image);
-
 								log.debug("Embedded image: {}", resourcePath);
 							}
+
 						} else {
 							log.warn("Resource not found: {}", resourcePath);
 						}
+
 					} catch (Exception e) {
 						log.warn("Failed to embed image {}", src);
 					}

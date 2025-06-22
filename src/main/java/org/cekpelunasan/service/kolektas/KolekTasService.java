@@ -37,9 +37,11 @@ public class KolekTasService {
 	public void saveAll(List<KolekTas> kolekTas) {
 		kolekTasRepository.saveAll(kolekTas);
 	}
+
 	public void deleteAll() {
 		kolekTasRepository.deleteAll();
 	}
+
 	public void parseCsvAndSave(Path path) {
 		deleteAll();
 		final int BATCH_SIZE = 500;

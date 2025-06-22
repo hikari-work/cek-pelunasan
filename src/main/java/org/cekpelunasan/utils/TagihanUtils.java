@@ -3,6 +3,7 @@ package org.cekpelunasan.utils;
 
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.entity.Repayment;
+import org.cekpelunasan.service.simulasi.SimulasiService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -11,51 +12,49 @@ import java.time.LocalDateTime;
 public class TagihanUtils {
 
 	private final RupiahFormatUtils rupiahFormatUtils;
+	private final SimulasiService simulasiService;
 
-	public TagihanUtils(RupiahFormatUtils rupiahFormatUtils) {
+	public TagihanUtils(RupiahFormatUtils rupiahFormatUtils, SimulasiService simulasiService1) {
 		this.rupiahFormatUtils = rupiahFormatUtils;
+		this.simulasiService = simulasiService1;
 	}
 
 	public String detailBills(Bills bill) {
 		return String.format("""
-				🏦 *INFORMASI KREDIT*
-				═══════════════════
-				
-				👤 *Detail Nasabah*
-				▢ Nama\t\t: *%s*
-				▢ No SPK\t: `%s`
-				▢ Alamat\t: %s
-				▢ Produk\t: %s
-				
-				💳 *Informasi Pinjaman*
-				▢ Plafond\t\t: %s
-				▢ Baki Debet\t: %s
-				▢ Realisasi\t\t: %s
-				▢ Jatuh Tempo\t: %s
-				
-				💹 *Angsuran*
-				▢ Bunga\t\t: %s
-				▢ Pokok\t\t: %s
-				▢ Total\t\t: %s
-				
-				⚠️ *Tunggakan*
-				▢ Bunga\t\t: %s
-				▢ Pokok\t\t: %s
-				
-				📊 *Status Kredit*
-				▢ Hari Tunggakan\t: %s hari
-				▢ Kolektibilitas\t\t: %s
-				
-				💰 *Pembayaran*
-				▢ Total Tagihan\t\t: %s
-				
-				⚡️ *Minimal Bayar*
-				▢ Pokok\t\t: %s
-				▢ Bunga\t\t: %s
-				
-				👨‍💼 *Account Officer*: %s
-				═══════════════════
-				""",
+            📄 *Detail Kredit*
+
+            👤 *Nasabah*
+            • Nama: *%s*
+            • No SPK: `%s`
+            • Alamat: %s
+            • Produk: %s
+
+            💳 *Pinjaman*
+            • Plafond: %s
+            • Baki Debet: %s
+            • Realisasi: %s
+            • Jatuh Tempo: %s
+
+            💹 *Angsuran*
+            • Bunga: %s
+            • Pokok: %s
+            • Total: %s
+
+            ⚠️ *Tunggakan*
+            • Bunga: %s x %s
+            • Pokok: %s x %s
+
+            📊 *Status*
+            • Hari Tunggakan: %d hari
+            • Kolektibilitas: %s
+
+            💸 *Tagihan*
+            • Total: %s
+            • Min. Pokok: %s
+            • Min. Bunga: %s
+
+            👨‍💼 *AO*: %s
+            """,
 			bill.getName(),
 			bill.getNoSpk(),
 			bill.getAddress(),
@@ -67,9 +66,11 @@ public class TagihanUtils {
 			rupiahFormatUtils.formatRupiah(bill.getInterest()),
 			rupiahFormatUtils.formatRupiah(bill.getPrincipal()),
 			rupiahFormatUtils.formatRupiah(bill.getInstallment()),
+			simulasiService.findTotalKeterlambatan(bill.getNoSpk(), "I"),
 			rupiahFormatUtils.formatRupiah(bill.getLastInterest()),
+			simulasiService.findTotalKeterlambatan(bill.getNoSpk(), "P"),
 			rupiahFormatUtils.formatRupiah(bill.getLastPrincipal()),
-			bill.getDayLate(),
+			Integer.parseInt(bill.getDayLate()),
 			bill.getCollectStatus(),
 			rupiahFormatUtils.formatRupiah(bill.getFullPayment()),
 			rupiahFormatUtils.formatRupiah(bill.getMinPrincipal()),
@@ -77,37 +78,28 @@ public class TagihanUtils {
 			bill.getAccountOfficer()
 		);
 	}
+
+
 	public String billsCompact(Bills bills) {
 		return String.format("""
-				🏦 *INFORMASI NASABAH*
-				━━━━━━━━━━━━━━━━━━━
-				
-				👤 *%s*
-				▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-				
-				📋 *Detail Nasabah*
-				┌─────────────────
-				│ 🔖 ID SPK: `%s`
-				│ 📍 Alamat: %s
-				└─────────────────
-				
-				📅 *Informasi Tempo*
-				┌─────────────────
-				│ 📆 Jatuh Tempo: %s
-				└─────────────────
-				
-				💰 *Informasi Tagihan*
-				┌─────────────────
-				│ 💵 Total: %s
-				└─────────────────
-				
-				👨‍💼 *Account Officer*
-				┌─────────────────
-				│ 👔 AO: %s
-				└─────────────────
-				
-				⏱️ _Generated: %s_
-				""",
+            🏦 *INFORMASI NASABAH*
+            ━━━━━━━━━━━━━━━━━━━
+
+            👤 *%s*
+            📄 ID SPK: `%s`
+            📍 Alamat: %s
+
+            📅 *Tempo*
+            • Jatuh Tempo: %s
+
+            💰 *Tagihan*
+            • Total: %s
+
+            👨‍💼 *Account Officer*
+            • AO: %s
+
+            ⏱️ _Generated: %s_
+            """,
 			bills.getName(),
 			bills.getNoSpk(),
 			bills.getAddress(),
@@ -117,6 +109,7 @@ public class TagihanUtils {
 			LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
 		);
 	}
+
 	public String getAllPelunasan(Repayment dto) {
 		return String.format("""
 				🔷 *%s*

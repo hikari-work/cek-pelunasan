@@ -14,18 +14,18 @@ public class CanvasingUtils {
 
 	public String canvasingTab(Savings dto) {
 		return String.format("""
-						👤 *%s*
-						╔═══════════════════════
-						║ 📊 *DATA NASABAH*
-						║ ├─── 🆔 CIF   : `%s`
-						║ ├─── 📍 Alamat: %s
-						║ └─── 💵 Saldo : %s
-						╚═══════════════════════
-						""",
+            👤 *%s*
+
+            📊 *Data Nasabah*
+            • 🆔 CIF: `%s`
+            • 📍 Alamat: %s
+            • 💵 Saldo: %s
+            """,
 			dto.getName(),
 			dto.getCif(),
 			dto.getAddress(),
 			rupiahFormatUtils.formatRupiah(dto.getBalance().longValue())
 		);
 	}
+
 }

@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 import software.amazon.awssdk.services.s3.model.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +27,7 @@ public class SendNotificationSlikUpdated {
 
 	@Value("${r2.bucket}")
 	private String bucket;
+	private volatile int lastCount = 1;
 
 	private final S3Connector s3Connector;
 	private final UserRepository userRepository;
@@ -41,8 +43,9 @@ public class SendNotificationSlikUpdated {
 
 	@Scheduled(fixedDelay = 10 * 60 * 1000)
 	public void run() {
-		BlockingQueue<S3Object> queue =  new LinkedBlockingQueue<>();
-		ExecutorService executorService = Executors.newFixedThreadPool(10);
+		List<S3Object> objects = new ArrayList<>();
+
+		int currentPdf = 0;
 		String continuationToken = null;
 		do {
 			ListObjectsV2Request request = ListObjectsV2Request.builder()
@@ -50,50 +53,69 @@ public class SendNotificationSlikUpdated {
 				.continuationToken(continuationToken)
 				.build();
 			ListObjectsV2Response response = s3Connector.s3Client().listObjectsV2(request);
+
 			for (S3Object object : response.contents()) {
-				if (object.key().contains(".pdf")){
-					queue.offer(object);
+				if (object.key().contains(".pdf")) {
+					currentPdf++;
+					objects.add(object);
 				}
 			}
 			continuationToken = response.nextContinuationToken();
 		} while (continuationToken != null);
+
+		BlockingQueue<S3Object> queue = new LinkedBlockingQueue<>(objects);
+
+		if (currentPdf == lastCount) {
+			log.info("PDF Count {}, Skipped", lastCount);
+			objects.clear();
+			return;
+		} else {
+			lastCount = currentPdf;
+		}
+		checkNotification(queue);
+
+	}
+
+	private void checkNotification(BlockingQueue<S3Object> queue) {
+		ExecutorService executorService = Executors.newFixedThreadPool(10);
 		for (int i = 0; i < 10; i++) {
 			executorService.submit(() -> {
-				while (true){
+				while (true) {
 					try {
 						S3Object object = queue.poll(2, TimeUnit.SECONDS);
-						if (object == null) {
-							break;
-						}
+						if (object == null) break;
+
 						String key = object.key();
-						if (!needsNotification(key)) {
-							continue;
-						}
+						if (!needsNotification(key)) continue;
+
 						Optional<User> userByKeyPrefix = findUserByKeyPrefix(key);
 						if (userByKeyPrefix.isEmpty()) {
-							log.warn("No User For Prefix {}", key);
 							continue;
 						}
+
 						String text = buildNotificationMessage(key);
 						sendTelegramNotification(userByKeyPrefix.get(), text);
 						markAsNotified(key);
+
 					} catch (InterruptedException e) {
 						log.error("Interrupted", e);
+						Thread.currentThread().interrupt();
 					} catch (Exception e) {
 						log.error("Failed to send notification", e);
 					}
 				}
-				executorService.shutdown();
-				try {
-					executorService.awaitTermination(5, TimeUnit.MINUTES);
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
 			});
 		}
+		executorService.shutdown();
+		try {
+			executorService.awaitTermination(5, TimeUnit.MINUTES);
+		} catch (InterruptedException e) {
+			log.error("Executor interrupted during shutdown", e);
+			Thread.currentThread().interrupt();
+		}
+
 		log.info("Finished sending notifications");
 	}
-
 	/**
 	 * Cek apakah object perlu dikirim notifikasi.
 	 */
@@ -105,9 +127,7 @@ public class SendNotificationSlikUpdated {
 				.build()
 		);
 
-		boolean notYetNotified = !header.metadata().containsKey("x-is-notified");
-		log.info("File {} needs notification: {}", key, notYetNotified);
-		return notYetNotified;
+		return !header.metadata().containsKey("x-is-notified");
 	}
 
 	/**
@@ -118,7 +138,6 @@ public class SendNotificationSlikUpdated {
 			log.warn("Key too short: {}", key);
 			return Optional.empty();
 		}
-
 		String prefix = key.substring(0, 3);
 		List<User> users = userRepository.findByUserCode(prefix);
 
