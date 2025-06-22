@@ -13,9 +13,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -38,11 +36,12 @@ public class SimulasiService {
     private List<Simulasi> findSimulasiBySpk(String spk) {
         return simulasiRepository.findBySpk(spk);
     }
-	public int findTotalKeterlambatan(String spk, String sequence) {
-		List<Simulasi> bySpkAndSequence = simulasiRepository.findBySpkAndSequenceIgnoreCase(spk, sequence);
-		log.info("Total keterlambatan {} adalah", spk);
-		bySpkAndSequence.removeIf(sim -> sim.getTunggakan() < 1);
-		return bySpkAndSequence.size();
+	public Map<String, Integer> findTotalKeterlambatan(String spk) {
+		List<Simulasi> bySpk = simulasiRepository.findBySpk(spk);
+		Map<String, Integer> map = new HashMap<>();
+		map.put("I", bySpk.stream().filter(simulasi -> simulasi.getSequence().equals("I") && simulasi.getTunggakan() > 0).toList().size());
+		map.put("P", bySpk.stream().filter(simulasi -> simulasi.getSequence().equals("P") && simulasi.getTunggakan() > 0).toList().size());
+		return map;
 	}
 
     public SimulasiResult getSimulasi(String spk, Long userInput) {
@@ -204,18 +203,11 @@ public class SimulasiService {
 							minimumPayment.addAndGet(record.getTunggakan());
 							record.setKeterlambatan(0L);
 						});
-			records.removeIf(sim -> {
-				log.info("Keterlambatan {} hari", sim.getKeterlambatan());
-				boolean toRemove = sim.getTunggakan() < 1;
-				if (toRemove) {
-					log.info("Tunggakan {} hari sudah dihapus", sim.getTunggakan());
-				}
-				return toRemove;
-			});
+
+			records.removeIf(sim -> sim.getTunggakan() < 1);
+
 			if (records.getFirst().getSequence().equals(SEQUENCE_INTEREST)) {
-				records
-					.forEach(simulasi -> simulasi.setKeterlambatan(simulasi.getKeterlambatan()
-						+ getDaysToEndOfMonth()));
+				records = addKeterlambatan(records);
 				records.stream()
 					.filter(simulasi -> simulasi.getSequence().equals(SEQUENCE_INTEREST) && simulasi.getKeterlambatan() > 90L)
 						.forEach(record -> {
@@ -225,15 +217,14 @@ public class SimulasiService {
 			}
         } else {
 			log.info("Penambahan {}", getDaysToEndOfMonth());
-            records
-				.forEach(simulasi -> simulasi.setKeterlambatan(simulasi.getKeterlambatan()
-					+ getDaysToEndOfMonth()));
+			records = addKeterlambatan(records);
 			records.stream()
 				.filter(simulasi -> simulasi.getSequence().equals(SEQUENCE_INTEREST) && simulasi.getKeterlambatan() > 90L)
 					.forEach(record -> {
 						minimumPayment.addAndGet(record.getTunggakan());
 						record.setKeterlambatan(0L);
 					});
+
 			records.stream()
 				.filter(simulasi -> simulasi.getSequence().equals(SEQUENCE_PRINCIPAL) && simulasi.getKeterlambatan() > 90L)
 					.forEach(record -> {
@@ -244,4 +235,10 @@ public class SimulasiService {
         
         return minimumPayment.get();
     }
+	public List<Simulasi> addKeterlambatan(List<Simulasi> simulasis) {
+		simulasis
+			.forEach(simulasi -> simulasi.setKeterlambatan(simulasi.getKeterlambatan()
+				+ getDaysToEndOfMonth()));
+		return simulasis;
+	}
 }

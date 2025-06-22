@@ -7,6 +7,7 @@ import org.cekpelunasan.service.simulasi.SimulasiService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Component
 public class TagihanUtils {
@@ -20,6 +21,7 @@ public class TagihanUtils {
 	}
 
 	public String detailBills(Bills bill) {
+		Map<String, Integer> totalKeterlambatan = simulasiService.findTotalKeterlambatan(bill.getNoSpk());
 		return String.format("""
             📄 *Detail Kredit*
 
@@ -66,9 +68,9 @@ public class TagihanUtils {
 			rupiahFormatUtils.formatRupiah(bill.getInterest()),
 			rupiahFormatUtils.formatRupiah(bill.getPrincipal()),
 			rupiahFormatUtils.formatRupiah(bill.getInstallment()),
-			simulasiService.findTotalKeterlambatan(bill.getNoSpk(), "I"),
+			totalKeterlambatan.get("I"),
 			rupiahFormatUtils.formatRupiah(bill.getLastInterest()),
-			simulasiService.findTotalKeterlambatan(bill.getNoSpk(), "P"),
+			totalKeterlambatan.get("P"),
 			rupiahFormatUtils.formatRupiah(bill.getLastPrincipal()),
 			Integer.parseInt(bill.getDayLate()),
 			bill.getCollectStatus(),
