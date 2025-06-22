@@ -37,11 +37,13 @@ public class CreditHistoryService {
 		Specification<CreditHistory> specification = (root, query, cb) -> {
 			query.distinct(true);
 
-
 			Subquery<String> subquery = query.subquery(String.class);
+
 			Root<CreditHistory> subRoot = subquery.from(CreditHistory.class);
+
 			subquery.select(subRoot.get("customerId"))
 				.where(cb.equal(cb.upper(subRoot.get("status")), "A"));
+
 			List<Predicate> predicates = keywords.stream()
 				.map(String::trim)
 				.filter(word -> !word.isEmpty())
@@ -50,7 +52,6 @@ public class CreditHistoryService {
 					"%" + word.toUpperCase() + "%"))
 				.toList();
 
-			// Use AND to ensure all keywords are present in the address
 			Predicate addressCondition = cb.and(predicates.toArray(new Predicate[0]));
 			Predicate notInSubQuery = cb.not(root.get("customerId").in(subquery));
 

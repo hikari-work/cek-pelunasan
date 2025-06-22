@@ -153,7 +153,9 @@ public class SavingsService {
 		long startTime = System.currentTimeMillis();
 		try {
 			CriteriaBuilder cb = em.getCriteriaBuilder();
+
 			CriteriaQuery<Savings> query = cb.createQuery(Savings.class);
+
 			Root<Savings> root = query.from(Savings.class);
 
 			Subquery<Long> minIdSubquery = buildMinIdSubquery(query, cb, addressKeywords);
