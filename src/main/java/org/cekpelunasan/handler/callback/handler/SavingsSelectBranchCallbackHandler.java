@@ -51,7 +51,7 @@ public class SavingsSelectBranchCallbackHandler implements CallbackProcessor {
 			}
 			log.info("Sending Savings Data");
 			InlineKeyboardMarkup markup = paginationSavingsButton.keyboardMarkup(savings, branchName, 0, query);
-			editMessageWithMarkup(chatId, messageId, buildMessage(savings, 0, System.currentTimeMillis()), telegramClient, markup);
+			editMessageWithMarkup(chatId, messageId, savingsUtils.buildMessage(savings, 0, System.currentTimeMillis()), telegramClient, markup);
 		});
 	}
 
@@ -62,14 +62,6 @@ public class SavingsSelectBranchCallbackHandler implements CallbackProcessor {
 		symbols.setDecimalSeparator(',');
 		DecimalFormat df = new DecimalFormat("Rp#,##0", symbols);
 		return df.format(amount);
-	}
-
-	public String buildMessage(Page<Savings> savings, int page, long startTime) {
-    	StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
-        	.append("Halaman ").append(page + 1).append(" dari ").append(savings.getTotalPages()).append("\n\n");
-    	savings.forEach(saving -> message.append(savingsUtils.getSavings(saving)));
-    	message.append("⏱️ Waktu: ").append(System.currentTimeMillis() - startTime).append("ms");
-    	return message.toString();
 	}
 
 }

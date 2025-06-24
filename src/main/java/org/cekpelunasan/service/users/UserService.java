@@ -45,4 +45,18 @@ public class UserService {
 	public Optional<User> findUserByChatId(Long chatId) {
 		return userRepository.findById(chatId);
 	}
+
+	@Transactional
+	public String findUserBranch(Long chatId) {
+		Optional<User> byId = userRepository.findById(chatId);
+		return byId.map(User::getBranch).orElse(null);
+	}
+
+	@Transactional
+	public void saveUserBranch(Long chatId, String branch) {
+		userRepository.findById(chatId).ifPresent(user -> {
+			user.setBranch(branch);
+			userRepository.save(user);
+		});
+	}
 }
