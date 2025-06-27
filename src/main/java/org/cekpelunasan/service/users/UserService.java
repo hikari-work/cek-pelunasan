@@ -1,5 +1,6 @@
 package org.cekpelunasan.service.users;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -9,14 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
 	private final UserRepository userRepository;
-
-
-	public UserService(UserRepository userRepository) {
-		this.userRepository = userRepository;
-	}
 
 	@Transactional
 	public void insertNewUsers(Long chatId) {

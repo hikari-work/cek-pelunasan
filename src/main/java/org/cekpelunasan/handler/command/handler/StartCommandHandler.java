@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
@@ -10,6 +11,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class StartCommandHandler implements CommandProcessor {
 
 	private static final String START_MESSAGE = """
@@ -18,10 +20,6 @@ public class StartCommandHandler implements CommandProcessor {
 	private final AuthorizedChats authService;
 	private final MessageTemplate messageTemplateService;
 
-	public StartCommandHandler(AuthorizedChats authService, MessageTemplate messageTemplateService) {
-		this.authService = authService;
-		this.messageTemplateService = messageTemplateService;
-	}
 
 	@Override
 	public String getCommand() {

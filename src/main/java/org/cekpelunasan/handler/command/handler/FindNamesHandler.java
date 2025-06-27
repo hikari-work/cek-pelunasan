@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
@@ -17,6 +18,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class FindNamesHandler implements CommandProcessor {
 
 	private static final int PAGE_SIZE = 5;
@@ -26,16 +28,6 @@ public class FindNamesHandler implements CommandProcessor {
 	private final MessageTemplate messageTemplateService;
 	private final TagihanUtils tagihanUtils;
 
-	public FindNamesHandler(
-		RepaymentService repaymentService,
-		AuthorizedChats authService,
-		MessageTemplate messageTemplateService,
-		TagihanUtils tagihanUtils1) {
-		this.repaymentService = repaymentService;
-		this.authService = authService;
-		this.messageTemplateService = messageTemplateService;
-		this.tagihanUtils = tagihanUtils1;
-	}
 
 	@Override
 	public String getCommand() {

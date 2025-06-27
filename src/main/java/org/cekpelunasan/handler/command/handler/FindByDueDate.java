@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.callback.pagination.PaginationBillsByNameCallbackHandler;
@@ -20,18 +21,13 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class FindByDueDate implements CommandProcessor {
 	private final UserService userService;
 	private final AuthorizedChats authorizedChats;
 	private final BillService billService;
 	private final DateUtils dateUtils;
 
-	public FindByDueDate(UserService userService, AuthorizedChats authorizedChats, BillService billService, DateUtils dateUtils) {
-		this.userService = userService;
-		this.authorizedChats = authorizedChats;
-		this.billService = billService;
-		this.dateUtils = dateUtils;
-	}
 
 	@Override
 	public String getCommand() {

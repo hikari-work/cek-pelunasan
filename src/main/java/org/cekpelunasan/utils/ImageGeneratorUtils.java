@@ -1,5 +1,6 @@
 package org.cekpelunasan.utils;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Repayment;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -12,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class ImageGeneratorUtils {
 
 	private static final int WIDTH = 1000;
@@ -22,11 +24,6 @@ public class ImageGeneratorUtils {
 
 	private final RupiahFormatUtils rupiahFormatUtils;
 	private final PenaltyUtils penaltyUtils;
-
-	public ImageGeneratorUtils(RupiahFormatUtils rupiahFormatUtils, PenaltyUtils penaltyUtils) {
-		this.rupiahFormatUtils = rupiahFormatUtils;
-		this.penaltyUtils = penaltyUtils;
-	}
 
 	public InputFile generateImages(Repayment repayment) {
 		try {

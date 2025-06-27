@@ -1,5 +1,6 @@
 package org.cekpelunasan.service.slik;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.repository.UserRepository;
@@ -20,6 +21,7 @@ import java.util.concurrent.*;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class SendNotificationSlikUpdated {
 
 	@Value("${telegram.bot.token}")
@@ -32,10 +34,6 @@ public class SendNotificationSlikUpdated {
 	private final S3Connector s3Connector;
 	private final UserRepository userRepository;
 
-	public SendNotificationSlikUpdated(S3Connector s3Connector, UserRepository userRepository) {
-		this.s3Connector = s3Connector;
-		this.userRepository = userRepository;
-	}
 
 	private TelegramClient getClient() {
 		return new OkHttpTelegramClient(botToken);

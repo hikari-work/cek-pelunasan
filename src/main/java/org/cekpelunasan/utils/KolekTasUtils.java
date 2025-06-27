@@ -1,16 +1,14 @@
 package org.cekpelunasan.utils;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.KolekTas;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class KolekTasUtils {
 
 	private final FormatPhoneNumberUtils formatPhoneNumberUtils;
-
-	public KolekTasUtils(FormatPhoneNumberUtils formatPhoneNumberUtils) {
-		this.formatPhoneNumberUtils = formatPhoneNumberUtils;
-	}
 
 	public String buildKolekTas(KolekTas kolekTas) {
 		return String.format("""

@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.savings.SavingsService;
@@ -20,17 +21,13 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class UploadTabCommandHandler implements CommandProcessor {
 
 	private final SavingsService savingsService;
 	private final UserService userService;
 	@Value("${telegram.bot.owner}")
 	private String botOwner;
-
-	public UploadTabCommandHandler(SavingsService savingsService, UserService userService) {
-		this.savingsService = savingsService;
-		this.userService = userService;
-	}
 
 	@Override
 	public String getCommand() {

@@ -1,6 +1,7 @@
 package org.cekpelunasan.service.simulasi;
 
 import com.opencsv.CSVReader;
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Simulasi;
 import org.cekpelunasan.entity.SimulasiResult;
 import org.cekpelunasan.repository.SimulasiRepository;
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 @Service
+@RequiredArgsConstructor
 public class SimulasiService {
     private static final Logger log = LoggerFactory.getLogger(SimulasiService.class);
     private static final String SEQUENCE_INTEREST = "I";
@@ -29,9 +31,6 @@ public class SimulasiService {
     
     private final SimulasiRepository simulasiRepository;
 
-    public SimulasiService(SimulasiRepository simulasiRepository) {
-        this.simulasiRepository = simulasiRepository;
-    }
     
     private List<Simulasi> findSimulasiBySpk(String spk) {
         return simulasiRepository.findBySpk(spk);

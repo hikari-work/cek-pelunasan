@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.callback.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.service.repayment.RepaymentService;
@@ -15,13 +16,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class PelunasanCallbackHandler implements CallbackProcessor {
 
 	private final RepaymentService repaymentService;
 
-	public PelunasanCallbackHandler(RepaymentService repaymentService) {
-		this.repaymentService = repaymentService;
-	}
 
 	@Override
 	public String getCallBackData() {

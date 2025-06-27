@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
@@ -10,16 +11,12 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class KantorHandler implements CommandProcessor {
+
 	private final AuthorizedChats authorizedChats;
 	private final MessageTemplate messageTemplate;
 	private final UserService userService;
-
-	public KantorHandler(AuthorizedChats authorizedChats, MessageTemplate messageTemplate, UserService userService) {
-		this.authorizedChats = authorizedChats;
-		this.messageTemplate = messageTemplate;
-		this.userService = userService;
-	}
 
 	@Override
 	public String getCommand() {

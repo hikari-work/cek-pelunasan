@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.CreditHistory;
 import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingButton;
 import org.cekpelunasan.handler.command.CommandProcessor;
@@ -19,20 +20,15 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class CanvasingCommandHandler implements CommandProcessor {
+
 	private final AuthorizedChats authorizedChats1;
 	private final MessageTemplate messageTemplate;
 	private final CreditHistoryService creditHistoryService;
 	private final PaginationCanvassingButton paginationCanvassingButton;
 	private final FormatPhoneNumberUtils formatPhoneNumberUtils;
 
-	public CanvasingCommandHandler(AuthorizedChats authorizedChats1, MessageTemplate messageTemplate, CreditHistoryService creditHistoryService, PaginationCanvassingButton paginationCanvassingButton, FormatPhoneNumberUtils formatPhoneNumberUtils) {
-		this.authorizedChats1 = authorizedChats1;
-		this.messageTemplate = messageTemplate;
-		this.creditHistoryService = creditHistoryService;
-		this.paginationCanvassingButton = paginationCanvassingButton;
-		this.formatPhoneNumberUtils = formatPhoneNumberUtils;
-	}
 
 	@Override
 	public String getCommand() {

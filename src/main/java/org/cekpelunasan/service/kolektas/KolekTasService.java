@@ -1,6 +1,7 @@
 package org.cekpelunasan.service.kolektas;
 
 import com.opencsv.CSVReader;
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.KolekTas;
 import org.cekpelunasan.repository.KolekTasRepository;
 import org.slf4j.Logger;
@@ -20,14 +21,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 @Service
+@RequiredArgsConstructor
 public class KolekTasService {
 
 	private static final Logger log = LoggerFactory.getLogger(KolekTasService.class);
 	private final KolekTasRepository kolekTasRepository;
 
-	public KolekTasService(KolekTasRepository kolekTasRepository) {
-		this.kolekTasRepository = kolekTasRepository;
-	}
 
    public Page<KolekTas> findKolekByKelompok(String kelompok, int page, int size) {
        int zeroBasedPage = page > 0 ? page - 1 : 0;

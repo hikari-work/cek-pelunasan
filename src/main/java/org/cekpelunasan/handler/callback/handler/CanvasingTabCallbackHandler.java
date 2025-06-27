@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.callback.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingByTab;
@@ -18,16 +19,11 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class CanvasingTabCallbackHandler implements CallbackProcessor {
 	private final SavingsService savingsService;
 	private final PaginationCanvassingByTab paginationCanvassingByTab;
 	private final CanvasingUtils canvasingUtils;
-
-	public CanvasingTabCallbackHandler(SavingsService savingsService1, PaginationCanvassingByTab paginationCanvassingByTab, CanvasingUtils canvasingUtils) {
-		this.savingsService = savingsService1;
-		this.paginationCanvassingByTab = paginationCanvassingByTab;
-		this.canvasingUtils = canvasingUtils;
-	}
 
 	@Override
 	public String getCallBackData() {

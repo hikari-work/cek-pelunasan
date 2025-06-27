@@ -1,17 +1,16 @@
 package org.cekpelunasan.utils;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Savings;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class SavingsUtils {
 
 	private final RupiahFormatUtils rupiahFormatUtils;
 
-	public SavingsUtils(RupiahFormatUtils rupiahFormatUtils) {
-		this.rupiahFormatUtils = rupiahFormatUtils;
-	}
 
 	public String getSavings(Savings saving) {
 		StringBuilder message = new StringBuilder();

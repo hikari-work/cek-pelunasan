@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.KolekTas;
 import org.cekpelunasan.handler.callback.pagination.PaginationKolekTas;
 import org.cekpelunasan.handler.command.CommandProcessor;
@@ -15,16 +16,12 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class KolekTasHandler implements CommandProcessor {
+
 	private final KolekTasService kolekTasService;
 	private final KolekTasUtils kolekTasUtils;
 	private final PaginationKolekTas paginationKolekTas;
-
-	public KolekTasHandler(KolekTasService kolekTasService, KolekTasUtils kolekTasUtils, PaginationKolekTas paginationKolekTas) {
-		this.kolekTasService = kolekTasService;
-		this.kolekTasUtils = kolekTasUtils;
-		this.paginationKolekTas = paginationKolekTas;
-	}
 
 	@Override
 	public String getCommand() {

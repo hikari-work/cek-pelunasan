@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.utils.button.DirectMessageButton;
@@ -19,17 +20,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
+@RequiredArgsConstructor
 public class InteractWithOwnerHandler implements CommandProcessor {
 
 	private final AuthorizedChats authorizedChats1;
 	private final DirectMessageButton directMessageButton;
 	@Value("${telegram.bot.owner}")
 	private Long ownerId;
-
-	public InteractWithOwnerHandler(AuthorizedChats authorizedChats1, DirectMessageButton directMessageButton) {
-		this.authorizedChats1 = authorizedChats1;
-		this.directMessageButton = directMessageButton;
-	}
 
 	@Override
 	public String getCommand() {

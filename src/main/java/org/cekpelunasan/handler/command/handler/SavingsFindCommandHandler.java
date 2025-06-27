@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.handler.callback.pagination.PaginationSavingsButton;
 import org.cekpelunasan.handler.callback.pagination.SelectSavingsBranch;
@@ -19,6 +20,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class SavingsFindCommandHandler implements CommandProcessor {
 
 	private final AuthorizedChats authorizedChats1;
@@ -28,14 +30,6 @@ public class SavingsFindCommandHandler implements CommandProcessor {
 	private final PaginationSavingsButton paginationSavingsButton;
 	private final SavingsUtils savingsUtils;
 
-	public SavingsFindCommandHandler(AuthorizedChats authorizedChats1, SavingsService savingsService, SelectSavingsBranch selectSavingsBranch, UserService userService, PaginationSavingsButton paginationSavingsButton, SavingsUtils savingsUtils) {
-		this.authorizedChats1 = authorizedChats1;
-		this.savingsService = savingsService;
-		this.selectSavingsBranch = selectSavingsBranch;
-		this.userService = userService;
-		this.paginationSavingsButton = paginationSavingsButton;
-		this.savingsUtils = savingsUtils;
-	}
 
 	@Override
 	public String getCommand() {

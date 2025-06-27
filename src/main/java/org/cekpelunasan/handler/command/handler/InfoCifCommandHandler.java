@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.customerhistory.CustomerHistoryService;
@@ -13,14 +14,11 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class InfoCifCommandHandler implements CommandProcessor {
+
 	private final CustomerHistoryService customerHistoryService;
 	private final AuthorizedChats authorizedChats1;
-
-	public InfoCifCommandHandler(CustomerHistoryService customerHistoryService, AuthorizedChats authorizedChats1) {
-		this.customerHistoryService = customerHistoryService;
-		this.authorizedChats1 = authorizedChats1;
-	}
 
 	@Override
 	public String getCommand() {

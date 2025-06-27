@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
@@ -29,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
  * Provides functionality to search by KTP ID or by name.
  */
 @Component
+@RequiredArgsConstructor
 public class SlikCommand implements CommandProcessor {
     private static final String KTP_PREFIX = "KTP_";
     private static final String KTP_EXTENSION = ".txt";
@@ -50,22 +52,6 @@ public class SlikCommand implements CommandProcessor {
     private final PDFReader pdfReader;
 	private final IsUserGetPermissionToViewResume isUserGetPermissionToViewResume;
 
-	public SlikCommand(
-            S3Connector s3Connector,
-            GeneratePDF generatePDF,
-            AuthorizedChats authorizedChats,
-            MessageTemplate messageTemplate,
-            UserService userService,
-            PDFReader pdfReader,
-			IsUserGetPermissionToViewResume isUserGetPermissionToViewResume) {
-        this.s3Connector = s3Connector;
-        this.generatePDF = generatePDF;
-        this.authorizedChats = authorizedChats;
-        this.messageTemplate = messageTemplate;
-        this.userService = userService;
-        this.pdfReader = pdfReader;
-		this.isUserGetPermissionToViewResume = isUserGetPermissionToViewResume;
-	}
 
     @Override
     public String getCommand() {

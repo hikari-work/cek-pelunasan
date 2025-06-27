@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
@@ -12,6 +13,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class DeleteUserAccessCommand implements CommandProcessor {
 
 	private final AuthorizedChats authorizedChats;
@@ -20,11 +22,6 @@ public class DeleteUserAccessCommand implements CommandProcessor {
 	@Value("${telegram.bot.owner}")
 	private Long ownerId;
 
-	public DeleteUserAccessCommand(AuthorizedChats authorizedChats, UserService userService, MessageTemplate messageTemplate) {
-		this.authorizedChats = authorizedChats;
-		this.userService = userService;
-		this.messageTemplate = messageTemplate;
-	}
 
 	@Override
 	public String getCommand() {

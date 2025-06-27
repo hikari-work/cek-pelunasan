@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
@@ -18,21 +19,12 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class PelunasanCommandHandler implements CommandProcessor {
 
 	private final RepaymentService repaymentService;
 	private final AuthorizedChats authService;
 	private final MessageTemplate messageTemplateService;
-
-	public PelunasanCommandHandler(
-		RepaymentService repaymentService,
-		AuthorizedChats authService,
-		MessageTemplate messageTemplateService
-	) {
-		this.repaymentService = repaymentService;
-		this.authService = authService;
-		this.messageTemplateService = messageTemplateService;
-	}
 
 	@Override
 	public String getCommand() {
@@ -69,8 +61,6 @@ public class PelunasanCommandHandler implements CommandProcessor {
 					""", telegramClient);
 				return;
 			}
-
-			long start = System.currentTimeMillis();
 
 			try {
 				Long customerId = Long.parseLong(tokens[1]);

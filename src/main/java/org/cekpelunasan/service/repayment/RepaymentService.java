@@ -1,6 +1,7 @@
 package org.cekpelunasan.service.repayment;
 
 import com.opencsv.CSVReader;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.repository.RepaymentRepository;
@@ -19,14 +20,10 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class RepaymentService {
 
 	private final RepaymentRepository repaymentRepository;
-
-	public RepaymentService(RepaymentRepository repaymentRepository) {
-		this.repaymentRepository = repaymentRepository;
-	}
-
 
 	public Repayment findRepaymentById(Long id) {
 		return repaymentRepository.findById(id).orElse(null);
@@ -82,8 +79,4 @@ public class RepaymentService {
 		return Math.toIntExact(repaymentRepository.count());
 	}
 
-	public Boolean isRepaymentExists(String name) {
-		return repaymentRepository.existsByNameIsLikeIgnoreCase(name);
-
-	}
 }

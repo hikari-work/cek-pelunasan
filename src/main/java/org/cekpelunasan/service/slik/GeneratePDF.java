@@ -1,6 +1,7 @@
 package org.cekpelunasan.service.slik;
 
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.configuration.PdfService;
 import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
@@ -40,14 +41,12 @@ import java.util.HashMap;
 
 
 @Component
+@RequiredArgsConstructor
 public class GeneratePDF {
 
 	private static final Logger log = LoggerFactory.getLogger(GeneratePDF.class);
 	private final PdfService pdfService;
 
-	public GeneratePDF(PdfService pdfService) {
-		this.pdfService = pdfService;
-	}
 
 	public String sendBytesWithRestTemplate(byte[] fileBytes, String fileName) {
     	String url = "https://kredit.suryayudha.id/ideb/generate.php";

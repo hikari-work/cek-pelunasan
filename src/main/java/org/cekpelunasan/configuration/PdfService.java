@@ -1,11 +1,11 @@
 package org.cekpelunasan.configuration;
 
+import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 
@@ -16,15 +16,11 @@ import java.util.Objects;
 
 
 @Component
+@RequiredArgsConstructor
 public class PdfService {
 
 	private static final Logger log = LoggerFactory.getLogger(PdfService.class);
 	private final ResourceLoader resourceLoader;
-
-	@Autowired
-	public PdfService(ResourceLoader resourceLoader) {
-		this.resourceLoader = resourceLoader;
-	}
 
 	public String embedLocalResourceImages(String htmlContent) {
 		log.info("Generating Image For PDF...");

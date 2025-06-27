@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.SimulasiResult;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.auth.AuthorizedChats;
@@ -11,14 +12,10 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class SimulasiCommandHandler implements CommandProcessor {
 	private final AuthorizedChats authorizedChats;
 	private final SimulasiService simulasiService;
-
-	public SimulasiCommandHandler(AuthorizedChats authorizedChats, SimulasiService simulasiService) {
-		this.authorizedChats = authorizedChats;
-		this.simulasiService = simulasiService;
-	}
 
 	@Override
 	public String getCommand() {

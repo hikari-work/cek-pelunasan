@@ -4,6 +4,7 @@ import com.opencsv.CSVReader;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.repository.SavingsRepository;
@@ -27,16 +28,13 @@ import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class SavingsService {
 
 	private static final Logger log = LoggerFactory.getLogger(SavingsService.class);
 	private final SavingsRepository savingsRepository;
 	private final EntityManager em;
 
-	public SavingsService(SavingsRepository savingsRepository, EntityManager em) {
-		this.em = em;
-		this.savingsRepository = savingsRepository;
-	}
 
 	public void batchSavingAccounts(List<Savings> savingsList) {
 		savingsRepository.saveAll(savingsList);

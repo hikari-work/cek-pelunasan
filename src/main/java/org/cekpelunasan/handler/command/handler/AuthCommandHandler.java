@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
@@ -12,6 +13,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class AuthCommandHandler implements CommandProcessor {
 
 	private final AuthorizedChats authorizedChats1;
@@ -20,11 +22,7 @@ public class AuthCommandHandler implements CommandProcessor {
 	@Value("${telegram.bot.owner}")
 	private Long ownerId;
 
-	public AuthCommandHandler(UserService userService, MessageTemplate messageTemplateService, AuthorizedChats authorizedChats1) {
-		this.userService = userService;
-		this.messageTemplateService = messageTemplateService;
-		this.authorizedChats1 = authorizedChats1;
-	}
+
 
 	@Override
 	public String getCommand() {

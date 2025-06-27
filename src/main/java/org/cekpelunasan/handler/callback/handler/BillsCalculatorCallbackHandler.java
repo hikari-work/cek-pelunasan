@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.callback.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.service.Bill.BillService;
@@ -12,15 +13,12 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
 
+@RequiredArgsConstructor
 @Component
 public class BillsCalculatorCallbackHandler implements CallbackProcessor {
 	private final BillService billService;
 	private final TagihanUtils tagihanUtils;
 
-	public BillsCalculatorCallbackHandler(BillService billService, TagihanUtils tagihanUtils1) {
-		this.billService = billService;
-		this.tagihanUtils = tagihanUtils1;
-	}
 
 	@Override
 	public String getCallBackData() {

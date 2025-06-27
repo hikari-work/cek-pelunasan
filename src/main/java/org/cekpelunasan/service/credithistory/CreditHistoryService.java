@@ -4,6 +4,7 @@ import com.opencsv.CSVReader;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.CreditHistory;
 import org.cekpelunasan.repository.CreditHistoryRepository;
 import org.slf4j.Logger;
@@ -24,13 +25,11 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@RequiredArgsConstructor
 public class CreditHistoryService {
 	private static final Logger log = LoggerFactory.getLogger(CreditHistoryService.class);
 	private final CreditHistoryRepository creditHistoryRepository;
 
-	public CreditHistoryService(CreditHistoryRepository creditHistoryRepository) {
-		this.creditHistoryRepository = creditHistoryRepository;
-	}
 
 	public Page<CreditHistory> searchAddressByKeywords(List<String> keywords, int page) {
 		log.info("Searching for address with keywords: {}", keywords);

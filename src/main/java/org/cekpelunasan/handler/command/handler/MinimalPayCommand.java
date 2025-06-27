@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.callback.pagination.PaginationToMinimalPay;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class MinimalPayCommand implements CommandProcessor {
 
 	private final AuthorizedChats authorizedChats;
@@ -26,18 +28,6 @@ public class MinimalPayCommand implements CommandProcessor {
 	private final BillService billService;
 	private final PaginationToMinimalPay paginationToMinimalPay;
 	private final MinimalPayUtils minimalPayUtils;
-
-	public MinimalPayCommand(
-		AuthorizedChats authorizedChats,
-		UserService userService,
-		BillService billService,
-		PaginationToMinimalPay paginationToMinimalPay, MinimalPayUtils minimalPayUtils) {
-		this.authorizedChats = authorizedChats;
-		this.userService = userService;
-		this.billService = billService;
-		this.paginationToMinimalPay = paginationToMinimalPay;
-		this.minimalPayUtils = minimalPayUtils;
-	}
 
 	@Override
 	public String getCommand() {

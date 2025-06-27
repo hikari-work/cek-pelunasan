@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.callback.pagination;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.service.Bill.BillService;
@@ -13,14 +14,11 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class PaginationBillsCallbackHandler implements CallbackProcessor {
+
 	private final BillService billService;
 	private final ButtonListForBills buttonListForBills;
-
-	public PaginationBillsCallbackHandler(BillService billService, ButtonListForBills buttonListForBills) {
-		this.billService = billService;
-		this.buttonListForBills = buttonListForBills;
-	}
 
 	@Override
 	public String getCallBackData() {

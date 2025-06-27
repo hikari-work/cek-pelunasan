@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.slik.ListUncompletedDocument;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,15 +12,13 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class ListSlikCommand implements CommandProcessor {
 
 	private final ListUncompletedDocument listUncompletedDocument;
 	@Value("${telegram.bot.owner}")
 	private String owner;
 
-	public ListSlikCommand(ListUncompletedDocument listUncompletedDocument) {
-		this.listUncompletedDocument = listUncompletedDocument;
-	}
 
 	@Override
 	public String getCommand() {

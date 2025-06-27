@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingByTab;
 import org.cekpelunasan.handler.command.CommandProcessor;
@@ -21,18 +22,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class CanvasingTabCommandHandler implements CommandProcessor {
+
 	private final AuthorizedChats authorizedChats1;
 	private final SavingsService savingsService;
 	private final PaginationCanvassingByTab paginationCanvassingByTab;
 	private final CanvasingUtils canvasingUtils;
-
-	public CanvasingTabCommandHandler(AuthorizedChats authorizedChats1, SavingsService savingsService, PaginationCanvassingByTab paginationCanvassingByTab, CanvasingUtils canvasingUtils1) {
-		this.authorizedChats1 = authorizedChats1;
-		this.savingsService = savingsService;
-		this.paginationCanvassingByTab = paginationCanvassingByTab;
-		this.canvasingUtils = canvasingUtils1;
-	}
 
 	@Override
 	public String getCommand() {

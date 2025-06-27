@@ -1,16 +1,14 @@
 package org.cekpelunasan.utils;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Savings;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class CanvasingUtils {
 
 	private final RupiahFormatUtils rupiahFormatUtils;
-
-	public CanvasingUtils(RupiahFormatUtils rupiahFormatUtils) {
-		this.rupiahFormatUtils = rupiahFormatUtils;
-	}
 
 	public String canvasingTab(Savings dto) {
 		return String.format("""

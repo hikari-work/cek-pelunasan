@@ -1,6 +1,7 @@
 package org.cekpelunasan.utils;
 
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.service.simulasi.SimulasiService;
@@ -10,15 +11,12 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class TagihanUtils {
 
 	private final RupiahFormatUtils rupiahFormatUtils;
 	private final SimulasiService simulasiService;
 
-	public TagihanUtils(RupiahFormatUtils rupiahFormatUtils, SimulasiService simulasiService1) {
-		this.rupiahFormatUtils = rupiahFormatUtils;
-		this.simulasiService = simulasiService1;
-	}
 
 	public String detailBills(Bills bill) {
 		Map<String, Integer> totalKeterlambatan = simulasiService.findTotalKeterlambatan(bill.getNoSpk());

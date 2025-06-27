@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
@@ -15,17 +16,13 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class TagihWithNameCommandHandler implements CommandProcessor {
 
 	private final BillService billService;
 	private final AuthorizedChats authorizedChats;
 	private final MessageTemplate messageTemplate;
 
-	public TagihWithNameCommandHandler(BillService billService, AuthorizedChats authorizedChats, MessageTemplate messageTemplate) {
-		this.billService = billService;
-		this.authorizedChats = authorizedChats;
-		this.messageTemplate = messageTemplate;
-	}
 
 	@Override
 	public String getCommand() {

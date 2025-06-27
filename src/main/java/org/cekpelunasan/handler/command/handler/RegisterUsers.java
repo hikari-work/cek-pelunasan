@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
@@ -15,18 +16,14 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class RegisterUsers implements CommandProcessor {
 	private final BillService billService;
 	private final UserService userService;
 	private final UserRepository userRepository;
 	private final SendNotificationSlikUpdated sendNotificationSlikUpdated;
 
-	public RegisterUsers(BillService billService, UserService userService, UserRepository userRepository, SendNotificationSlikUpdated sendNotificationSlikUpdated1) {
-		this.billService = billService;
-		this.userService = userService;
-		this.userRepository = userRepository;
-		this.sendNotificationSlikUpdated = sendNotificationSlikUpdated1;
-	}
+
 
 	@Override
 	public String getCommand() {

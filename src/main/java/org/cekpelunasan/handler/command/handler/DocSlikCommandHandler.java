@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
@@ -13,16 +14,12 @@ import java.io.ByteArrayInputStream;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class DocSlikCommandHandler implements CommandProcessor {
 	private final AuthorizedChats authorizedChats1;
 	private final MessageTemplate messageTemplate;
 	private final S3Connector s3Connector;
 
-	public DocSlikCommandHandler(AuthorizedChats authorizedChats1, MessageTemplate messageTemplate, S3Connector s3Connector) {
-		this.authorizedChats1 = authorizedChats1;
-		this.messageTemplate = messageTemplate;
-		this.s3Connector = s3Connector;
-	}
 
 	@Override
 	public String getCommand() {

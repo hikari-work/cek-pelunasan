@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.Bill.BillService;
@@ -13,17 +14,13 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class StatusCommandHandler implements CommandProcessor {
 
 	private final RepaymentService repaymentService;
 	private final UserService userService;
 	private final BillService billService;
 
-	public StatusCommandHandler(RepaymentService repaymentService, UserService userService, BillService billService) {
-		this.repaymentService = repaymentService;
-		this.userService = userService;
-		this.billService = billService;
-	}
 
 	@Override
 	public String getCommand() {

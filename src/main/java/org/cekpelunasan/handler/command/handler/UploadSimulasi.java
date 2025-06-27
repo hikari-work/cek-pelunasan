@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.simulasi.SimulasiService;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class UploadSimulasi implements CommandProcessor {
 
 	private final UserService userService;
@@ -28,10 +30,6 @@ public class UploadSimulasi implements CommandProcessor {
 	@Value("${telegram.bot.owner}")
 	private String owner;
 
-	public UploadSimulasi(UserService userService1, SimulasiService simulasiService) {
-		this.userService = userService1;
-		this.simulasiService = simulasiService;
-	}
 
 	@Override
 	public String getCommand() {
@@ -60,14 +58,6 @@ public class UploadSimulasi implements CommandProcessor {
 			processFileAndNotifyUsers(url, user, telegramClient);
 
 		});
-	}
-	private String extractFileUrl(String text, long chatId, TelegramClient telegramClient) {
-		try {
-			return text.split(" ", 2)[1];
-		} catch (ArrayIndexOutOfBoundsException e) {
-			sendMessage(chatId, "❗ *Format salah.*\nGunakan `/upload <link_csv>`", telegramClient);
-			return null;
-		}
 	}
 
 	private void processFileAndNotifyUsers(String fileUrl, List<User> allUsers, TelegramClient telegramClient) {

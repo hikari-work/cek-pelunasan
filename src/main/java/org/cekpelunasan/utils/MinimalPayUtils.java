@@ -1,16 +1,14 @@
 package org.cekpelunasan.utils;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class MinimalPayUtils {
 
 	private final RupiahFormatUtils rupiahFormatUtils;
-
-	public MinimalPayUtils(RupiahFormatUtils rupiahFormatUtils) {
-		this.rupiahFormatUtils = rupiahFormatUtils;
-	}
 
 	public String minimalPay(Bills bill) {
 		return String.format("""

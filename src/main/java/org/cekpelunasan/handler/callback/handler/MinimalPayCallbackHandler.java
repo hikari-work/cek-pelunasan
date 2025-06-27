@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.callback.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
@@ -18,6 +19,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class MinimalPayCallbackHandler implements CallbackProcessor {
 
 	private final PaginationToMinimalPay paginationToMinimalPay;
@@ -25,12 +27,6 @@ public class MinimalPayCallbackHandler implements CallbackProcessor {
 	private final UserService userService;
 	private final MinimalPayUtils minimalPayUtils;
 
-	public MinimalPayCallbackHandler(PaginationToMinimalPay paginationToMinimalPay, BillService billService, UserService userService, MinimalPayUtils minimalPayUtils1) {
-		this.paginationToMinimalPay = paginationToMinimalPay;
-		this.billService = billService;
-		this.userService = userService;
-		this.minimalPayUtils = minimalPayUtils1;
-	}
 
 	@Override
 	public String getCallBackData() {

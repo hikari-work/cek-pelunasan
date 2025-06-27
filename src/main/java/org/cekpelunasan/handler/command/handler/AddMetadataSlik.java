@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.slik.GenerateMetadataSlikForUncompletedDocument;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,15 +10,14 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class AddMetadataSlik implements CommandProcessor {
 
 	private final GenerateMetadataSlikForUncompletedDocument generateMetadataSlikForUncompletedDocument;
 	@Value("${telegram.bot.owner}")
 	private String owner;
 
-	public AddMetadataSlik(GenerateMetadataSlikForUncompletedDocument generateMetadataSlikForUncompletedDocument) {
-		this.generateMetadataSlikForUncompletedDocument = generateMetadataSlikForUncompletedDocument;
-	}
+
 
 	@Override
 	public String getCommand() {

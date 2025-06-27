@@ -1,6 +1,7 @@
 package org.cekpelunasan.service.Bill;
 
 import com.opencsv.CSVReader;
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.repository.BillsRepository;
 import org.slf4j.Logger;
@@ -18,14 +19,12 @@ import java.util.List;
 import java.util.Set;
 
 @Service
+@RequiredArgsConstructor
 public class BillService {
 
 	private static final Logger log = LoggerFactory.getLogger(BillService.class);
 	private final BillsRepository billsRepository;
 
-	public BillService(BillsRepository billsRepository) {
-		this.billsRepository = billsRepository;
-	}
 
 	public Set<String> lisAllBranch() {
 		return billsRepository.findDistinctBranchByBrach();
@@ -40,11 +39,6 @@ public class BillService {
 		return billsRepository.count();
 	}
 
-	public Set<String> findAllBillsByBranch(String branch) {
-		return billsRepository.findByBranch(branch)
-			.map(b -> Set.of(b.getBranch()))
-			.orElse(Collections.emptySet());
-	}
 
 	public Page<Bills> findDueDateByAccountOfficer(String accountOfficer, String payDown, int page, int size) {
 		PageRequest pageRequest = PageRequest.of(page, size);

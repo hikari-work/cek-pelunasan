@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 public class PDFReader {
 
 	public String generateIDNumber(byte[] object) {
-		// Add null check to prevent NullPointerException
 		if (object == null) {
 			log.warn("Received null byte array in generateIDNumber");
 			return null;
@@ -34,7 +33,7 @@ public class PDFReader {
 			}
 
 		} catch (Exception e) {
-			this.log.error("Error in generateIDNumber: {}", e.getMessage(), e);
+			log.error("Error in generateIDNumber: {}", e.getMessage(), e);
 			return null;
 		}
 	}

@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.callback.pagination;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.CreditHistory;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.service.credithistory.CreditHistoryService;
@@ -15,16 +16,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class PaginationToCanvasing implements CallbackProcessor {
 
 
 	private final CreditHistoryService creditHistoryService;
 	private final PaginationCanvassingButton paginationCanvassingButton;
-
-	public PaginationToCanvasing(CreditHistoryService creditHistoryService, PaginationCanvassingButton paginationCanvassingButton) {
-		this.creditHistoryService = creditHistoryService;
-		this.paginationCanvassingButton = paginationCanvassingButton;
-	}
 
 	@Override
 	public String getCallBackData() {

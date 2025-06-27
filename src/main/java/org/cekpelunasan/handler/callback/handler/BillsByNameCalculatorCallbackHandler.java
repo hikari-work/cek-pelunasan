@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.callback.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.handler.callback.pagination.PaginationBillsByNameCallbackHandler;
@@ -18,18 +19,13 @@ import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class BillsByNameCalculatorCallbackHandler implements CallbackProcessor {
+
 	private final BillService billService;
 	private final DateUtils dateUtils;
 	private final PaginationBillsByNameCallbackHandler paginationBillsByNameCallbackHandler;
 	private final TagihanUtils tagihanUtils;
-
-	public BillsByNameCalculatorCallbackHandler(BillService billService, DateUtils dateUtils, PaginationBillsByNameCallbackHandler paginationBillsByNameCallbackHandler, TagihanUtils tagihanUtils1) {
-		this.billService = billService;
-		this.dateUtils = dateUtils;
-		this.paginationBillsByNameCallbackHandler = paginationBillsByNameCallbackHandler;
-		this.tagihanUtils = tagihanUtils1;
-	}
 
 	@Override
 	public String getCallBackData() {

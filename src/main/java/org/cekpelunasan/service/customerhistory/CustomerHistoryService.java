@@ -32,7 +32,7 @@ public class CustomerHistoryService {
 		if (result.isEmpty()) {
 			return Collections.emptyList();
 		}
-		Object[] row = result.getFirst(); // Mengambil baris pertama
+		Object[] row = result.getFirst();
 		return Arrays.stream(row)
 			.map(val -> val != null ? ((Number) val).longValue() : 0L)
 			.collect(Collectors.toList());

@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.callback.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.handler.callback.pagination.PaginationSavingsButton;
@@ -16,16 +17,12 @@ import java.text.DecimalFormatSymbols;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class SavingNextButtonCallbackHandler implements CallbackProcessor {
+
 	private final SavingsService savingsService;
 	private final PaginationSavingsButton paginationSavingsButton;
 	private final SavingsUtils savingsUtils;
-
-	public SavingNextButtonCallbackHandler(SavingsService savingsService, PaginationSavingsButton paginationSavingsButton, SavingsUtils savingsUtils) {
-		this.savingsService = savingsService;
-		this.paginationSavingsButton = paginationSavingsButton;
-		this.savingsUtils = savingsUtils;
-	}
 
 	@Override
 	public String getCallBackData() {

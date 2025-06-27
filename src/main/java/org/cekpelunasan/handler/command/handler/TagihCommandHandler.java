@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
@@ -13,6 +14,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@RequiredArgsConstructor
 public class TagihCommandHandler implements CommandProcessor {
 
 	private final BillService billService;
@@ -20,12 +22,6 @@ public class TagihCommandHandler implements CommandProcessor {
 	private final MessageTemplate messageTemplate;
 	private final TagihanUtils tagihanUtils;
 
-	public TagihCommandHandler(BillService billService, AuthorizedChats authorizedChats1, MessageTemplate messageTemplate, TagihanUtils tagihanUtils1) {
-		this.billService = billService;
-		this.authorizedChats1 = authorizedChats1;
-		this.messageTemplate = messageTemplate;
-		this.tagihanUtils = tagihanUtils1;
-	}
 
 	@Override
 	public String getCommand() {
