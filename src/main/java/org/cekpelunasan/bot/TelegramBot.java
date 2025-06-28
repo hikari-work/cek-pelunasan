@@ -23,15 +23,19 @@ public class TelegramBot {
 	public void startBot(Update update, TelegramClient telegramClient) {
 		if (update.hasMessage() && update.getMessage().hasText()) {
 			commandHandler.handle(update, telegramClient);
+			return;
 		}
 		if (update.hasCallbackQuery()) {
 			callbackHandler.handle(update, telegramClient);
+			return;
 		}
 		if (update.hasInlineQuery()) {
 			geminiServiceAnswer.handleInlineQuery(update.getInlineQuery(), telegramClient);
+			return;
 		}
 		if (update.getMessage().hasPhoto()) {
 			pengakuanTransferHandle.handle(update, telegramClient);
+			return;
 		}
 
 	}
