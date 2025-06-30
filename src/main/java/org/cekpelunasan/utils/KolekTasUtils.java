@@ -12,6 +12,8 @@ public class KolekTasUtils {
 
 	public String buildKolekTas(KolekTas kolekTas) {
 		return String.format("""
+            
+            ___________________
             👤 *%s*
             📝 Rek: `%s`
             📍 Alamat: %s
