@@ -206,7 +206,9 @@ public class SimulasiService {
 			records.removeIf(sim -> sim.getTunggakan() < 1);
 
 			if (records.getFirst().getSequence().equals(SEQUENCE_INTEREST)) {
-				records = addKeterlambatan(records);
+				records
+					.forEach(simulasi -> simulasi.setKeterlambatan(simulasi.getKeterlambatan()
+						+ getDaysToEndOfMonth()));
 				records.stream()
 					.filter(simulasi -> simulasi.getSequence().equals(SEQUENCE_INTEREST) && simulasi.getKeterlambatan() > 90L)
 						.forEach(record -> {
@@ -216,7 +218,9 @@ public class SimulasiService {
 			}
         } else {
 			log.info("Penambahan {}", getDaysToEndOfMonth());
-			records = addKeterlambatan(records);
+			records
+				.forEach(simulasi -> simulasi.setKeterlambatan(simulasi.getKeterlambatan()
+					+ getDaysToEndOfMonth()));
 			records.stream()
 				.filter(simulasi -> simulasi.getSequence().equals(SEQUENCE_INTEREST) && simulasi.getKeterlambatan() > 90L)
 					.forEach(record -> {
@@ -234,11 +238,4 @@ public class SimulasiService {
         
         return minimumPayment.get();
     }
-	public List<Simulasi> addKeterlambatan(List<Simulasi> simulasis) {
-		List<Simulasi> simulasiList = new ArrayList<>(simulasis);
-		simulasiList
-			.forEach(simulasi -> simulasi.setKeterlambatan(simulasi.getKeterlambatan()
-				+ getDaysToEndOfMonth()));
-		return simulasiList;
-	}
 }
