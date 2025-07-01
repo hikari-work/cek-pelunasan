@@ -54,7 +54,9 @@ public class GeneratePDF {
 
     	HttpHeaders headers = new HttpHeaders();
     	headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
+		if (fasilitasAktif) {
+			headers.set("fasilitasAktif", "y");
+		}
 
     	MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
