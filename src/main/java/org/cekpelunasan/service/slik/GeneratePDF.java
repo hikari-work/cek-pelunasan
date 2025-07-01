@@ -48,13 +48,15 @@ public class GeneratePDF {
 	private final PdfService pdfService;
 
 
-	public String sendBytesWithRestTemplate(byte[] fileBytes, String fileName) {
+	public String sendBytesWithRestTemplate(byte[] fileBytes, String fileName, Boolean fasilitasAktif) {
     	String url = "https://kredit.suryayudha.id/ideb/generate.php";
     	RestTemplate restTemplate = new RestTemplate();
 
     	HttpHeaders headers = new HttpHeaders();
     	headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
+		if (fasilitasAktif) {
+			headers.set("fasilitasAktif", "y");
+		}
 
     	MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
 
