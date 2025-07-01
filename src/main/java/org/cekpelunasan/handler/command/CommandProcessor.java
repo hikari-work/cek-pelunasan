@@ -8,6 +8,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -73,6 +74,18 @@ public interface CommandProcessor {
 				.build());
 		} catch (TelegramApiException e) {
 			log.info("Error sending document: {}", e.getMessage());
+		}
+	}
+	default void sendMessage(Long chatId, String text, InlineKeyboardMarkup markup, TelegramClient telegramClient) {
+		try {
+			telegramClient.execute(SendMessage.builder()
+				.chatId(chatId)
+					.replyMarkup(markup)
+				.text(text)
+				.parseMode("Markdown")
+				.build());
+		} catch (TelegramApiException e) {
+			log.info(e.getMessage());
 		}
 	}
 }

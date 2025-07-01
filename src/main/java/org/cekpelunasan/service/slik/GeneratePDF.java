@@ -48,7 +48,7 @@ public class GeneratePDF {
 	private final PdfService pdfService;
 
 
-	public String sendBytesWithRestTemplate(byte[] fileBytes, String fileName) {
+	public String sendBytesWithRestTemplate(byte[] fileBytes, String fileName, Boolean fasilitasAktif) {
     	String url = "https://kredit.suryayudha.id/ideb/generate.php";
     	RestTemplate restTemplate = new RestTemplate();
 
@@ -66,6 +66,9 @@ public class GeneratePDF {
     	};
 
     	body.add("fileToUpload", resource);
+		if (fasilitasAktif) {
+			body.add("fasilitasAktif", "y");
+		}
 
     	HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
