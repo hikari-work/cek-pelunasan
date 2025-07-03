@@ -77,6 +77,7 @@ public class BillService {
 			while ((line = reader.readNext()) != null) {
 				batch.add(mapToBill(line));
 				if (batch.size() >= BATCH_SIZE) {
+					log.info("Saved Into Database ");
 					billsRepository.saveAll(batch);
 					batch.clear();
 				}
