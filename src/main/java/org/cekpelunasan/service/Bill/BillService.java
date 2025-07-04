@@ -68,7 +68,7 @@ public class BillService {
 
 	public void parseCsvAndSaveIntoDatabase(Path path) {
 		billsRepository.deleteAll();
-		final int BATCH_SIZE = 100;
+		final int BATCH_SIZE = 1000;
 		List<Bills> batch = new ArrayList<>(BATCH_SIZE);
 
 		try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
