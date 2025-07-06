@@ -1,7 +1,12 @@
 package org.cekpelunasan.controller;
 
 import org.cekpelunasan.bot.TelegramBot;
+import org.cekpelunasan.dto.WhatsappMessageDTO;
+import org.cekpelunasan.service.whatsapp.SendWhatsappMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,17 +17,26 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 @RestController
 public class WebhookController {
 
+	private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 	private final TelegramClient telegramClient;
 	private final TelegramBot telegramBot;
+	private final SendWhatsappMessage sendWhatsappMessage;
 
-	public WebhookController(@Value("${telegram.bot.token}") String botToken, TelegramBot telegramBot) {
+	public WebhookController(@Value("${telegram.bot.token}") String botToken, TelegramBot telegramBot, SendWhatsappMessage sendWhatsappMessage) {
 		this.telegramClient = new OkHttpTelegramClient(botToken);
 		this.telegramBot = telegramBot;
+		this.sendWhatsappMessage = sendWhatsappMessage;
 	}
 
 	@PostMapping("/webhook")
 	public String webhook(@RequestBody Update update) {
 		telegramBot.startBot(update, telegramClient);
 		return "Webhook is working!";
+	}
+	@PostMapping("/whatsapp")
+	public ResponseEntity<String> whatsapp(@RequestBody WhatsappMessageDTO whatsappMessageDTO) {
+		log.info("Updated {}", whatsappMessageDTO.getMessage().getText());
+		sendWhatsappMessage.sendMessage(whatsappMessageDTO);
+		return ResponseEntity.ok("OK");
 	}
 }
