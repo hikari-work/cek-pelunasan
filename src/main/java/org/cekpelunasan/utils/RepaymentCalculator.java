@@ -1,6 +1,7 @@
 package org.cekpelunasan.utils;
 
 import org.cekpelunasan.entity.Repayment;
+import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+@Component
 public class RepaymentCalculator {
 
 	public String calculate(Repayment repayment, Map<String, Long> penaltyMap) {
@@ -33,7 +35,7 @@ public class RepaymentCalculator {
             • Penalty +%s: %s
             • Denda: %s
 
-            💵 *TOTAL TAGIHAN: %s*
+            💵 *TOTAL PELUNASAN: %s*
 
             📌 *Catatan*
             • Tap SPK untuk salin nomor.

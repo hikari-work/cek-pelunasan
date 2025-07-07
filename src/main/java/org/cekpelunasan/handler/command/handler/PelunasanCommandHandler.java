@@ -25,6 +25,7 @@ public class PelunasanCommandHandler implements CommandProcessor {
 	private final RepaymentService repaymentService;
 	private final AuthorizedChats authService;
 	private final MessageTemplate messageTemplateService;
+	private final RepaymentCalculator repaymentCalculator;
 
 	@Override
 	public String getCommand() {
@@ -78,7 +79,7 @@ public class PelunasanCommandHandler implements CommandProcessor {
 					repayment
 				);
 
-				String result = new RepaymentCalculator().calculate(repayment, penalty);
+				String result = repaymentCalculator.calculate(repayment, penalty);
 
 				sendMessage(chatId, result, telegramClient, new SendPhotoKeyboard().sendPhotoButton(customerId));
 

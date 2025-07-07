@@ -18,9 +18,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
-public class SendWhatsappMessage {
+public class SendWhatsappMessageHotKolek {
 
-	private static final Logger log = LoggerFactory.getLogger(SendWhatsappMessage.class);
+	private static final Logger log = LoggerFactory.getLogger(SendWhatsappMessageHotKolek.class);
 	@Value("${whatsapp.gateway.username}")
 	private String username;
 
@@ -34,7 +34,7 @@ public class SendWhatsappMessage {
 	private final HotKolekService hotKolekService;
 	RestTemplate restTemplate = new RestTemplate();
 
-	public SendWhatsappMessage(GenerateMessageText generateMessageText, HotKolekService hotKolekService) {
+	public SendWhatsappMessageHotKolek(GenerateMessageText generateMessageText, HotKolekService hotKolekService) {
 		this.generateMessageText = generateMessageText;
 		this.hotKolekService = hotKolekService;
 	}
@@ -74,7 +74,6 @@ public class SendWhatsappMessage {
 		);
 		log.info("Message: {}", messageText);
 
-		// Create JSON request body in the required format
 		String jsonBody = String.format(
 			"{\"phone\":\"%s\",\"message\":\"%s\",\"is_forwarded\":false}",
 			target,
@@ -93,11 +92,7 @@ public class SendWhatsappMessage {
 		ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 		log.info("Response: {}", response.getBody());
 
-		// Remove this line as it's not necessary and could cause issues
-		// restTemplate.getForObject(url, String.class);
 	}
-
-	// Add this helper method to escape special characters in the JSON string
 	private String escapeJsonString(String input) {
 		if (input == null) {
 			return "";
