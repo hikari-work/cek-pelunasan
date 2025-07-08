@@ -122,6 +122,7 @@ public class UploadCommandHandler implements CommandProcessor {
 			Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
 
 			if (fileName.endsWith(".csv")) {
+				repaymentService.deleteAll();
 				repaymentService.parseCsvAndSaveIntoDatabase(outputPath);
 			}
 			return true;

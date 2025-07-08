@@ -98,6 +98,7 @@ public class UploadSimulasi implements CommandProcessor {
 			Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
 
 			if (fileName.endsWith(".csv")) {
+				simulasiService.deleteAll();
 				simulasiService.parseCsv(outputPath);
 			}
 			return true;

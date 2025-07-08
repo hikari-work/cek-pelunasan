@@ -63,6 +63,7 @@ public class UploadTabCommandHandler implements CommandProcessor {
 			Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
 
 			if (fileName.endsWith(".csv")) {
+				savingsService.deleteAll();
 				savingsService.parseCsvAndSaveIntoDatabase(outputPath);
 			}
 			return true;

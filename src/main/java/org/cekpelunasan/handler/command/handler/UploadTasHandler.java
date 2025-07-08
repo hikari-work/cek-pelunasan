@@ -72,6 +72,7 @@ public class UploadTasHandler implements CommandProcessor {
 			Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
 
 			if (fileName.endsWith(".csv")) {
+				kolekTasService.deleteAll();
 				kolekTasService.parseCsvAndSave(outputPath);
 			}
 			return true;

@@ -14,9 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.FileReader;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Service
 @RequiredArgsConstructor
@@ -66,26 +68,48 @@ public class BillService {
 		return billsRepository.findDistinctByAccountOfficer();
 	}
 
-	public void parseCsvAndSaveIntoDatabase(Path path) {
-		billsRepository.deleteAll();
-		final int BATCH_SIZE = 1000;
-		List<Bills> batch = new ArrayList<>(BATCH_SIZE);
 
+	public void parseCsvAndSaveIntoDatabase(Path path) {
+		ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+		final int BATCH_SIZE = 1000;
+
+
+		List<Future<?>> futures = new ArrayList<>();
 		try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
 			String[] line;
-
+			List<Bills> batch = new ArrayList<>(BATCH_SIZE);
 			while ((line = reader.readNext()) != null) {
 				batch.add(mapToBill(line));
 				if (batch.size() >= BATCH_SIZE) {
-					log.info("Saved Into Database ");
-					billsRepository.saveAll(batch);
+					List<Bills> batchSave = new ArrayList<>(batch);
+					futures.add(executorService.submit(() -> {
+						billsRepository.saveAll(batchSave);
+						return null;
+					}));
 					batch.clear();
 				}
 			}
+			if (!batch.isEmpty()) {
+				List<Bills> batchSave = new ArrayList<>(batch);
+				futures.add(executorService.submit(() -> {
+					billsRepository.saveAll(batchSave);
+					return null;
+				}));
+			}
+			for (Future<?> future : futures) {
+				future.get();
+			}
 		} catch (Exception e) {
 			log.error("Error saving to database: {}", e.getMessage(), e);
+		} finally {
+			executorService.shutdown();
+			System.gc();
 		}
-		System.gc();
+
+	}
+	@Transactional
+	public void deleteAll() {
+		billsRepository.deleteAllFast();
 	}
 
 

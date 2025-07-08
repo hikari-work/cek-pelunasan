@@ -46,9 +46,8 @@ public class SavingsService {
 	}
 
 	public void parseCsvAndSaveIntoDatabase(Path path) {
-		savingsRepository.deleteAll();
 		final int BATCH_SIZE = 1000;
-		final int MAX_CONCURRENT_TASK = Runtime.getRuntime().availableProcessors() * 2;
+		final int MAX_CONCURRENT_TASK = Runtime.getRuntime().availableProcessors() * 10;
 
 		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 		Semaphore semaphore = new Semaphore(MAX_CONCURRENT_TASK);
@@ -77,6 +76,10 @@ public class SavingsService {
 		} catch (Exception e) {
 			log.error("Error parsing CSV file: {}", e.getMessage(), e);
 		}
+	}
+	@Transactional
+	public void deleteAll() {
+		savingsRepository.deleteAllFast();
 	}
 
 	private void processBatch(List<Savings> batch, ExecutorService executor, Semaphore semaphore) throws InterruptedException {

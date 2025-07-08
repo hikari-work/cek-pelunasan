@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileReader;
 import java.nio.file.Path;
@@ -37,14 +38,14 @@ public class KolekTasService {
 		kolekTasRepository.saveAll(kolekTas);
 	}
 
+	@Transactional
 	public void deleteAll() {
-		kolekTasRepository.deleteAll();
+		kolekTasRepository.deleteAllFast();
 	}
 
 	public void parseCsvAndSave(Path path) {
-		deleteAll();
 		final int BATCH_SIZE = 500;
-		final int MAX_CONCURRENT_TASK = 10;
+		final int MAX_CONCURRENT_TASK = 15;
 		ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 		Semaphore semaphore = new Semaphore(MAX_CONCURRENT_TASK);
 		List<KolekTas> currentBatch = new ArrayList<>(BATCH_SIZE);

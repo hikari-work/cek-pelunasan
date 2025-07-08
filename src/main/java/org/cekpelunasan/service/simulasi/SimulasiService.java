@@ -8,6 +8,7 @@ import org.cekpelunasan.repository.SimulasiRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileReader;
 import java.nio.file.Path;
@@ -111,11 +112,15 @@ public class SimulasiService {
                 }
             });
     }
+	@Transactional
+	public void deleteAll() {
+		simulasiRepository.deleteAllFast();
+	}
 
     public void parseCsv(Path path) {
-        simulasiRepository.deleteAll();
+
         final int BATCH_SIZE = 500;
-        final int MAX_CONCURRENT_TASKS = 10;
+        final int MAX_CONCURRENT_TASKS = 15;
         
         ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
         Semaphore semaphore = new Semaphore(MAX_CONCURRENT_TASKS);

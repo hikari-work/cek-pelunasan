@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileReader;
 import java.nio.file.Path;
@@ -17,6 +18,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Slf4j
 @Service
@@ -28,12 +32,20 @@ public class RepaymentService {
 	public Repayment findRepaymentById(Long id) {
 		return repaymentRepository.findById(id).orElse(null);
 	}
+	@Transactional
+	public void deleteAll() {
+		repaymentRepository.deleteAllFast();
+	}
 
 	public void parseCsvAndSaveIntoDatabase(Path path) {
-		List<Repayment> repayments = new ArrayList<>();
+		final int BATCH_SIZE = 500;
+		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+		List<Future<?>> futures = new ArrayList<>();
 
 		try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
 			String[] line;
+			List<Repayment> batch = new ArrayList<>(BATCH_SIZE);
+
 			while ((line = reader.readNext()) != null) {
 				Repayment repayment = Repayment.builder()
 					.customerId(line[0])
@@ -52,17 +64,45 @@ public class RepaymentService {
 					.lpdb(line[13])
 					.createdAt(Date.from(Instant.now()))
 					.build();
-				repayments.add(repayment);
+				batch.add(repayment);
+
+				if (batch.size() >= BATCH_SIZE) {
+					List<Repayment> batchToSave = new ArrayList<>(batch); // Create a copy
+					futures.add(executor.submit(() -> {
+						repaymentRepository.saveAll(batchToSave);
+						return null;
+					}));
+					batch.clear();
+				}
 			}
-			repaymentRepository.deleteAll(); // bisa juga pakai custom delete by condition kalau tidak mau hapus semua
-			repaymentRepository.saveAll(repayments); // simpan sekaligus
-			log.info("✅ Upload selesai: {} data disimpan", repayments.size());
+
+			// Process any remaining items in the last batch
+			if (!batch.isEmpty()) {
+				List<Repayment> batchToSave = new ArrayList<>(batch);
+				futures.add(executor.submit(() -> {
+					repaymentRepository.saveAll(batchToSave);
+					return null;
+				}));
+			}
+
+			// Wait for all virtual threads to complete
+			int savedCount = 0;
+			for (Future<?> future : futures) {
+				try {
+					future.get();
+					savedCount += BATCH_SIZE;
+				} catch (Exception e) {
+					log.error("Error waiting for batch to complete: {}", e.getMessage(), e);
+				}
+			}
+
+			log.info("✅ Upload selesai: ~{} data disimpan", savedCount);
 
 		} catch (Exception e) {
 			log.warn("❌ Gagal upload CSV: {}", e.getMessage());
+		} finally {
+			executor.shutdown();
 		}
-
-
 	}
 
 	public Repayment findAll() {

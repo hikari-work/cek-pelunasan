@@ -100,6 +100,7 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 			Path filePath = Paths.get("files", fileName);
 			Files.createDirectories(filePath.getParent());
 			Files.copy(input, filePath, StandardCopyOption.REPLACE_EXISTING);
+			billService.deleteAll();
 			billService.parseCsvAndSaveIntoDatabase(filePath);
 			return true;
 		} catch (Exception e) {
