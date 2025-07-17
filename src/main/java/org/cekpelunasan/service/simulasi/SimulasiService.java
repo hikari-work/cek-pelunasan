@@ -43,6 +43,13 @@ public class SimulasiService {
 		map.put("P", bySpk.stream().filter(simulasi -> simulasi.getSequence().equals("P") && simulasi.getTunggakan() > 0).toList().size());
 		return map;
 	}
+	public Long findMaxBayar(String spk) {
+		return simulasiRepository.findBySpk(spk)
+			.stream()
+			.mapToLong(Simulasi::getKeterlambatan)
+			.max()
+			.orElse(0L);
+	}
 
     public SimulasiResult getSimulasi(String spk, Long userInput) {
         List<Simulasi> keterlambatan = findSimulasiBySpk(spk);

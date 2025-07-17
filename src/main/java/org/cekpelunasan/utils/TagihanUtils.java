@@ -20,6 +20,7 @@ public class TagihanUtils {
 
 	public String detailBills(Bills bill) {
 		Map<String, Integer> totalKeterlambatan = simulasiService.findTotalKeterlambatan(bill.getNoSpk());
+		Long maxBayar = simulasiService.findMaxBayar(bill.getNoSpk());
 		return String.format("""
             📄 *Detail Kredit*
 
@@ -70,7 +71,7 @@ public class TagihanUtils {
 			rupiahFormatUtils.formatRupiah(bill.getLastInterest()),
 			totalKeterlambatan.get("P"),
 			rupiahFormatUtils.formatRupiah(bill.getLastPrincipal()),
-			Integer.parseInt(bill.getDayLate()),
+			Integer.parseInt(String.valueOf(maxBayar)),
 			bill.getCollectStatus(),
 			rupiahFormatUtils.formatRupiah(bill.getFullPayment()),
 			rupiahFormatUtils.formatRupiah(bill.getMinPrincipal()),
