@@ -50,7 +50,7 @@ public class RepaymentCalculator {
 			formatRupiah(repayment.getPlafond()),
 			formatRupiah(bakidebet),
 			isTunggakan(tunggakan),
-			formatRupiah(tunggakan),
+			formatRupiah(tunggakan * -1),
 			penaltyMap.get("multiplier"),
 			formatRupiah(penalty),
 			formatRupiah(denda),
