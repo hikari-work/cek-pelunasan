@@ -31,7 +31,7 @@ public class RepaymentCalculator {
 
             💳 *Tagihan*
             • Baki Debet: %s
-            • Tunggakan: %s
+            • %s: %s
             • Penalty +%s: %s
             • Denda: %s
 
@@ -49,6 +49,7 @@ public class RepaymentCalculator {
 			formatText(repayment.getProduct()),
 			formatRupiah(repayment.getPlafond()),
 			formatRupiah(bakidebet),
+			isTunggakan(tunggakan),
 			formatRupiah(tunggakan),
 			penaltyMap.get("multiplier"),
 			formatRupiah(penalty),
@@ -72,5 +73,8 @@ public class RepaymentCalculator {
 
 	private String formatText(String text) {
 		return text == null ? "-" : text;
+	}
+	private String isTunggakan(Long tunggakan) {
+		return tunggakan >= 0L ? "Tunggakan Bunga" : "Titipan Bunga";
 	}
 }
