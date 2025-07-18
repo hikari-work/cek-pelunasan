@@ -35,7 +35,7 @@ public class WebhookController {
 	}
 	@PostMapping("/whatsapp")
 	public ResponseEntity<String> whatsapp(@RequestBody WhatsappMessageDTO whatsappMessageDTO) {
-		log.info("Updated {}", whatsappMessageDTO.getMessage().getText());
+		log.info("Updated {}", whatsappMessageDTO);
 		whatsappRouters.sendPelunasanOrTabungan(whatsappMessageDTO);
 		return ResponseEntity.ok("OK");
 	}
