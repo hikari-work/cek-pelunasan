@@ -53,7 +53,7 @@ public class WhatsappRouters {
 		return text.matches("^\\d{12}$");
 	}
 	private boolean isValidHotKolek(String text) {
-		return text.matches("^.\\d{12}$");
+		return text.matches("^\\.\\d{12}$");
 	}
 
 
@@ -65,13 +65,14 @@ public class WhatsappRouters {
 		String text = whatsappMessageDTO.getMessage().getText();
 		if (!isValidData(text)) {
 			log.info("Not Valid Hot Kolek Service");
+			if (isValidHotKolek(text)) {
+				log.info("Hot Kolek Service");
+				sendWhatsappMessageHotKolek.sendMessage(whatsappMessageDTO);
+				return;
+			}
 			return;
 		}
-		if (isValidHotKolek(text)) {
-			log.info("Hot Kolek Service");
-			sendWhatsappMessageHotKolek.sendMessage(whatsappMessageDTO);
-			return;
-		}
+
 		Repayment repaymentById = repaymentService.findRepaymentById(Long.parseLong(text));
 		if (repaymentById == null) {
 			Optional<Savings> byId = savingsService.findById(text);
