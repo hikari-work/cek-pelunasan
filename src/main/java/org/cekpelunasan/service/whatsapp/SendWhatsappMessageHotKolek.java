@@ -42,16 +42,22 @@ public class SendWhatsappMessageHotKolek {
 	private boolean isValidSpk(String text) {
 		return text.matches("^\\d{12}$");
 	}
-	private String getValidUser(WhatsappMessageDTO whatsappMessageDTO) {
-		String target = whatsappMessageDTO.getFrom();
-		Pattern pattern = Pattern.compile("(62\\d+@s\\.whatsapp\\.net)");
-		Matcher matcher = pattern.matcher(target);
-		if (matcher.find()) {
-			return matcher.group(1);
-		} else {
-			return null;
+	private String getPreferredAddress(String text) {
+		Pattern groupPattern = Pattern.compile("\\b\\d+@g\\.us\\b");
+		Matcher groupMatcher = groupPattern.matcher(text);
+		if (groupMatcher.find()) {
+			return groupMatcher.group();
 		}
+
+		Pattern userPattern = Pattern.compile("\\b\\d+@s\\.whatsapp\\.net\\b");
+		Matcher userMatcher = userPattern.matcher(text);
+		if (userMatcher.find()) {
+			return userMatcher.group();
+		}
+
+		return null;
 	}
+
 
 	public void sendMessage(WhatsappMessageDTO messageDTO) {
 		String spk = messageDTO.getMessage().getText().replace(".", "");
@@ -59,7 +65,7 @@ public class SendWhatsappMessageHotKolek {
 			return;
 		}
 		log.info("Message From {} is Valid", messageDTO.getFrom());
-		String target = getValidUser(messageDTO);
+		String target = getPreferredAddress(messageDTO.getFrom());
 		if (target == null) {
 			log.info("Target User is not Valid");
 			return;
