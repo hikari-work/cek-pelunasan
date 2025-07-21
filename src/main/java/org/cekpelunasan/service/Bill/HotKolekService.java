@@ -57,7 +57,7 @@ public class HotKolekService {
     public List<Bills> findFirstPay(String branch) {
 		log.info("Finding {}", getLastMonth());
         return filterBills(branch, 
-            (repo, br) -> repo.findByDueDateContaining(getLastMonth()));
+            (repo, br) -> repo.findByRealizationIsContainingIgnoreCase(getLastMonth()));
     }
     
     public List<Bills> findMinimalPay(String branch) {
