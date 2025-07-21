@@ -5,6 +5,8 @@ import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.entity.Paying;
 import org.cekpelunasan.repository.BillsRepository;
 import org.cekpelunasan.repository.PayingRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +21,8 @@ import java.util.function.BiFunction;
 @RequiredArgsConstructor
 public class HotKolekService {
 
-    private final PayingRepository payingRepository;
+	private static final Logger log = LoggerFactory.getLogger(HotKolekService.class);
+	private final PayingRepository payingRepository;
     private final BillsRepository billsRepository;
 
     @Transactional
@@ -52,6 +55,7 @@ public class HotKolekService {
     }
     
     public List<Bills> findFirstPay(String branch) {
+		log.info("Finding {}", getLastMonth());
         return filterBills(branch, 
             (repo, br) -> repo.findByDueDateContaining(getLastMonth()));
     }

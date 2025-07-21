@@ -27,7 +27,7 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 
 	@Query("""
 		SELECT b FROM Bills b
-		WHERE b.branch = :branch
+		WHERE b.officeLocation = :branch
 		AND (b.minInterest + b.minPrincipal) > 0
 		""")
 	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(Long minInterest, Long minPrincipal, String branch, Pageable pageable);
