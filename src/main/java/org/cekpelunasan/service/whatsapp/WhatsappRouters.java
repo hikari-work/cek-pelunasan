@@ -37,6 +37,7 @@ public class WhatsappRouters {
 	private final RestTemplate restTemplate = new RestTemplate();
 	private final PenaltyUtils penaltyUtils;
 	private final RepaymentCalculator repaymentCalculator;
+	private final SendWhatsappMessageHotKolek sendWhatsappMessageHotKolek;
 	@Value("${whatsapp.gateway.username}")
 	private String username;
 
@@ -51,6 +52,10 @@ public class WhatsappRouters {
 	private boolean isValidData(String text) {
 		return text.matches("^\\d{12}$");
 	}
+	private boolean isValidHotKolek(String text) {
+		return text.matches("^\\.\\d{12}$");
+	}
+
 
 	public void sendPelunasanOrTabungan(WhatsappMessageDTO whatsappMessageDTO) {
 		String target = getValidUser(whatsappMessageDTO);
@@ -59,6 +64,10 @@ public class WhatsappRouters {
 		}
 		String text = whatsappMessageDTO.getMessage().getText();
 		if (!isValidData(text)) {
+			return;
+		}
+		if (isValidHotKolek(text)) {
+			sendWhatsappMessageHotKolek.sendMessage(whatsappMessageDTO);
 			return;
 		}
 		Repayment repaymentById = repaymentService.findRepaymentById(Long.parseLong(text));
