@@ -40,7 +40,7 @@ public class SendWhatsappMessageHotKolek {
 	}
 
 	private boolean isValidSpk(String text) {
-		return text.matches("\\d{12}");
+		return text.matches("^\\.\\d{12}$");
 	}
 	private String getValidUser(WhatsappMessageDTO whatsappMessageDTO) {
 		String target = whatsappMessageDTO.getFrom();
@@ -54,7 +54,8 @@ public class SendWhatsappMessageHotKolek {
 	}
 
 	public void sendMessage(WhatsappMessageDTO messageDTO) {
-		if (!isValidSpk(messageDTO.getMessage().getText())) {
+		String spk = messageDTO.getMessage().getText().replace(".", "");
+		if (!isValidSpk(spk)) {
 			return;
 		}
 		log.info("Message From {} is Valid", messageDTO.getFrom());
@@ -64,8 +65,8 @@ public class SendWhatsappMessageHotKolek {
 			return;
 		}
 		log.info("Target User is {}", target);
-		log.info("Saving Data {}", messageDTO.getMessage().getText());
-		hotKolekService.savePaying(messageDTO.getMessage().getText());
+		log.info("Saving Data {}", spk);
+		hotKolekService.savePaying(spk);
 		log.info("Data Saved");
 		String messageText = generateMessageText.generateMessageText(
 			hotKolekService.findMinimalPay("1075"), hotKolekService.findFirstPay("1075"), hotKolekService.findDueDate("1075"),
