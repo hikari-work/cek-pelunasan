@@ -88,7 +88,6 @@ public class SendWhatsappMessageHotKolek {
 		headers.set("Authorization", authHeader);
 
 		HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
-		log.info("Request: {}", request.getBody());
 		ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 		log.info("Response: {}", response.getBody());
 
