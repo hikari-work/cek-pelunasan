@@ -73,7 +73,6 @@ public class SendWhatsappMessageHotKolek {
 			hotKolekService.findMinimalPay("1172"), hotKolekService.findFirstPay("1172"), hotKolekService.findDueDate("1172"),
 			hotKolekService.findMinimalPay("1173"), hotKolekService.findFirstPay("1173"), hotKolekService.findDueDate("1173")
 		);
-		log.info("Message: {}", messageText);
 
 		String jsonBody = String.format(
 			"{\"phone\":\"%s\",\"message\":\"%s\",\"is_forwarded\":false}",
