@@ -40,7 +40,7 @@ public class SendWhatsappMessageHotKolek {
 	}
 
 	private boolean isValidSpk(String text) {
-		return text.matches("^\\.\\d{12}$");
+		return text.matches("^\\d{12}$");
 	}
 	private String getValidUser(WhatsappMessageDTO whatsappMessageDTO) {
 		String target = whatsappMessageDTO.getFrom();
