@@ -20,7 +20,7 @@ public class GenerateMessageText {
                                   List<Bills> billsKejobong,
                                   List<Bills> firstPayKejobong,
                                   List<Bills> dueDateKejobong) {
-    String bulanTahun = getBulanTahun(LocalDate.now());
+    String bulanTahun = getMonthAndYear(LocalDate.now());
     StringBuilder builder = new StringBuilder(String.format("""
         *HOT COLLECTION BULAN %s*
         *TAGIHAN YG PENGARUH NPL*
@@ -83,7 +83,7 @@ public class GenerateMessageText {
 
 
 
-	private String getBulanTahun(LocalDate date) {
+	private String getMonthAndYear(LocalDate date) {
 		String bulan = date.getMonth().getDisplayName(TextStyle.FULL, new Locale("id", "ID"))
 			.toUpperCase();
 		int tahun = date.getYear();

@@ -7,7 +7,9 @@ import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.service.simulasi.SimulasiService;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @Component
@@ -73,7 +75,7 @@ public class TagihanUtils {
 			rupiahFormatUtils.formatRupiah(bill.getLastPrincipal()),
 			Integer.parseInt(String.valueOf(maxBayar)),
 			bill.getCollectStatus(),
-			rupiahFormatUtils.formatRupiah(bill.getFullPayment()),
+			rupiahFormatUtils.formatRupiah(calculateTotalPayment(bill)),
 			rupiahFormatUtils.formatRupiah(bill.getMinPrincipal()),
 			rupiahFormatUtils.formatRupiah(bill.getMinInterest()),
 			bill.getAccountOfficer()
@@ -107,7 +109,7 @@ public class TagihanUtils {
 			bills.getPayDown(),
 			String.format("Rp%,d,-", bills.getFullPayment()),
 			bills.getAccountOfficer(),
-			LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+			LocalDateTime.now().plusHours(7).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
 		);
 	}
 
@@ -129,5 +131,18 @@ public class TagihanUtils {
 			dto.getAddress(),
 			rupiahFormatUtils.formatRupiah(dto.getPlafond())
 		);
+	}
+	private Long calculateTotalPayment(Bills bills) {
+		String realization = bills.getRealization(); // "31-12-2025"
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+		LocalDate realizationDate = LocalDate.parse(realization, formatter);
+		LocalDate today = LocalDate.now();
+		if (realizationDate.isEqual(today)) {
+			return bills.getFullPayment();
+		} else if (realizationDate.isBefore(today)) {
+			return bills.getLastInterest() + bills.getLastPrincipal();
+		} else {
+			return bills.getInstallment();
+		}
 	}
 }

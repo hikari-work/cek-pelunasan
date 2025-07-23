@@ -36,7 +36,7 @@ public class BillService {
 		return billsRepository.findById(id).orElse(null);
 	}
 
-	@Transactional
+
 	public Long countAllBills() {
 		return billsRepository.count();
 	}

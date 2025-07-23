@@ -13,11 +13,11 @@ public class CanvasingUtils {
 	public String canvasingTab(Savings dto) {
 		return String.format("""
             👤 *%s*
-
             📊 *Data Nasabah*
             • 🆔 CIF: `%s`
             • 📍 Alamat: %s
             • 💵 Saldo: %s
+            
             """,
 			dto.getName(),
 			dto.getCif(),

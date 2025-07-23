@@ -55,7 +55,7 @@ public class RepaymentCalculator {
 			formatRupiah(penalty),
 			formatRupiah(denda),
 			formatRupiah(total),
-			LocalDateTime.now().format(
+			LocalDateTime.now().plusHours(7).format(
 				DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")
 			)
 		);
