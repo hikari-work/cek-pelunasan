@@ -1,6 +1,7 @@
 package org.cekpelunasan.service.whatsapp;
 
 import org.cekpelunasan.dto.WhatsappMessageDTO;
+import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.service.Bill.HotKolekService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,10 +68,6 @@ public class SendWhatsappMessageHotKolek {
 
 
 	public void sendMessage(WhatsappMessageDTO messageDTO) {
-		String spk = messageDTO.getMessage().getText().replace(".", "");
-		if (!isValidSpk(spk)) {
-			return;
-		}
 		log.info("Message From {} is Valid", messageDTO.getFrom());
 		String target = getPreferredAddress(messageDTO.getFrom());
 		if (target == null) {
@@ -75,14 +75,11 @@ public class SendWhatsappMessageHotKolek {
 			return;
 		}
 		log.info("Target User is {}", target);
-		log.info("Saving Data {}", spk);
-		hotKolekService.savePaying(spk);
+		List<String> strings = extractSpkNumbers(messageDTO.getMessage().getText());
+		log.info("Saving data {}", strings);
+		hotKolekService.saveAllPaying(strings);
 		log.info("Data Saved");
-		String messageText = generateMessageText.generateMessageText(
-			hotKolekService.findMinimalPay("1075"), hotKolekService.findFirstPay("1075"), hotKolekService.findDueDate("1075"),
-			hotKolekService.findMinimalPay("1172"), hotKolekService.findFirstPay("1172"), hotKolekService.findDueDate("1172"),
-			hotKolekService.findMinimalPay("1173"), hotKolekService.findFirstPay("1173"), hotKolekService.findDueDate("1173")
-		);
+		String messageText = generateNonBlocking();
 
 		String jsonBody = String.format(
 			"{\"phone\":\"%s\",\"message\":\"%s\",\"is_forwarded\":false}",
@@ -112,6 +109,50 @@ public class SendWhatsappMessageHotKolek {
 			.replace("\r", "\\r")
 			.replace("\t", "\\t");
 	}
+	private List<String> extractSpkNumbers(String text) {
+		List<String> result = new ArrayList<>();
+
+		String[] tokens = text.trim().split("\\s+");
+		for (String token : tokens) {
+			String cleanToken = token.startsWith(".") ? token.substring(1) : token;
+			if (cleanToken.matches("^\\d{12}$")) {
+				result.add(cleanToken);
+			}
+		}
+		return result;
+	}
+
+	public String generateNonBlocking() {
+		CompletableFuture<List<Bills>> minimalPay1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1075"));
+		CompletableFuture<List<Bills>> firstPay1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1075"));
+		CompletableFuture<List<Bills>> dueDate1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1075"));
+
+		CompletableFuture<List<Bills>> minimalPay1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1172"));
+		CompletableFuture<List<Bills>> firstPay1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1172"));
+		CompletableFuture<List<Bills>> dueDate1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1172"));
+
+		CompletableFuture<List<Bills>> minimalPay1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1173"));
+		CompletableFuture<List<Bills>> firstPay1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1173"));
+		CompletableFuture<List<Bills>> dueDate1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1173"));
+
+		return CompletableFuture.allOf(
+			minimalPay1075, firstPay1075, dueDate1075,
+			minimalPay1172, firstPay1172, dueDate1172,
+			minimalPay1173, firstPay1173, dueDate1173
+		).thenApply(v -> {
+			try {
+				return generateMessageText.generateMessageText(
+					minimalPay1075.get(), firstPay1075.get(), dueDate1075.get(),
+					minimalPay1172.get(), firstPay1172.get(), dueDate1172.get(),
+					minimalPay1173.get(), firstPay1173.get(), dueDate1173.get()
+				);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}).join();
+	}
+
+
 
 
 }

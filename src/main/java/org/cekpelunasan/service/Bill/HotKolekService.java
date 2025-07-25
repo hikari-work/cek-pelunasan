@@ -75,4 +75,12 @@ public class HotKolekService {
         bills.removeIf(bill -> !bill.getOfficeLocation().equals(branch));
         return bills;
     }
+
+	public void saveAllPaying(List<String> list) {
+		payingRepository.saveAll(list.stream().map(spk -> Paying.builder()
+			.id(spk)
+			.paid(true)
+			.build())
+			.toList());
+	}
 }

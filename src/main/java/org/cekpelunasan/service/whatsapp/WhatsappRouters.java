@@ -53,9 +53,8 @@ public class WhatsappRouters {
 		return text.matches("^\\d{12}$");
 	}
 	private boolean isValidHotKolek(String text) {
-		return text.matches("^\\.\\d{12}$");
+		return text.startsWith(".");
 	}
-
 
 	public void sendPelunasanOrTabungan(WhatsappMessageDTO whatsappMessageDTO) {
 		String target = getValidUser(whatsappMessageDTO);
