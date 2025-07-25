@@ -43,6 +43,10 @@ public class SendWhatsappMessageHotKolek {
 		return text.matches("^\\d{12}$");
 	}
 	private String getPreferredAddress(String text) {
+		String preferred = "6285227941810-1603156359@g.us";
+    	if (text.contains(preferred)) {
+        	return preferred;
+    	}
 		Pattern groupPattern = Pattern.compile("\\b\\d+@g\\.us\\b");
 		Matcher groupMatcher = groupPattern.matcher(text);
 		if (groupMatcher.find()) {
