@@ -57,7 +57,7 @@ public class SendWhatsappMessageHotKolek {
 			return groupMatcher.group();
 		}
 
-		Pattern userPattern = Pattern.compile("\\b\\d+@s\\.whatsapp\\.net\\b");
+		Pattern userPattern = Pattern.compile("(?<![:\\d])\\d{7,}@s\\.whatsapp\\.net");
 		Matcher userMatcher = userPattern.matcher(text);
 		if (userMatcher.find()) {
 			return userMatcher.group();
