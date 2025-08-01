@@ -122,8 +122,16 @@ public class RepaymentService {
 		return Math.toIntExact(repaymentRepository.count());
 	}
 
-	public Boolean isRepaymentExists(String name) {
-		return repaymentRepository.existsByNameIsLikeIgnoreCase(name);
 
+	public List<Repayment> findAllLimited() {
+		Pageable pageable = PageRequest.of(0, 10);
+		return repaymentRepository.findAll(pageable).getContent();
+	}
+
+	public List<Repayment> searchByIdOrNameLimited(String searchTerm) {
+		Pageable pageable = PageRequest.of(0, 10);
+		return repaymentRepository.findByCustomerIdContainingIgnoreCaseOrNameContainingIgnoreCase(
+			searchTerm, searchTerm, pageable
+		);
 	}
 }

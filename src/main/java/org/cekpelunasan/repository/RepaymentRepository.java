@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 
 @Repository
 public interface RepaymentRepository extends JpaRepository<Repayment, Long> {
@@ -19,4 +21,9 @@ public interface RepaymentRepository extends JpaRepository<Repayment, Long> {
 	Page<Repayment> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
 	Boolean existsByNameIsLikeIgnoreCase(String name);
+	List<Repayment> findByCustomerIdContainingIgnoreCaseOrNameContainingIgnoreCase(
+		String customerId, String name, Pageable pageable
+	);
+
+
 }
