@@ -41,7 +41,7 @@ public class NgrokService {
 		}
 	}
 
-	private String getTunnelInfo() {
+	public String getTunnelInfo() {
 		try {
 			String forObject = restTemplate.getForObject(ngrokApiUrl, String.class);
 			logger.info("Getting tunnel information from ngrok API: {}", forObject);
@@ -58,7 +58,7 @@ public class NgrokService {
 		}
 	}
 
-	private String extractPublicUrl(String tunnelJson) {
+	public String extractPublicUrl(String tunnelJson) {
 		try {
 			JsonNode tunnelNode = new ObjectMapper().readTree(tunnelJson);
 			JsonNode tunnels = tunnelNode.get("tunnels");
