@@ -103,7 +103,9 @@ public class UploadTabCommandHandler implements CommandProcessor {
 		String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
 
 		boolean success = downloadAndProcessFile(fileUrl, fileName);
-		String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
+		String currentDateTime = LocalDateTime.now()
+			.plusHours(7)
+			.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
 
 		String resultMessage = success
 			? String.format("✅ *Update berhasil: Data Tabungan diperbarui pada %s*", currentDateTime)

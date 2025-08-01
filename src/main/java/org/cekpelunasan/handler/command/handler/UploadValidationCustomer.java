@@ -91,7 +91,9 @@ public class UploadValidationCustomer implements CommandProcessor {
     boolean success = downloadAndProcessFile(fileUrl, fileName);
     
     // Format current date and time
-    String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
+    String currentDateTime = LocalDateTime.now()
+		.plusHours(7)
+		.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
     
     String resultMessage = success
         ? String.format("✅ *Update berhasil: Data Validasi CIF diperbarui pada %s*", currentDateTime)
