@@ -48,10 +48,12 @@ public class RepaymentController {
 	@NotNull
 	private List<Repayment> getRepayments(List<Repayment> allLimited) {
 		allLimited.forEach(r -> {
-			Map<String, Long> penalty = penaltyUtils.penalty(r.getStartDate(), r.getAmount(), r.getProduct(), r);
-			r.setPenaltyRepayment(penalty.get("penalty"));
-			log.info("Penalty: {}", penalty.get("penalty"));
-			log.info("Multiplier : {}", penalty.get("multiplier"));
+			// Use r.getAmount() to be consistent with other code
+			Map<String, Long> penalty = penaltyUtils.penalty(r.getStartDate(), r.getPenaltyLoan(), r.getProduct(), r);
+			r.setPenaltyLoan(penalty.get("penalty"));
+			log.info("Customer ID: {}, Penalty: {}, Multiplier: {}", 
+                r.getCustomerId(), penalty.get("penalty"), penalty.get("multiplier"));
+			r.setTotalPay(r.getAmount() +  r.getPenaltyLoan() + r.getPenaltyRepayment() + r.getInterest());
 		});
 		return allLimited;
 	}
