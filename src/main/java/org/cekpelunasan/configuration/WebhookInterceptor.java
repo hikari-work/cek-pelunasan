@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
+import java.util.concurrent.CompletableFuture;
 
 
 @Component
@@ -26,9 +27,9 @@ public class WebhookInterceptor implements HandlerInterceptor {
 		log.info("New Webhook Received");
 		if (request instanceof ContentCachingRequestWrapper wrapper) {
 			String body = new String(wrapper.getContentAsByteArray(), wrapper.getCharacterEncoding());
-			requestLogRepository.save(Logging.builder()
+			CompletableFuture.runAsync(() -> requestLogRepository.save(Logging.builder()
 				.request(body)
-				.build());
+				.build()));
 		}
 	}
 }
