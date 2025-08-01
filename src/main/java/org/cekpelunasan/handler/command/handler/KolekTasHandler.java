@@ -7,6 +7,7 @@ import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.kolektas.KolekTasService;
 import org.cekpelunasan.utils.KolekTasUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -34,6 +35,7 @@ public class KolekTasHandler implements CommandProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			String data = text.split(" ")[1].trim().toLowerCase();

@@ -5,6 +5,7 @@ import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.users.UserService;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -29,6 +30,7 @@ public class KantorHandler implements CommandProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			if (!authorizedChats.isAuthorized(chatId)) {

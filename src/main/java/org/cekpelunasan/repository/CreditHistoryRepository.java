@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CreditHistoryRepository extends JpaRepository<CreditHistory, Long>, JpaSpecificationExecutor<CreditHistory> {
 
+
+
 }

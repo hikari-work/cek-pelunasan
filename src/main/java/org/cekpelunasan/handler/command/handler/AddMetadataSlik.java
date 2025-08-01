@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.slik.GenerateMetadataSlikForUncompletedDocument;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -30,6 +31,7 @@ public class AddMetadataSlik implements CommandProcessor {
 	}
 
 	@Override
+	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		if (!owner.equals(Long.toString(chatId))) {
 			return CompletableFuture.runAsync(() -> sendMessage(chatId, "Hanya Admin yang dapat menggunakan command ini", telegramClient));

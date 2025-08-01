@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.Bill.BillService;
+import org.cekpelunasan.service.credithistory.CreditHistoryService;
+import org.cekpelunasan.service.customerhistory.CustomerHistoryService;
 import org.cekpelunasan.service.repayment.RepaymentService;
 import org.cekpelunasan.service.users.UserService;
 import org.cekpelunasan.utils.SystemUtils;
@@ -20,6 +22,8 @@ public class StatusCommandHandler implements CommandProcessor {
 	private final RepaymentService repaymentService;
 	private final UserService userService;
 	private final BillService billService;
+	private final CreditHistoryService creditHistoryService;
+	private final CustomerHistoryService customerHistoryService;
 
 
 	@Override
@@ -41,12 +45,21 @@ public class StatusCommandHandler implements CommandProcessor {
 		long startTime = System.currentTimeMillis();
 
 		CompletableFuture<Long> billCount = CompletableFuture.supplyAsync(billService::countAllBills);
+		CompletableFuture<Long> customerHistoryCount = CompletableFuture.supplyAsync(customerHistoryService::countCustomerHistory);
 		CompletableFuture<Repayment> latestRepaymentFuture = CompletableFuture.supplyAsync(repaymentService::findAll);
 		CompletableFuture<Long> totalUsersFuture = CompletableFuture.supplyAsync(userService::countUsers);
 		CompletableFuture<Integer> totalRepaymentsFuture = CompletableFuture.supplyAsync(repaymentService::countAll);
 		CompletableFuture<String> systemLoadFuture = CompletableFuture.supplyAsync(() -> new SystemUtils().getSystemUtils());
+		CompletableFuture<Long> creditHistory = CompletableFuture.supplyAsync(creditHistoryService::countCreditHistory);
 
-		return CompletableFuture.allOf(latestRepaymentFuture, totalUsersFuture, totalRepaymentsFuture, systemLoadFuture)
+
+
+		return CompletableFuture.allOf(latestRepaymentFuture,
+				totalUsersFuture,
+				totalRepaymentsFuture,
+				systemLoadFuture,
+				creditHistory,
+				customerHistoryCount)
 			.thenComposeAsync(aVoid -> {
 				try {
 					Repayment latestRepayment = latestRepaymentFuture.get();
@@ -55,12 +68,16 @@ public class StatusCommandHandler implements CommandProcessor {
 					String systemLoad = systemLoadFuture.get();
 					long executionTime = System.currentTimeMillis() - startTime;
 					long billTotal = billCount.get();
+					long creditHistoryTotal = creditHistory.get();
+					long customerHistoryTotal = customerHistoryCount.get();
 
 					String statusMessage = buildStatusMessage(latestRepayment,
 						totalUsers,
 						totalRepayments,
+						creditHistoryTotal,
 						billTotal,
 						systemLoad,
+						customerHistoryTotal,
 						executionTime);
 					sendMessage(chatId, statusMessage, telegramClient);
 				} catch (Exception e) {
@@ -73,8 +90,10 @@ public class StatusCommandHandler implements CommandProcessor {
 	private String buildStatusMessage(Repayment latest,
 									  long totalUsers,
 									  int totalRepayments,
+									  long credit,
 									  long totalBills,
 									  String systemLoad,
+									  long customerHistoryTotal,
 									  long executionTime) {
 		return String.format("""
 				⚡️ *PELUNASAN BOT STATUS*
@@ -86,6 +105,8 @@ public class StatusCommandHandler implements CommandProcessor {
 				┌────────────────────
 				│ 👥 Users     : %d
 				│ 📦 Pelunasan : %d
+				│ 📦 All Krd   : %d
+				│ 📦 Cek CIF   : %d
 				│ 💳 Tagihan   : %d
 				│ ⚙️ Load      : %s
 				└────────────────────
@@ -108,6 +129,8 @@ public class StatusCommandHandler implements CommandProcessor {
 				""",
 			totalUsers,
 			totalRepayments,
+			credit,
+			customerHistoryTotal,
 			totalBills,
 			systemLoad,
 			latest.getCreatedAt().toString(),

@@ -49,7 +49,6 @@ public class InfoCifCommandHandler implements CommandProcessor {
 	}
 
 	private String formatCollectSummary(String cif, List<Long> counts) {
-    	// Define credit status labels with icons
     	String[] statuses = {
         	"🌟 LANCAR", "⚜️ DALAM PERHATIAN", "⭐ KURANG LANCAR",
         	"💫 DIRAGUKAN", "❗ MACET"

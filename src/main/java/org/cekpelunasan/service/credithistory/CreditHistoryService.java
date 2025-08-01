@@ -132,4 +132,8 @@ public class CreditHistoryService {
 			.phone(line[6])
 			.build();
 	}
+
+	public Long countCreditHistory() {
+		return creditHistoryRepository.count();
+	}
 }

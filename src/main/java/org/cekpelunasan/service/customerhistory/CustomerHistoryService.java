@@ -37,6 +37,9 @@ public class CustomerHistoryService {
 			.map(val -> val != null ? ((Number) val).longValue() : 0L)
 			.collect(Collectors.toList());
 	}
+	public Long countCustomerHistory() {
+		return customerHistoryRepository.count();
+	}
 
 	public void parseCsvAndSaveIntoDatabase(Path path) {
 
