@@ -8,13 +8,6 @@ public class MessageTemplate {
 	public String authorizedMessage() {
 		return """
 			✨ Yeay! Pendaftaran kamu berhasil! 🎉
-			
-			🤖 Bot ini sekarang resmi jadi partner kamu~
-			💍 Nih, cincin virtualnya... *cling* 💫
-			
-			Mau tau jurus-jurus rahasianya? Langsung cek /help ya! 📜
-			
-			Selamat berpetualang! 🚀
 			""";
 	}
 
