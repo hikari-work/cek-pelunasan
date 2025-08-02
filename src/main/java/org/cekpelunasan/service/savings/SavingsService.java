@@ -10,10 +10,7 @@ import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.repository.SavingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -245,11 +242,9 @@ public class SavingsService {
 	}
 
 	public List<Savings> findAllTabByNameOrNomor(String searchTerm) {
-		return savingsRepository.findByTabIdContainingIgnoreCaseOrNameContainingIgnoreCase(searchTerm, searchTerm)
-			.stream()
-			.limit(100)
-			.sorted(Comparator.comparing(Savings::getTabId))
-			.collect(Collectors.toList());
+		Pageable pageable = PageRequest.of(0, 100);
+		return savingsRepository.findByTabIdContainingIgnoreCaseOrNameContainingIgnoreCase(searchTerm, searchTerm, pageable)
+			.getContent();
 	}
 	public List<Savings> findAll() {
 		return savingsRepository.findAll().stream().limit(100).distinct().collect(Collectors.toList());

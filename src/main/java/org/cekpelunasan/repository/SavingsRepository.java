@@ -28,5 +28,5 @@ public interface SavingsRepository extends JpaRepository<Savings, Long>, JpaSpec
 	@Query("SELECT DISTINCT b.branch FROM Savings b WHERE LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%'))")
 	List<String> findAllByNameContainingIgnoreCase(@Param("name") String name);
 
-	List<Savings> findByTabIdContainingIgnoreCaseOrNameContainingIgnoreCase(String tabId, String name);
+	Page<Savings> findByTabIdContainingIgnoreCaseOrNameContainingIgnoreCase(String tabId, String name, Pageable pageable);
 }
