@@ -74,6 +74,7 @@ public class SavingsService {
 			log.error("Error parsing CSV file: {}", e.getMessage(), e);
 		}
 	}
+
 	@Transactional
 	public void deleteAll() {
 		savingsRepository.deleteAllFast();

@@ -82,7 +82,7 @@
 <div class="search-container">
     <input type="text" id="searchInput" class="search-input"
            placeholder="Cari berdasarkan No Rekening atau Nama" autocomplete="off">
-    <div class="limit-notice">Menampilkan maksimal 10 hasil</div>
+    <div class="limit-notice">Menampilkan maksimal 100 hasil</div>
 </div>
 
 <div id="resultsCount" class="results-count"></div>
@@ -145,8 +145,8 @@
             ? `Ditemukan ${count} hasil untuk "${searchTerm}"`
             : `Menampilkan ${count} data`;
 
-        if (count === 10) {
-            countText += ' (maksimal 10)';
+        if (count === 100) {
+            countText += ' (maksimal 100)';
         }
 
         resultsCount.textContent = countText;
