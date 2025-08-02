@@ -247,10 +247,11 @@ public class SavingsService {
 	public List<Savings> findAllTabByNameOrNomor(String searchTerm) {
 		return savingsRepository.findByTabIdContainingIgnoreCaseOrNameContainingIgnoreCase(searchTerm, searchTerm)
 			.stream()
+			.limit(100)
 			.sorted(Comparator.comparing(Savings::getTabId))
 			.collect(Collectors.toList());
 	}
 	public List<Savings> findAll() {
-		return new ArrayList<>(savingsRepository.findAll());
+		return savingsRepository.findAll().stream().limit(100).distinct().collect(Collectors.toList());
 	}
 }
