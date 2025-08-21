@@ -14,7 +14,6 @@ public class SendMessageResponse {
 	public static class Results {
 		@JsonProperty("message_id")
 		private String messageId;
-
 		private String status;
 	}
 }

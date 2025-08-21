@@ -84,8 +84,7 @@ public class SchedulerPaymentCheck {
 					LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
 				));
 				HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, notification);
-				ResponseEntity<SendMessageResponse> sendMessageResponseResponseEntity = restTemplateBuilder.build().postForEntity(whatsappGatewayurl, requestEntity, SendMessageResponse.class);
-				log.info("Data is {} the body is {}", sendMessageResponseResponseEntity.getStatusCode(), sendMessageResponseResponseEntity.getBody());
+				restTemplateBuilder.build().postForEntity(whatsappGatewayurl, requestEntity, Void.class);
 				paymentService.deletePayment(payment.getId());
 
 			}
