@@ -6,6 +6,8 @@ import org.cekpelunasan.dto.SendMessageResponse;
 import org.cekpelunasan.entity.Payment;
 import org.cekpelunasan.service.payment.PaymentService;
 import org.cekpelunasan.utils.RupiahFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
@@ -22,6 +24,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SchedulerPaymentCheck {
 
+	private static final Logger log = LoggerFactory.getLogger(SchedulerPaymentCheck.class);
 	private final RupiahFormatUtils rupiahFormatUtils;
 	@Value("${payment.url}")
 	private String paymentUrl;
@@ -82,9 +85,8 @@ public class SchedulerPaymentCheck {
 				));
 				HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, notification);
 				ResponseEntity<SendMessageResponse> sendMessageResponseResponseEntity = restTemplateBuilder.build().postForEntity(whatsappGatewayurl, requestEntity, SendMessageResponse.class);
-				if (sendMessageResponseResponseEntity.getStatusCode().is2xxSuccessful()) {
-					paymentService.deletePayment(payment.getId());
-				}
+				log.info("Data is {} the body is {}", sendMessageResponseResponseEntity.getStatusCode(), sendMessageResponseResponseEntity.getBody());
+				paymentService.deletePayment(payment.getId());
 
 			}
 		});
