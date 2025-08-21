@@ -56,7 +56,6 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 			String fileUrl = extractFileUrl(text, chatId, telegramClient);
 			if (fileUrl == null) return;
 			List<User> allUser = userService.findAllUsers();
-			notifyUsers(allUser, "⏳ *Sedang mengunduh dan memproses file...*", telegramClient);
 			notifyUsers(allUser, "⚠ *Sedang melakukan update data, mohon jangan kirim perintah apapun...*", telegramClient);
 
 			processFileAndNotifyUsers(fileUrl, allUser, telegramClient);

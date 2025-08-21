@@ -6,6 +6,8 @@ import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.service.repayment.RepaymentService;
 import org.cekpelunasan.service.savings.SavingsService;
+import org.cekpelunasan.service.whatsapp.payment.GeneratePaymentData;
+import org.cekpelunasan.service.whatsapp.payment.PaymentRouters;
 import org.cekpelunasan.utils.PenaltyUtils;
 import org.cekpelunasan.utils.RepaymentCalculator;
 import org.cekpelunasan.utils.SavingsUtils;
@@ -38,6 +40,8 @@ public class WhatsappRouters {
 	private final PenaltyUtils penaltyUtils;
 	private final RepaymentCalculator repaymentCalculator;
 	private final SendWhatsappMessageHotKolek sendWhatsappMessageHotKolek;
+	private final GeneratePaymentData generatePaymentData;
+	private final PaymentRouters paymentRouters;
 	@Value("${whatsapp.gateway.username}")
 	private String username;
 
@@ -62,6 +66,11 @@ public class WhatsappRouters {
 			return;
 		}
 		String text = whatsappMessageDTO.getMessage().getText();
+		if (text.startsWith(".qris")) {
+			log.info("Payment");
+			paymentRouters.generatePayment(whatsappMessageDTO);
+			return;
+		}
 		if (!isValidData(text)) {
 			log.info("Not Valid Hot Kolek Service");
 			if (isValidHotKolek(text)) {
