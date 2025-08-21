@@ -13,6 +13,9 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -84,8 +87,33 @@ public class SchedulerPaymentCheck {
 					LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
 				));
 				HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, notification);
-				restTemplateBuilder.build().postForEntity(whatsappGatewayurl, requestEntity, Void.class);
 				paymentService.deletePayment(payment.getId());
+				try {
+					log.info("Sending request to WhatsApp gateway: {}", whatsappGatewayurl);
+
+					ResponseEntity<Void> response = restTemplateBuilder.build()
+						.postForEntity(whatsappGatewayurl, requestEntity, Void.class);
+
+					if (response.getStatusCode().is2xxSuccessful()) {
+						log.info("WhatsApp message sent successfully. Status: {}", response.getStatusCode());
+					} else {
+						log.warn("WhatsApp request completed but with non-success status: {}", response.getStatusCode());
+					}
+
+				} catch (HttpClientErrorException e) {
+					log.error("Client error when sending WhatsApp message. Status: {}, Response: {}",
+						e.getStatusCode(), e.getResponseBodyAsString());
+
+				} catch (HttpServerErrorException e) {
+					log.error("Server error when sending WhatsApp message. Status: {}, Response: {}",
+						e.getStatusCode(), e.getResponseBodyAsString());
+
+				} catch (ResourceAccessException e) {
+					log.error("Network error when sending WhatsApp message: {}", e.getMessage());
+
+				} catch (Exception e) {
+					log.error("Unexpected error when sending WhatsApp message: ", e);
+				}
 
 			}
 		});
