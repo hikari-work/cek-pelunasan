@@ -72,7 +72,7 @@ public class SchedulerPaymentCheck {
 				notification.setContentType(MediaType.APPLICATION_JSON);
 				notification.setBasicAuth(username, password);
 				Map<String, Object> body = new HashMap<>();
-				body.put("phone", payment.getUser());
+				body.put("phone", payment.getUser() + "@s.whatsapp.net");
 				body.put("message", String.format(
 					"🎉 *PEMBAYARAN BERHASIL!* 🎉\n\n" +
 						"✅ *Status:* Terverifikasi & Diterima\n" +
