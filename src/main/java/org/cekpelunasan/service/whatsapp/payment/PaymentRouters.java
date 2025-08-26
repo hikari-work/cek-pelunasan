@@ -121,7 +121,7 @@ public class PaymentRouters {
 
 			if (stringResponseEntity.getStatusCode().is2xxSuccessful()) {
 				log.info("WhatsApp message sent successfully, saving payment data");
-				generatePaymentData.savePaymentData(invoiceResponse, dto.getFrom());
+				generatePaymentData.savePaymentData(invoiceResponse, dto.getChat_id());
 			} else {
 				log.error("Failed to send WhatsApp message. Status: {}, Body: {}",
 					stringResponseEntity.getStatusCode(), stringResponseEntity.getBody());
