@@ -78,7 +78,7 @@ public class PaymentRouters {
 			};
 
 			MultiValueMap<String, Object> request = new LinkedMultiValueMap<>();
-			request.add("phone", dto.getFrom());
+			request.add("phone", dto.getChat_id() + "@s.whatsapp.net");
 			request.add("caption", String.format(
 				"""
 					✅ *INVOICE PEMBAYARAN BERHASIL DIBUAT*
