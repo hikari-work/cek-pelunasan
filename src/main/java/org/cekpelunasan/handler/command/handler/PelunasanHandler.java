@@ -37,6 +37,10 @@ public class PelunasanHandler implements CommandProcessor {
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		String spk = text.replace("/p ", "");
+		if (spk.isBlank()) {
+			sendMessage(chatId, "Silahkan Isi No SPK", telegramClient);
+			return CompletableFuture.completedFuture(null);
+		}
 		log.info("Get Pelunasan for Spk {}", spk);
 		Bills billsSpk = billService.getBillById(spk);
 		log.info("Get Pelunasan for Spk {} {}", spk, billsSpk.toString());
@@ -66,7 +70,6 @@ public class PelunasanHandler implements CommandProcessor {
 			"Pokok Hutang   : Rp " + formatCurrency(pelunasanDTO.getAmount()) + "\n" +
 			"\n📊 PERHITUNGAN BUNGA\n" +
 			"Multiplier     : " + String.format("%.2f", pelunasanDTO.getMultiplier()) + " Kali Bunga\n" +
-			// Breakdown
 			"\nRincian:\n" +
 			"• Pokok Hutang : Rp " + formatCurrency(pelunasanDTO.getAmount()) + "\n" +
 			"• Bunga        : Rp " + formatCurrency(pelunasanDTO.getInterest()) + "\n" +
