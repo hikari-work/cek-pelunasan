@@ -10,6 +10,8 @@ public class WhatsappMessageDTO {
 
 	private Message message;
 
+	private String chat_id;
+
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private Image image;
 

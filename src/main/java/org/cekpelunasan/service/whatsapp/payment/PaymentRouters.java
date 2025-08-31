@@ -78,7 +78,7 @@ public class PaymentRouters {
 			};
 
 			MultiValueMap<String, Object> request = new LinkedMultiValueMap<>();
-			request.add("phone", dto.getFrom());
+			request.add("phone", dto.getChat_id() + "@s.whatsapp.net");
 			request.add("caption", String.format(
 				"""
 					✅ *INVOICE PEMBAYARAN BERHASIL DIBUAT*
@@ -121,7 +121,7 @@ public class PaymentRouters {
 
 			if (stringResponseEntity.getStatusCode().is2xxSuccessful()) {
 				log.info("WhatsApp message sent successfully, saving payment data");
-				generatePaymentData.savePaymentData(invoiceResponse, dto.getFrom());
+				generatePaymentData.savePaymentData(invoiceResponse, dto.getChat_id());
 			} else {
 				log.error("Failed to send WhatsApp message. Status: {}, Body: {}",
 					stringResponseEntity.getStatusCode(), stringResponseEntity.getBody());
