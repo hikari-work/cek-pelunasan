@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 @Component
+@Deprecated
 public class PenaltyUtils {
 	private static final String DG_PRODUCT_SUFFIX = "DG";
 	private static final String FLM_PRODUCT_SUFFIX = "FLM";

@@ -44,5 +44,7 @@ public class Bills {
 	private Long penaltyInterest;
 	private Long penaltyPrincipal;
 	private String accountOfficer;
-	private String autoDebet;
+	private String kios;
+	private Long titipan;
+	private Long fixedInterest;
 }

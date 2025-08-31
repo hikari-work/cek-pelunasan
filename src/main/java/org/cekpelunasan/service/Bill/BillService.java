@@ -142,6 +142,9 @@ public class BillService {
 			.penaltyInterest(parseLong(line[24]))
 			.penaltyPrincipal(parseLong(line[25]))
 			.accountOfficer(line[26])
+			.kios(line[28])
+			.titipan(parseLong(line[29]))
+			.fixedInterest(parseLong(line[30]))
 			.build();
 	}
 
@@ -149,7 +152,6 @@ public class BillService {
 		try {
 			return Long.parseLong(value.trim());
 		} catch (NumberFormatException e) {
-			log.warn("Failed to parse long from '{}'", value);
 			return 0L;
 		}
 	}

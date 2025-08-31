@@ -71,6 +71,7 @@ public class TagihWithNameCommandHandler implements CommandProcessor {
 	}
 
 	private void sendMessageWithBranchSelection(long chatId, String name, Set<String> branches, TelegramClient telegramClient) {
+		log.info("Data ditemukan dalam beberapa cabang: {}", branches);
 		InlineKeyboardMarkup markup = new ButtonListForSelectBranch().dynamicSelectBranch(branches, name);
 		sendMessage(chatId, "⚠ *Terdapat lebih dari satu cabang dengan nama yang sama*\n\nSilakan pilih cabang yang sesuai:", telegramClient, markup);
 	}

@@ -2,7 +2,6 @@ package org.cekpelunasan.service.whatsapp.payment;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.dto.InvoiceResponse;
-import org.cekpelunasan.dto.SendMessageResponse;
 import org.cekpelunasan.entity.Payment;
 import org.cekpelunasan.service.payment.PaymentService;
 import org.cekpelunasan.utils.RupiahFormatUtils;
@@ -74,17 +73,21 @@ public class SchedulerPaymentCheck {
 				Map<String, Object> body = new HashMap<>();
 				body.put("phone", payment.getUser());
 				body.put("message", String.format(
-					"🎉 *PEMBAYARAN BERHASIL!* 🎉\n\n" +
-						"✅ *Status:* Terverifikasi & Diterima\n" +
-						"💰 *Jumlah:* %s\n" +
-						"🆔 *Invoice:* `%s`\n" +
-						"📅 *Waktu:* %s\n\n" +
-						"🙏 *Terima kasih atas pembayaran Anda!*\n" +
-						"Transaksi Anda telah berhasil diproses.\n\n" +
-						"📱 Simpan pesan ini sebagai referensi",
+					"""
+						🎉 *PEMBAYARAN BERHASIL!* 🎉
+						
+						✅ *Status:* Terverifikasi & Diterima
+						💰 *Jumlah:* %s
+						🆔 *Invoice:* `%s`
+						📅 *Waktu:* %s
+						
+						🙏 *Terima kasih atas pembayaran Anda!*
+						Transaksi Anda telah berhasil diproses.
+						
+						📱 Simpan pesan ini sebagai referensi""",
 					rupiahFormatUtils.formatRupiah(payment.getAmount()),
 					payment.getId(),
-					LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+					LocalDateTime.now().plusHours(7).format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
 				));
 				HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, notification);
 				paymentService.deletePayment(payment.getId());

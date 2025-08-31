@@ -23,6 +23,7 @@ import java.util.concurrent.Future;
 
 @Slf4j
 @Service
+@Deprecated
 public class RepaymentService {
 
 	private final RepaymentRepository repaymentRepository;
@@ -102,7 +103,7 @@ public class RepaymentService {
 			log.info("✅ Upload selesai: ~{} data disimpan", savedCount);
 
 		} catch (Exception e) {
-			log.warn("❌ Gagal upload CSV: {}", e.getMessage());
+			log.warn("❌ Gagal upload CSV: {}", e.getMessage(), e);
 		} finally {
 			executor.shutdown();
 		}

@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @Component
+@Deprecated
 public class RepaymentCalculator {
 
 	public String calculate(Repayment repayment, Map<String, Long> penaltyMap) {

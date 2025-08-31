@@ -12,6 +12,7 @@ import java.util.List;
 
 
 @Repository
+@Deprecated
 public interface RepaymentRepository extends JpaRepository<Repayment, Long> {
 
 	@Modifying
@@ -20,7 +21,7 @@ public interface RepaymentRepository extends JpaRepository<Repayment, Long> {
 
 	Page<Repayment> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
-	Boolean existsByNameIsLikeIgnoreCase(String name);
+
 	List<Repayment> findByCustomerIdContainingIgnoreCaseOrNameContainingIgnoreCase(
 		String customerId, String name, Pageable pageable
 	);

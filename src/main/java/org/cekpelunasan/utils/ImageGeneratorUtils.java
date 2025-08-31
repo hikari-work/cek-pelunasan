@@ -14,6 +14,7 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
+@Deprecated
 public class ImageGeneratorUtils {
 
 	private static final int WIDTH = 1000;

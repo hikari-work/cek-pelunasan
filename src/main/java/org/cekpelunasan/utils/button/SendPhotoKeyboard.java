@@ -8,6 +8,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public class SendPhotoKeyboard {
 
 	public InlineKeyboardMarkup sendPhotoButton(Long query) {

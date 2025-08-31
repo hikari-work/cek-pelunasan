@@ -17,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 
 @Component
 @RequiredArgsConstructor
+@Deprecated
 public class PelunasanCallbackHandler implements CallbackProcessor {
 
 	private final RepaymentService repaymentService;

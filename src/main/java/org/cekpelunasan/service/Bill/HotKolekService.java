@@ -25,18 +25,6 @@ public class HotKolekService {
 	private final PayingRepository payingRepository;
     private final BillsRepository billsRepository;
 
-    @Transactional
-    public void savePaying(String spk) {
-        payingRepository.save(Paying.builder()
-                .id(spk)
-                .paid(true)
-            .build());
-    }
-    
-    @Transactional
-    public void deletePaying() {
-        payingRepository.deleteAll();
-    }
 
 	private String getMonth() {
 		YearMonth month = YearMonth.now();
@@ -76,6 +64,7 @@ public class HotKolekService {
         return bills;
     }
 
+	@Transactional
 	public void saveAllPaying(List<String> list) {
 		payingRepository.saveAll(list.stream().map(spk -> Paying.builder()
 			.id(spk)

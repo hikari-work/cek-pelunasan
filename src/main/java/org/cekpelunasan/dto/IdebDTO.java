@@ -13,7 +13,6 @@ public class IdebDTO {
 	public static class HeaderDTO {
 		private String idPermintaan;
 		private String kodeReferensiPengguna;
-		// dll.
 	}
 
 	@Data

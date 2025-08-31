@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 
 @Component
 @RequiredArgsConstructor
+@Deprecated
 public class PaginationPelunasanCallbackHandler implements CallbackProcessor {
 
 	private final RepaymentService repaymentService;

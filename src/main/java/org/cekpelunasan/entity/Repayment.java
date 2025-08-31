@@ -5,6 +5,8 @@ import lombok.*;
 
 import java.util.Date;
 
+
+@Deprecated
 @Getter
 @Setter
 @AllArgsConstructor
