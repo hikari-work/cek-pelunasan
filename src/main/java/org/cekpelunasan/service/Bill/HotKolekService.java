@@ -29,12 +29,12 @@ public class HotKolekService {
 
 	private String getMonth() {
 		YearMonth month = YearMonth.now();
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-yyyy");
 		return formatter.format(month);
 	}
 	private String getLastMonth() {
 		YearMonth month = YearMonth.now().minusMonths(1);
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-yyyy");
 		return formatter.format(month);
 	}
     

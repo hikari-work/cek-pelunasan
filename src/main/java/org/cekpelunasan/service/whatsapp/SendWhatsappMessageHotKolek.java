@@ -136,11 +136,11 @@ public class SendWhatsappMessageHotKolek {
 //		CompletableFuture<List<Bills>> dueDate1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1173"));
 
 		CompletableFuture<List<Bills>> minimalPay1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1075").stream()
-			.filter(branch -> branch.getKios().isEmpty()).toList());
+			.filter(branch -> branch.getKios().equals("")).toList());
 		CompletableFuture<List<Bills>> firstPay1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1075").stream()
-			.filter(branch -> branch.getKios().isEmpty()).toList());
+			.filter(branch -> branch.getKios().equals("")).toList());
 		CompletableFuture<List<Bills>> dueDate1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1075")
-			.stream().filter(branch -> branch.getKios().isEmpty()).toList());
+			.stream().filter(branch -> branch.getKios().equals("")).toList());
 
 		CompletableFuture<List<Bills>> minimalPay1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPayment("1075").stream()
 			.filter(branch -> branch.getKios().equals("KLJ")).toList());
