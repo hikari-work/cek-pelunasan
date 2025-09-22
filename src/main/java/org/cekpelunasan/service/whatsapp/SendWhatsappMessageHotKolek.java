@@ -128,20 +128,23 @@ public class SendWhatsappMessageHotKolek {
 			new KiosConfig("1075", "KLJ"),
 			new KiosConfig("1075", "KJB")
 		);
+		log.info("Generating Method of All Data");
 
 		List<CompletableFuture<BillsData>> futures = kiosConfigs.stream()
 			.map(this::fetchBillsDataAsync)
 			.toList();
+
 
 		return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
 			.thenApply(v -> {
 				List<BillsData> results = futures.stream()
 					.map(CompletableFuture::join)
 					.toList();
-
+				log.info("Generated");
 				BillsData data1075 = results.get(0);
 				BillsData data1172 = results.get(1);
 				BillsData data1173 = results.get(2);
+				log.info("Generated");
 				return generateMessageText.generateMessageText(
 					data1075.minimalPay(), data1075.firstPay(), data1075.dueDate(),
 					data1172.minimalPay(), data1172.firstPay(), data1172.dueDate(),
@@ -152,6 +155,7 @@ public class SendWhatsappMessageHotKolek {
 	}
 
 	private CompletableFuture<BillsData> fetchBillsDataAsync(KiosConfig config) {
+		log.info("Starting generate");
 		String code = config.code();
 		String kiosFilter = config.kiosFilter();
 
@@ -163,7 +167,7 @@ public class SendWhatsappMessageHotKolek {
 
 		CompletableFuture<List<Bills>> dueDate = CompletableFuture
 			.supplyAsync(() -> filterBills(hotKolekService.findDueDate(code), kiosFilter));
-
+		log.info("Fetching From Database");
 		return CompletableFuture.allOf(minimalPay, firstPay, dueDate)
 			.thenApply(v -> new BillsData(
 				minimalPay.join(),
