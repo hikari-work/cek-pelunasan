@@ -123,17 +123,26 @@ public class SendWhatsappMessageHotKolek {
 	}
 
 	public String generateNonBlocking() {
-		CompletableFuture<List<Bills>> minimalPay1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1075"));
-		CompletableFuture<List<Bills>> firstPay1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1075"));
-		CompletableFuture<List<Bills>> dueDate1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1075"));
+		CompletableFuture<List<Bills>> minimalPay1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1075")
+			.stream().filter(kios -> kios.getKios().isEmpty()).toList());
+		CompletableFuture<List<Bills>> firstPay1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1075")
+			.stream().filter(kios -> kios.getKios().isEmpty()).toList());
+		CompletableFuture<List<Bills>> dueDate1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1075")
+			.stream().filter(kios -> kios.getKios().isEmpty()).toList());
 
-		CompletableFuture<List<Bills>> minimalPay1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1172"));
-		CompletableFuture<List<Bills>> firstPay1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1172"));
-		CompletableFuture<List<Bills>> dueDate1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1172"));
+		CompletableFuture<List<Bills>> minimalPay1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1075")
+			.stream().filter(kios -> kios.getKios().equals("KLJ")).toList());
+		CompletableFuture<List<Bills>> firstPay1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1075")
+			.stream().filter(kios -> kios.getKios().equals("KLJ")).toList());
+		CompletableFuture<List<Bills>> dueDate1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1075")
+			.stream().filter(kios -> kios.getKios().equals("KLJ")).toList());
 
-		CompletableFuture<List<Bills>> minimalPay1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1173"));
-		CompletableFuture<List<Bills>> firstPay1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1173"));
-		CompletableFuture<List<Bills>> dueDate1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1173"));
+		CompletableFuture<List<Bills>> minimalPay1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1075")
+			.stream().filter(kios -> kios.getKios().equals("KJB")).toList());
+		CompletableFuture<List<Bills>> firstPay1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1075")
+			.stream().filter(kios -> kios.getKios().equals("KJB")).toList());
+		CompletableFuture<List<Bills>> dueDate1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1075")
+			.stream().filter(kios -> kios.getKios().equals("KJB")).toList());
 
 		return CompletableFuture.allOf(
 			minimalPay1075, firstPay1075, dueDate1075,
