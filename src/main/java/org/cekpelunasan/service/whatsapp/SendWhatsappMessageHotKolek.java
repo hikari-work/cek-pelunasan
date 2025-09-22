@@ -123,41 +123,68 @@ public class SendWhatsappMessageHotKolek {
 	}
 
 	public String generateNonBlocking() {
-		CompletableFuture<List<Bills>> minimalPay1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1075")
-			.stream().filter(kios -> kios.getKios().isEmpty()).toList());
-		CompletableFuture<List<Bills>> firstPay1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1075")
-			.stream().filter(kios -> kios.getKios().isEmpty()).toList());
-		CompletableFuture<List<Bills>> dueDate1075 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1075")
-			.stream().filter(kios -> kios.getKios().isEmpty()).toList());
+		List<KiosConfig> kiosConfigs = List.of(
+			new KiosConfig("1075", ""),
+			new KiosConfig("1075", "KLJ"),
+			new KiosConfig("1075", "KJB")
+		);
 
-		CompletableFuture<List<Bills>> minimalPay1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1075")
-			.stream().filter(kios -> kios.getKios().equals("KLJ")).toList());
-		CompletableFuture<List<Bills>> firstPay1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1075")
-			.stream().filter(kios -> kios.getKios().equals("KLJ")).toList());
-		CompletableFuture<List<Bills>> dueDate1172 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1075")
-			.stream().filter(kios -> kios.getKios().equals("KLJ")).toList());
+		List<CompletableFuture<BillsData>> futures = kiosConfigs.stream()
+			.map(this::fetchBillsDataAsync)
+			.toList();
 
-		CompletableFuture<List<Bills>> minimalPay1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findMinimalPay("1075")
-			.stream().filter(kios -> kios.getKios().equals("KJB")).toList());
-		CompletableFuture<List<Bills>> firstPay1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findFirstPay("1075")
-			.stream().filter(kios -> kios.getKios().equals("KJB")).toList());
-		CompletableFuture<List<Bills>> dueDate1173 = CompletableFuture.supplyAsync(() -> hotKolekService.findDueDate("1075")
-			.stream().filter(kios -> kios.getKios().equals("KJB")).toList());
+		return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+			.thenApply(v -> {
+				List<BillsData> results = futures.stream()
+					.map(CompletableFuture::join)
+					.toList();
 
-		return CompletableFuture.allOf(
-			minimalPay1075, firstPay1075, dueDate1075,
-			minimalPay1172, firstPay1172, dueDate1172,
-			minimalPay1173, firstPay1173, dueDate1173
-		).thenApply(v -> {
-			try {
+				BillsData data1075 = results.get(0);
+				BillsData data1172 = results.get(1);
+				BillsData data1173 = results.get(2);
 				return generateMessageText.generateMessageText(
-					minimalPay1075.get(), firstPay1075.get(), dueDate1075.get(),
-					minimalPay1172.get(), firstPay1172.get(), dueDate1172.get(),
-					minimalPay1173.get(), firstPay1173.get(), dueDate1173.get()
+					data1075.minimalPay(), data1075.firstPay(), data1075.dueDate(),
+					data1172.minimalPay(), data1172.firstPay(), data1172.dueDate(),
+					data1173.minimalPay(), data1173.firstPay(), data1173.dueDate()
 				);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		}).join();
+			})
+			.join();
 	}
+
+	private CompletableFuture<BillsData> fetchBillsDataAsync(KiosConfig config) {
+		String code = config.code();
+		String kiosFilter = config.kiosFilter();
+
+		CompletableFuture<List<Bills>> minimalPay = CompletableFuture
+			.supplyAsync(() -> filterBills(hotKolekService.findMinimalPay(code), kiosFilter));
+
+		CompletableFuture<List<Bills>> firstPay = CompletableFuture
+			.supplyAsync(() -> filterBills(hotKolekService.findFirstPay(code), kiosFilter));
+
+		CompletableFuture<List<Bills>> dueDate = CompletableFuture
+			.supplyAsync(() -> filterBills(hotKolekService.findDueDate(code), kiosFilter));
+
+		return CompletableFuture.allOf(minimalPay, firstPay, dueDate)
+			.thenApply(v -> new BillsData(
+				minimalPay.join(),
+				firstPay.join(),
+				dueDate.join()
+			));
+	}
+
+	private List<Bills> filterBills(List<Bills> bills, String kiosFilter) {
+		return bills.stream()
+			.filter(bill -> kiosFilter.isEmpty() ?
+				bill.getKios().isEmpty() :
+				bill.getKios().equals(kiosFilter))
+			.toList();
+	}
+
+	private record KiosConfig(String code, String kiosFilter) {}
+
+	private record BillsData(
+		List<Bills> minimalPay,
+		List<Bills> firstPay,
+		List<Bills> dueDate
+	) {}
 }
