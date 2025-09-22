@@ -35,15 +35,6 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 		""")
 	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(Long minInterest, Long minPrincipal, String branch, Pageable pageable);
 
-
-
-	@Query("""
-		SELECT b FROM Bills b
-		WHERE b.kios = :branch
-		AND (b.minInterest + b.minPrincipal) > 0
-		""")
-	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndBranchLocation(Long minInterest, Long minPrincipal, String branch, Pageable pageable);
-
 	@Query("""
 		SELECT b FROM Bills b
 		WHERE b.accountOfficer = :accountOfficer
@@ -51,13 +42,6 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 		""")
 	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndAccountOfficer(Long minInterest, Long minPrincipal, String accountOfficer, Pageable pageable);
 
-
-	@Query("""
-		SELECT b FROM Bills b
-		WHERE b.branch = :branch AND b.kios = ''
-		AND (b.minInterest + b.minPrincipal) > 0
-		""")
-	Page<Bills> findMinimalPaymentForInduk(Long minInterest, Long minPrincipal, String branch, Pageable pageable);
 
 	@Query("SELECT DISTINCT b.branch FROM Bills b")
 	Set<String> findDistinctBranchByBrach();
