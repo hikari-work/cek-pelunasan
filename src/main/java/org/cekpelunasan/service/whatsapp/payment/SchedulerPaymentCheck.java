@@ -47,7 +47,7 @@ public class SchedulerPaymentCheck {
 	private final PaymentService paymentService;
 	private final RestTemplateBuilder restTemplateBuilder;
 
-	@Scheduled(fixedRate = 10 * 1000)
+
 	public void checkPayment() {
 		List<Payment> allPayment = paymentService.getAllPayment();
 		allPayment.parallelStream().forEach(payment -> {

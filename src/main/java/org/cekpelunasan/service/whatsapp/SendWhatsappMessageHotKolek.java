@@ -184,6 +184,7 @@ public class SendWhatsappMessageHotKolek {
 
 	private record BillsData(
 		List<Bills> minimalPay,
+
 		List<Bills> firstPay,
 		List<Bills> dueDate
 	) {}
