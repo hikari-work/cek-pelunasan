@@ -123,28 +123,30 @@ public class SendWhatsappMessageHotKolek {
 	}
 
 	public String generateNonBlocking() {
+		// Konfigurasi untuk setiap kategori
 		List<KiosConfig> kiosConfigs = List.of(
-			new KiosConfig("1075", ""),
-			new KiosConfig("1075", "KLJ"),
-			new KiosConfig("1075", "KJB")
+			new KiosConfig("1075", ""),     // Empty kios -> 1075
+			new KiosConfig("1075", "KLJ"),  // KLJ kios -> 1172
+			new KiosConfig("1075", "KJB")   // KJB kios -> 1173
 		);
-		log.info("Generating Method of All Data");
 
+		// Menjalankan semua operasi secara paralel
 		List<CompletableFuture<BillsData>> futures = kiosConfigs.stream()
 			.map(this::fetchBillsDataAsync)
 			.toList();
 
-
+		// Menunggu semua operasi selesai dan mengumpulkan hasilnya
 		return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
 			.thenApply(v -> {
 				List<BillsData> results = futures.stream()
 					.map(CompletableFuture::join)
 					.toList();
-				log.info("Generated");
-				BillsData data1075 = results.get(0);
-				BillsData data1172 = results.get(1);
-				BillsData data1173 = results.get(2);
-				log.info("Generated");
+
+				// Ekstrak data sesuai urutan untuk menjaga kompatibilitas
+				BillsData data1075 = results.get(0);  // Empty kios
+				BillsData data1172 = results.get(1);  // KLJ kios
+				BillsData data1173 = results.get(2);  // KJB kios
+
 				return generateMessageText.generateMessageText(
 					data1075.minimalPay(), data1075.firstPay(), data1075.dueDate(),
 					data1172.minimalPay(), data1172.firstPay(), data1172.dueDate(),
@@ -155,10 +157,10 @@ public class SendWhatsappMessageHotKolek {
 	}
 
 	private CompletableFuture<BillsData> fetchBillsDataAsync(KiosConfig config) {
-		log.info("Starting generate");
 		String code = config.code();
 		String kiosFilter = config.kiosFilter();
 
+		// Menjalankan 3 operasi secara paralel untuk setiap kios
 		CompletableFuture<List<Bills>> minimalPay = CompletableFuture
 			.supplyAsync(() -> filterBills(hotKolekService.findMinimalPay(code), kiosFilter));
 
@@ -167,7 +169,8 @@ public class SendWhatsappMessageHotKolek {
 
 		CompletableFuture<List<Bills>> dueDate = CompletableFuture
 			.supplyAsync(() -> filterBills(hotKolekService.findDueDate(code), kiosFilter));
-		log.info("Fetching From Database");
+
+		// Menggabungkan hasil dari 3 operasi
 		return CompletableFuture.allOf(minimalPay, firstPay, dueDate)
 			.thenApply(v -> new BillsData(
 				minimalPay.join(),
@@ -184,6 +187,7 @@ public class SendWhatsappMessageHotKolek {
 			.toList();
 	}
 
+	// Helper classes
 	private record KiosConfig(String code, String kiosFilter) {}
 
 	private record BillsData(
