@@ -110,6 +110,7 @@ public class GeneratePDF {
             	printOptions.setPageRanges("1-");
             	printOptions.setOrientation(PrintOptions.Orientation.LANDSCAPE);
 				printOptions.setPageMargin(margin);
+
             
             	log.info("Generating PDF...");
             	Pdf pdf = ((PrintsPage) driver).print(printOptions);
@@ -143,6 +144,13 @@ public class GeneratePDF {
 		options.addArguments("--no-sandbox");
 		options.addArguments("--disable-dev-shm-usage");
 		options.addArguments("--user-data-dir=/tmp/chrome-" + UUID.randomUUID());
+		Path tempProfile = null;
+		try {
+			tempProfile = Files.createTempDirectory("chrome-profile-");
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		options.addArguments("--user-data-dir=" + tempProfile.toAbsolutePath().toString());
 
 		HashMap<String, Object> chromePrefs = new HashMap<>();
 		chromePrefs.put("printing.default_destination_selection_rules", "{\"kind\": \"local\", \"namePattern\": \"Save as PDF\"}");
