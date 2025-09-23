@@ -120,7 +120,7 @@ public class GeneratePDF {
             	log.info("WebDriver closed");
         	}
     	} catch (Exception e) {
-        	log.error("PDF generation with Selenium failed Due To Exception");
+        	log.error("PDF generation with Selenium failed Due To Exception", e);
         	return new byte[0];
     	} finally {
         	try {
