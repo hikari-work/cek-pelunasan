@@ -127,6 +127,7 @@ public class GeneratePDF {
             	if (tempHtmlFile != null) {
                 	Files.deleteIfExists(tempHtmlFile);
             	}
+				getWebDriver().close();
         	} catch (IOException e) {
             	log.warn("Failed to delete temporary HTML file");
         	}
