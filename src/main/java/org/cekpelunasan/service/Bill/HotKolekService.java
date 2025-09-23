@@ -72,4 +72,14 @@ public class HotKolekService {
 			.build())
 			.toList());
 	}
+	@Transactional
+	public void deleteAllPaying() {
+		payingRepository.deleteAll();
+	}
+
+	@Transactional
+	public void deleteAllPaying(List<String> spkList) {
+		payingRepository.deleteAllById(spkList);
+
+	}
 }

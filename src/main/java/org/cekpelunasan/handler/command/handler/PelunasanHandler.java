@@ -75,7 +75,6 @@ public class PelunasanHandler implements CommandProcessor {
 			"• Bunga        : Rp " + formatCurrency(pelunasanDTO.getInterest()) + "\n" +
 			"• Penalty      : Rp " + formatCurrency(pelunasanDTO.getPenalty()) + "\n" +
 			"• Denda        : Rp " + formatCurrency(pelunasanDTO.getDenda()) + "\n" +
-			"  " + "-".repeat(25) + "\n" +
 			"  TOTAL        : Rp " + formatCurrency(pelunasanDTO.getTotal()) + "\n";
 	}
 

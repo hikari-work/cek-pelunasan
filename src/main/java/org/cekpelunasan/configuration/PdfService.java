@@ -133,7 +133,6 @@ public class PdfService {
 		return "image/jpeg"; // default
 	}
 
-	// Method tambahan untuk debug - panggil saat startup
 	@PostConstruct
 	public void debugImageResources() {
 		log.info("=== Debugging Image Resources ===");
