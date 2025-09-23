@@ -1,11 +1,13 @@
 package org.cekpelunasan.configuration;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 
@@ -32,65 +34,78 @@ public class PdfService {
 
 				if (!src.startsWith("http") && !src.startsWith("data:")) {
 					try {
-						// Coba beberapa kemungkinan path
-						String[] possiblePaths = {
-							"classpath:images/" + src,           // Tanpa slash pertama
-							"classpath:/images/" + src,          // Dengan slash pertama
-							"classpath:static/images/" + src,    // Di folder static
-							"classpath:/static/images/" + src    // Di folder static dengan slash
-						};
+						// Untuk Spring Boot JAR, gunakan path tanpa leading slash
+						String resourcePath = "images/" + src;
 
-						org.springframework.core.io.Resource resource = null;
-						String foundPath = null;
+						// Gunakan ClassPathResource untuk Spring Boot compatibility
+						ClassPathResource resource = new ClassPathResource(resourcePath);
 
-						// Cari resource yang ada
-						for (String path : possiblePaths) {
-							org.springframework.core.io.Resource tempResource = resourceLoader.getResource(path);
-							if (tempResource.exists()) {
-								resource = tempResource;
-								foundPath = path;
-								break;
-							}
-						}
+						log.debug("Trying to load resource: {}", resourcePath);
+						log.debug("Resource exists: {}", resource.exists());
+						log.debug("Resource is readable: {}", resource.isReadable());
 
-						if (resource != null && resource.exists()) {
+						if (resource.exists() && resource.isReadable()) {
 							try (InputStream is = resource.getInputStream()) {
 								ByteArrayOutputStream out = new ByteArrayOutputStream();
 								byte[] buffer = new byte[4096];
 								int bytesRead;
-								log.info("Writing Images from path: {}", foundPath);
+								log.info("Writing Image: {} from {}", src, resourcePath);
 
 								while ((bytesRead = is.read(buffer)) != -1) {
 									out.write(buffer, 0, bytesRead);
 								}
 
 								byte[] imageBytes = out.toByteArray();
+								log.debug("Image size: {} bytes", imageBytes.length);
 
-								// Deteksi MIME type yang lebih akurat
-								String mimeType = detectMimeType(src, resource);
+								// Deteksi MIME type
+								String mimeType = detectMimeType(src);
 								String base64Image = Base64.getEncoder().encodeToString(imageBytes);
 								img.attr("src", "data:" + mimeType + ";base64," + base64Image);
-								log.debug("Embedded image: {} from {}", src, foundPath);
+								log.debug("Successfully embedded image: {}", src);
 							}
 						} else {
-							log.warn("Resource not found for any path. Tried paths for '{}': {}",
-								src, String.join(", ", possiblePaths));
+							log.warn("Resource not found or not readable: {}", resourcePath);
 
-							// Debug: List semua resources di classpath:/images/
+							// Debug additional info
 							try {
-								org.springframework.core.io.Resource imagesDir = resourceLoader.getResource("classpath:images/");
-								if (imagesDir.exists()) {
-									log.debug("Images directory exists: {}", imagesDir.getURI());
-								} else {
-									log.debug("Images directory does not exist");
-								}
+								log.debug("Resource URI: {}", resource.getURI());
+								log.debug("Resource description: {}", resource.getDescription());
 							} catch (Exception debugEx) {
-								log.debug("Error checking images directory: {}", debugEx.getMessage());
+								log.debug("Could not get resource details: {}", debugEx.getMessage());
+							}
+
+							// Alternatif: coba dengan ResourceUtils
+							try {
+								InputStream altStream = this.getClass().getClassLoader()
+									.getResourceAsStream(resourcePath);
+								if (altStream != null) {
+									log.info("Found resource using alternative method: {}", resourcePath);
+									try (InputStream is = altStream) {
+										ByteArrayOutputStream out = new ByteArrayOutputStream();
+										byte[] buffer = new byte[4096];
+										int bytesRead;
+
+										while ((bytesRead = is.read(buffer)) != -1) {
+											out.write(buffer, 0, bytesRead);
+										}
+
+										byte[] imageBytes = out.toByteArray();
+										String mimeType = detectMimeType(src);
+										String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+										img.attr("src", "data:" + mimeType + ";base64," + base64Image);
+										log.debug("Successfully embedded image using alternative method: {}", src);
+									}
+								} else {
+									log.warn("Resource not found with alternative method either: {}", resourcePath);
+								}
+							} catch (Exception altEx) {
+								log.warn("Alternative resource loading failed: {}", altEx.getMessage());
 							}
 						}
 
 					} catch (Exception e) {
-						log.warn("Failed to embed image '{}': {}", src, e.getMessage());
+						log.error("Failed to embed image '{}': {}", src, e.getMessage(), e);
 					}
 				}
 			}
@@ -102,34 +117,69 @@ public class PdfService {
 		}
 	}
 
-	private String detectMimeType(String filename, org.springframework.core.io.Resource resource) {
-		try {
-			// Gunakan Spring's method untuk detect content type
-			String contentType = URLConnection.guessContentTypeFromName(filename);
-			if (contentType != null) {
-				return contentType;
-			}
-
-			// Fallback berdasarkan ekstensi
-			String lowerFilename = filename.toLowerCase();
-			if (lowerFilename.endsWith(".png")) {
-				return "image/png";
-			} else if (lowerFilename.endsWith(".jpg") || lowerFilename.endsWith(".jpeg")) {
-				return "image/jpeg";
-			} else if (lowerFilename.endsWith(".gif")) {
-				return "image/gif";
-			} else if (lowerFilename.endsWith(".svg")) {
-				return "image/svg+xml";
-			} else if (lowerFilename.endsWith(".webp")) {
-				return "image/webp";
-			}
-
-			// Default fallback
+	private String detectMimeType(String filename) {
+		String lowerFilename = filename.toLowerCase();
+		if (lowerFilename.endsWith(".png")) {
+			return "image/png";
+		} else if (lowerFilename.endsWith(".jpg") || lowerFilename.endsWith(".jpeg")) {
 			return "image/jpeg";
-
-		} catch (Exception e) {
-			log.debug("Error detecting MIME type for {}: {}", filename, e.getMessage());
-			return "image/jpeg";
+		} else if (lowerFilename.endsWith(".gif")) {
+			return "image/gif";
+		} else if (lowerFilename.endsWith(".svg")) {
+			return "image/svg+xml";
+		} else if (lowerFilename.endsWith(".webp")) {
+			return "image/webp";
 		}
+		return "image/jpeg"; // default
+	}
+
+	// Method tambahan untuk debug - panggil saat startup
+	@PostConstruct
+	public void debugImageResources() {
+		log.info("=== Debugging Image Resources ===");
+
+		try {
+			// Cek dengan ClassPathResource
+			ClassPathResource logoResource = new ClassPathResource("images/logo.png");
+			log.info("ClassPathResource - exists: {}, readable: {}",
+				logoResource.exists(), logoResource.isReadable());
+
+			if (logoResource.exists()) {
+				log.info("ClassPathResource URI: {}", logoResource.getURI());
+				log.info("ClassPathResource description: {}", logoResource.getDescription());
+			}
+		} catch (Exception e) {
+			log.error("Error checking ClassPathResource: {}", e.getMessage());
+		}
+
+		try {
+			// Cek dengan ClassLoader
+			InputStream stream = this.getClass().getClassLoader()
+				.getResourceAsStream("images/logo.png");
+			if (stream != null) {
+				log.info("ClassLoader method found the resource");
+				stream.close();
+			} else {
+				log.warn("ClassLoader method did not find the resource");
+			}
+		} catch (Exception e) {
+			log.error("Error checking with ClassLoader: {}", e.getMessage());
+		}
+
+		try {
+			// Cek dengan ResourceLoader
+			org.springframework.core.io.Resource springResource =
+				resourceLoader.getResource("classpath:images/logo.png");
+			log.info("Spring ResourceLoader - exists: {}, readable: {}",
+				springResource.exists(), springResource.isReadable());
+
+			if (springResource.exists()) {
+				log.info("Spring ResourceLoader URI: {}", springResource.getURI());
+			}
+		} catch (Exception e) {
+			log.error("Error checking Spring ResourceLoader: {}", e.getMessage());
+		}
+
+		log.info("=== End Debug Image Resources ===");
 	}
 }
