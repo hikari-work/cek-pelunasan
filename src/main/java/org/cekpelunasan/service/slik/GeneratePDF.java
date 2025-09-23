@@ -140,17 +140,17 @@ public class GeneratePDF {
 		log.info("Set Up Webdriver....");
 		ChromeOptions options = new ChromeOptions();
 		options.addArguments("--headless=new");
-		options.addArguments("--disable-gpu");
 		options.addArguments("--no-sandbox");
+		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-dev-shm-usage");
-		options.addArguments("--user-data-dir=/tmp/chrome-" + UUID.randomUUID());
-		Path tempProfile;
+
+		Path tmpProfile;
 		try {
-			tempProfile = Files.createTempDirectory("chrome-profile-");
+			tmpProfile = Files.createTempDirectory("chrome-profile-");
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		options.addArguments("--user-data-dir=" + tempProfile.toAbsolutePath());
+		options.addArguments("--user-data-dir=" + tmpProfile.toAbsolutePath());
 
 		HashMap<String, Object> chromePrefs = new HashMap<>();
 		chromePrefs.put("printing.default_destination_selection_rules", "{\"kind\": \"local\", \"namePattern\": \"Save as PDF\"}");
