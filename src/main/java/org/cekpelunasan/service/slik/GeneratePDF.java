@@ -38,6 +38,7 @@ import org.openqa.selenium.print.PrintOptions;
 
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.UUID;
 
 
 @Component
@@ -141,6 +142,7 @@ public class GeneratePDF {
 		options.addArguments("--disable-gpu");
 		options.addArguments("--no-sandbox");
 		options.addArguments("--disable-dev-shm-usage");
+		options.addArguments("--user-data-dir=/tmp/chrome-" + UUID.randomUUID());
 
 		HashMap<String, Object> chromePrefs = new HashMap<>();
 		chromePrefs.put("printing.default_destination_selection_rules", "{\"kind\": \"local\", \"namePattern\": \"Save as PDF\"}");
