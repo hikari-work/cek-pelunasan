@@ -55,6 +55,13 @@ public class WebhookController {
 			throw new RuntimeException(e);
 		}
 		CompletableFuture.runAsync(() -> whatsappRouters.sendPelunasanOrTabungan(whatsappMessageDTO));
+		// TODO : New Command Executor
+
 		return ResponseEntity.ok("OK");
+	}
+
+	@PostMapping("/v2/whatsapp")
+	public ResponseEntity<String> whatsapp(@RequestBody String whatsappMessage) {
+		
 	}
 }

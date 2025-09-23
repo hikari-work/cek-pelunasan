@@ -3,15 +3,12 @@ package org.cekpelunasan.service.slik;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.configuration.PdfService;
-import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.openqa.selenium.Pdf;
 import org.openqa.selenium.PrintsPage;
-import org.openqa.selenium.print.PageMargin;
-import org.openqa.selenium.print.PageSize;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
@@ -32,13 +29,9 @@ import java.nio.file.Path;
 
 
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.print.PrintOptions;
 
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.UUID;
 
 
 @Component
@@ -47,6 +40,8 @@ public class GeneratePDF {
 
 	private static final Logger log = LoggerFactory.getLogger(GeneratePDF.class);
 	private final PdfService pdfService;
+	private final WebDriver driver;
+	private final PrintOptions printOptions;
 
 
 	public String sendBytesWithRestTemplate(byte[] fileBytes, String fileName, Boolean fasilitasAktif) {
@@ -94,24 +89,13 @@ public class GeneratePDF {
 
         	Files.writeString(tempHtmlFile, htmlContent);
         	log.info("HTML content written to temporary file");
-			WebDriver driver = getWebDriver();
+
 
 			try {
             	driver.get(tempHtmlFile.toUri().toString());
             	log.info("HTML loaded in Chrome Headless...");
             	log.info("Going To Generate PDT...");
             	Thread.sleep(1500);
-
-				PageMargin margin = new PageMargin(0.5F, 0.5F, 0.5F, 0.5F);
-				PageSize pageSize = new PageSize(29.7, 21);
-            	PrintOptions printOptions = new PrintOptions();
-            	printOptions.setBackground(true);
-				printOptions.setPageSize(pageSize);
-            	printOptions.setPageRanges("1-");
-            	printOptions.setOrientation(PrintOptions.Orientation.LANDSCAPE);
-				printOptions.setPageMargin(margin);
-
-            
             	log.info("Generating PDF...");
             	Pdf pdf = ((PrintsPage) driver).print(printOptions);
             	byte[] pdfBytes = Base64.getDecoder().decode(pdf.getContent());
@@ -133,33 +117,6 @@ public class GeneratePDF {
             	log.warn("Failed to delete temporary HTML file");
         	}
     	}
-	}
-
-	@NotNull
-	private static WebDriver getWebDriver() {
-		log.info("Set Up Webdriver....");
-		ChromeOptions options = new ChromeOptions();
-		options.addArguments("--headless=new");
-		options.addArguments("--no-sandbox");
-		options.addArguments("--disable-gpu");
-		options.addArguments("--disable-dev-shm-usage");
-
-		Path tmpProfile;
-		try {
-			tmpProfile = Files.createTempDirectory("chrome-profile-");
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		options.addArguments("--user-data-dir=" + tmpProfile.toAbsolutePath());
-
-		HashMap<String, Object> chromePrefs = new HashMap<>();
-		chromePrefs.put("printing.default_destination_selection_rules", "{\"kind\": \"local\", \"namePattern\": \"Save as PDF\"}");
-		chromePrefs.put("printing.print_preview_sticky_settings.appState",
-			"{\"recentDestinations\":[{\"id\":\"Save as PDF\",\"origin\":\"local\"}]," +
-			"\"selectedDestinationId\":\"Save as PDF\",\"version\":2," +
-			"\"isLandscapeEnabled\":true,\"isHeaderFooterEnabled\":false}");
-		options.setExperimentalOption("prefs", chromePrefs);
-		return new ChromeDriver(options);
 	}
 
 	private String removeButtonsDiv(String htmlContent) {
