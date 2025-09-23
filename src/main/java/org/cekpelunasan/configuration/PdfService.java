@@ -35,7 +35,7 @@ public class PdfService {
 						org.springframework.core.io.Resource resource = resourceLoader.getResource(resourcePath);
 
 						if (!resource.exists()) {
-							resourcePath = "classpath:static/images/" + src;
+							resourcePath = "classpath:images/" + src;
 							resource = resourceLoader.getResource(resourcePath);
 						}
 
