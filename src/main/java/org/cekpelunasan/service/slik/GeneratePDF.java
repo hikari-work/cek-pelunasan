@@ -102,7 +102,6 @@ public class GeneratePDF {
             	log.info("PDF generated successfully");
             	return pdfBytes;
         	} finally {
-            	driver.quit();
             	log.info("WebDriver closed");
         	}
     	} catch (Exception e) {
