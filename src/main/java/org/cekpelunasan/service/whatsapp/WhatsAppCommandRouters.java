@@ -1,121 +1,141 @@
 package org.cekpelunasan.service.whatsapp;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.dto.whatsapp.send.*;
 import org.cekpelunasan.dto.whatsapp.webhook.WhatsAppWebhookDTO;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.service.Bill.HotKolekService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class WhatsAppCommandRouters {
 
-	private static final Logger log = LoggerFactory.getLogger(WhatsAppCommandRouters.class);
+	private static final String COMMAND_PREFIX = ".";
+	private static final String HOT_KOLEK_PATTERN = "^\\.\\d{12}(?:\\s\\d{12})*$";
+	private static final String FLUSH_COMMAND = ".flush";
+	private static final String SPK_NUMBER_PATTERN = "^\\d{12}$";
+	private static final String GROUP_SUFFIX = "@g.us";
+	private static final String INDIVIDUAL_SUFFIX = "@s.whatsapp.net";
+
 	private final GenerateMessageText generateMessageText;
 	private final HotKolekService hotKolekService;
 	private final WhatsAppSender whatsAppSender;
-	private final ObjectMapper objectMapper;
+
 	@Value("${admin.whatsapp}")
 	private String adminWhatsapp;
 
 	public boolean isWhatsappCommand(WhatsAppWebhookDTO dto) {
-		return dto.getMessage().getText().startsWith(".");
+		return dto.getMessage() != null
+			&& dto.getMessage().getText() != null
+			&& dto.getMessage().getText().startsWith(COMMAND_PREFIX);
 	}
-
 
 	public void whatsappCommandRouter(WhatsAppWebhookDTO dto) {
-		if (dto.getMessage() == null) {
+		if (!isValidMessage(dto)) {
 			return;
 		}
+
 		String text = dto.getMessage().getText();
-		if (text == null) {
-			return;
-		}
-		log.info("Received from={} id={}", dto.getCleanChatId(), dto.getMessage().getId());
+		log.info("Received command from={} id={}", dto.getCleanChatId(), dto.getMessage().getId());
 
-		if (!isWhatsappCommand(dto)) {
-			return;
-		}
-
-		boolean isGroupChat = dto.isGroupChat();
-
-		if (text.startsWith(".flush")) {
-			flushKolek(dto);
+		if (text.startsWith(FLUSH_COMMAND)) {
+			handleFlushCommand(dto);
+		} else if (isValidHotKolekCommand(text)) {
+			log.info("Valid Hot Kolek Service, isGroup={}", dto.isGroupChat());
+			handleHotKolekCommand(dto);
 		} else {
-			String pattern = "^\\.\\d{12}(?:\\s\\d{12})*$";
-			Pattern pattern1 = Pattern.compile(pattern);
-			Matcher matcher = pattern1.matcher(text);
-			if (matcher.matches()) {
-				log.info("Valid Hot Kolek Service");
-				log.info("Is Group Message {}", isGroupChat);
-				sendHotKolekMessage(dto, isGroupChat);
-			} else {
-				log.info("Invalid Hot Kolek Service");
-			}
+			log.info("Invalid command format: {}", text);
 		}
 	}
 
-	public void sendHotKolekMessage(WhatsAppWebhookDTO dto, boolean isGroup) {
-		log.info("Generating Non Blocking Message");
+	private boolean isValidMessage(WhatsAppWebhookDTO dto) {
+		return dto.getMessage() != null && dto.getMessage().getText() != null;
+	}
+
+	private boolean isValidHotKolekCommand(String text) {
+		return Pattern.matches(HOT_KOLEK_PATTERN, text);
+	}
+
+	private void handleHotKolekCommand(WhatsAppWebhookDTO dto) {
 		try {
-			String chatId = isGroup ? dto.getCleanChatId() + "@g.us" : dto.getCleanChatId() + "@s.whatsapp.net";
+			String chatId = buildChatId(dto);
 			String text = dto.getMessage().getText();
-			List<String> spkList = getAllSpk(text);
+
+			List<String> spkList = extractSpkNumbers(text);
 			hotKolekService.saveAllPaying(spkList);
-			String messageText = generateNonBlocking();
+
+			sendReaction(dto, chatId);
+			sendHotKolekResponse(dto, chatId);
+
+		} catch (Exception e) {
+			log.error("Error in handleHotKolekCommand for chat: {}", dto.getCleanChatId(), e);
+		}
+	}
+
+	private String buildChatId(WhatsAppWebhookDTO dto) {
+		String suffix = dto.isGroupChat() ? GROUP_SUFFIX : INDIVIDUAL_SUFFIX;
+		return dto.getCleanChatId() + suffix;
+	}
+
+	private List<String> extractSpkNumbers(String messageText) {
+		List<String> spkNumbers = new ArrayList<>();
+		String[] tokens = messageText.trim().split("\\s+");
+
+		for (String token : tokens) {
+			String cleanToken = token.startsWith(COMMAND_PREFIX) ? token.substring(1) : token;
+			if (cleanToken.matches(SPK_NUMBER_PATTERN)) {
+				spkNumbers.add(cleanToken);
+			}
+		}
+		return spkNumbers;
+	}
+
+	private void sendReaction(WhatsAppWebhookDTO dto, String chatId) {
+		try {
 			MessageReactionDTO reactionDTO = new MessageReactionDTO("🙏");
 			reactionDTO.setMessageId(dto.getMessage().getId());
 			reactionDTO.setPhone(chatId);
-			String reaction = whatsAppSender.buildUrl(TypeMessage.REACTION);
-			whatsAppSender.request(reaction, reactionDTO);
+
+			String reactionUrl = whatsAppSender.buildUrl(TypeMessage.REACTION);
+			whatsAppSender.request(reactionUrl, reactionDTO);
+		} catch (Exception e) {
+			log.warn("Failed to send reaction to {}", chatId, e);
+		}
+	}
+
+	private void sendHotKolekResponse(WhatsAppWebhookDTO dto, String chatId) {
+		try {
+			String messageText = generateHotKolekMessage();
+
 			SendTextMessageDTO sendTextMessageDTO = new SendTextMessageDTO();
 			sendTextMessageDTO.setMessage(messageText);
 			sendTextMessageDTO.setReplyMessageId(dto.getMessage().getId());
 			sendTextMessageDTO.setPhone(chatId);
 
 			String url = whatsAppSender.buildUrl(TypeMessage.TEXT);
-			log.info(">>> SENDING TEXT via WhatsAppSender, from={} and pushname={}", text, dto.getPushname());
 			ResponseEntity<GenericResponseDTO> response = whatsAppSender.request(url, sendTextMessageDTO);
 
-			boolean success = whatsAppSender.isSuccess(response);
-			if (success) {
-				log.info("Sukses Sending Text ke {}", chatId);
+			if (whatsAppSender.isSuccess(response)) {
+				log.info("Successfully sent hot kolek message to {}", chatId);
 			} else {
-				log.warn("Gagal Sending Text ke {}", chatId);
+				log.warn("Failed to send hot kolek message to {}", chatId);
 			}
-
 		} catch (Exception e) {
-			log.error("Error in sendHotKolekMessage", e);
+			log.error("Error sending hot kolek response to {}", chatId, e);
 		}
 	}
 
-	private List<String> getAllSpk(String messageText) {
-		List<String> results = new ArrayList<>();
-		String[] tokens = messageText.trim().split("\\s+");
-		for (String token : tokens) {
-			String cleanToken = token.startsWith(".") ? token.substring(1) : token;
-			if (cleanToken.matches("^\\d{12}$")) {
-				results.add(cleanToken);
-			}
-		}
-		return results;
-	}
-
-	public String generateNonBlocking() {
+	private String generateHotKolekMessage() {
 		List<KiosConfig> kiosConfigs = List.of(
 			new KiosConfig("1075", ""),
 			new KiosConfig("1172", "KLJ"),
@@ -132,104 +152,116 @@ public class WhatsAppCommandRouters {
 					.map(CompletableFuture::join)
 					.toList();
 
-				BillsData data1075 = results.get(0);
-				BillsData data1172 = results.get(1);
-				BillsData data1173 = results.get(2);
-
 				return generateMessageText.generateMessageText(
-					data1075.minimalPay(), data1075.firstPay(), data1075.dueDate(),
-					data1172.minimalPay(), data1172.firstPay(), data1172.dueDate(),
-					data1173.minimalPay(), data1173.firstPay(), data1173.dueDate()
+					results.get(0).minimalPay(), results.get(0).firstPay(), results.get(0).dueDate(),
+					results.get(1).minimalPay(), results.get(1).firstPay(), results.get(1).dueDate(),
+					results.get(2).minimalPay(), results.get(2).firstPay(), results.get(2).dueDate()
 				);
 			})
 			.join();
 	}
 
 	private CompletableFuture<BillsData> fetchBillsDataAsync(KiosConfig config) {
-		String code = config.code();
-		String kiosFilter = config.kiosFilter();
-
 		CompletableFuture<List<Bills>> minimalPay = CompletableFuture
-			.supplyAsync(() -> filterBills(hotKolekService.findMinimalPay(code), kiosFilter));
+			.supplyAsync(() -> filterBillsByKios(hotKolekService.findMinimalPay(config.code()), config.kiosFilter()));
 
 		CompletableFuture<List<Bills>> firstPay = CompletableFuture
-			.supplyAsync(() -> filterBills(hotKolekService.findFirstPay(code), kiosFilter));
+			.supplyAsync(() -> filterBillsByKios(hotKolekService.findFirstPay(config.code()), config.kiosFilter()));
 
 		CompletableFuture<List<Bills>> dueDate = CompletableFuture
-			.supplyAsync(() -> filterBills(hotKolekService.findDueDate(code), kiosFilter));
+			.supplyAsync(() -> filterBillsByKios(hotKolekService.findDueDate(config.code()), config.kiosFilter()));
 
 		return CompletableFuture.allOf(minimalPay, firstPay, dueDate)
-			.thenApply(v -> new BillsData(
-				minimalPay.join(),
-				firstPay.join(),
-				dueDate.join()
-			));
+			.thenApply(v -> new BillsData(minimalPay.join(), firstPay.join(), dueDate.join()));
 	}
 
-	private List<Bills> filterBills(List<Bills> bills, String kiosFilter) {
+	private List<Bills> filterBillsByKios(List<Bills> bills, String kiosFilter) {
 		return bills.stream()
 			.filter(bill -> bill.getKios().equals(kiosFilter))
 			.toList();
 	}
 
-	// Helper classes
-	private record KiosConfig(String code, String kiosFilter) {}
-
-	private record BillsData(
-		List<Bills> minimalPay,
-
-		List<Bills> firstPay,
-		List<Bills> dueDate
-	) {}
-
-	private void flushKolek(WhatsAppWebhookDTO dto) {
-		boolean isGroupChat = dto.isGroupChat();
-		String chatId = isGroupChat ? dto.getCleanChatId() + "@g.us" : dto.getCleanChatId() + "@s.whatsapp.net";
-		String senderId = dto.getSenderId();
-		boolean authorized = dto.getFrom().contains(adminWhatsapp);
-		log.info("Received {}", dto.toString());
-		log.info("Sender Id is {}", senderId);
+	private void handleFlushCommand(WhatsAppWebhookDTO dto) {
+		String chatId = buildChatId(dto);
 		String quotedMessage = dto.getMessage().getQuotedMessage();
-		if (quotedMessage == null || quotedMessage.isEmpty()) {
-			log.info("Quoted Message Is Empty");
-			if (authorized) {
-				log.info("Admin Whatsapp");
-				hotKolekService.deleteAllPaying();
-				String messageId = dto.getMessage().getId();
-				String text = "Hot Kolek Sudah di reset untuk bulan ini. Silahkan hapus untuk nasabah yang sudah aman...";
-				MessageUpdateDTO update = new MessageUpdateDTO();
-				update.setPhone(chatId);
-				update.setMessageId(messageId);
-				update.setMessage(text);
-				String url = whatsAppSender.buildUrl(TypeMessage.UPDATE);
-				ResponseEntity<GenericResponseDTO> response = whatsAppSender.request(url, update);
-				log.info("Response is {} from server", response.getStatusCode());
-				return;
-			} else {
-				log.info("Not Admin Whatsapp");
-				SendTextMessageDTO sendTextMessageDTO = new SendTextMessageDTO();
-				sendTextMessageDTO.setMessage("Anda Tidak Diizinkan");
-				sendTextMessageDTO.setReplyMessageId(dto.getMessage().getId());
-				sendTextMessageDTO.setPhone(chatId);
-				String url = whatsAppSender.buildUrl(TypeMessage.TEXT);
-				ResponseEntity<GenericResponseDTO> response = whatsAppSender.request(url, sendTextMessageDTO);
-				log.info("Response is {}", response.getStatusCode());
-				return;
-			}
+
+		if (isEmptyQuotedMessage(quotedMessage)) {
+			handleFlushAllCommand(dto, chatId);
 		} else {
-			log.info("Quoted Message Is Not Empty");
-			String text = dto.getMessage().getQuotedMessage();
-			List<String> allSpk = getAllSpk(text);
-			hotKolekService.deleteAllPaying(allSpk);
+			handleFlushSpecificCommand(dto, chatId, quotedMessage);
+		}
+	}
+
+	private boolean isEmptyQuotedMessage(String quotedMessage) {
+		return quotedMessage == null || quotedMessage.isEmpty();
+	}
+
+	private void handleFlushAllCommand(WhatsAppWebhookDTO dto, String chatId) {
+		if (!isAuthorizedUser(dto)) {
+			sendUnauthorizedMessage(dto, chatId);
+			return;
+		}
+
+		try {
+			hotKolekService.deleteAllPaying();
+			updateMessageWithFlushConfirmation(dto, chatId);
+			log.info("Admin {} successfully flushed all hot kolek data", dto.getSenderId());
+		} catch (Exception e) {
+			log.error("Error flushing all hot kolek data", e);
+		}
+	}
+
+	private void handleFlushSpecificCommand(WhatsAppWebhookDTO dto, String chatId, String quotedMessage) {
+		try {
+			List<String> spkNumbers = extractSpkNumbers(quotedMessage);
+			hotKolekService.deleteAllPaying(spkNumbers);
+			sendTextMessage(dto, chatId, "Data sudah dihapus");
+			log.info("Successfully deleted specific SPK numbers: {}", spkNumbers);
+		} catch (Exception e) {
+			log.error("Error flushing specific hot kolek data", e);
+		}
+	}
+
+	private boolean isAuthorizedUser(WhatsAppWebhookDTO dto) {
+		return dto.getFrom().contains(adminWhatsapp);
+	}
+
+	private void sendUnauthorizedMessage(WhatsAppWebhookDTO dto, String chatId) {
+		sendTextMessage(dto, chatId, "Anda Tidak Diizinkan");
+		log.warn("Unauthorized flush attempt from: {}", dto.getSenderId());
+	}
+
+	private void updateMessageWithFlushConfirmation(WhatsAppWebhookDTO dto, String chatId) {
+		String confirmationText = "Hot Kolek Sudah di reset untuk bulan ini. Silahkan hapus untuk nasabah yang sudah aman...";
+
+		MessageUpdateDTO update = new MessageUpdateDTO();
+		update.setPhone(chatId);
+		update.setMessageId(dto.getMessage().getId());
+		update.setMessage(confirmationText);
+
+		String url = whatsAppSender.buildUrl(TypeMessage.UPDATE);
+		ResponseEntity<GenericResponseDTO> response = whatsAppSender.request(url, update);
+
+		log.info("Flush confirmation update response: {}", response.getStatusCode());
+	}
+
+	private void sendTextMessage(WhatsAppWebhookDTO dto, String chatId, String message) {
+		try {
 			SendTextMessageDTO sendTextMessageDTO = new SendTextMessageDTO();
-			sendTextMessageDTO.setMessage("Data sudah dihapus");
+			sendTextMessageDTO.setMessage(message);
 			sendTextMessageDTO.setReplyMessageId(dto.getMessage().getId());
 			sendTextMessageDTO.setPhone(chatId);
+
 			String url = whatsAppSender.buildUrl(TypeMessage.TEXT);
 			ResponseEntity<GenericResponseDTO> response = whatsAppSender.request(url, sendTextMessageDTO);
 
+			log.info("Text message sent with response: {}", response.getStatusCode());
+		} catch (Exception e) {
+			log.error("Error sending text message to {}", chatId, e);
 		}
-
 	}
 
+	private record KiosConfig(String code, String kiosFilter) {}
+
+	private record BillsData(List<Bills> minimalPay, List<Bills> firstPay, List<Bills> dueDate) {}
 }
