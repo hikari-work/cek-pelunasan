@@ -3,6 +3,8 @@ package org.cekpelunasan.service.whatsapp;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.dto.whatsapp.webhook.WhatsAppWebhookDTO;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
@@ -11,6 +13,10 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 @Slf4j
 public class Routers {
+
+	@Value("${admin.whatsapp}")
+	private String adminWhatsApp;
+
 	private static final String COMMAND_PREFIX = ".";
 	private static final String HOT_KOLEK_PATTERN = "^\\.\\d{12}(?:\\s\\d{12})*$";
 
@@ -18,11 +24,13 @@ public class Routers {
 	private final HandleKolekCommand handleKolekCommand;
 
 
+	@Async
 	public CompletableFuture<Void> handle(WhatsAppWebhookDTO command) {
 		if (!isText(command)) {
 			return CompletableFuture.completedFuture(null);
 		}
 		return CompletableFuture.runAsync(() -> {
+
 			log.info("Received command from={} id={}", command.getCleanChatId(), command.getMessage().getId());
 			if (!command.getMessage().getText().startsWith(COMMAND_PREFIX)) {
 				return;
@@ -35,10 +43,17 @@ public class Routers {
 			} else if (isSpkNumber(command)) {
 				// TODO : Pelunasan Service and Tabungan Service
 				return;
-			} else {
-				log.info("Invalid command format: {}", text);
+			} else if (text.startsWith(COMMAND_PREFIX + "t")){
+				// TODO : Tabungan Service
+			} else if (text.startsWith(COMMAND_PREFIX + "p")) {
+				// TODO : Pelunasan Service
+			} else if (text.startsWith(COMMAND_PREFIX + "min") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
+				// TODO : Send Minimal Bayar
+			} else if (text.startsWith(COMMAND_PREFIX + "jb") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
+				// TODO : Jatuh Bayar
+			} else if (text.startsWith(COMMAND_PREFIX + "reset") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
+				// TODO : Reset Hot Kolek
 			}
-
 		});
 	}
 

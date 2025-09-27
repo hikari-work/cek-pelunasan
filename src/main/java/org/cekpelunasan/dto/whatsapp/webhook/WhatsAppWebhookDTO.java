@@ -35,21 +35,20 @@ public class WhatsAppWebhookDTO {
 	private MediaDTO document;
 	private MediaDTO sticker;
 
-	// Special message types
+
 	private ReactionDTO reaction;
 	private LocationDTO location;
 	private ContactDTO contact;
 
-	// Event payloads
+
 	private ReceiptPayloadDTO payload;
 
-	// Special flags
+
 	@JsonProperty("view_once")
 	private Boolean viewOnce;
 
 	private Boolean forwarded;
 
-	// Revoke/Edit specific fields
 	@JsonProperty("revoked_chat")
 	private String revokedChat;
 
@@ -157,8 +156,6 @@ public class WhatsAppWebhookDTO {
 		if (sticker != null) return "sticker";
 		return null;
 	}
-
-	// Get clean phone number (without @s.whatsapp.net)
 	public String getCleanSenderId() {
 		if (senderId == null) return null;
 		return senderId.replace("@s.whatsapp.net", "");

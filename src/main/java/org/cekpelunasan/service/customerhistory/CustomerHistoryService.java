@@ -74,7 +74,6 @@ public class CustomerHistoryService {
 				}
 			}
 
-			// Sisa data terakhir
 			if (!currentBatch.isEmpty()) {
 				List<CustomerHistory> batchToSave = new ArrayList<>(currentBatch);
 				semaphore.acquire();
