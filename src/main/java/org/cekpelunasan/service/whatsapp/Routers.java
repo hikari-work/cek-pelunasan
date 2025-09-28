@@ -3,6 +3,10 @@ package org.cekpelunasan.service.whatsapp;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.dto.whatsapp.webhook.WhatsAppWebhookDTO;
+import org.cekpelunasan.service.whatsapp.hotkolek.HandleKolekCommand;
+import org.cekpelunasan.service.whatsapp.jatuhbayar.JatuhBayarService;
+import org.cekpelunasan.service.whatsapp.pelunasan.HandlerPelunasan;
+import org.cekpelunasan.service.whatsapp.tabungan.TabunganService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -14,6 +18,9 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class Routers {
 
+	private final HandlerPelunasan handlerPelunasan;
+	private final TabunganService tabunganService;
+	private final JatuhBayarService jatuhBayarService;
 	@Value("${admin.whatsapp}")
 	private String adminWhatsApp;
 
@@ -25,7 +32,9 @@ public class Routers {
 
 
 	@Async
+	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> handle(WhatsAppWebhookDTO command) {
+		log.info("Received command from={} id={} toString={}", command.getCleanChatId(), command.getMessage().getId(), command.toString());
 		if (!isText(command)) {
 			return CompletableFuture.completedFuture(null);
 		}
@@ -39,18 +48,15 @@ public class Routers {
 			if (isHotKolekCommand(command)) {
 				log.info("Valid Hot Kolek Service, isGroup={}", command.isGroupChat());
 				CompletableFuture.runAsync(() -> handleKolekCommand.handleKolekCommand(command));
-				return;
-			} else if (isSpkNumber(command)) {
-				// TODO : Pelunasan Service and Tabungan Service
-				return;
+			} else if (isPelunasanCommand(command)) {
+				CompletableFuture<CompletableFuture<Void>> completableFutureCompletableFuture = CompletableFuture.supplyAsync(() -> handlerPelunasan.handlePelunasan(command));
+				completableFutureCompletableFuture.join();
 			} else if (text.startsWith(COMMAND_PREFIX + "t")){
-				// TODO : Tabungan Service
-			} else if (text.startsWith(COMMAND_PREFIX + "p")) {
-				// TODO : Pelunasan Service
+				tabunganService.handleTabungan(command);
 			} else if (text.startsWith(COMMAND_PREFIX + "min") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
 				// TODO : Send Minimal Bayar
-			} else if (text.startsWith(COMMAND_PREFIX + "jb") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
-				// TODO : Jatuh Bayar
+			} else if (text.startsWith(COMMAND_PREFIX + "jb")) {
+				jatuhBayarService.handle(command);
 			} else if (text.startsWith(COMMAND_PREFIX + "reset") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
 				// TODO : Reset Hot Kolek
 			}
@@ -67,6 +73,10 @@ public class Routers {
 
 	public boolean isSpkNumber(WhatsAppWebhookDTO command) {
 		return isText(command) && command.getMessage().getText().matches(SPK_NUMBER_PATTERN);
+	}
+
+	public boolean isPelunasanCommand(WhatsAppWebhookDTO command) {
+		return isText(command) && command.getMessage().getText().startsWith(".p");
 	}
 
 }

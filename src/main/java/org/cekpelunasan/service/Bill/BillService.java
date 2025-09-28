@@ -41,6 +41,10 @@ public class BillService {
 		return billsRepository.count();
 	}
 
+	public List<Bills> findAllBillsByBranch(String branch) {
+		return billsRepository.findAllByBranch(branch);
+	}
+
 
 	public Page<Bills> findDueDateByAccountOfficer(String accountOfficer, String payDown, int page, int size) {
 		PageRequest pageRequest = PageRequest.of(page, size);

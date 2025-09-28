@@ -29,4 +29,6 @@ public interface SavingsRepository extends JpaRepository<Savings, Long>, JpaSpec
 	List<String> findAllByNameContainingIgnoreCase(@Param("name") String name);
 
 	Page<Savings> findByTabIdContainingIgnoreCaseOrNameContainingIgnoreCase(String tabId, String name, Pageable pageable);
+
+    Savings findByCif(String cif);
 }

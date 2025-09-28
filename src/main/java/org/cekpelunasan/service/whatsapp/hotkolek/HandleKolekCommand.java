@@ -1,4 +1,4 @@
-package org.cekpelunasan.service.whatsapp;
+package org.cekpelunasan.service.whatsapp.hotkolek;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,6 +6,8 @@ import org.cekpelunasan.dto.whatsapp.send.GenericResponseDTO;
 import org.cekpelunasan.dto.whatsapp.webhook.WhatsAppWebhookDTO;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.service.Bill.HotKolekService;
+import org.cekpelunasan.service.whatsapp.sender.WhatsAppSenderService;
+import org.cekpelunasan.service.whatsapp.utils.HotKolekMessageGenerator;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -64,6 +66,7 @@ public class HandleKolekCommand {
 	private void sendReactionAsync(WhatsAppWebhookDTO command) {
 		CompletableFuture.runAsync(() -> {
 			try {
+				Thread.sleep(2000L);
 				String chatId = buildChatId(command);
 				String messageId = command.getMessage().getId();
 				GenericResponseDTO genericResponseDTO = whatsAppSenderService.sendReactionToMessage(chatId, messageId);

@@ -53,4 +53,6 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 	List<Bills> findByDueDateContaining(String dueDate);
 
 	List<Bills> findByRealizationIsContainingIgnoreCase(String branch);
+
+    List<Bills> findAllByBranch(String branch);
 }

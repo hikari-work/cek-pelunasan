@@ -1,10 +1,7 @@
-package org.cekpelunasan.service.whatsapp;
+package org.cekpelunasan.service.whatsapp.sender;
 
 import lombok.RequiredArgsConstructor;
-import org.cekpelunasan.dto.whatsapp.send.GenericResponseDTO;
-import org.cekpelunasan.dto.whatsapp.send.MessageReactionDTO;
-import org.cekpelunasan.dto.whatsapp.send.MessageUpdateDTO;
-import org.cekpelunasan.dto.whatsapp.send.SendTextMessageDTO;
+import org.cekpelunasan.dto.whatsapp.send.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +13,7 @@ public class WhatsAppSenderService {
 
 	private final WhatsAppSender sender;
 
+	@SuppressWarnings("UnusedReturnValue")
 	public GenericResponseDTO sendWhatsAppText(String phone, String message) {
 		SendTextMessageDTO textMessageDTO = new SendTextMessageDTO();
 		textMessageDTO.setPhone(phone);
@@ -34,6 +32,8 @@ public class WhatsAppSenderService {
 		ResponseEntity<GenericResponseDTO> response = sender.request(url, textMessageDTO);
 		return response.getBody();
 	}
+
+	@SuppressWarnings("UnusedReturnValue")
 	public GenericResponseDTO updateMessage(String phone, String messageId, String message) {
 		MessageUpdateDTO update = new MessageUpdateDTO();
 		update.setPhone(phone);
@@ -61,6 +61,15 @@ public class WhatsAppSenderService {
 		reactionDTO.setEmoji(reaction.get((int) (Math.random() * reaction.size())));
 		String url = sender.buildUrl(TypeMessage.REACTION);
 		ResponseEntity<GenericResponseDTO> response = sender.request(url, reactionDTO);
+		return response.getBody();
+	}
+
+	public GenericResponseDTO deleteMessage(String phone, String messageId) {
+		DeleteMessageDTO deleteMessageDTO = new DeleteMessageDTO();
+		deleteMessageDTO.setPhone(phone);
+		deleteMessageDTO.setMessageId(messageId);
+		String url = sender.buildUrl(TypeMessage.DELETE);
+		ResponseEntity<GenericResponseDTO> response = sender.request(url, deleteMessageDTO);
 		return response.getBody();
 	}
 

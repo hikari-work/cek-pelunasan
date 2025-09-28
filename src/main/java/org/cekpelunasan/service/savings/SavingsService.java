@@ -41,6 +41,9 @@ public class SavingsService {
 		Pageable pageable = PageRequest.of(page, 5);
 		return savingsRepository.findByNameContainingIgnoreCaseAndBranch(name, branch, pageable);
 	}
+	public Savings findByCif(String cif) {
+		return savingsRepository.findByCif(cif);
+	}
 
 	public void parseCsvAndSaveIntoDatabase(Path path) {
 		final int BATCH_SIZE = 1000;

@@ -165,4 +165,12 @@ public class WhatsAppWebhookDTO {
 		if (chatId == null) return null;
 		return chatId.replace("@s.whatsapp.net", "").replace("@g.us", "");
 	}
+	public String buildChatId() {
+		if (getCleanChatId() == null) {
+			throw new IllegalArgumentException("Invalid WhatsApp DTO or clean chat ID");
+		}
+
+		String suffix = this.isGroupChat() ? "@g.us" : "@s.whatsapp.net";
+		return this.getCleanChatId() + suffix;
+	}
 }

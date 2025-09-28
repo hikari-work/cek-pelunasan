@@ -1,4 +1,4 @@
-package org.cekpelunasan.service.whatsapp;
+package org.cekpelunasan.service.whatsapp.sender;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +36,7 @@ public class WhatsAppSender {
 			case VIDEO -> baseUrl + "/send/video";
 			case REACTION -> baseUrl + "/message/{message_id}/reaction";
 			case UPDATE -> baseUrl + "/message/{message_id}/update";
+			case DELETE -> baseUrl + "/message/{message_id}/delete";
 			default -> null;
 		};
 	}

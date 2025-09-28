@@ -1,4 +1,4 @@
-package org.cekpelunasan.service.whatsapp;
+package org.cekpelunasan.service.whatsapp.utils;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

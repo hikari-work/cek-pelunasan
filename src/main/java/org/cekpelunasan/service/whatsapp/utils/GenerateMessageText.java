@@ -1,4 +1,4 @@
-package org.cekpelunasan.service.whatsapp;
+package org.cekpelunasan.service.whatsapp.utils;
 
 import org.cekpelunasan.entity.Bills;
 import org.springframework.stereotype.Service;
