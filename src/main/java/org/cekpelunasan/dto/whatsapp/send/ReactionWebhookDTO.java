@@ -2,7 +2,7 @@ package org.cekpelunasan.dto.whatsapp.send;
 
 import lombok.*;
 
-// Webhook payload untuk reaction
+
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)

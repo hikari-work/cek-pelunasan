@@ -55,7 +55,7 @@ public class Routers {
 				tabunganService.handleTabungan(command);
 			} else if (text.startsWith(COMMAND_PREFIX + "min") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
 				// TODO : Send Minimal Bayar
-			} else if (text.startsWith(COMMAND_PREFIX + "jb")) {
+			} else if (text.startsWith(COMMAND_PREFIX + "jb") && command.getFrom().contains(adminWhatsApp)) {
 				jatuhBayarService.handle(command);
 			} else if (text.startsWith(COMMAND_PREFIX + "reset") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
 				// TODO : Reset Hot Kolek

@@ -1,15 +1,20 @@
 package org.cekpelunasan.service.whatsapp.sender;
 
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.dto.whatsapp.send.BaseMessageRequestDTO;
 import org.cekpelunasan.dto.whatsapp.send.GenericResponseDTO;
 import org.cekpelunasan.dto.whatsapp.send.MessageActionDTO;
+import org.cekpelunasan.dto.whatsapp.send.SendFileMessageDTO;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 
 @Slf4j
@@ -37,7 +42,7 @@ public class WhatsAppSender {
 			case REACTION -> baseUrl + "/message/{message_id}/reaction";
 			case UPDATE -> baseUrl + "/message/{message_id}/update";
 			case DELETE -> baseUrl + "/message/{message_id}/delete";
-			default -> null;
+			case FILE -> baseUrl + "/send/file";
 		};
 	}
 
@@ -45,6 +50,12 @@ public class WhatsAppSender {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setBasicAuth(username, password);
 		headers.setContentType(MediaType.APPLICATION_JSON);
+		return headers;
+	}
+	public HttpHeaders headersMultiPart() {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setBasicAuth(username, password);
+		headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 		return headers;
 	}
 
@@ -75,6 +86,65 @@ public class WhatsAppSender {
 			throw new RuntimeException("Failed to send WhatsApp message", e);
 		}
 	}
+	public ResponseEntity<GenericResponseDTO> requestMultiPart(String url, SendFileMessageDTO form, TypeMessage type) {
+		try {
+			MultiValueMap<String, Object> formData = getFormData(form, type);
+			HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(formData, headersMultiPart());
+			log.warn(">>> SENDING FILE via WhatsAppSender, url={}, phone={}, caption={}, filename={}",
+				url, form.getPhone(), form.getCaption(), form.getFileName());
+			return rest.exchange(url, HttpMethod.POST, entity, GenericResponseDTO.class);
+		} catch (Exception e) {
+			log.error("Error sending WhatsApp request", e);
+			throw new RuntimeException("Failed to send WhatsApp message", e);
+		}
+
+	}
+	private static MultiValueMap<String, Object> getFormData(SendFileMessageDTO form, TypeMessage type) {
+		MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
+		formData.add("phone", form.getPhone());
+		formData.add("caption", form.getCaption());
+		formData.add("isForwarded", form.getIsForwarded());
+		formData.add("duration", form.getDuration());
+		switch (type) {
+			case IMAGE -> {
+				if (form.getFileBytes() != null) {
+					ByteArrayResource resource = new ByteArrayResource(form.getFileBytes()) {
+						@Override
+						public String getFilename() {
+							return form.getFileName();
+						}
+					};
+					formData.add("image", resource);
+				} else {
+					formData.add("image", form.getImageUrl());
+				}
+			}
+			case VIDEO -> {
+				if (form.getFileBytes() != null) {
+					ByteArrayResource resource = new ByteArrayResource(form.getFileBytes()) {
+						@Override
+						public String getFilename() {
+							return form.getFileName();
+						}
+					};
+					formData.add("video", resource);
+				} else {
+					formData.add("video_url", form.getVideoUrl());
+				}
+			}
+			case FILE -> {
+				ByteArrayResource resource = new ByteArrayResource(form.getFileBytes()) {
+					@Override
+					public String getFilename() {
+						return form.getFileName();
+					}
+				};
+				formData.add("file", resource);
+			}
+			default -> throw new IllegalArgumentException("Unsupported file type: " + type);
+		}
+		return formData;
+	}
 
 	public boolean isSuccess(ResponseEntity<GenericResponseDTO> response) {
 		return response != null &&
@@ -82,4 +152,5 @@ public class WhatsAppSender {
 			response.getBody() != null &&
 			"SUCCESS".equals(response.getBody().getCode());
 	}
+
 }

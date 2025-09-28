@@ -23,6 +23,7 @@ public class WhatsAppSenderService {
 		return response.getBody();
 	}
 
+	@SuppressWarnings("UnusedReturnValue")
 	public GenericResponseDTO sendWhatsAppText(String phone, String message, String replyMessageId) {
 		SendTextMessageDTO textMessageDTO = new SendTextMessageDTO();
 		textMessageDTO.setPhone(phone);
@@ -64,6 +65,7 @@ public class WhatsAppSenderService {
 		return response.getBody();
 	}
 
+	@SuppressWarnings("UnusedReturnValue")
 	public GenericResponseDTO deleteMessage(String phone, String messageId) {
 		DeleteMessageDTO deleteMessageDTO = new DeleteMessageDTO();
 		deleteMessageDTO.setPhone(phone);
@@ -73,5 +75,64 @@ public class WhatsAppSenderService {
 		return response.getBody();
 	}
 
-
+	public GenericResponseDTO sendFile(String phone, String message, byte[] files, String filename) {
+		SendFileMessageDTO request = new SendFileMessageDTO();
+		request.setDuration(3600);
+		request.setFileBytes(files);
+		request.setCaption(message);
+		request.setPhone(phone);
+		request.setFileName(filename);
+		request.setIsForwarded(false);
+		String url = sender.buildUrl(TypeMessage.FILE);
+		ResponseEntity<GenericResponseDTO> response = sender.requestMultiPart(url, request, TypeMessage.FILE);
+		return response.getBody();
+	}
+	public GenericResponseDTO sendImage(String phone, String message, String url, String filename) {
+		SendFileMessageDTO request = new SendFileMessageDTO();
+		request.setDuration(3600);
+		request.setImageUrl(url);
+		request.setCaption(message);
+		request.setPhone(phone);
+		request.setFileName(filename);
+		request.setIsForwarded(false);
+		String baseUrl = sender.buildUrl(TypeMessage.IMAGE);
+		ResponseEntity<GenericResponseDTO> response = sender.requestMultiPart(baseUrl, request, TypeMessage.IMAGE);
+		return response.getBody();
+	}
+	public GenericResponseDTO sendImage(String phone, String message, byte[] url, String filename) {
+		SendFileMessageDTO request = new SendFileMessageDTO();
+		request.setDuration(3600);
+		request.setFileBytes(url);
+		request.setCaption(message);
+		request.setPhone(phone);
+		request.setFileName(filename);
+		request.setIsForwarded(false);
+		String baseUrl = sender.buildUrl(TypeMessage.IMAGE);
+		ResponseEntity<GenericResponseDTO> response = sender.requestMultiPart(baseUrl, request, TypeMessage.IMAGE);
+		return response.getBody();
+	}
+	public GenericResponseDTO sendVideo(String phone, String message, byte[] files, String filename) {
+		SendFileMessageDTO request = new SendFileMessageDTO();
+		request.setDuration(3600);
+		request.setFileBytes(files);
+		request.setCaption(message);
+		request.setPhone(phone);
+		request.setFileName(filename);
+		request.setIsForwarded(false);
+		String baseUrl = sender.buildUrl(TypeMessage.VIDEO);
+		ResponseEntity<GenericResponseDTO> response = sender.requestMultiPart(baseUrl, request, TypeMessage.VIDEO);
+		return response.getBody();
+	}
+	public GenericResponseDTO sendVideo(String phone, String message, String url, String filename) {
+		SendFileMessageDTO request = new SendFileMessageDTO();
+		request.setDuration(3600);
+		request.setVideoUrl(url);
+		request.setCaption(message);
+		request.setPhone(phone);
+		request.setFileName(filename);
+		request.setIsForwarded(false);
+		String baseUrl = sender.buildUrl(TypeMessage.VIDEO);
+		ResponseEntity<GenericResponseDTO> response = sender.requestMultiPart(baseUrl, request, TypeMessage.VIDEO);
+		return response.getBody();
+	}
 }

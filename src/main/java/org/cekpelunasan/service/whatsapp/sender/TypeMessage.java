@@ -7,5 +7,6 @@ public enum TypeMessage {
 	VIDEO,
 	REACTION,
 	UPDATE,
-	DELETE
+	DELETE,
+	FILE
 }

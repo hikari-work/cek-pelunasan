@@ -1,6 +1,7 @@
 package org.cekpelunasan.service.whatsapp.jatuhbayar;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.dto.whatsapp.webhook.WhatsAppWebhookDTO;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.entity.Savings;
@@ -14,12 +15,17 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JatuhBayarService {
+
+	private static final Set<String> EXCLUDED_ACCOUNT_OFFICERS = Set.of("JKS", "AIN");
 
 	private final static String BRANCH_CODE = "1075";
 
@@ -31,18 +37,39 @@ public class JatuhBayarService {
 	@Async
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> handle(WhatsAppWebhookDTO command) {
-		Map<String, List<Bills>> dataJatuhBayar = getBills();
-
-		dataJatuhBayar.forEach((accountOfficer, bills) -> {
-			if (!bills.isEmpty()) {
-				String message = formatJatuhBayar(bills, accountOfficer);
-				whatsAppSenderService.deleteMessage(command.buildChatId(), command.getMessage().getId());
-				whatsAppSenderService.sendWhatsAppText(command.buildChatId(), message, null);
-				System.out.println("Pesan untuk " + accountOfficer + ":\n" + bills.size() + " nasabah");
-			}
-		});
-
-		return CompletableFuture.completedFuture(null);
+		return CompletableFuture
+			.supplyAsync(this::getBills)
+			.thenAccept(dataJatuhBayar -> {
+				AtomicBoolean isFirst = new AtomicBoolean(true);
+				dataJatuhBayar.forEach((accountOfficer, bills) -> {
+					if (!bills.isEmpty()) {
+						String message = formatJatuhBayar(bills, accountOfficer);
+						if (isFirst.getAndSet(false)) {
+							whatsAppSenderService.updateMessage(
+								command.buildChatId(),
+								command.getMessage().getId(),
+								message
+							);
+						} else {
+							whatsAppSenderService.sendWhatsAppText(
+								command.buildChatId(),
+								message,
+								null
+							);
+						}
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							Thread.currentThread().interrupt();
+							throw new RuntimeException("Thread interrupted", e);
+						}
+					}
+				});
+			})
+			.exceptionally(throwable -> {
+				log.error("Error processing bills: ", throwable);
+				return null;
+			});
 	}
 
 	public Map<String, List<Bills>> getBills() {
@@ -51,9 +78,8 @@ public class JatuhBayarService {
 
 		return billService.findAllBillsByBranch(BRANCH_CODE)
 			.stream()
-			.filter(bill -> bill.getPayDown().equals(dayOfMonth))
-			.filter(bill -> !bill.getAccountOfficer().equals("JKS"))
-			.filter(bill -> !bill.getAccountOfficer().equals("AIN"))
+			.filter(bill -> bill.getPayDown().equals(dayOfMonth)
+				&& !EXCLUDED_ACCOUNT_OFFICERS.contains(bill.getAccountOfficer()))
 			.collect(Collectors.groupingBy(Bills::getAccountOfficer));
 	}
 
@@ -73,10 +99,11 @@ public class JatuhBayarService {
 			Bills bill = bills.get(i);
 			builder.append("*").append(i + 1).append(". ").append(bill.getName()).append("*\n");
 			builder.append("   💳 No SPK : ").append(bill.getNoSpk()).append("\n");
-			builder.append("   💰 Angsuran: ").append(rupiahFormatUtils.formatRupiah(bill.getInstallment())).append("\n");
 
 			if (bill.getLastInstallment() != null && bill.getLastInstallment().compareTo(0L) > 0) {
 				builder.append("   ⚠️ Tunggakan: ").append(rupiahFormatUtils.formatRupiah(bill.getLastInstallment())).append("\n");
+			} else {
+				builder.append("   💰 Angsuran: ").append(rupiahFormatUtils.formatRupiah(bill.getInstallment())).append("\n");
 			}
 
 			try {
@@ -93,53 +120,11 @@ public class JatuhBayarService {
 			builder.append("\n");
 		}
 
-		// Footer
 		builder.append("═══════════════════\n");
 		builder.append("Harap segera lakukan follow up kepada nasabah terkait.\n");
 		builder.append("_Pesan otomatis dari sistem_");
 
 		return builder.toString();
 	}
-	public String getSummaryMessage() {
-		Map<String, List<Bills>> dataJatuhBayar = getBills();
-		LocalDate today = LocalDate.now();
 
-		if (dataJatuhBayar.isEmpty()) {
-			return "✅ Tidak ada nasabah yang jatuh bayar hari ini (" + today + ")";
-		}
-
-		StringBuilder summary = new StringBuilder();
-		summary.append("📊 *SUMMARY JATUH BAYAR*\n");
-		summary.append("📅 Tanggal: ").append(today).append("\n\n");
-
-		int totalNasabah = 0;
-		for (Map.Entry<String, List<Bills>> entry : dataJatuhBayar.entrySet()) {
-			String ao = entry.getKey();
-			int jumlahNasabah = entry.getValue().size();
-			totalNasabah += jumlahNasabah;
-
-			summary.append("👤 ").append(ao).append(": ").append(jumlahNasabah).append(" nasabah\n");
-		}
-
-		summary.append("\n📈 *Total: ").append(totalNasabah).append(" nasabah*");
-		return summary.toString();
-	}
-
-	private boolean isValidBill(Bills bill) {
-		return bill != null
-			&& bill.getName() != null && !bill.getName().trim().isEmpty()
-			&& bill.getCustomerId() != null && !bill.getCustomerId().trim().isEmpty()
-			&& bill.getAccountOfficer() != null && !bill.getAccountOfficer().trim().isEmpty()
-			&& bill.getInstallment() != null;
-	}
-	public Map<String, List<Bills>> getValidBills() {
-		LocalDate today = LocalDate.now();
-		String dayOfMonth = String.valueOf(today.getDayOfMonth());
-
-		return billService.findAllBillsByBranch(BRANCH_CODE)
-			.stream()
-			.filter(bill -> bill.getPayDown().equals(dayOfMonth))
-			.filter(this::isValidBill)
-			.collect(Collectors.groupingBy(Bills::getAccountOfficer));
-	}
 }
