@@ -49,6 +49,6 @@ public class TabunganService {
 	}
 
 	public boolean isValidTabunganCommand(WhatsAppWebhookDTO command) {
-		return command.getMessage().getText().matches("^\\.p \\d{12}$");
+		return command.getMessage().getText().matches("^\\.t \\d{12}$");
 	}
 }
