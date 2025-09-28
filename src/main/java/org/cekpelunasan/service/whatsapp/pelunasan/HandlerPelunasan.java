@@ -66,13 +66,13 @@ public class HandlerPelunasan {
 		String text = command.getMessage().getText();
 
 		if (text == null || !text.startsWith(PELUNASAN_COMMAND_PREFIX)) {
-			log.debug("Invalid pelunasan command format: {}", text);
+			log.info("Invalid pelunasan command format: {}", text);
 			return false;
 		}
 
-		if (text.length() <= PELUNASAN_COMMAND_PREFIX.length()) {
-			log.debug("Empty SPK number in command: {}", text);
-			sendErrorMessage(command, "SPK number tidak boleh kosong. Format: .p [SPK-12-digit]");
+		if (text.length() != PELUNASAN_COMMAND_PREFIX.length() + 12) {
+			log.info("Empty SPK number in command: {}", text);
+			sendErrorMessage(command, "Nomor SPK tidak boleh kosong. Format: .p [SPK-12-digit]");
 			return false;
 		}
 
