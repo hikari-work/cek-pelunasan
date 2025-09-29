@@ -23,13 +23,13 @@ public class HotKolekMessageGenerator {
 		""", bulanTahun));
 
 		for (LocationBills location : locationBills) {
-			builder.append("\n\n");
+			builder.append("\n");
 			if (!location.hasAnyData()) {
 				continue;
 			}
 			builder.append("*").append(location.getName()).append("* : \n");
 			for (CategoryBills category : location.getCategoryBills()) {
-				builder.append("\n\n");
+				builder.append("\n");
 				if (category.isEmpty()) {
 					continue;
 				}
