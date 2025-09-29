@@ -34,7 +34,6 @@ public class Routers {
 	@Async
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> handle(WhatsAppWebhookDTO command) {
-		log.info("Received command from={} id={} toString={}", command.getCleanChatId(), command.getMessage().getId(), command.toString());
 		if (!isText(command)) {
 			return CompletableFuture.completedFuture(null);
 		}
