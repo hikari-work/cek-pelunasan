@@ -23,11 +23,13 @@ public class HotKolekMessageGenerator {
 		""", bulanTahun));
 
 		for (LocationBills location : locationBills) {
+			builder.append("\n\n");
 			if (!location.hasAnyData()) {
 				continue;
 			}
 			builder.append("*").append(location.getName()).append("* : \n");
 			for (CategoryBills category : location.getCategoryBills()) {
+				builder.append("\n\n");
 				if (category.isEmpty()) {
 					continue;
 				}
@@ -37,6 +39,11 @@ public class HotKolekMessageGenerator {
 				appendBillsInfo(builder, category.getBills());
 			}
 		}
+		builder.append("""
+		
+		
+		Bagi AO yg sudah mendapat tagihan dan tdk pengaruh NPL bisa langsung di hapus.
+		Semoga NPL bulan ini bisa turun ,ttp semangat dan jaga kesehatan.""");
 		return builder.toString();
 	}
 
