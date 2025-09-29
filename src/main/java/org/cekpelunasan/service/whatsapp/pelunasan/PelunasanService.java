@@ -142,7 +142,7 @@ public class PelunasanService {
 		int totalMonthsPeriod = calculateMonthsBetween(realizationDate, dueDate);
 		int monthsLeft = totalMonthsPeriod - monthsPassed;
 
-		log.debug("FM Penalty calculation - Passed: {}, Left: {}, Total: {}",
+		log.info("FM Penalty calculation - Passed: {}, Left: {}, Total: {}",
 			monthsPassed, monthsLeft, totalMonthsPeriod);
 
 		if (totalMonthsPeriod > LONG_TERM_MONTHS) {
