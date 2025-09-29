@@ -70,9 +70,6 @@ public class Routers {
 		return isText(command) && command.getMessage().getText().matches(HOT_KOLEK_PATTERN);
 	}
 
-	public boolean isSpkNumber(WhatsAppWebhookDTO command) {
-		return isText(command) && command.getMessage().getText().matches(SPK_NUMBER_PATTERN);
-	}
 
 	public boolean isPelunasanCommand(WhatsAppWebhookDTO command) {
 		return isText(command) && command.getMessage().getText().startsWith(".p");

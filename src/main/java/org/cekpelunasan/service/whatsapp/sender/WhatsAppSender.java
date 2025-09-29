@@ -105,45 +105,34 @@ public class WhatsAppSender {
 		formData.add("caption", form.getCaption());
 		formData.add("isForwarded", form.getIsForwarded());
 		formData.add("duration", form.getDuration());
+
 		switch (type) {
-			case IMAGE -> {
-				if (form.getFileBytes() != null) {
-					ByteArrayResource resource = new ByteArrayResource(form.getFileBytes()) {
-						@Override
-						public String getFilename() {
-							return form.getFileName();
-						}
-					};
-					formData.add("image", resource);
-				} else {
-					formData.add("image", form.getImageUrl());
-				}
-			}
-			case VIDEO -> {
-				if (form.getFileBytes() != null) {
-					ByteArrayResource resource = new ByteArrayResource(form.getFileBytes()) {
-						@Override
-						public String getFilename() {
-							return form.getFileName();
-						}
-					};
-					formData.add("video", resource);
-				} else {
-					formData.add("video_url", form.getVideoUrl());
-				}
-			}
-			case FILE -> {
-				ByteArrayResource resource = new ByteArrayResource(form.getFileBytes()) {
-					@Override
-					public String getFilename() {
-						return form.getFileName();
-					}
-				};
-				formData.add("file", resource);
-			}
+			case IMAGE -> addFileOrUrl(formData, "image", "image", form);
+			case VIDEO -> addFileOrUrl(formData, "video", "video_url", form);
+			case FILE -> addFile(formData, "file", form);
 			default -> throw new IllegalArgumentException("Unsupported file type: " + type);
 		}
+
 		return formData;
+	}
+
+	private static void addFileOrUrl(MultiValueMap<String, Object> formData, String fileKey, String urlKey, SendFileMessageDTO form) {
+		if (form.getFileBytes() != null) {
+			addFile(formData, fileKey, form);
+		} else {
+			String url = fileKey.equals("image") ? form.getImageUrl() : form.getVideoUrl();
+			formData.add(urlKey, url);
+		}
+	}
+
+	private static void addFile(MultiValueMap<String, Object> formData, String key, SendFileMessageDTO form) {
+		ByteArrayResource resource = new ByteArrayResource(form.getFileBytes()) {
+			@Override
+			public String getFilename() {
+				return form.getFileName();
+			}
+		};
+		formData.add(key, resource);
 	}
 
 	public boolean isSuccess(ResponseEntity<GenericResponseDTO> response) {

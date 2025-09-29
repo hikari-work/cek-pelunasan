@@ -1,7 +1,6 @@
 package org.cekpelunasan.service.customerhistory;
 
 import com.opencsv.CSVReader;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.entity.CustomerHistory;
@@ -98,7 +97,7 @@ public class CustomerHistoryService {
 		System.out.println("Semua data telah disimpan.");
 	}
 
-	@Transactional
+
 	public void saveBatch(List<CustomerHistory> batch) {
 		customerHistoryRepository.saveAll(batch);
 	}
