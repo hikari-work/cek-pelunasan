@@ -13,7 +13,7 @@ import java.util.List;
 public class PelunasanService {
 
 	// Constants
-	private static final String FLAT_MURNI_TYPE = "FM";
+	private static final String FLAT_MURNI_TYPE = "LM";
 	private static final String ANUITAS_TYPE = "DG";
 	private static final int FLAT_MURNI_MAX_PENALTY_LONG_TERM = 6;
 	private static final int FLAT_MURNI_MAX_PENALTY_SHORT_TERM = 3;
