@@ -36,6 +36,11 @@ public class Routers {
 	@Async
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> handle(WhatsAppWebhookDTO command) {
+		String text = command.getMessage().getText();
+		if (text.startsWith("/") && command.getFrom().contains(adminWhatsApp)) {
+			log.info("Handle Auto Edit");
+			shortcutMessages.sendShortcutMessage(command);
+		}
 		if (!isText(command)) {
 			return CompletableFuture.completedFuture(null);
 		}
@@ -45,13 +50,7 @@ public class Routers {
 				return;
 			}
 
-			String text = command.getMessage().getText();
-
-			// PINDAHKAN KE ATAS - Cek admin command dulu (lebih spesifik)
-			if (text.startsWith("/") && command.getFrom().contains(adminWhatsApp)) {
-				log.info("Handle Auto Edit");
-				shortcutMessages.sendShortcutMessage(command);
-			} else if (isHotKolekCommand(command)) {
+			if (isHotKolekCommand(command)) {
 				log.info("Valid Hot Kolek Service, isGroup={}", command.isGroupChat());
 				CompletableFuture.runAsync(() -> handleKolekCommand.handleKolekCommand(command));
 			} else if (isPelunasanCommand(command)) {
