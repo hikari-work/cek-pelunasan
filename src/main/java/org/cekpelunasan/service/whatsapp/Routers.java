@@ -40,18 +40,20 @@ public class Routers {
 			return CompletableFuture.completedFuture(null);
 		}
 		return CompletableFuture.runAsync(() -> {
-
 			log.info("Received command from={} id={} from= {}", command.getCleanChatId(), command.getMessage().getId(), command.getFrom());
 			if (!command.getMessage().getText().startsWith(COMMAND_PREFIX)) {
 				return;
 			}
+
 			String text = command.getMessage().getText();
-			if (isHotKolekCommand(command)) {
-				log.info("Valid Hot Kolek Service, isGroup={}", command.isGroupChat());
-				CompletableFuture.runAsync(() -> handleKolekCommand.handleKolekCommand(command));
-			} else if (text.startsWith("/") && command.getFrom().contains(adminWhatsApp)) {
+
+			// PINDAHKAN KE ATAS - Cek admin command dulu (lebih spesifik)
+			if (text.startsWith("/") && command.getFrom().contains(adminWhatsApp)) {
 				log.info("Handle Auto Edit");
 				shortcutMessages.sendShortcutMessage(command);
+			} else if (isHotKolekCommand(command)) {
+				log.info("Valid Hot Kolek Service, isGroup={}", command.isGroupChat());
+				CompletableFuture.runAsync(() -> handleKolekCommand.handleKolekCommand(command));
 			} else if (isPelunasanCommand(command)) {
 				CompletableFuture<CompletableFuture<Void>> completableFutureCompletableFuture = CompletableFuture.supplyAsync(() -> handlerPelunasan.handlePelunasan(command));
 				completableFutureCompletableFuture.join();
