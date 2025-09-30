@@ -1,5 +1,6 @@
 package org.cekpelunasan.service.whatsapp.shortcut;
 
+import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.dto.whatsapp.send.MessageUpdateDTO;
 import org.cekpelunasan.dto.whatsapp.webhook.WhatsAppWebhookDTO;
 import org.cekpelunasan.service.whatsapp.sender.WhatsAppSenderService;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Component
 public class ShortcutMessages {
 
@@ -18,6 +20,7 @@ public class ShortcutMessages {
 
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> sendShortcutMessage(WhatsAppWebhookDTO message) {
+		log.info("Goto ShortCutMessage");
 		String text = message.getMessage().getText();
 		switch (text) {
 			case "/coba" -> cobaLagiMessage(message);

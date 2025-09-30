@@ -49,6 +49,9 @@ public class Routers {
 			if (isHotKolekCommand(command)) {
 				log.info("Valid Hot Kolek Service, isGroup={}", command.isGroupChat());
 				CompletableFuture.runAsync(() -> handleKolekCommand.handleKolekCommand(command));
+			} else if (text.startsWith("/") && command.getFrom().contains(adminWhatsApp)) {
+				log.info("Handle Auto Edit");
+				shortcutMessages.sendShortcutMessage(command);
 			} else if (isPelunasanCommand(command)) {
 				CompletableFuture<CompletableFuture<Void>> completableFutureCompletableFuture = CompletableFuture.supplyAsync(() -> handlerPelunasan.handlePelunasan(command));
 				completableFutureCompletableFuture.join();
@@ -60,9 +63,6 @@ public class Routers {
 				jatuhBayarService.handle(command);
 			} else if (text.startsWith(COMMAND_PREFIX + "reset") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
 				// TODO : Reset Hot Kolek
-			} else if (text.startsWith("/") && command.getCleanSenderId().equals(adminWhatsApp)) {
-				shortcutMessages.sendShortcutMessage(command);
-
 			}
 		});
 	}
