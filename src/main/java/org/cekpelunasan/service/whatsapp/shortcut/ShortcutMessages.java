@@ -1,11 +1,11 @@
 package org.cekpelunasan.service.whatsapp.shortcut;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cekpelunasan.dto.whatsapp.send.MessageUpdateDTO;
 import org.cekpelunasan.dto.whatsapp.webhook.WhatsAppWebhookDTO;
 import org.cekpelunasan.service.whatsapp.sender.WhatsAppSenderService;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -13,87 +13,40 @@ import java.util.concurrent.CompletableFuture;
 public class ShortcutMessages {
 
 	private final WhatsAppSenderService whatsAppSenderService;
+	private final Map<String, String> shortcutResponses;
 
 	public ShortcutMessages(WhatsAppSenderService whatsAppSenderService) {
 		this.whatsAppSenderService = whatsAppSenderService;
+		this.shortcutResponses = Map.ofEntries(
+			Map.entry("/coba", "silahkan bisa dicoba kembali kak"),
+			Map.entry("/kasih", "terima kasih kembali kak 🙏"),
+			Map.entry("/tunggu", "baik, mohon ditunggu kak"),
+			Map.entry("/relog", "silahkan usernya relogin terlebih dahulu kak, kemudian bisa dicoba kembali"),
+			Map.entry("/selesai", "kalo sudah selesai kami diinfo ya kak"),
+			Map.entry("/enter", "enter lagi kak, kalo sudah kami diinfo ya kak"),
+			Map.entry("/input", "baik kak sudah kami input ya 🙏"),
+			Map.entry("/display", "untuk display tersebut sudah dibebaskan ya kak, bisa dicoba kembali 🙏"),
+			Map.entry("/terima", "terimakasih kak 🙏")
+		);
 	}
 
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> sendShortcutMessage(WhatsAppWebhookDTO message) {
 		log.info("Goto ShortCutMessage");
 		String text = message.getMessage().getText();
-		switch (text) {
-			case "/coba" -> cobaLagiMessage(message);
-			case "/kasih" -> terimakasihMessage(message);
-			case "/tunggu" -> tungguMessage(message);
-			case "/relog" -> relogMessage(message);
-			case "/selesai" -> selesaiMessage(message);
-			case "/enter" -> enterMessage(message);
-			case "/input" -> inputMessage(message);
-			case "/display" -> displayMessage(message);
-			case "/terima" -> terimakasih(message);
+		String response = shortcutResponses.get(text);
 
+		if (response != null) {
+			return CompletableFuture.runAsync(() ->
+				whatsAppSenderService.updateMessage(
+					message.buildChatId(),
+					message.getMessage().getId(),
+					response
+				)
+			);
 		}
+
+		log.warn("Unknown shortcut command: {}", text);
 		return CompletableFuture.completedFuture(null);
-	};
-
-	@SuppressWarnings("UnusedReturnValue")
-	public CompletableFuture<Void> terimakasih(WhatsAppWebhookDTO message) {
-		return CompletableFuture.runAsync(() -> {
-			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "terimakasih kak 🙏");
-		});
 	}
-
-
-	@SuppressWarnings("UnusedReturnValue")
-	public CompletableFuture<Void> cobaLagiMessage(WhatsAppWebhookDTO message) {
-		return CompletableFuture.runAsync(() -> {
-			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "silahkan bisa dicoba kembali kak");
-		});
-	}
-	@SuppressWarnings("UnusedReturnValue")
-	public CompletableFuture<Void> terimakasihMessage(WhatsAppWebhookDTO message) {
-		return CompletableFuture.runAsync(() -> {
-			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "terima kasih kembali kak 🙏");
-		});
-	}
-	@SuppressWarnings("UnusedReturnValue")
-	public CompletableFuture<Void> tungguMessage(WhatsAppWebhookDTO message) {
-		return CompletableFuture.runAsync(() -> {
-			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "baik, mohon ditunggu kak");
-		});
-	}
-
-	@SuppressWarnings("UnusedReturnValue")
-	public CompletableFuture<Void> relogMessage(WhatsAppWebhookDTO message) {
-		return CompletableFuture.runAsync(() -> {
-			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "silahkan usernya relogin terlebih dahulu kak, kemudian bisa dicoba kembali");
-		});
-	}
-
-	@SuppressWarnings("UnusedReturnValue")
-	public CompletableFuture<Void> selesaiMessage(WhatsAppWebhookDTO message) {
-		return CompletableFuture.runAsync(() -> {
-			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "kalo sudah selesai kami diinfo ya kak");
-		});
-	}
-	@SuppressWarnings("UnusedReturnValue")
-	public CompletableFuture<Void> enterMessage(WhatsAppWebhookDTO message) {
-		return CompletableFuture.runAsync(() -> {
-			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "enter lagi kak, kalo sudah kami diinfo ya kak");
-		});
-	}
-	@SuppressWarnings("UnusedReturnValue")
-	public CompletableFuture<Void> inputMessage(WhatsAppWebhookDTO message) {
-		return CompletableFuture.runAsync(() -> {
-			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "baik kak sudah kami input ya 🙏");
-		});
-	}
-	@SuppressWarnings("UnusedReturnValue")
-	public CompletableFuture<Void> displayMessage(WhatsAppWebhookDTO message) {
-		return CompletableFuture.runAsync(() -> {
-			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "untuk display tersebut sudah dibebaskan ya kak, bisa dicoba kembali 🙏");
-		});
-	}
-
 }
