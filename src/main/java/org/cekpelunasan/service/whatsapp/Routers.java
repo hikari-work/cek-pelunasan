@@ -41,7 +41,7 @@ public class Routers {
 		}
 		return CompletableFuture.runAsync(() -> {
 
-			log.info("Received command from={} id={}", command.getCleanChatId(), command.getMessage().getId());
+			log.info("Received command from={} id={} from= {}", command.getCleanChatId(), command.getMessage().getId(), command.getFrom());
 			if (!command.getMessage().getText().startsWith(COMMAND_PREFIX)) {
 				return;
 			}
