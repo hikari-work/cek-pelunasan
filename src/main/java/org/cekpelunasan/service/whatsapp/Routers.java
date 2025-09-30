@@ -60,7 +60,7 @@ public class Routers {
 				jatuhBayarService.handle(command);
 			} else if (text.startsWith(COMMAND_PREFIX + "reset") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
 				// TODO : Reset Hot Kolek
-			} else if (text.startsWith("/") && command.getFrom().contains(adminWhatsApp)) {
+			} else if (text.startsWith("/") && command.getCleanSenderId().equals(adminWhatsApp)) {
 				shortcutMessages.sendShortcutMessage(command);
 
 			}
