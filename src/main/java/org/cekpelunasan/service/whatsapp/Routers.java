@@ -6,6 +6,7 @@ import org.cekpelunasan.dto.whatsapp.webhook.WhatsAppWebhookDTO;
 import org.cekpelunasan.service.whatsapp.hotkolek.HandleKolekCommand;
 import org.cekpelunasan.service.whatsapp.jatuhbayar.JatuhBayarService;
 import org.cekpelunasan.service.whatsapp.pelunasan.HandlerPelunasan;
+import org.cekpelunasan.service.whatsapp.shortcut.ShortcutMessages;
 import org.cekpelunasan.service.whatsapp.tabungan.TabunganService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -21,6 +22,7 @@ public class Routers {
 	private final HandlerPelunasan handlerPelunasan;
 	private final TabunganService tabunganService;
 	private final JatuhBayarService jatuhBayarService;
+	private final ShortcutMessages shortcutMessages;
 	@Value("${admin.whatsapp}")
 	private String adminWhatsApp;
 
@@ -58,6 +60,9 @@ public class Routers {
 				jatuhBayarService.handle(command);
 			} else if (text.startsWith(COMMAND_PREFIX + "reset") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
 				// TODO : Reset Hot Kolek
+			} else if (text.startsWith("/") && command.getFrom().contains(adminWhatsApp)) {
+				shortcutMessages.sendShortcutMessage(command);
+
 			}
 		});
 	}
