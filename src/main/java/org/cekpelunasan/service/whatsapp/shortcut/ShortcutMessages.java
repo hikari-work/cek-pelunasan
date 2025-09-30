@@ -31,15 +31,24 @@ public class ShortcutMessages {
 			case "/enter" -> enterMessage(message);
 			case "/input" -> inputMessage(message);
 			case "/display" -> displayMessage(message);
+			case "/terima" -> terimakasih(message);
 
 		}
 		return CompletableFuture.completedFuture(null);
 	};
 
 	@SuppressWarnings("UnusedReturnValue")
+	public CompletableFuture<Void> terimakasih(WhatsAppWebhookDTO message) {
+		return CompletableFuture.runAsync(() -> {
+			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "terimakasih kak 🙏");
+		});
+	}
+
+
+	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> cobaLagiMessage(WhatsAppWebhookDTO message) {
 		return CompletableFuture.runAsync(() -> {
-			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "silahkan bisa dicoba dembali kak");
+			whatsAppSenderService.updateMessage(message.buildChatId(), message.getMessage().getId(), "silahkan bisa dicoba kembali kak");
 		});
 	}
 	@SuppressWarnings("UnusedReturnValue")
