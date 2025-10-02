@@ -23,62 +23,109 @@ public class Routers {
 	private final TabunganService tabunganService;
 	private final JatuhBayarService jatuhBayarService;
 	private final ShortcutMessages shortcutMessages;
+	private final HandleKolekCommand handleKolekCommand;
+
 	@Value("${admin.whatsapp}")
 	private String adminWhatsApp;
 
 	private static final String COMMAND_PREFIX = ".";
+	private static final String ADMIN_SHORTCUT_PREFIX = "/";
 	private static final String HOT_KOLEK_PATTERN = "^\\.\\d{12}(?:\\s\\d{12})*$";
-
-	private static final String SPK_NUMBER_PATTERN = "^\\d{12}$";
-	private final HandleKolekCommand handleKolekCommand;
-
 
 	@Async
 	@SuppressWarnings("UnusedReturnValue")
-	public CompletableFuture<Void> handle(WhatsAppWebhookDTO command) {
-		String text = command.getMessage().getText();
-		if (text.startsWith("/") && command.getFrom().contains(adminWhatsApp)) {
-			log.info("Handle Auto Edit");
-			shortcutMessages.sendShortcutMessage(command);
-		}
-		if (!isText(command)) {
+	public CompletableFuture<Void> handle(WhatsAppWebhookDTO webhook) {
+		log.info("Received webhook from={} id={}", webhook.getCleanChatId(), webhook.getMessage().getId());
+
+		if (!isValidTextMessage(webhook)) {
 			return CompletableFuture.completedFuture(null);
 		}
-		return CompletableFuture.runAsync(() -> {
-			log.info("Received command from={} id={} from= {}", command.getCleanChatId(), command.getMessage().getId(), command.getFrom());
-			if (!command.getMessage().getText().startsWith(COMMAND_PREFIX)) {
-				return;
-			}
 
-			if (isHotKolekCommand(command)) {
-				log.info("Valid Hot Kolek Service, isGroup={}", command.isGroupChat());
-				CompletableFuture.runAsync(() -> handleKolekCommand.handleKolekCommand(command));
-			} else if (isPelunasanCommand(command)) {
-				CompletableFuture<CompletableFuture<Void>> completableFutureCompletableFuture = CompletableFuture.supplyAsync(() -> handlerPelunasan.handlePelunasan(command));
-				completableFutureCompletableFuture.join();
-			} else if (text.startsWith(COMMAND_PREFIX + "t")){
-				tabunganService.handleTabungan(command);
-			} else if (text.startsWith(COMMAND_PREFIX + "min") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
-				// TODO : Send Minimal Bayar
-			} else if (text.startsWith(COMMAND_PREFIX + "jb") && command.getFrom().contains(adminWhatsApp)) {
-				jatuhBayarService.handle(command);
-			} else if (text.startsWith(COMMAND_PREFIX + "reset") && command.isGroupChat() && command.getCleanSenderId().equals(adminWhatsApp)) {
-				// TODO : Reset Hot Kolek
-			}
-		});
+		return CompletableFuture.runAsync(() -> processCommand(webhook));
 	}
 
-	public boolean isText(WhatsAppWebhookDTO command) {
-		return command.getMessage() != null && command.getMessage().getText() != null;
+	private void processCommand(WhatsAppWebhookDTO webhook) {
+		String messageText = webhook.getMessage().getText();
+
+		if (!messageText.startsWith(COMMAND_PREFIX)) {
+			return;
+		}
+
+		if (isAdminShortcut(webhook)) {
+			shortcutMessages.sendShortcutMessage(webhook);
+			return;
+		}
+
+		routeCommand(webhook, messageText);
 	}
 
-	public boolean isHotKolekCommand(WhatsAppWebhookDTO command) {
-		return isText(command) && command.getMessage().getText().matches(HOT_KOLEK_PATTERN);
+	private void routeCommand(WhatsAppWebhookDTO webhook, String text) {
+		if (isHotKolekCommand(webhook)) {
+			log.info("Routing to Hot Kolek Service, isGroup={}", webhook.isGroupChat());
+			CompletableFuture.runAsync(() -> handleKolekCommand.handleKolekCommand(webhook));
+		}
+		else if (isPelunasanCommand(webhook)) {
+			handlerPelunasan.handlePelunasan(webhook).join();
+		}
+		else if (isTabunganCommand(text)) {
+			tabunganService.handleTabungan(webhook);
+		}
+		else if (isMinimalBayarCommand(webhook, text)) {
+			log.warn("Minimal Bayar command not yet implemented");
+		}
+		else if (isJatuhBayarCommand(webhook, text)) {
+			jatuhBayarService.handle(webhook);
+		}
+		else if (isResetCommand(webhook, text)) {
+			log.warn("Reset Hot Kolek command not yet implemented");
+		}
+		else {
+			log.debug("Unknown command: {}", text);
+		}
 	}
 
-
-	public boolean isPelunasanCommand(WhatsAppWebhookDTO command) {
-		return isText(command) && command.getMessage().getText().startsWith(".p");
+	private boolean isValidTextMessage(WhatsAppWebhookDTO webhook) {
+		return webhook.getMessage() != null && webhook.getMessage().getText() != null;
 	}
 
+	private boolean isAdminShortcut(WhatsAppWebhookDTO webhook) {
+		return isFromAdmin(webhook) &&
+			webhook.getMessage().getText().startsWith(ADMIN_SHORTCUT_PREFIX);
+	}
+
+	private boolean isFromAdmin(WhatsAppWebhookDTO webhook) {
+		return webhook.getFrom().contains(adminWhatsApp);
+	}
+
+	private boolean isAdminInGroup(WhatsAppWebhookDTO webhook) {
+		return webhook.isGroupChat() &&
+			webhook.getCleanSenderId().equals(adminWhatsApp);
+	}
+
+	// Command type checkers
+	public boolean isHotKolekCommand(WhatsAppWebhookDTO webhook) {
+		return isValidTextMessage(webhook) &&
+			webhook.getMessage().getText().matches(HOT_KOLEK_PATTERN);
+	}
+
+	public boolean isPelunasanCommand(WhatsAppWebhookDTO webhook) {
+		return isValidTextMessage(webhook) &&
+			webhook.getMessage().getText().startsWith(COMMAND_PREFIX + "p");
+	}
+
+	private boolean isTabunganCommand(String text) {
+		return text.startsWith(COMMAND_PREFIX + "t");
+	}
+
+	private boolean isMinimalBayarCommand(WhatsAppWebhookDTO webhook, String text) {
+		return text.startsWith(COMMAND_PREFIX + "min") && isAdminInGroup(webhook);
+	}
+
+	private boolean isJatuhBayarCommand(WhatsAppWebhookDTO webhook, String text) {
+		return text.startsWith(COMMAND_PREFIX + "jb") && isFromAdmin(webhook);
+	}
+
+	private boolean isResetCommand(WhatsAppWebhookDTO webhook, String text) {
+		return text.startsWith(COMMAND_PREFIX + "reset") && isAdminInGroup(webhook);
+	}
 }
