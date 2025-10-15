@@ -43,9 +43,7 @@ public class NgrokService {
 
 	public String getTunnelInfo() {
 		try {
-			String forObject = restTemplate.getForObject(ngrokApiUrl, String.class);
-			logger.info("Getting tunnel information from ngrok API: {}", forObject);
-			return forObject;
+			return restTemplate.getForObject(ngrokApiUrl, String.class);
 		} catch (RestClientException e) {
 			logger.error("Failed to connect to ngrok API: {}", e.getMessage());
 			try {

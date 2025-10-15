@@ -13,9 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.net.URLConnection;
 import java.util.Base64;
-import java.util.Objects;
 
 
 @Component
@@ -34,10 +32,10 @@ public class PdfService {
 
 				if (!src.startsWith("http") && !src.startsWith("data:")) {
 					try {
-						// Untuk Spring Boot JAR, gunakan path tanpa leading slash
+
 						String resourcePath = "images/" + src;
 
-						// Gunakan ClassPathResource untuk Spring Boot compatibility
+
 						ClassPathResource resource = new ClassPathResource(resourcePath);
 
 						log.debug("Trying to load resource: {}", resourcePath);
@@ -58,7 +56,6 @@ public class PdfService {
 								byte[] imageBytes = out.toByteArray();
 								log.debug("Image size: {} bytes", imageBytes.length);
 
-								// Deteksi MIME type
 								String mimeType = detectMimeType(src);
 								String base64Image = Base64.getEncoder().encodeToString(imageBytes);
 								img.attr("src", "data:" + mimeType + ";base64," + base64Image);
@@ -67,7 +64,6 @@ public class PdfService {
 						} else {
 							log.warn("Resource not found or not readable: {}", resourcePath);
 
-							// Debug additional info
 							try {
 								log.debug("Resource URI: {}", resource.getURI());
 								log.debug("Resource description: {}", resource.getDescription());
@@ -75,7 +71,6 @@ public class PdfService {
 								log.debug("Could not get resource details: {}", debugEx.getMessage());
 							}
 
-							// Alternatif: coba dengan ResourceUtils
 							try {
 								InputStream altStream = this.getClass().getClassLoader()
 									.getResourceAsStream(resourcePath);
@@ -130,7 +125,7 @@ public class PdfService {
 		} else if (lowerFilename.endsWith(".webp")) {
 			return "image/webp";
 		}
-		return "image/jpeg"; // default
+		return "image/jpeg";
 	}
 
 	@PostConstruct
@@ -138,7 +133,7 @@ public class PdfService {
 		log.info("=== Debugging Image Resources ===");
 
 		try {
-			// Cek dengan ClassPathResource
+
 			ClassPathResource logoResource = new ClassPathResource("images/logo.png");
 			log.info("ClassPathResource - exists: {}, readable: {}",
 				logoResource.exists(), logoResource.isReadable());
@@ -152,7 +147,7 @@ public class PdfService {
 		}
 
 		try {
-			// Cek dengan ClassLoader
+
 			InputStream stream = this.getClass().getClassLoader()
 				.getResourceAsStream("images/logo.png");
 			if (stream != null) {
@@ -166,7 +161,7 @@ public class PdfService {
 		}
 
 		try {
-			// Cek dengan ResourceLoader
+
 			org.springframework.core.io.Resource springResource =
 				resourceLoader.getResource("classpath:images/logo.png");
 			log.info("Spring ResourceLoader - exists: {}, readable: {}",

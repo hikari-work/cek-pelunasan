@@ -124,11 +124,6 @@ public class HandlerPelunasan {
 			sendReactionAsync(command);
 
 			if (isAdminUser(command)) {
-				try {
-					Thread.sleep(2_000L);
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
 				updateMessageForAdmin(command, message);
 			} else {
 				sendRegularMessage(command, message);

@@ -7,6 +7,7 @@ import org.cekpelunasan.service.whatsapp.hotkolek.HandleKolekCommand;
 import org.cekpelunasan.service.whatsapp.jatuhbayar.JatuhBayarService;
 import org.cekpelunasan.service.whatsapp.pelunasan.HandlerPelunasan;
 import org.cekpelunasan.service.whatsapp.shortcut.ShortcutMessages;
+import org.cekpelunasan.service.whatsapp.slik.SlikService;
 import org.cekpelunasan.service.whatsapp.tabungan.TabunganService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -24,6 +25,7 @@ public class Routers {
 	private final JatuhBayarService jatuhBayarService;
 	private final ShortcutMessages shortcutMessages;
 	private final HandleKolekCommand handleKolekCommand;
+	private final SlikService slikService;
 
 	@Value("${admin.whatsapp}")
 	private String adminWhatsApp;
@@ -75,8 +77,9 @@ public class Routers {
 		}
 		else if (isJatuhBayarCommand(webhook, text)) {
 			jatuhBayarService.handle(webhook);
-		}
-		else if (isResetCommand(webhook, text)) {
+		} else if (isValidSlikCommand(webhook)) {
+			slikService.handleSlikService(webhook);
+		} else if (isResetCommand(webhook, text)) {
 			log.warn("Reset Hot Kolek command not yet implemented");
 		}
 		else {
@@ -86,6 +89,11 @@ public class Routers {
 
 	private boolean isValidTextMessage(WhatsAppWebhookDTO webhook) {
 		return webhook.getMessage() != null && webhook.getMessage().getText() != null;
+	}
+
+	private boolean isValidSlikCommand(WhatsAppWebhookDTO webhook) {
+		return isValidTextMessage(webhook) &&
+			webhook.getMessage().getText().startsWith(COMMAND_PREFIX + "s");
 	}
 
 	private boolean isAdminShortcut(WhatsAppWebhookDTO webhook) {
