@@ -9,6 +9,7 @@ import org.cekpelunasan.service.whatsapp.pelunasan.HandlerPelunasan;
 import org.cekpelunasan.service.whatsapp.shortcut.ShortcutMessages;
 import org.cekpelunasan.service.whatsapp.slik.SlikService;
 import org.cekpelunasan.service.whatsapp.tabungan.TabunganService;
+import org.cekpelunasan.service.whatsapp.virtualaccount.VirtualAccountHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class Routers {
 	private final ShortcutMessages shortcutMessages;
 	private final HandleKolekCommand handleKolekCommand;
 	private final SlikService slikService;
+	private final VirtualAccountHandler virtualAccountHandler;
 
 	@Value("${admin.whatsapp}")
 	private String adminWhatsApp;
@@ -81,10 +83,17 @@ public class Routers {
 			slikService.handleSlikService(webhook);
 		} else if (isResetCommand(webhook, text)) {
 			log.warn("Reset Hot Kolek command not yet implemented");
-		}
-		else {
+		} else if (isVirtualAccount(webhook)) {
+			log.info("Routing to Virtual Account Service");
+			virtualAccountHandler.handler(webhook);
+
+		} else {
 			log.debug("Unknown command: {}", text);
 		}
+	}
+
+	private boolean isVirtualAccount(WhatsAppWebhookDTO webhookDTO) {
+		return webhookDTO.getMessage().getText().startsWith(COMMAND_PREFIX + "va");
 	}
 
 	private boolean isValidTextMessage(WhatsAppWebhookDTO webhook) {
