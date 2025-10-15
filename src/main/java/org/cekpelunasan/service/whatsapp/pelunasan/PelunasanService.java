@@ -6,7 +6,6 @@ import org.cekpelunasan.service.whatsapp.dto.PelunasanDto;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -41,17 +40,6 @@ public class PelunasanService {
 		return buildPelunasanDto(pelunasan, penalty, interest, penaltyMultiplier);
 	}
 
-	public List<PelunasanDto> handleMultiplePelunasanCalculator(List<Bills> pelunasans) {
-		if (pelunasans == null || pelunasans.isEmpty()) {
-			return List.of();
-		}
-
-		return pelunasans.parallelStream()
-			.filter(this::isValidBill)
-			.map(this::calculatePelunasn)
-			.toList();
-	}
-
 	private void validateInput(Bills pelunasan) {
 		if (pelunasan == null) {
 			throw new IllegalArgumentException("Bills cannot be null");
@@ -64,15 +52,6 @@ public class PelunasanService {
 		}
 	}
 
-	private boolean isValidBill(Bills bill) {
-		try {
-			validateInput(bill);
-			return true;
-		} catch (Exception e) {
-			log.warn("Invalid bill found, skipping: {}", e.getMessage());
-			return false;
-		}
-	}
 
 	private String extractCreditType(String productType) {
 		if (productType == null || productType.length() < 2) {
@@ -144,6 +123,9 @@ public class PelunasanService {
 
 		log.info("FM Penalty calculation - Passed: {}, Left: {}, Total: {}",
 			monthsPassed, monthsLeft, totalMonthsPeriod);
+		if (isSameMonthAndYear(dueDate, LocalDate.now())) {
+			return 0;
+		}
 
 		if (totalMonthsPeriod > LONG_TERM_MONTHS) {
 			return calculateLongTermFlatMurniPenalty(monthsPassed, monthsLeft);
@@ -235,11 +217,4 @@ public class PelunasanService {
 	public record PenaltyCalculation(Long denda, Long penalty) {}
 
 	public record InterestCalculation(Long amount, String type) {}
-
-	public String toTelegramMessage(PelunasanDto dto) {
-		return dto.toTelegramMessage();
-	}
-	public String toTelegramMessageClean(PelunasanDto dto) {
-		return dto.toWhatsAppMessageClean();
-	}
 }
