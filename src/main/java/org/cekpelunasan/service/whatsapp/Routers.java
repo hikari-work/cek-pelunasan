@@ -42,9 +42,9 @@ public class Routers {
 		log.info("Received webhook from={} id={}", webhook.getCleanChatId(), webhook.getMessage().getId());
 
 		if (!isValidTextMessage(webhook)) {
+			log.debug("Invalid message: {}", webhook.getMessage());
 			return CompletableFuture.completedFuture(null);
 		}
-
 		return CompletableFuture.runAsync(() -> processCommand(webhook));
 	}
 
