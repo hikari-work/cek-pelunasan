@@ -107,6 +107,11 @@
             <artifactId>s3</artifactId>
             <version>2.25.0</version> <!-- Use latest -->
         </dependency>
+        <dependency>
+            <groupId>org.graalvm.buildtools</groupId>
+            <artifactId>native-maven-plugin</artifactId>
+            <version>0.10.1</version>
+        </dependency>
 
 
         <dependency>

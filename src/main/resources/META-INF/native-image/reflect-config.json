@@ -1,0 +1,11 @@
+[
+    {
+        "name": "org.springframework.boot.loader.launch.Launcher",
+        "methods": [
+            {
+                "name": "launch",
+                "parameterTypes": ["java.lang.String[]"]
+            }
+        ]
+    }
+]
