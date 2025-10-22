@@ -45,7 +45,8 @@ public class Routers {
 			log.debug("Invalid message: {}", webhook.getMessage());
 			return CompletableFuture.completedFuture(null);
 		}
-		return CompletableFuture.runAsync(() -> processCommand(webhook));
+		processCommand(webhook);
+		return CompletableFuture.completedFuture(null);
 	}
 
 	private void processCommand(WhatsAppWebhookDTO webhook) {
