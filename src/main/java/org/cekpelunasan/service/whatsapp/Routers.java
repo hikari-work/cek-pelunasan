@@ -39,7 +39,7 @@ public class Routers {
 	@Async
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> handle(WhatsAppWebhookDTO webhook) {
-		log.info("Received webhook from={} id={}", webhook.getCleanChatId(), webhook.getMessage().getId());
+		log.info("Received webhook from={} id={} from={}", webhook.getCleanChatId(), webhook.getMessage().getId(), webhook.getFrom());
 
 		if (!isValidTextMessage(webhook)) {
 			log.debug("Invalid message: {}", webhook.getMessage());
