@@ -56,6 +56,7 @@ public class Routers {
 		}
 
 		if (isAdminShortcut(webhook)) {
+			log.info("Routing to Shortcut Service");
 			shortcutMessages.sendShortcutMessage(webhook);
 			return;
 		}
