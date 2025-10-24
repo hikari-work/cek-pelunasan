@@ -24,6 +24,7 @@ public class WebDriverConfiguration {
 		options.addArguments("--no-sandbox");
 		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-dev-shm-usage");
+		options.addArguments("--single-process");
 
 		Path tmpProfile;
 		try {
