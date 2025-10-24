@@ -30,14 +30,9 @@ public class PelunasanService {
 		String creditType = extractCreditType(pelunasan.getProduct());
 		int penaltyMultiplier = calculatePenaltyMultiplier(creditType, pelunasan);
 
-		log.info("Credit Type: {}, Penalty Multiplier: {}", creditType, penaltyMultiplier);
-
 		PenaltyCalculation penalty = calculatePenalties(pelunasan, penaltyMultiplier);
 
 		InterestCalculation interest = calculateInterest(pelunasan);
-
-		log.info("Date comparison - Is after now: {}", isAfterCurrentDay(parseDate(pelunasan.getRealization())));
-		log.info("Interest calculation - Amount: {}", interest.amount());
 
 		return buildPelunasanDto(pelunasan, penalty, interest, penaltyMultiplier);
 	}
@@ -131,8 +126,6 @@ public class PelunasanService {
 		int totalMonthsPeriod = calculateMonthsBetween(realizationDate, dueDate);
 		int monthsLeft = totalMonthsPeriod - monthsPassed;
 
-		log.info("FM Penalty calculation - Passed: {}, Left: {}, Total: {}",
-			monthsPassed, monthsLeft, totalMonthsPeriod);
 		if (isSameMonthAndYear(dueDate, LocalDate.now())) {
 			return 0;
 		}
@@ -160,13 +153,9 @@ public class PelunasanService {
 	}
 
 	private int calculateAnuitasPenaltyMultiplier(Bills pelunasan) {
-		LocalDate realizationDate = parseDate(pelunasan.getRealization());
 		LocalDate dueDate = parseDate(pelunasan.getDueDate());
 
-		log.info("Anuitas penalty calculation - Realization: {}, Due date: {}",
-			realizationDate, dueDate);
-
-		boolean isSameMonthAndYear = isSameMonthAndYear(realizationDate, dueDate);
+		boolean isSameMonthAndYear = isSameMonthAndYear(LocalDate.now(), dueDate);
 		return isSameMonthAndYear ? 0 : 1;
 	}
 
@@ -201,6 +190,7 @@ public class PelunasanService {
 	}
 
 	private boolean isSameMonthAndYear(LocalDate date1, LocalDate date2) {
+		log.info("Checking if {} and {} are same month and year ", date1, date2);
 		return date1.getMonthValue() == date2.getMonthValue()
 			&& date1.getYear() == date2.getYear();
 	}
