@@ -1,12 +1,11 @@
 package org.cekpelunasan.service.Bill;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.entity.Bills;
 import org.cekpelunasan.entity.Paying;
 import org.cekpelunasan.repository.BillsRepository;
 import org.cekpelunasan.repository.PayingRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,9 +18,9 @@ import java.util.function.BiFunction;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class HotKolekService {
 
-	private static final Logger log = LoggerFactory.getLogger(HotKolekService.class);
 	private final PayingRepository payingRepository;
     private final BillsRepository billsRepository;
 
@@ -52,7 +51,9 @@ public class HotKolekService {
 		List<Bills> bills = filterBills(branch,
 			(repo, br) -> new ArrayList<>(repo.findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(
 				0L, 0L, br, Pageable.unpaged()).stream().toList()));
-		bills.removeIf(bill -> bill.getAccountOfficer().equals("JKS"));
+		log.info("Found {} bills", bills.size());
+		bills.removeIf(this::isValidBillsHotKolek);
+		log.info("Found {} bills from Filter", bills.size());
 		return bills;
 	}
     
@@ -80,6 +81,30 @@ public class HotKolekService {
 	@Transactional
 	public void deleteAllPaying(List<String> spkList) {
 		payingRepository.deleteAllById(spkList);
+	}
 
+	private boolean isValidBillsHotKolek(Bills bills) {
+		if (bills == null) {
+			return true;
+		}
+
+		if (bills.getMinInterest() <= 0 && bills.getMinPrincipal() <= 0) {
+			return true;
+		}
+
+
+		if (bills.getMinInterest() > 0) {
+			if (bills.getMinInterest() > bills.getInterest()) {
+				return true;
+			}
+		}
+
+
+		if (bills.getMinPrincipal() > 0) {
+			if (bills.getMinPrincipal() > bills.getPrincipal()) {
+				return true;
+			}
+		}
+		return Integer.parseInt(bills.getDayLate()) > 120;
 	}
 }

@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class JatuhBayarService {
 
-	private static final Set<String> EXCLUDED_ACCOUNT_OFFICERS = Set.of("JKS", "AIN");
 
 	private final static String BRANCH_CODE = "1075";
 
@@ -78,8 +77,7 @@ public class JatuhBayarService {
 
 		return billService.findAllBillsByBranch(BRANCH_CODE)
 			.stream()
-			.filter(bill -> bill.getPayDown().equals(dayOfMonth)
-				&& !EXCLUDED_ACCOUNT_OFFICERS.contains(bill.getAccountOfficer()))
+			.filter(bill -> bill.getPayDown().equals(dayOfMonth))
 			.collect(Collectors.groupingBy(Bills::getAccountOfficer));
 	}
 
