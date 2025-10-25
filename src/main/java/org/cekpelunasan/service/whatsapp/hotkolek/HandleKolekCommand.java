@@ -59,7 +59,6 @@ public class HandleKolekCommand {
 
 		String responseMessage = generateHotKolekMessage();
 		String chatId = buildChatId(command);
-		GenericResponseDTO genericResponseDTO = whatsAppSenderService.sendWhatsAppText(chatId, "Noted");
 
 		whatsAppSenderService.sendWhatsAppText(chatId, responseMessage);
 	}
