@@ -12,6 +12,11 @@ import java.util.concurrent.Executors;
 @EnableAsync
 public class AsyncConfiguration implements AsyncConfigurer {
 
+	/*
+	This project mostly do I/O bound tasks, so using virtual threads is more efficient.
+	Using virtual threads allows the application to handle a large number of concurrent tasks
+	with minimal resource consumption, as virtual threads are lightweight and managed by the JVM.
+	 */
 	@Override
 	public Executor getAsyncExecutor() {
 		return Executors.newVirtualThreadPerTaskExecutor();

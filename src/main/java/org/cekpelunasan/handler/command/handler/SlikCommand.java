@@ -7,7 +7,7 @@ import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.slik.IsUserGetPermissionToViewResume;
 import org.cekpelunasan.service.slik.PDFReader;
-import org.cekpelunasan.service.slik.S3Connector;
+import org.cekpelunasan.service.slik.S3ClientConfiguration;
 import org.cekpelunasan.service.users.UserService;
 import org.cekpelunasan.utils.button.SlikButtonConfirmation;
 import org.springframework.scheduling.annotation.Async;
@@ -34,7 +34,7 @@ public class SlikCommand implements CommandProcessor {
     private static final String ERROR_MESSAGE = "SLIK Belum di request, Atau anda belum didaftarkan sebagai AO";
     private static final String KTP_REQUIRED_MESSAGE = "No KTP Harus Diisi";
 
-    private final S3Connector s3Connector;
+    private final S3ClientConfiguration s3Connector;
     private final AuthorizedChats authorizedChats;
     private final MessageTemplate messageTemplate;
     private final UserService userService;

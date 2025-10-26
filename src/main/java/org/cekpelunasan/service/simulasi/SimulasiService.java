@@ -211,27 +211,13 @@ public class SimulasiService {
             records.removeIf(sim -> sim.getTunggakan() < 1);
 
             if (!records.isEmpty() && records.getFirst().getSequence().equals(SEQUENCE_INTEREST)) {
-                records.forEach(sim -> sim.setKeterlambatan(sim.getKeterlambatan() + getDaysToEndOfMonth()));
-
-                records.stream()
-                        .filter(sim -> sim.getSequence().equals(SEQUENCE_INTEREST) && sim.getKeterlambatan() > 90L)
-                        .forEach(record -> {
-                            minimumPayment.addAndGet(record.getTunggakan());
-                            record.setKeterlambatan(0L);
-                        });
-            }
+				addLateDate(records, minimumPayment);
+			}
         } else {
             log.info("Penambahan {}", getDaysToEndOfMonth());
-            records.forEach(sim -> sim.setKeterlambatan(sim.getKeterlambatan() + getDaysToEndOfMonth()));
+			addLateDate(records, minimumPayment);
 
-            records.stream()
-                    .filter(sim -> sim.getSequence().equals(SEQUENCE_INTEREST) && sim.getKeterlambatan() > 90L)
-                    .forEach(record -> {
-                        minimumPayment.addAndGet(record.getTunggakan());
-                        record.setKeterlambatan(0L);
-                    });
-
-            records.stream()
+			records.stream()
                     .filter(sim -> sim.getSequence().equals(SEQUENCE_PRINCIPAL) && sim.getKeterlambatan() > 90L)
                     .forEach(record -> {
                         minimumPayment.addAndGet(record.getTunggakan());
@@ -241,4 +227,15 @@ public class SimulasiService {
 
         return minimumPayment.get();
     }
+
+	private void addLateDate(List<Simulasi> records, AtomicLong minimumPayment) {
+		records.forEach(sim -> sim.setKeterlambatan(sim.getKeterlambatan() + getDaysToEndOfMonth()));
+
+		records.stream()
+				.filter(sim -> sim.getSequence().equals(SEQUENCE_INTEREST) && sim.getKeterlambatan() > 90L)
+				.forEach(record -> {
+					minimumPayment.addAndGet(record.getTunggakan());
+					record.setKeterlambatan(0L);
+				});
+	}
 }

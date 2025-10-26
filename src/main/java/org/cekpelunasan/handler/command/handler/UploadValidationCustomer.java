@@ -1,5 +1,6 @@
 package org.cekpelunasan.handler.command.handler;
 
+import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
@@ -24,9 +25,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Component
+@Slf4j
 public class UploadValidationCustomer implements CommandProcessor {
 
-	private static final Logger log = LoggerFactory.getLogger(UploadCommandHandler.class);
 	private static final long DELAY_BETWEEN_USERS_MS = 500;
 
 	private final UserService userService;

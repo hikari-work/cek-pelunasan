@@ -15,6 +15,10 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
 
+/*
+The main controller for handling incoming webhook requests.
+Using telegram or WhatsApp webhook after filter in Servlet.
+ */
 
 @RestController
 public class WebhookController {

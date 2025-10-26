@@ -244,13 +244,4 @@ public class SavingsService {
 
 		return cb.and(likePredicates.toArray(new Predicate[0]));
 	}
-
-	public List<Savings> findAllTabByNameOrNomor(String searchTerm) {
-		Pageable pageable = PageRequest.of(0, 100);
-		return savingsRepository.findByTabIdContainingIgnoreCaseOrNameContainingIgnoreCase(searchTerm, searchTerm, pageable)
-			.getContent();
-	}
-	public List<Savings> findAll() {
-		return savingsRepository.findAll().stream().limit(100).distinct().collect(Collectors.toList());
-	}
 }

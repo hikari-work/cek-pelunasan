@@ -6,6 +6,13 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.*;
 
+/*
+Bills entity
+
+The entity class for the bills' table.
+Used for tagihan and pelunasan operation.
+ */
+
 @Getter
 @Setter
 @AllArgsConstructor

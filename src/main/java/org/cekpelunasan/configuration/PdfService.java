@@ -12,9 +12,14 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
 
+/*
+The bean for generating PDFs from HTML.
+Using Selenium Webdriver to generate PDFs for complex page setup and easy to control.
+ */
 
 @Component
 @RequiredArgsConstructor
@@ -24,52 +29,33 @@ public class PdfService {
 	private final ResourceLoader resourceLoader;
 
 	public String embedLocalResourceImages(String htmlContent) {
-		log.info("Generating Image For PDF...");
+		/*
+		Loading Images from local resources
+		Specially for logo to shown in a PDF file
+		 */
 		try {
+			// Parso html content
 			Document doc = Jsoup.parse(htmlContent);
 			for (Element img : doc.select("img")) {
+				// Get image src
 				String src = img.attr("src");
 
+				// Check if image src is a local resource
 				if (!src.startsWith("http") && !src.startsWith("data:")) {
 					try {
-
+						// Load image from local resources
 						String resourcePath = "images/" + src;
-
-
 						ClassPathResource resource = new ClassPathResource(resourcePath);
 
-						log.debug("Trying to load resource: {}", resourcePath);
-						log.debug("Resource exists: {}", resource.exists());
-						log.debug("Resource is readable: {}", resource.isReadable());
-
 						if (resource.exists() && resource.isReadable()) {
+							// Embed image into HTML
 							try (InputStream is = resource.getInputStream()) {
-								ByteArrayOutputStream out = new ByteArrayOutputStream();
-								byte[] buffer = new byte[4096];
-								int bytesRead;
-								log.info("Writing Image: {} from {}", src, resourcePath);
-
-								while ((bytesRead = is.read(buffer)) != -1) {
-									out.write(buffer, 0, bytesRead);
-								}
-
-								byte[] imageBytes = out.toByteArray();
-								log.debug("Image size: {} bytes", imageBytes.length);
-
-								String mimeType = detectMimeType(src);
-								String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-								img.attr("src", "data:" + mimeType + ";base64," + base64Image);
+								inputImages(img, src, is);
 								log.debug("Successfully embedded image: {}", src);
 							}
 						} else {
+							// Resource hasn't been found or not readable
 							log.warn("Resource not found or not readable: {}", resourcePath);
-
-							try {
-								log.debug("Resource URI: {}", resource.getURI());
-								log.debug("Resource description: {}", resource.getDescription());
-							} catch (Exception debugEx) {
-								log.debug("Could not get resource details: {}", debugEx.getMessage());
-							}
 
 							try {
 								InputStream altStream = this.getClass().getClassLoader()
@@ -77,18 +63,7 @@ public class PdfService {
 								if (altStream != null) {
 									log.info("Found resource using alternative method: {}", resourcePath);
 									try (InputStream is = altStream) {
-										ByteArrayOutputStream out = new ByteArrayOutputStream();
-										byte[] buffer = new byte[4096];
-										int bytesRead;
-
-										while ((bytesRead = is.read(buffer)) != -1) {
-											out.write(buffer, 0, bytesRead);
-										}
-
-										byte[] imageBytes = out.toByteArray();
-										String mimeType = detectMimeType(src);
-										String base64Image = Base64.getEncoder().encodeToString(imageBytes);
-										img.attr("src", "data:" + mimeType + ";base64," + base64Image);
+										inputImages(img, src, is);
 										log.debug("Successfully embedded image using alternative method: {}", src);
 									}
 								} else {
@@ -100,16 +75,34 @@ public class PdfService {
 						}
 
 					} catch (Exception e) {
+						// Failed to load image
 						log.error("Failed to embed image '{}': {}", src, e.getMessage(), e);
 					}
 				}
 			}
-			log.info("Embedded image generation complete");
 			return doc.html();
 		} catch (Exception e) {
 			log.error("Error embedding local resource images: {}", e.getMessage(), e);
 			return htmlContent;
 		}
+	}
+
+	// Extract Images
+
+	private void inputImages(Element img, String src, InputStream is) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		byte[] buffer = new byte[4096];
+		int bytesRead;
+
+		while ((bytesRead = is.read(buffer)) != -1) {
+			out.write(buffer, 0, bytesRead);
+		}
+
+		byte[] imageBytes = out.toByteArray();
+
+		String mimeType = detectMimeType(src);
+		String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+		img.attr("src", "data:" + mimeType + ";base64," + base64Image);
 	}
 
 	private String detectMimeType(String filename) {

@@ -3,7 +3,7 @@ package org.cekpelunasan.handler.callback.handler;
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.callback.CallbackProcessor;
 import org.cekpelunasan.service.slik.GeneratePDF;
-import org.cekpelunasan.service.slik.S3Connector;
+import org.cekpelunasan.service.slik.S3ClientConfiguration;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -26,7 +26,7 @@ public class SlikSenderHandler implements CallbackProcessor {
 	private static final String FILE_NOT_FOUND_FORMAT = "Data KTP `%s` tidak ada";
 	private static final String FILE_FOUND_FORMAT = "Data KTP `%s` Ditemukan....";
 
-	private final S3Connector s3Connector;
+	private final S3ClientConfiguration s3Connector;
 	private final GeneratePDF generatePDF;
 
 	@Override

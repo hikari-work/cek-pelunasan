@@ -11,6 +11,7 @@ import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public class SendNotificationSlikUpdated {
 	private String bucket;
 	private volatile int lastCount = 1;
 
-	private final S3Connector s3Connector;
+	private final S3Client s3Connector;
 	private final UserRepository userRepository;
 
 
@@ -50,7 +51,7 @@ public class SendNotificationSlikUpdated {
 				.bucket(bucket)
 				.continuationToken(continuationToken)
 				.build();
-			ListObjectsV2Response response = s3Connector.s3Client().listObjectsV2(request);
+			ListObjectsV2Response response = s3Connector.listObjectsV2(request);
 
 			for (S3Object object : response.contents()) {
 				if (object.key().contains(".pdf")) {
@@ -118,7 +119,7 @@ public class SendNotificationSlikUpdated {
 	 * Cek apakah object perlu dikirim notifikasi.
 	 */
 	private boolean needsNotification(String key) {
-		HeadObjectResponse header = s3Connector.s3Client().headObject(
+		HeadObjectResponse header = s3Connector.headObject(
 			HeadObjectRequest.builder()
 				.bucket(bucket)
 				.key(key)
@@ -190,7 +191,7 @@ public class SendNotificationSlikUpdated {
 	 * Tandai file S3 sebagai sudah dinotifikasi.
 	 */
 	private void markAsNotified(String key) {
-		HeadObjectResponse response = s3Connector.s3Client().headObject(HeadObjectRequest.builder()
+		HeadObjectResponse response = s3Connector.headObject(HeadObjectRequest.builder()
 			.key(key)
 			.bucket(bucket)
 			.build());
@@ -205,7 +206,7 @@ public class SendNotificationSlikUpdated {
 			.metadataDirective(MetadataDirective.REPLACE)
 			.build();
 
-		s3Connector.s3Client().copyObject(copyRequest);
+		s3Connector.copyObject(copyRequest);
 		log.info("Marked {} as notified", key);
 	}
 }

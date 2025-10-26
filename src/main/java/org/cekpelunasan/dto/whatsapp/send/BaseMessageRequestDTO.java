@@ -1,6 +1,11 @@
 package org.cekpelunasan.dto.whatsapp.send;
 
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public abstract class BaseMessageRequestDTO {
 	private String phone;
 	private Boolean isForwarded = false;
@@ -20,14 +25,6 @@ public abstract class BaseMessageRequestDTO {
 	}
 
 
-	public String getPhone() { return phone; }
-	public void setPhone(String phone) { this.phone = phone; }
-
-	public Boolean getIsForwarded() { return isForwarded; }
-	public void setIsForwarded(Boolean isForwarded) { this.isForwarded = isForwarded; }
-
-	public Integer getDuration() { return duration; }
-	public void setDuration(Integer duration) { this.duration = duration; }
 }
 
 

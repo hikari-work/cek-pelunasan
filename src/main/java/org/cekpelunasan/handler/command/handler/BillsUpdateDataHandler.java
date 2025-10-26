@@ -1,12 +1,14 @@
 package org.cekpelunasan.handler.command.handler;
 
-import org.cekpelunasan.entity.User;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.cekpelunasan.event.database.DatabaseUpdateEvent;
+import org.cekpelunasan.event.database.EventType;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.Bill.BillService;
-import org.cekpelunasan.service.users.UserService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -16,109 +18,129 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class BillsUpdateDataHandler implements CommandProcessor {
 
-	private static final long DELAY_BETWEEN_USER = 500;
+	private static final String COMMAND = "/uploadtagihan";
+	private static final String CSV_EXTENSION = ".csv";
+	private static final String UPLOAD_DIRECTORY = "files";
+	private static final String ERROR_DOWNLOAD = "❌ Gagal memproses file";
+	private static final String PROCESSING_MESSAGE = "⏳ *Sedang mengunduh dan memproses file...*";
 
 	private final BillService billService;
-	private final UserService userService;
-	private final String botOwner;
+	private final ApplicationEventPublisher publisher;
 	private final MessageTemplate messageTemplate;
 
-	public BillsUpdateDataHandler(BillService billService,
-								  @Value("${telegram.bot.owner}") String botOwner,
-								  UserService userService, MessageTemplate messageTemplate1) {
-		this.billService = billService;
-		this.botOwner = botOwner;
-		this.userService = userService;
-		this.messageTemplate = messageTemplate1;
-	}
+	@Value("${telegram.bot.owner}")
+	private String botOwner;
 
 	@Override
 	public String getCommand() {
-		return "/uploadtagihan";
+		return COMMAND;
 	}
 
 	@Override
 	public String getDescription() {
-		return """
-			Gunakan Command ini untuk upload data tagihan harian.
-			""";
+		return "Gunakan Command ini untuk upload data tagihan harian.";
 	}
 
 	@Override
-	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
-		return CompletableFuture.runAsync(() -> {
-			log.info("Update Received...");
-			String[] parts = text.split(" ", 2);
-
-			if (!botOwner.equalsIgnoreCase(String.valueOf(chatId))) {
-				log.info("Not Admin {}", chatId);
-				sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
-				return;
-			}
-
-			if (!String.valueOf(chatId).equalsIgnoreCase(botOwner) || parts.length < 2) {
-				log.info("Denied");
-				return;
-			}
-			log.info("Command: {} Executed", text);
-			String url = parts[1];
-			String fileName = url.substring(url.lastIndexOf("/") + 1);
-
-			sendMessage(chatId, "⏳ *Sedang mengunduh dan memproses file...*", telegramClient);
-
-			try {
-				List<User> users = userService.findAllUsers();
-
-				if (processCsvFile(url, fileName)) {
-					log.info("Starting Broadcast....");
-					broadcast(users, String.format("✅ *Database tagihan berhasil di update pada %s:*",
-						LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"))),
-						telegramClient);
-				} else {
-					log.info("Update Failed....");
-					broadcast(users, "⚠ *Gagal update data Tagihan. Akan dicoba ulang.*", telegramClient);
-				}
-			} catch (Exception e) {
-				log.error("Gagal memproses file CSV");
-				sendMessage(chatId, "❌ Gagal memproses file", telegramClient);
-			}
-		});
+		return CompletableFuture.runAsync(() -> processRequest(chatId, text, telegramClient));
 	}
 
-	private boolean processCsvFile(String fileUrl, String fileName) {
-		if (!fileName.endsWith(".csv")) return false;
-		try (InputStream input = new URL(fileUrl).openStream()) {
-			Path filePath = Paths.get("files", fileName);
-			Files.createDirectories(filePath.getParent());
-			Files.copy(input, filePath, StandardCopyOption.REPLACE_EXISTING);
-			billService.deleteAll();
-			billService.parseCsvAndSaveIntoDatabase(filePath);
-			return true;
-		} catch (Exception e) {
-			log.error("❌ Gagal memproses file dari URL: {}", fileUrl);
+	private void processRequest(long chatId, String text, TelegramClient telegramClient) {
+		log.info("Update Received...");
+
+		if (!isAdmin(chatId)) {
+			log.warn("Not Admin: {}", chatId);
+			sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
+			return;
+		}
+
+		String fileUrl = extractFileUrl(text);
+		if (fileUrl == null) {
+			log.warn("Invalid format from chat {}", chatId);
+			return;
+		}
+
+		processAndNotify(fileUrl, chatId, telegramClient);
+	}
+
+	private boolean isAdmin(long chatId) {
+		try {
+			return botOwner.equalsIgnoreCase(String.valueOf(chatId));
+		} catch (NumberFormatException e) {
+			log.error("Invalid bot owner ID configuration: {}", botOwner, e);
 			return false;
 		}
 	}
 
-	private void broadcast(List<User> users, String message, TelegramClient client) {
-		users.forEach(user -> {
-			log.info("Broadcasting to {}", user.getChatId());
-			sendMessage(user.getChatId(), message, client);
-			try {
-				Thread.sleep(DELAY_BETWEEN_USER);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				log.warn("❗ Delay antar user terinterupsi", e);
+	private String extractFileUrl(String text) {
+		try {
+			String[] parts = text.split(" ", 2);
+			if (parts.length < 2) {
+				throw new ArrayIndexOutOfBoundsException("URL not provided");
 			}
-		});
+			return parts[1];
+		} catch (ArrayIndexOutOfBoundsException e) {
+			log.debug("Invalid command format: {}", e.getMessage());
+			return null;
+		}
+	}
+
+	private void processAndNotify(String fileUrl, long chatId, TelegramClient telegramClient) {
+		String fileName = extractFileName(fileUrl);
+
+		sendMessage(chatId, PROCESSING_MESSAGE, telegramClient);
+		log.info("Command: /uploadtagihan Executed with file: {}", fileName);
+
+		try {
+			boolean processed = processCsvFile(fileUrl, fileName);
+			publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.TAGIHAN, processed));
+
+			if (!processed) {
+				sendMessage(chatId, ERROR_DOWNLOAD, telegramClient);
+			}
+		} catch (Exception e) {
+			log.error("Error processing CSV file: {}", fileUrl, e);
+			sendMessage(chatId, ERROR_DOWNLOAD, telegramClient);
+		}
+	}
+
+	private String extractFileName(String fileUrl) {
+		return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+	}
+
+	private boolean processCsvFile(String fileUrl, String fileName) throws Exception {
+		if (!isCsvFile(fileName)) {
+			log.warn("File is not CSV: {}", fileName);
+			return false;
+		}
+
+		Path filePath = downloadFile(fileUrl, fileName);
+		billService.deleteAll();
+		billService.parseCsvAndSaveIntoDatabase(filePath);
+		log.info("CSV file processed successfully: {}", fileName);
+		return true;
+	}
+
+	private boolean isCsvFile(String fileName) {
+		return fileName.endsWith(CSV_EXTENSION);
+	}
+
+	private Path downloadFile(String fileUrl, String fileName) throws Exception {
+		Path filePath = Paths.get(UPLOAD_DIRECTORY, fileName);
+		Files.createDirectories(filePath.getParent());
+
+		try (InputStream input = new URL(fileUrl).openStream()) {
+			Files.copy(input, filePath, StandardCopyOption.REPLACE_EXISTING);
+		}
+
+		return filePath;
 	}
 }

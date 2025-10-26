@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
-import org.cekpelunasan.service.slik.S3Connector;
+import org.cekpelunasan.service.slik.S3ClientConfiguration;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
 public class DocSlikCommandHandler implements CommandProcessor {
 	private final AuthorizedChats authorizedChats1;
 	private final MessageTemplate messageTemplate;
-	private final S3Connector s3Connector;
+	private final S3ClientConfiguration s3Connector;
 
 
 	@Override

@@ -1,10 +1,9 @@
 package org.cekpelunasan.service.whatsapp.slik;
 
 import org.cekpelunasan.dto.whatsapp.webhook.WhatsAppWebhookDTO;
-import org.cekpelunasan.service.slik.S3Connector;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
 import java.util.List;
@@ -15,9 +14,9 @@ public class SlikService {
 	@Value("${r2.bucket}")
 	private String bucket;
 
-	private final S3Connector s3Connector;
+	private final S3Client s3Connector;
 
-	public SlikService(S3Connector s3Connector) {
+	public SlikService(S3Client s3Connector) {
 		this.s3Connector = s3Connector;
 	}
 
@@ -29,10 +28,8 @@ public class SlikService {
 		}
 		if (fileName.endsWith(".txt")) {
 			// TODO : Generate PDF Files
-			return;
 		} else if (fileName.endsWith(".pdf")) {
 			// TODO : Send PDF Files
-			return;
 		}
 	}
 
@@ -40,7 +37,7 @@ public class SlikService {
 		ListObjectsV2Request request = ListObjectsV2Request.builder()
 			.bucket(bucket)
 			.build();
-		ListObjectsV2Response response = s3Connector.s3Client().listObjectsV2(request);
+		ListObjectsV2Response response = s3Connector.listObjectsV2(request);
 		return response.contents().stream().map(S3Object::key).toList();
 	}
 	public String getMatchingItems(String name, List<String> items) {
@@ -48,14 +45,6 @@ public class SlikService {
 			.filter(item -> item.toLowerCase().contains(name.toLowerCase()))
 			.findFirst()
 			.orElse(null);
-	}
-	public byte[] getObjectBytes(String bytesName) {
-		GetObjectRequest request = GetObjectRequest.builder()
-			.bucket(bucket)
-			.key(bytesName)
-			.build();
-		ResponseBytes<GetObjectResponse> objectAsBytes = s3Connector.s3Client().getObjectAsBytes(request);
-		return objectAsBytes.asByteArray();
 	}
 
 }

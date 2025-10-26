@@ -14,13 +14,19 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.util.concurrent.CompletableFuture;
 
+/*
+Intercepts all requests to the /webhook endpoint to record user activity.
+ */
 
 @Component
 public class WebhookInterceptor implements HandlerInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(WebhookInterceptor.class);
-	@Autowired
-	private LoggingRepository requestLogRepository;
+	private final LoggingRepository requestLogRepository;
+
+	public WebhookInterceptor(LoggingRepository requestLogRepository) {
+		this.requestLogRepository = requestLogRepository;
+	}
 
 	@Override
 	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {

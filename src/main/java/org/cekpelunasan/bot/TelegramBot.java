@@ -15,13 +15,20 @@ public class TelegramBot {
 	private final CommandHandler commandHandler;
 	private final CallbackHandler callbackHandler;
 
+	/*
+	Main handler for routing messages to the appropriate handler.
+	Using a callback handler or using a command handler.
+	Async annotation to tell JVM not to block the main thread.
+	 */
 	@Async
 	public void startBot(Update update, TelegramClient telegramClient) {
 		if (update.hasMessage() && update.getMessage().hasText()) {
+			// Handle a message using the command handler
 			commandHandler.handle(update, telegramClient);
 			return;
 		}
 		if (update.hasCallbackQuery()) {
+			// Handle a callback using the callback handler
 			callbackHandler.handle(update, telegramClient);
 		}
 

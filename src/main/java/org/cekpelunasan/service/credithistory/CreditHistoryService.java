@@ -34,6 +34,7 @@ public class CreditHistoryService {
 	public Page<CreditHistory> searchAddressByKeywords(List<String> keywords, int page) {
 		log.info("Searching for address with keywords: {}", keywords);
 		Specification<CreditHistory> specification = (root, query, cb) -> {
+			assert query != null;
 			query.distinct(true);
 
 			Subquery<String> subquery = query.subquery(String.class);
@@ -88,7 +89,7 @@ public class CreditHistoryService {
 						try {
 							saveAll(batcToSave);
 						} catch (Exception e) {
-							log.error("Error {}", e.getMessage());
+							log.error("Error {} saving", e.getMessage());
 						} finally {
 							semaphore.release();
 						}

@@ -14,6 +14,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 
+/*
+Setting Selenium WebDriver to run headless.
+Setting page size to landscape and generate print options.
+ */
+
 @Configuration
 public class WebDriverConfiguration {
 
