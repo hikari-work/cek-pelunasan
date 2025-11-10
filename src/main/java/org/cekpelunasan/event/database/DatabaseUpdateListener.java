@@ -1,13 +1,88 @@
 package org.cekpelunasan.event.database;
 
+import lombok.extern.slf4j.Slf4j;
+import org.cekpelunasan.entity.User;
+import org.cekpelunasan.service.users.UserService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+
+@Slf4j
 @Component
 public class DatabaseUpdateListener {
 
+	private final TelegramClient telegramClient;
+	private final UserService userService;
+
+	public DatabaseUpdateListener(@Value("${telegram.bot.token}") String botToken, UserService userService) {
+		this.userService = userService;
+		this.telegramClient = new OkHttpTelegramClient(botToken);
+	}
+
+	@Async
 	@EventListener(DatabaseUpdateEvent.class)
 	public void onDatabaseUpdateEvent(DatabaseUpdateEvent event) {
-		System.out.println("Database Update Event: " + event.toString());
+		log.info("Processing database update event asynchronously: {}", event.getEventType());
+
+		try {
+			String message = buildEventMessage(event);
+			List<User> users = getAllUsers();
+
+			// Kirim pesan ke semua user secara asynchronous
+			users.forEach(user -> sendTelegramMessageAsync(user.getChatId().toString(), message));
+
+			log.info("Database update event processing completed");
+		} catch (Exception e) {
+			log.error("Error processing database update event", e);
+		}
+	}
+
+	@Async
+	public void sendTelegramMessageAsync(String chatId, String messageText) {
+		CompletableFuture.runAsync(() -> {
+			try {
+				SendMessage message = SendMessage.builder()
+					.chatId(chatId)
+					.text(messageText)
+					.build();
+
+				telegramClient.execute(message);
+				log.debug("Message sent successfully to chatId: {}", chatId);
+			} catch (TelegramApiException e) {
+				log.error("Failed to send telegram message to chatId: {}", chatId, e);
+			} catch (Exception e) {
+				log.error("Unexpected error while sending telegram message to chatId: {}", chatId, e);
+			}
+		});
+	}
+
+	private String buildEventMessage(DatabaseUpdateEvent event) {
+		String timestamp = java.time.LocalDateTime.now()
+			.format(java.time.format.DateTimeFormatter.ofPattern("dd MMMM yyyy HH:mm:ss", new Locale("id", "ID")));
+
+		String emoji = event.isSuccess() ? "✅" : "❌";
+		String statusText = event.isSuccess() ? "berhasil" : "gagal";
+
+		return String.format(
+			"%s Database %s %s di update pada %s:",
+			emoji,
+			event.getEventType().value,
+			statusText,
+			timestamp
+		);
+	}
+
+
+	private List<User> getAllUsers() {
+		return userService.findAllUsers();
 	}
 }
