@@ -62,7 +62,6 @@ public class WhatsAppSender {
 	public ResponseEntity<GenericResponseDTO> request(String url, BaseMessageRequestDTO messageRequestDTO) {
 		try {
 			String jsonBody = objectMapper.writeValueAsString(messageRequestDTO);
-			log.warn(">>> SENDING TEXT via WhatsAppSender, url={}, body={}", url, jsonBody);
 
 			HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers());
 
@@ -90,8 +89,6 @@ public class WhatsAppSender {
 		try {
 			MultiValueMap<String, Object> formData = getFormData(form, type);
 			HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(formData, headersMultiPart());
-			log.warn(">>> SENDING FILE via WhatsAppSender, url={}, phone={}, caption={}, filename={}",
-				url, form.getPhone(), form.getCaption(), form.getFileName());
 			return rest.exchange(url, HttpMethod.POST, entity, GenericResponseDTO.class);
 		} catch (Exception e) {
 			log.error("Error sending WhatsApp request", e);
@@ -135,11 +132,5 @@ public class WhatsAppSender {
 		formData.add(key, resource);
 	}
 
-	public boolean isSuccess(ResponseEntity<GenericResponseDTO> response) {
-		return response != null &&
-			response.getStatusCode().is2xxSuccessful() &&
-			response.getBody() != null &&
-			"SUCCESS".equals(response.getBody().getCode());
-	}
 
 }

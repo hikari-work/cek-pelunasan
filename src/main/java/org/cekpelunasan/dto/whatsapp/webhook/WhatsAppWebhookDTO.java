@@ -19,6 +19,9 @@ public class WhatsAppWebhookDTO {
 	@JsonProperty("chat_id")
 	private String chatId;
 
+	@JsonProperty("from_lid")
+	private String fromLid;
+
 	private String from;
 	private String timestamp;
 	private String pushname;
@@ -166,6 +169,13 @@ public class WhatsAppWebhookDTO {
 		return chatId.replace("@s.whatsapp.net", "").replace("@g.us", "");
 	}
 	public String buildChatId() {
+		if (getFrom().contains("@lid")) {
+			return chatId + "@lid";
+		}
+		if (fromLid != null && !getFrom().contains("@g.us")) {
+			return senderId + "@lid";
+		}
+
 		if (getCleanChatId() == null) {
 			throw new IllegalArgumentException("Invalid WhatsApp DTO or clean chat ID");
 		}

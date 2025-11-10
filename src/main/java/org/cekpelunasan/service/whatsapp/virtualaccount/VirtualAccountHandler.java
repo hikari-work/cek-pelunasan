@@ -90,7 +90,7 @@ public class VirtualAccountHandler {
 		String va = "7997 " +
 			accountNumber.substring(0, 4) + " " +
 			accountNumber.substring(4, 6) + " " +
-			accountNumber.substring(7, 12);
+			accountNumber.substring(6, 12);
 		return "🏦 *Danamon*\n" + va;
 	}
 
@@ -105,7 +105,7 @@ public class VirtualAccountHandler {
 		String va = "8743 " +
 			accountNumber.substring(0, 4) + " " +
 			accountNumber.substring(4, 6) + " " +
-			accountNumber.substring(7, 12);
+			accountNumber.substring(6, 12);
 		return "🏦 *BNI*\n" + va;
 	}
 
