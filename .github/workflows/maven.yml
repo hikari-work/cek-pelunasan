@@ -9,28 +9,30 @@ jobs:
   build-native:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        -   uses: actions/checkout@v4
 
-      - name: Setup GraalVM (with Native Image)
-        uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: '21'
-          distribution: 'graalvm'
-          native-image: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        -   name: Set up GraalVM
+            uses: graalvm/setup-graalvm@v1
+            with:
+                java-version: '21'
+                distribution: 'graalvm-community'
+                cache: 'maven'
 
-      - name: Cache Maven local repo
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        -   name: Build native image
+            run: mvn -Pnative clean native:compile
 
-      - name: Build (Maven) and create native image
-        run: mvn -DskipTests -B clean package -Pnative
+        -   name: Extract app name
+            id: app
+            run: |
+                APP_NAME=$(mvn help:describe -Dplugin=org.springframework.boot:spring-boot-maven-plugin -q | grep "spring-boot-app" || echo "spring-boot-app")
+                echo "name=$(ls -1 target/ | grep -v -E '.jar|.txt|maven-archiver' | head -1)" >> $GITHUB_OUTPUT
 
-      - name: Upload native binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: native-binary
-          path: target/*-runner
+        -   name: Create Release
+            uses: softprops/action-gh-release@v1
+            with:
+                files: target/spring-boot-app
+                draft: false
+                prerelease: false
+                generate_release_notes: true
+            env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

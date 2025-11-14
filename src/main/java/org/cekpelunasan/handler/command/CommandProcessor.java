@@ -15,6 +15,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.concurrent.CompletableFuture;
 
 public interface CommandProcessor {
+
 	Logger log = LoggerFactory.getLogger(CommandProcessor.class);
 
 	String getCommand();

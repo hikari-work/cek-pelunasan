@@ -12,6 +12,8 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 @RequiredArgsConstructor
 public class TelegramBot {
 
+	private final TelegramClient telegramClient;
+
 	private final CommandHandler commandHandler;
 	private final CallbackHandler callbackHandler;
 
@@ -21,10 +23,9 @@ public class TelegramBot {
 	Async annotation to tell JVM not to block the main thread.
 	 */
 	@Async
-	public void startBot(Update update, TelegramClient telegramClient) {
+	public void startBot(Update update) {
 		if (update.hasMessage() && update.getMessage().hasText()) {
-			// Handle a message using the command handler
-			commandHandler.handle(update, telegramClient);
+			commandHandler.handle(update);
 			return;
 		}
 		if (update.hasCallbackQuery()) {
