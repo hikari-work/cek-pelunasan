@@ -1,0 +1,36 @@
+name: Build GraalVM native image (Maven)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-native:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM (with Native Image)
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          native-image: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Maven local repo
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+
+      - name: Build (Maven) and create native image
+        run: mvn -DskipTests -B clean package -Pnative
+
+      - name: Upload native binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-binary
+          path: target/*-runner
