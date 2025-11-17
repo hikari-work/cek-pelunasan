@@ -1,6 +1,9 @@
 package org.cekpelunasan.service.slik;
 
 import okhttp3.*;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -13,6 +16,8 @@ public class GeneratePdfFiles {
 	public GeneratePdfFiles(OkHttpClient okHttpClient) {
 		this.okHttpClient = okHttpClient;
 	}
+
+
 
 	public String generateHtmlContent(byte[] pdfBytes) {
 		if (pdfBytes == null || pdfBytes.length == 0) {
@@ -40,6 +45,35 @@ public class GeneratePdfFiles {
 		} catch (Exception e) {
 			return null;
 		}
+	}
+
+	private Document parsingHtmlContent(String htmlContent) {
+		return Jsoup.parse(htmlContent);
+	}
+	private Document removeScriptTag(Document doc) {
+		doc.getElementsByTag("script").remove();
+		return doc;
+	}
+	private Document moveTableToLast(Document document) {
+		Element table = document.selectFirst("div[style*='display: grid']");
+		if (table == null) {
+			return document;
+		}
+		Element parent = table.parent();
+		if (parent == null) {
+			return document;
+		}
+		table.remove();
+		parent.appendChild(table);
+		return document;
+	}
+	private Document insertingImages(Document document) {
+		Element image = document.selectFirst("img.right-image");
+		if (image == null) {
+			return document;
+		}
+		image.attr("src", "https://kredit.suryayudha.id/ideb/logo.png");
+		return document;
 	}
 
 
