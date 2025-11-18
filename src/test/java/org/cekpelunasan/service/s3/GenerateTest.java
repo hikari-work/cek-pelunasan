@@ -1,5 +1,6 @@
 package org.cekpelunasan.service.s3;
 
+import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.service.slik.GeneratePdfFiles;
 import org.cekpelunasan.service.slik.S3ClientConfiguration;
 import org.jsoup.nodes.Document;
@@ -8,6 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.io.FileOutputStream;
+
+@Slf4j
 @SpringBootTest
 public class GenerateTest {
 
@@ -25,5 +29,21 @@ public class GenerateTest {
 		Document document = generatePdfFiles.parsingHtmlContentAndManipulatePages(s);
 		Assertions.assertNotNull(document);
 		System.out.println(document.html());
+	}
+	@Test
+	void generateByte() {
+		long start = System.currentTimeMillis();
+		byte[] file = S3configuration.getFile("KTP_3175040206810003.txt");
+		String s = generatePdfFiles.generateHtmlContent(file);
+		Document document = generatePdfFiles.parsingHtmlContentAndManipulatePages(s);
+		log.info("Document: {}", document.html());
+		byte[] bytes = generatePdfFiles.generatePdfBytes(document);
+		Assertions.assertNotNull(bytes);
+		try (FileOutputStream outputStream = new FileOutputStream("KTP_3175040206810003.pdf")){
+			outputStream.write(bytes);
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+		log.info("Time is {} ms", System.currentTimeMillis() - start);
 	}
 }

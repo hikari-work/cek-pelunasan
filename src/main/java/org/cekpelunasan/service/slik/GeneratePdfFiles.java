@@ -1,5 +1,10 @@
 package org.cekpelunasan.service.slik;
 
+import com.itextpdf.html2pdf.ConverterProperties;
+import com.itextpdf.html2pdf.HtmlConverter;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
 import okhttp3.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -10,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -85,7 +91,6 @@ public class GeneratePdfFiles {
 
 	private void removeScriptTag(Document doc) {
 		doc.getElementsByTag("script").remove();
-		doc.getElementsByTag("style").remove();
 	}
 
 	private void moveTableToLast(Document document) {
@@ -111,8 +116,35 @@ public class GeneratePdfFiles {
 	}
 	private Element createFlexWrapper(Element block) {
 		Element wrapper = new Element("div");
-		wrapper.attr("style", "display: flex; justify-content: flex-end; margin-top: 20px;");
-		wrapper.appendChild(block);
+		wrapper.attr("style", "display: flex; justify-content: center; margin-top: 20px; width: 100%;");
+
+		Element innerContainer = new Element("div");
+		innerContainer.attr("style", "width: 240px; display: flex; justify-content: center;");
+		innerContainer.appendChild(block);
+
+		wrapper.appendChild(innerContainer);
 		return wrapper;
+	}
+
+	public byte[] generatePdfBytes(Document htmlContent) {
+		if (htmlContent == null) {
+			return null;
+		}
+		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()){
+			PdfWriter writer = new PdfWriter(baos);
+			PdfDocument document = new PdfDocument(writer);
+			PageSize pdfSize = new PageSize(842, 595);
+			String htmlWithCss = "<html><head><style>@page { size: A4 landscape; margin: 10mm; }</style></head><body>"
+				+ htmlContent.html() + "</body></html>";
+			document.setDefaultPageSize(pdfSize);
+			HtmlConverter.convertToPdf(htmlWithCss, writer);
+			return baos.toByteArray();
+		} catch (IOException e) {
+			logger.error("Error generating PDF bytes", e);
+			return null;
+		} catch (Exception e) {
+			logger.error("Unexpected error in generatePdfBytes", e);
+			return null;
+		}
 	}
 }
