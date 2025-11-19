@@ -25,7 +25,7 @@ public class GenerateTest {
 	@Test
 	void generate() {
 		byte[] file = S3configuration.getFile("KTP_3175040206810003.txt");
-		String s = generatePdfFiles.generateHtmlContent(file);
+		String s = generatePdfFiles.generateHtmlContent(file, true);
 		Document document = generatePdfFiles.parsingHtmlContentAndManipulatePages(s);
 		Assertions.assertNotNull(document);
 		System.out.println(document.html());
@@ -35,7 +35,7 @@ public class GenerateTest {
 		long start = System.currentTimeMillis();
 		byte[] file = S3configuration.getFile("KTP_3175040206810003.txt");
 		log.info("Get Object In {} ms", System.currentTimeMillis() - start);
-		String s = generatePdfFiles.generateHtmlContent(file);
+		String s = generatePdfFiles.generateHtmlContent(file, true);
 		log.info("Generate HTML In {} ms", System.currentTimeMillis() - start);
 		Document document = generatePdfFiles.parsingHtmlContentAndManipulatePages(s);
 		log.info("Parsing HTML In {} ms", System.currentTimeMillis() - start);
