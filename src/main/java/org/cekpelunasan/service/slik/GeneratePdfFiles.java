@@ -160,68 +160,47 @@ public class GeneratePdfFiles {
 	}
 
 	private void fixSignatureGrid(Document doc) {
-		Element grid = doc.selectFirst("div[style*='display: grid']");
 
-		if (grid == null) {
-			return;
+		Element gridDiv = doc.selectFirst("div[style*='display: grid']");
+
+		if (gridDiv != null) {
+
+			List<Element> children = new ArrayList<>(gridDiv.children());
+
+			Element table = new Element("table");
+
+			table.attr("style", "width: 300px; border-collapse: collapse; font-family: sans-serif; font-size: 12px; border: 0.5px solid blue; margin-top: 50px; page-break-inside: avoid;");
+
+			Element tbody = new Element("tbody");
+			table.appendChild(tbody);
+
+			Element row1 = new Element("tr");
+			for (int i = 0; i < 3 && i < children.size(); i++) {
+				Element originalDiv = children.get(i);
+				Element td = new Element("td");
+				td.attr("style", "border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;");
+				td.text(originalDiv.text());
+				row1.appendChild(td);
+			}
+			tbody.appendChild(row1);
+
+			Element row2 = new Element("tr");
+			for (int i = 3; i < 6 && i < children.size(); i++) {
+				Element td = new Element("td");
+				td.attr("style", "border: 0.5px solid blue; height: 40px;");
+				row2.appendChild(td);
+			}
+			tbody.appendChild(row2);
+
+			Element container = doc.selectFirst("div.printableArea");
+			Objects.requireNonNullElseGet(container, doc::body).appendChild(table);
+
+			gridDiv.remove();
+
+			Element parentFlex = doc.selectFirst("div[style*='display: flex']");
+			if (parentFlex != null && parentFlex.childrenSize() <= 1) {
+				parentFlex.attr("style", "font-family: sans-serif;");
+			}
 		}
-		List<Element> children = new ArrayList<>(grid.children());
-		Element table = new Element("table");
-		table.attr("style", "width: 240px; border-collapse: collapse; font-family: sans-serif; font-size: 12px; border: 0.5px solid blue; margin-left: auto;");
-
-		Element tbody = new Element("tbody");
-		table.appendChild(tbody);
-		Element row1 = new Element("tr");
-		for (int i = 0; i < 3 && i < children.size(); i++) {
-			Element originalDiv = children.get(i);
-			Element td = new Element("td");
-			td.attr("style", "border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 80px;");
-			td.text(originalDiv.text());
-			row1.appendChild(td);
-		}
-		tbody.appendChild(row1);
-		Element row2 = new Element("tr");
-		for (int i = 3; i < 6 && i < children.size(); i++) {
-			Element td = new Element("td");
-			td.attr("style", "border: 0.5px solid blue; height: 40px;");
-			row2.appendChild(td);
-		}
-		tbody.appendChild(row2);
-
-		grid.replaceWith(table);
-
-		Element flexParent = doc.selectFirst("div[style*='display: flex']");
-		if (flexParent != null) {
-			convertFlexParentToTable(flexParent);
-		}
-
-
-	}
-
-	private void convertFlexParentToTable(Element flexDiv) {
-		if (flexDiv.childrenSize() < 2) {
-			return;
-		}
-
-		Element leftChild = flexDiv.child(0);
-		Element rightChild = flexDiv.child(1);
-
-		Element table = new Element("table");
-		table.attr("style", "width: 100%; border: none;");
-		Element row = new Element("tr");
-		table.appendChild(row);
-
-		Element tdLeft = new Element("td");
-		tdLeft.attr("style", "vertical-align: top; border: none;");
-		tdLeft.appendChild(leftChild);
-		row.appendChild(tdLeft);
-
-
-		Element tdRight = new Element("td");
-		tdRight.attr("style", "vertical-align: top; text-align: right; border: none;");
-		tdRight.appendChild(rightChild);
-		row.appendChild(tdRight);
-
-		flexDiv.replaceWith(table);
 	}
 }
