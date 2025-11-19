@@ -30,6 +30,13 @@ public interface CommandProcessor {
 	}
 
 	default CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		if (update.hasMessage() && update.getMessage().hasText()) {
+			Long chatId = update.getMessage().getChatId();
+			String text = update.getMessage().getText();
+
+			return process(chatId, text, telegramClient);
+		}
+
 		return CompletableFuture.completedFuture(null);
 	}
 

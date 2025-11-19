@@ -8,6 +8,7 @@ import org.cekpelunasan.service.users.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -35,6 +36,7 @@ public class AuthCommandHandler implements CommandProcessor {
 			Gunakan command ini untuk memberikan izin kepada user untuk menggunakan bot.
 			""";
 	}
+
 
 	@Override
 	@Async

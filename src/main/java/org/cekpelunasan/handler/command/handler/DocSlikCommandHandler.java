@@ -8,6 +8,7 @@ import org.cekpelunasan.service.slik.S3ClientConfiguration;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.ByteArrayInputStream;
@@ -30,6 +31,7 @@ public class DocSlikCommandHandler implements CommandProcessor {
 	public String getDescription() {
 		return "";
 	}
+
 
 	@Override
 	@Async

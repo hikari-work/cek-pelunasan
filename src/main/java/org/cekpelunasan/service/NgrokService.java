@@ -24,33 +24,34 @@ public class NgrokService {
 		this.botToken = botToken;
 	}
 
-	public void setWebhook() {
+	public boolean setupWebhookOrFallback() {
 		try {
 			String tunnelJson = getTunnelInfo();
 			if (tunnelJson == null) {
-				logger.error("Failed to get tunnel information from ngrok");
-				return;
+				logger.warn("Ngrok tunnel not found/active. Switching to fallback.");
+				return false;
 			}
 
 			String publicUrl = extractPublicUrl(tunnelJson);
 			if (publicUrl != null) {
-				setTelegramWebHook(publicUrl);
+				return setTelegramWebHook(publicUrl);
 			}
 		} catch (Exception e) {
-			logger.error("Error in setWebhook: {}", e.getMessage(), e);
+			logger.error("Error in setupWebhook: {}", e.getMessage());
 		}
+		return false;
 	}
 
 	public String getTunnelInfo() {
 		try {
 			return restTemplate.getForObject(ngrokApiUrl, String.class);
 		} catch (RestClientException e) {
-			logger.error("Failed to connect to ngrok API: {}", e.getMessage());
+			logger.debug("Ngrok main port 4040 unreachable.");
 			try {
 				String alternativeUrl = ngrokApiUrl.replace("4040", "3030");
 				return restTemplate.getForObject(alternativeUrl, String.class);
 			} catch (RestClientException ex) {
-				logger.error("Failed to connect to ngrok API on alternative port: {}", ex.getMessage());
+				logger.debug("Ngrok alternative port 3030 unreachable.");
 				return null;
 			}
 		}
@@ -63,28 +64,38 @@ public class NgrokService {
 
 			if (tunnels != null && tunnels.isArray() && !tunnels.isEmpty()) {
 				return tunnels.get(0).get("public_url").asText();
-			} else {
-				logger.error("No tunnels found in ngrok response");
-				return null;
 			}
+			return null;
 		} catch (Exception e) {
-			logger.error("Error extracting public URL: {}", e.getMessage());
+			logger.error("Error extracting public URL", e);
 			return null;
 		}
 	}
 
-	private void setTelegramWebHook(String publicUrl) {
+	private boolean setTelegramWebHook(String publicUrl) {
 		try {
 			String webHookPath = "/webhook";
 			String fullWebHookUrl = publicUrl + webHookPath;
 			String setWebHookUrl = String.format("https://api.telegram.org/bot%s/setWebhook?url=%s",
 				botToken, fullWebHookUrl);
-			System.out.println(setWebHookUrl);
 
+			logger.info("Setting Webhook to: {}", fullWebHookUrl);
 			String response = restTemplate.getForObject(setWebHookUrl, String.class);
 			logger.info("Webhook set response: {}", response);
+			return true;
 		} catch (Exception e) {
-			logger.error("Error setting Telegram webhook: {}", e.getMessage());
+			logger.error("Error setting Telegram webhook", e);
+			return false;
+		}
+	}
+	public void deleteWebhook() {
+		try {
+			String deleteUrl = String.format("https://api.telegram.org/bot%s/deleteWebhook", botToken);
+			logger.info("Deleting Webhook to enable Long Polling...");
+			String response = restTemplate.getForObject(deleteUrl, String.class);
+			logger.info("Delete Webhook response: {}", response);
+		} catch (Exception e) {
+			logger.error("Error deleting webhook", e);
 		}
 	}
 }

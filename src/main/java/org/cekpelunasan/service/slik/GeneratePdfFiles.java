@@ -38,21 +38,23 @@ public class GeneratePdfFiles {
 		this.okHttpClient = Objects.requireNonNull(okHttpClient, "OkHttpClient cannot be null");
 	}
 
-	public String generateHtmlContent(byte[] pdfBytes) {
+	public String generateHtmlContent(byte[] pdfBytes, boolean fasilitasAktif) {
 		if (pdfBytes == null || pdfBytes.length == 0) {
 			logger.warn("PDF bytes is null or empty");
 			return null;
 		}
-		return responseFromEndpoint(pdfBytes);
+		return responseFromEndpoint(pdfBytes, fasilitasAktif);
 	}
 
-	private String responseFromEndpoint(byte[] body) {
+	private String responseFromEndpoint(byte[] body, boolean fasilitasAktif) {
 		logger.info("Getting Content");
 		RequestBody requestBody = new MultipartBody.Builder()
 			.setType(MultipartBody.FORM)
 			.addFormDataPart("fileToUpload", "ideb.txt",
 				RequestBody.create(body, MediaType.parse("text/plain")))
+			.addFormDataPart("fasilitasAktif", fasilitasAktif ? "y" : "n")
 			.build();
+
 
 		Request request = new okhttp3.Request.Builder()
 			.url(pdfEndpointUrl)
