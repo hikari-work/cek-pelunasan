@@ -33,17 +33,22 @@ public class GenerateTest {
 	@Test
 	void generateByte() {
 		long start = System.currentTimeMillis();
-		byte[] file = S3configuration.getFile("KTP_3175040206810003.txt");
+		byte[] file = S3configuration.getFile("KTP_3303024507030001.txt");
+		log.info("Get Object In {} ms", System.currentTimeMillis() - start);
 		String s = generatePdfFiles.generateHtmlContent(file);
+		log.info("Generate HTML In {} ms", System.currentTimeMillis() - start);
 		Document document = generatePdfFiles.parsingHtmlContentAndManipulatePages(s);
-		log.info("Document: {}", document.html());
+		log.info("Parsing HTML In {} ms", System.currentTimeMillis() - start);
+		log.info(document.html());
 		byte[] bytes = generatePdfFiles.generatePdfBytes(document);
+		log.info("Generate PDF In {} ms", System.currentTimeMillis() - start);
 		Assertions.assertNotNull(bytes);
-		try (FileOutputStream outputStream = new FileOutputStream("KTP_3175040206810003.pdf")){
+		try (FileOutputStream outputStream = new FileOutputStream("KTP_3303024507030001.pdf")){
 			outputStream.write(bytes);
 		}catch (Exception e){
 			e.printStackTrace();
 		}
+
 		log.info("Time is {} ms", System.currentTimeMillis() - start);
 	}
 }

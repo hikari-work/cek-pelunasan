@@ -1,6 +1,6 @@
 package org.cekpelunasan.service.slik;
 
-import com.itextpdf.html2pdf.ConverterProperties;
+
 import com.itextpdf.html2pdf.HtmlConverter;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -9,7 +9,6 @@ import okhttp3.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +16,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Component
@@ -46,6 +47,7 @@ public class GeneratePdfFiles {
 	}
 
 	private String responseFromEndpoint(byte[] body) {
+		logger.info("Getting Content");
 		RequestBody requestBody = new MultipartBody.Builder()
 			.setType(MultipartBody.FORM)
 			.addFormDataPart("fileToUpload", "ideb.txt",
@@ -57,7 +59,7 @@ public class GeneratePdfFiles {
 			.header("User-Agent", USER_AGENT)
 			.post(requestBody)
 			.build();
-
+		logger.info("Generated request");
 		try (Response response = okHttpClient.newCall(request).execute()) {
 			if (!response.isSuccessful()) {
 				logger.error("Failed to get response from endpoint. Status code: {}", response.code());
@@ -65,7 +67,6 @@ public class GeneratePdfFiles {
 			}
 
 			ResponseBody responseBody = response.body();
-
 			return responseBody.string();
 		} catch (IOException e) {
 			logger.error("Error calling PDF endpoint", e);
@@ -84,8 +85,9 @@ public class GeneratePdfFiles {
 
 		Document document = Jsoup.parse(htmlContent);
 		removeScriptTag(document);
-		moveTableToLast(document);
 		insertingImages(document);
+		removePrintButtons(document);
+		fixSignatureGrid(document);
 		return document;
 	}
 
@@ -93,38 +95,40 @@ public class GeneratePdfFiles {
 		doc.getElementsByTag("script").remove();
 	}
 
-	private void moveTableToLast(Document document) {
-		Elements table = document.select("div[style*='grid-template-columns: 80px 80px 80px']");
-		for (Element block : table) {
-			Element clonedBlock = block.clone();
-			block.remove();
-
-			Element wrapper = createFlexWrapper(clonedBlock);
-			document.body().appendChild(wrapper);
-		}
-	}
-
 	private void insertingImages(Document document) {
 		Element image = document.selectFirst("img.right-image");
 		if (image == null) {
-			logger.debug("Image element not found");
 			return;
 		}
-
 		image.attr("src", logoUrl);
-		logger.debug("Image source updated");
-	}
-	private Element createFlexWrapper(Element block) {
-		Element wrapper = new Element("div");
-		wrapper.attr("style", "display: flex; justify-content: center; margin-top: 20px; width: 100%;");
+		image.removeAttr("style");
+		image.attr("style", "width: 160px;");
 
-		Element innerContainer = new Element("div");
-		innerContainer.attr("style", "width: 240px; display: flex; justify-content: center;");
-		innerContainer.appendChild(block);
+		Element headerTable= new Element("table");
+		headerTable.attr("style", "width: 100%; border: none; margin-bottom: 20px; border-collapse: collapse;");
 
-		wrapper.appendChild(innerContainer);
-		return wrapper;
+		Element row = new Element("tr");
+		headerTable.appendChild(row);
+
+		Element tdLeft = new Element("td");
+		tdLeft.attr("style", "border: none; vertical-align: middle; text-align: left;");
+		document.select("h3").forEach(h3 -> {
+			h3.attr("style", "margin: 2px 0; font-family: sans-serif;");
+			tdLeft.appendChild(h3);
+		});
+		row.appendChild(tdLeft);
+
+		Element tdRight = new Element("td");
+		tdRight.attr("style", "border: none; vertical-align: middle; text-align: right; width: 1%; white-space: nowrap;");
+		tdRight.appendChild(image);
+		row.appendChild(tdRight);
+
+
+		document.body().prependChild(headerTable);
+
+		logger.debug("Header layout converted to Table for PDF stability");
 	}
+
 
 	public byte[] generatePdfBytes(Document htmlContent) {
 		if (htmlContent == null) {
@@ -134,7 +138,7 @@ public class GeneratePdfFiles {
 			PdfWriter writer = new PdfWriter(baos);
 			PdfDocument document = new PdfDocument(writer);
 			PageSize pdfSize = new PageSize(842, 595);
-			String htmlWithCss = "<html><head><style>@page { size: A4 landscape; margin: 10mm; }</style></head><body>"
+			String htmlWithCss = "<html><head><style>@page { size: A4 landscape; margin: 15mm; }</style></head><body>"
 				+ htmlContent.html() + "</body></html>";
 			document.setDefaultPageSize(pdfSize);
 			HtmlConverter.convertToPdf(htmlWithCss, writer);
@@ -146,5 +150,78 @@ public class GeneratePdfFiles {
 			logger.error("Unexpected error in generatePdfBytes", e);
 			return null;
 		}
+	}
+	private void removePrintButtons(Document doc) {
+		doc.select("div.text-right").forEach(element -> {
+			if (!element.select("button#print").isEmpty()) {
+				element.remove();
+			}
+		});
+	}
+
+	private void fixSignatureGrid(Document doc) {
+		Element grid = doc.selectFirst("div[style*='display: grid']");
+
+		if (grid == null) {
+			return;
+		}
+		List<Element> children = new ArrayList<>(grid.children());
+		Element table = new Element("table");
+		table.attr("style", "width: 240px; border-collapse: collapse; font-family: sans-serif; font-size: 12px; border: 0.5px solid blue; margin-left: auto;");
+
+		Element tbody = new Element("tbody");
+		table.appendChild(tbody);
+		Element row1 = new Element("tr");
+		for (int i = 0; i < 3 && i < children.size(); i++) {
+			Element originalDiv = children.get(i);
+			Element td = new Element("td");
+			td.attr("style", "border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 80px;");
+			td.text(originalDiv.text());
+			row1.appendChild(td);
+		}
+		tbody.appendChild(row1);
+		Element row2 = new Element("tr");
+		for (int i = 3; i < 6 && i < children.size(); i++) {
+			Element td = new Element("td");
+			td.attr("style", "border: 0.5px solid blue; height: 40px;");
+			row2.appendChild(td);
+		}
+		tbody.appendChild(row2);
+
+		grid.replaceWith(table);
+
+		Element flexParent = doc.selectFirst("div[style*='display: flex']");
+		if (flexParent != null) {
+			convertFlexParentToTable(flexParent);
+		}
+
+
+	}
+
+	private void convertFlexParentToTable(Element flexDiv) {
+		if (flexDiv.childrenSize() < 2) {
+			return;
+		}
+
+		Element leftChild = flexDiv.child(0);
+		Element rightChild = flexDiv.child(1);
+
+		Element table = new Element("table");
+		table.attr("style", "width: 100%; border: none;");
+		Element row = new Element("tr");
+		table.appendChild(row);
+
+		Element tdLeft = new Element("td");
+		tdLeft.attr("style", "vertical-align: top; border: none;");
+		tdLeft.appendChild(leftChild);
+		row.appendChild(tdLeft);
+
+
+		Element tdRight = new Element("td");
+		tdRight.attr("style", "vertical-align: top; text-align: right; border: none;");
+		tdRight.appendChild(rightChild);
+		row.appendChild(tdRight);
+
+		flexDiv.replaceWith(table);
 	}
 }
