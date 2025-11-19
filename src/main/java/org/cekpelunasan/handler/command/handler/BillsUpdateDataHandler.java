@@ -10,6 +10,7 @@ import org.cekpelunasan.service.Bill.BillService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.InputStream;
@@ -50,8 +51,10 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 
 	@Override
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+		log.info("Received command: {}", text);
 		return CompletableFuture.runAsync(() -> processRequest(chatId, text, telegramClient));
 	}
+
 
 	private void processRequest(long chatId, String text, TelegramClient telegramClient) {
 		log.info("Update Received...");

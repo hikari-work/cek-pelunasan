@@ -25,8 +25,18 @@ public interface CommandProcessor {
 	default CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.completedFuture(null);
 	}
+	default CompletableFuture<Void> process(Update update) {
+		return CompletableFuture.completedFuture(null);
+	}
 
 	default CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		if (update.hasMessage() && update.getMessage().hasText()) {
+			Long chatId = update.getMessage().getChatId();
+			String text = update.getMessage().getText();
+
+			return process(chatId, text, telegramClient);
+		}
+
 		return CompletableFuture.completedFuture(null);
 	}
 

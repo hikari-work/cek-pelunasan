@@ -96,7 +96,7 @@ public class WhatsAppSender {
 		}
 
 	}
-	private static MultiValueMap<String, Object> getFormData(SendFileMessageDTO form, TypeMessage type) {
+	private MultiValueMap<String, Object> getFormData(SendFileMessageDTO form, TypeMessage type) {
 		MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
 		formData.add("phone", form.getPhone());
 		formData.add("caption", form.getCaption());
@@ -113,7 +113,7 @@ public class WhatsAppSender {
 		return formData;
 	}
 
-	private static void addFileOrUrl(MultiValueMap<String, Object> formData, String fileKey, String urlKey, SendFileMessageDTO form) {
+	private void addFileOrUrl(MultiValueMap<String, Object> formData, String fileKey, String urlKey, SendFileMessageDTO form) {
 		if (form.getFileBytes() != null) {
 			addFile(formData, fileKey, form);
 		} else {
@@ -122,7 +122,7 @@ public class WhatsAppSender {
 		}
 	}
 
-	private static void addFile(MultiValueMap<String, Object> formData, String key, SendFileMessageDTO form) {
+	private void addFile(MultiValueMap<String, Object> formData, String key, SendFileMessageDTO form) {
 		ByteArrayResource resource = new ByteArrayResource(form.getFileBytes()) {
 			@Override
 			public String getFilename() {
