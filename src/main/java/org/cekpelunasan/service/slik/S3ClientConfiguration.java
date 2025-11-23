@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
@@ -86,14 +87,24 @@ public class S3ClientConfiguration {
 		}
 	}
 	public List<String> listObjectFoundByName(String prefix) {
-		ListObjectsV2Request request = ListObjectsV2Request.builder()
-			.bucket(bucket)
-			.build();
-		ListObjectsV2Response listObjectsV2Response = s3Client().listObjectsV2(request);
-		return listObjectsV2Response.contents().stream()
-			.map(S3Object::key)
-			.filter(keys -> keys.toLowerCase().contains(prefix.toLowerCase()))
-			.toList();
+		List<String> allObject = new ArrayList<>();
+		String continuationToken = null;
+		boolean isTruncated = true;
+		while (isTruncated) {
+			ListObjectsV2Request.Builder requestBuilder = ListObjectsV2Request.builder()
+				.bucket(bucket)
+				.prefix(prefix);
+			if (continuationToken != null) {
+				requestBuilder.continuationToken(continuationToken);
+			}
+			ListObjectsV2Response response = s3Client().listObjectsV2(requestBuilder.build());
+			for (S3Object object : response.contents()) {
+				allObject.add(object.key());
+			}
+			continuationToken = response.nextContinuationToken();
+			isTruncated = response.isTruncated();
+		}
+		return allObject;
 	}
 
 }
