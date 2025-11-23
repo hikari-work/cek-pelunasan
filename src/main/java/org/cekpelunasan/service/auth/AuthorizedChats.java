@@ -1,5 +1,6 @@
 package org.cekpelunasan.service.auth;
 
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.repository.UserRepository;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -30,6 +31,10 @@ public class AuthorizedChats {
 
 	public void deleteUser(Long chatId) {
 		authorizedChats.remove(chatId);
+	}
+
+	public AccountOfficerRoles getUserRoles(Long chatId) {
+		return userRepository.findById(chatId).map(User::getRoles).orElse(null);
 	}
 
 	@EventListener(ApplicationReadyEvent.class)

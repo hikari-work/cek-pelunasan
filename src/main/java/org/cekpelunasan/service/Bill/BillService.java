@@ -29,7 +29,7 @@ public class BillService {
 
 
 	public Set<String> lisAllBranch() {
-		return billsRepository.findDistinctBranchByBrach();
+		return billsRepository.findDistinctBranchByBranch();
 	}
 
 	public Bills getBillById(String id) {

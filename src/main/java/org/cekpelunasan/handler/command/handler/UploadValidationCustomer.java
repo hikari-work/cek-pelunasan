@@ -1,16 +1,15 @@
 package org.cekpelunasan.handler.command.handler;
 
 import lombok.extern.slf4j.Slf4j;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.customerhistory.CustomerHistoryService;
 import org.cekpelunasan.service.users.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.InputStream;
@@ -31,16 +30,10 @@ public class UploadValidationCustomer implements CommandProcessor {
 	private static final long DELAY_BETWEEN_USERS_MS = 500;
 
 	private final UserService userService;
-	private final String botOwner;
-	private final MessageTemplate messageTemplate;
 	private final CustomerHistoryService customerHistoryService;
 
-	public UploadValidationCustomer(UserService userService,
-									@Value("${telegram.bot.owner}") String botOwner,
-									MessageTemplate messageTemplate, CustomerHistoryService customerHistoryService) {
+	public UploadValidationCustomer(UserService userService, CustomerHistoryService customerHistoryService) {
 		this.userService = userService;
-		this.botOwner = botOwner;
-		this.messageTemplate = messageTemplate;
 		this.customerHistoryService = customerHistoryService;
 	}
 
@@ -55,10 +48,15 @@ public class UploadValidationCustomer implements CommandProcessor {
 	}
 
 	@Override
+	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
+
+	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
-			if (isNotAdmin(chatId, telegramClient)) return;
 
 			String fileUrl = extractFileUrl(text, chatId, telegramClient);
 			if (fileUrl == null) return;
@@ -67,14 +65,6 @@ public class UploadValidationCustomer implements CommandProcessor {
 
 			processFileAndNotifyUsers(fileUrl, allUsers, telegramClient);
 		});
-	}
-
-	private boolean isNotAdmin(long chatId, TelegramClient telegramClient) {
-		if (!botOwner.equals(String.valueOf(chatId))) {
-			sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
-			return true;
-		}
-		return false;
 	}
 
 	private String extractFileUrl(String text, long chatId, TelegramClient telegramClient) {

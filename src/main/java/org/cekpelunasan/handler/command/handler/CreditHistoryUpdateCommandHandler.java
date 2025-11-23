@@ -1,5 +1,7 @@
 package org.cekpelunasan.handler.command.handler;
 
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
@@ -38,6 +40,12 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 	}
 
 	@Override
+	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
+
+	@Override
 	public String getCommand() {
 		return "/uploadcredit";
 	}
@@ -52,9 +60,6 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
-			log.info("Uplading Credit....");
-			if (isNotAdmin(chatId, telegramClient)) return;
-
 			String fileUrl = extractFileUrl(text, chatId, telegramClient);
 			if (fileUrl == null) return;
 			List<User> allUser = userService.findAllUsers();
@@ -74,14 +79,6 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 			: "⚠ *Gagal update. Akan dicoba ulang.*";
 
 		notifyUsers(allUsers, resultMessage, telegramClient);
-	}
-
-	private boolean isNotAdmin(long chatId, TelegramClient telegramClient) {
-		if (!botOwner.equals(String.valueOf(chatId))) {
-			sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
-			return true;
-		}
-		return false;
 	}
 
 	private String extractFileUrl(String text, long chatId, TelegramClient telegramClient) {
