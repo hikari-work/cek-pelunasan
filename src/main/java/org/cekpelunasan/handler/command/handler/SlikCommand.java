@@ -2,10 +2,10 @@ package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.handler.command.template.MessageTemplate;
-import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.slik.IsUserGetPermissionToViewResume;
 import org.cekpelunasan.service.slik.PDFReader;
 import org.cekpelunasan.service.slik.S3ClientConfiguration;
@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -58,8 +59,6 @@ public class SlikCommand implements CommandProcessor {
 	private int maxResults;
 
 	private final S3ClientConfiguration s3Connector;
-	private final AuthorizedChats authorizedChats;
-	private final MessageTemplate messageTemplate;
 	private final UserService userService;
 	private final PDFReader pdfReader;
 	private final IsUserGetPermissionToViewResume isUserGetPermissionToViewResume;
@@ -76,16 +75,16 @@ public class SlikCommand implements CommandProcessor {
 	}
 
 	@Override
+	@RequireAuth(roles = {AccountOfficerRoles.AO, AccountOfficerRoles.ADMIN, AccountOfficerRoles.PIMP})
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
+
+	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			try {
-				if (!authorizedChats.isAuthorized(chatId)) {
-					log.warn("Unauthorized access attempt - Chat ID: {}", chatId);
-					sendMessage(chatId, messageTemplate.unathorizedMessage(), telegramClient);
-					return;
-				}
-
 				String query = extractQuery(text);
 				if (query.isEmpty()) {
 					sendMessage(chatId, ERROR_KTP_REQUIRED, telegramClient);

@@ -2,12 +2,12 @@ package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.event.database.DatabaseUpdateEvent;
 import org.cekpelunasan.event.database.EventType;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.Bill.BillService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -34,10 +34,12 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 
 	private final BillService billService;
 	private final ApplicationEventPublisher publisher;
-	private final MessageTemplate messageTemplate;
 
-	@Value("${telegram.bot.owner}")
-	private String botOwner;
+	@Override
+	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
 
 	@Override
 	public String getCommand() {
@@ -57,14 +59,6 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 
 
 	private void processRequest(long chatId, String text, TelegramClient telegramClient) {
-		log.info("Update Received...");
-
-		if (!isAdmin(chatId)) {
-			log.warn("Not Admin: {}", chatId);
-			sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
-			return;
-		}
-
 		String fileUrl = extractFileUrl(text);
 		if (fileUrl == null) {
 			log.warn("Invalid format from chat {}", chatId);
@@ -72,15 +66,6 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 		}
 
 		processAndNotify(fileUrl, chatId, telegramClient);
-	}
-
-	private boolean isAdmin(long chatId) {
-		try {
-			return botOwner.equalsIgnoreCase(String.valueOf(chatId));
-		} catch (NumberFormatException e) {
-			log.error("Invalid bot owner ID configuration: {}", botOwner, e);
-			return false;
-		}
 	}
 
 	private String extractFileUrl(String text) {

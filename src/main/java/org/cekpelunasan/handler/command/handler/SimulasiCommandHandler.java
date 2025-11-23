@@ -1,12 +1,15 @@
 package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.SimulasiResult;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.simulasi.SimulasiService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -25,6 +28,12 @@ public class SimulasiCommandHandler implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return "Melakukan simulasi pelunasan dengan format: /simulasi <No SPK> <Nominal>";
+	}
+
+	@Override
+	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
 	}
 
 	@Override

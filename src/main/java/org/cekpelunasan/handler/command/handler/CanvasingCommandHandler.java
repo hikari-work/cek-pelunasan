@@ -1,11 +1,11 @@
 package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.CreditHistory;
 import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingButton;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.handler.command.template.MessageTemplate;
-import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.credithistory.CreditHistoryService;
 import org.cekpelunasan.utils.FormatPhoneNumberUtils;
 import org.springframework.data.domain.Page;
@@ -24,8 +24,6 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class CanvasingCommandHandler implements CommandProcessor {
 
-	private final AuthorizedChats authorizedChats1;
-	private final MessageTemplate messageTemplate;
 	private final CreditHistoryService creditHistoryService;
 	private final PaginationCanvassingButton paginationCanvassingButton;
 	private final FormatPhoneNumberUtils formatPhoneNumberUtils;
@@ -44,15 +42,16 @@ public class CanvasingCommandHandler implements CommandProcessor {
 	}
 
 	@Override
+	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
+
+	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			String address = text.length() > 11 ? text.substring(11).trim() : "";
-			if (!authorizedChats1.isAuthorized(chatId)) {
-				log.info("Canvasing Is Not auth to user {}", chatId);
-				sendMessage(chatId, messageTemplate.unathorizedMessage(), telegramClient);
-				return;
-			}
 			if (address.isEmpty()) {
 				log.info("Address Is Empty");
 				sendMessage(chatId, "Alamat Harus Diisi", telegramClient);

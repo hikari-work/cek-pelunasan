@@ -1,6 +1,8 @@
 package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
@@ -36,16 +38,17 @@ public class DeleteUserAccessCommand implements CommandProcessor {
 			""";
 	}
 
+	@Override
+	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
 
 	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			String[] parts = text.split(" ");
-			if (chatId != ownerId) {
-				sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
-				return;
-			}
 			if (parts.length < 2) {
 				sendMessage(chatId, messageTemplate.notValidDeauthFormat(), telegramClient);
 				return;

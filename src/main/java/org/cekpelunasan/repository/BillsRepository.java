@@ -45,7 +45,7 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 
 
 	@Query("SELECT DISTINCT b.branch FROM Bills b")
-	Set<String> findDistinctBranchByBrach();
+	Set<String> findDistinctBranchByBranch();
 
 	@Query("SELECT DISTINCT b.accountOfficer FROM Bills b")
 	Set<String> findDistinctByAccountOfficer();

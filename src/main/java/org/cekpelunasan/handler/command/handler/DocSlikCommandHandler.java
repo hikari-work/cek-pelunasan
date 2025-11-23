@@ -1,9 +1,9 @@
 package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.handler.command.template.MessageTemplate;
-import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.slik.S3ClientConfiguration;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -17,8 +17,6 @@ import java.util.concurrent.CompletableFuture;
 @Component
 @RequiredArgsConstructor
 public class DocSlikCommandHandler implements CommandProcessor {
-	private final AuthorizedChats authorizedChats1;
-	private final MessageTemplate messageTemplate;
 	private final S3ClientConfiguration s3Connector;
 
 
@@ -32,15 +30,16 @@ public class DocSlikCommandHandler implements CommandProcessor {
 		return "";
 	}
 
+	@Override
+	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
 
 	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
-			if (!authorizedChats1.isAuthorized(chatId)) {
-				sendMessage(chatId, messageTemplate.unathorizedMessage(), telegramClient);
-				return;
-			}
 			if (text.length() < 2) {
 				sendMessage(chatId, "Nama Harus Diisi", telegramClient);
 				return;

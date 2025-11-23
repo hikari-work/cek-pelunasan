@@ -1,11 +1,11 @@
 package org.cekpelunasan.handler.command.handler;
 
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.credithistory.CreditHistoryService;
 import org.cekpelunasan.service.users.UserService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -25,16 +25,18 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 
 	private static final long DELAY_BETWEEN_USER = 500;
 
-	private final String botOwner;
-	private final MessageTemplate messageTemplate;
 	private final UserService userService;
 	private final CreditHistoryService creditHistoryService;
 
-	public CreditHistoryUpdateCommandHandler(@Value("${telegram.bot.owner}") String botOwner, MessageTemplate messageTemplate, UserService userService, CreditHistoryService creditHistoryService) {
-		this.botOwner = botOwner;
-		this.messageTemplate = messageTemplate;
+	public CreditHistoryUpdateCommandHandler(UserService userService, CreditHistoryService creditHistoryService) {
 		this.userService = userService;
 		this.creditHistoryService = creditHistoryService;
+	}
+
+	@Override
+	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
 	}
 
 	@Override
@@ -48,13 +50,11 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 	}
 
 
+
 	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
-			log.info("Uplading Credit....");
-			if (isNotAdmin(chatId, telegramClient)) return;
-
 			String fileUrl = extractFileUrl(text, chatId, telegramClient);
 			if (fileUrl == null) return;
 			List<User> allUser = userService.findAllUsers();
@@ -74,14 +74,6 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 			: "⚠ *Gagal update. Akan dicoba ulang.*";
 
 		notifyUsers(allUsers, resultMessage, telegramClient);
-	}
-
-	private boolean isNotAdmin(long chatId, TelegramClient telegramClient) {
-		if (!botOwner.equals(String.valueOf(chatId))) {
-			sendMessage(chatId, messageTemplate.notAdminUsers(), telegramClient);
-			return true;
-		}
-		return false;
 	}
 
 	private String extractFileUrl(String text, long chatId, TelegramClient telegramClient) {

@@ -1,10 +1,11 @@
 package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.Savings;
 import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingByTab;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.savings.SavingsService;
 import org.cekpelunasan.utils.CanvasingUtils;
 import org.springframework.data.domain.Page;
@@ -26,7 +27,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CanvasingTabCommandHandler implements CommandProcessor {
 
-	private final AuthorizedChats authorizedChats1;
 	private final SavingsService savingsService;
 	private final PaginationCanvassingByTab paginationCanvassingByTab;
 	private final CanvasingUtils canvasingUtils;
@@ -41,18 +41,17 @@ public class CanvasingTabCommandHandler implements CommandProcessor {
 		return "";
 	}
 
+	@Override
+	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
 
 	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			String address = text.length() > 8 ? text.substring(8).trim() : "";
-
-			if (!authorizedChats1.isAuthorized(chatId)) {
-				log.info("User Nor Auth...");
-				sendMessage(chatId, "Kamu tidak memiliki akses ke fitur ini", telegramClient);
-				return;
-			}
 
 			if (address.isEmpty()) {
 				log.info("Address Is Not Valid");
