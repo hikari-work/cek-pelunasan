@@ -58,7 +58,7 @@ public class HotKolekService {
 	}
     
     private List<Bills> filterBills(String branch, BiFunction<BillsRepository, String, List<Bills>> billsFetcher) {
-        List<String> payings = payingRepository.findAll().stream().map(Paying::getId).toList();
+        List<String> payings = billsRepository.findUnpaidBillsByBranch(branch).stream().map(Bills::getNoSpk).toList();
         List<Bills> bills = billsFetcher.apply(billsRepository, branch);
         bills.removeIf(bill -> payings.contains(bill.getNoSpk()));
         bills.removeIf(bill -> !bill.getOfficeLocation().equals(branch));

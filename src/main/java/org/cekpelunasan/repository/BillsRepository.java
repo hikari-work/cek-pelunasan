@@ -19,8 +19,11 @@ import java.util.function.Function;
 public interface BillsRepository extends JpaRepository<Bills, String> {
 
 	@Modifying
-	@Query("DELETE FROM Bills ")
+	@Query(value = "TRUNCATE TABLE tagihan", nativeQuery = true)
 	void deleteAllFast();
+
+	@Query("SELECT b FROM Bills b WHERE b.officeLocation = :branch AND b.noSpk NOT IN (SELECT p.id FROM Paying p)")
+	List<Bills> findUnpaidBillsByBranch(String branch);
 
 	Page<Bills> findByAccountOfficerAndPayDown(String accountOfficer, String payDown, Pageable pageable);
 
