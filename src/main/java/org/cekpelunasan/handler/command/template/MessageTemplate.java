@@ -21,17 +21,6 @@ public class MessageTemplate {
 			
 			""";
 	}
-
-	public String notAdminUsers() {
-		return """
-			❌ Kamu tidak punya izin untuk perintah ini.
-			
-			
-			Pastikan kamu adalah pemilik bot ini, Jika Benar
-			silahkan konfigurasi ulang...
-			""";
-	}
-
 	public String notValidDeauthFormat() {
 		return """
 			⚠️ Format salah.
@@ -50,14 +39,4 @@ public class MessageTemplate {
 			Parameter yang anda masukkan tidak dapat dikenali.
 			""";
 	}
-
-	public String fiCommandHelper() {
-		return """
-			⚠️ *Informasi* ⚠️
-			
-			Command `/fi` digunakan untuk mencari nasabah berdasarkan nama.
-			Contoh: `/fi Budi`
-			""";
-	}
-
 }
