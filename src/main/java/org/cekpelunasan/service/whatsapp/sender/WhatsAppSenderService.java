@@ -44,15 +44,6 @@ public class WhatsAppSenderService {
 		ResponseEntity<GenericResponseDTO> response = sender.request(url, update);
 		return response.getBody();
 	}
-	public GenericResponseDTO sendReactionToMessage(String phone, String messageId, String reaction) {
-		MessageReactionDTO reactionDTO = new MessageReactionDTO();
-		reactionDTO.setPhone(phone);
-		reactionDTO.setMessageId(messageId);
-		reactionDTO.setEmoji(reaction);
-		String url = sender.buildUrl(TypeMessage.REACTION);
-		ResponseEntity<GenericResponseDTO> response = sender.request(url, reactionDTO);
-		return response.getBody();
-	}
 
 	public GenericResponseDTO sendReactionToMessage(String phone, String messageId) {
 		MessageReactionDTO reactionDTO = new MessageReactionDTO();
@@ -62,77 +53,6 @@ public class WhatsAppSenderService {
 		reactionDTO.setEmoji(reaction.get((int) (Math.random() * reaction.size())));
 		String url = sender.buildUrl(TypeMessage.REACTION);
 		ResponseEntity<GenericResponseDTO> response = sender.request(url, reactionDTO);
-		return response.getBody();
-	}
-
-	@SuppressWarnings("UnusedReturnValue")
-	public GenericResponseDTO deleteMessage(String phone, String messageId) {
-		DeleteMessageDTO deleteMessageDTO = new DeleteMessageDTO();
-		deleteMessageDTO.setPhone(phone);
-		deleteMessageDTO.setMessageId(messageId);
-		String url = sender.buildUrl(TypeMessage.DELETE);
-		ResponseEntity<GenericResponseDTO> response = sender.request(url, deleteMessageDTO);
-		return response.getBody();
-	}
-
-	public GenericResponseDTO sendFile(String phone, String message, byte[] files, String filename) {
-		SendFileMessageDTO request = new SendFileMessageDTO();
-		request.setDuration(3600);
-		request.setFileBytes(files);
-		request.setCaption(message);
-		request.setPhone(phone);
-		request.setFileName(filename);
-		request.setIsForwarded(false);
-		String url = sender.buildUrl(TypeMessage.FILE);
-		ResponseEntity<GenericResponseDTO> response = sender.requestMultiPart(url, request, TypeMessage.FILE);
-		return response.getBody();
-	}
-	public GenericResponseDTO sendImage(String phone, String message, String url, String filename) {
-		SendFileMessageDTO request = new SendFileMessageDTO();
-		request.setDuration(3600);
-		request.setImageUrl(url);
-		request.setCaption(message);
-		request.setPhone(phone);
-		request.setFileName(filename);
-		request.setIsForwarded(false);
-		String baseUrl = sender.buildUrl(TypeMessage.IMAGE);
-		ResponseEntity<GenericResponseDTO> response = sender.requestMultiPart(baseUrl, request, TypeMessage.IMAGE);
-		return response.getBody();
-	}
-	public GenericResponseDTO sendImage(String phone, String message, byte[] url, String filename) {
-		SendFileMessageDTO request = new SendFileMessageDTO();
-		request.setDuration(3600);
-		request.setFileBytes(url);
-		request.setCaption(message);
-		request.setPhone(phone);
-		request.setFileName(filename);
-		request.setIsForwarded(false);
-		String baseUrl = sender.buildUrl(TypeMessage.IMAGE);
-		ResponseEntity<GenericResponseDTO> response = sender.requestMultiPart(baseUrl, request, TypeMessage.IMAGE);
-		return response.getBody();
-	}
-	public GenericResponseDTO sendVideo(String phone, String message, byte[] files, String filename) {
-		SendFileMessageDTO request = new SendFileMessageDTO();
-		request.setDuration(3600);
-		request.setFileBytes(files);
-		request.setCaption(message);
-		request.setPhone(phone);
-		request.setFileName(filename);
-		request.setIsForwarded(false);
-		String baseUrl = sender.buildUrl(TypeMessage.VIDEO);
-		ResponseEntity<GenericResponseDTO> response = sender.requestMultiPart(baseUrl, request, TypeMessage.VIDEO);
-		return response.getBody();
-	}
-	public GenericResponseDTO sendVideo(String phone, String message, String url, String filename) {
-		SendFileMessageDTO request = new SendFileMessageDTO();
-		request.setDuration(3600);
-		request.setVideoUrl(url);
-		request.setCaption(message);
-		request.setPhone(phone);
-		request.setFileName(filename);
-		request.setIsForwarded(false);
-		String baseUrl = sender.buildUrl(TypeMessage.VIDEO);
-		ResponseEntity<GenericResponseDTO> response = sender.requestMultiPart(baseUrl, request, TypeMessage.VIDEO);
 		return response.getBody();
 	}
 }

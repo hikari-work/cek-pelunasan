@@ -10,6 +10,7 @@ import org.cekpelunasan.service.users.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -74,7 +75,7 @@ public class AuthCommandHandler implements CommandProcessor {
 
 	public void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
 		try {
-			telegramClient.execute(org.telegram.telegrambots.meta.api.methods.send.SendMessage.builder()
+			telegramClient.execute(SendMessage.builder()
 				.chatId(chatId.toString())
 				.text(text)
 				.build());
