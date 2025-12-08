@@ -1,5 +1,6 @@
-FROM openjdk:21-jdk
+FROM amazoncorretto:21-al2023-jdk
 WORKDIR /app
-COPY target/*.jar app.jar
-EXPOSE 5000
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY app.jar app.jar
+
+# Cloud Run menggunakan variabel PORT, kita arahkan server.port ke sana
+ENTRYPOINT ["java", "-XX:+UseShenandoahGC", "-Xmx756m", "-Xmn128m", "-jar", "app.jar", "--server.port=${PORT}"]
