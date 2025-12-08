@@ -22,13 +22,13 @@ public class CallbackHandler {
 	}
 
 	@Async
-	public CompletableFuture<Void> handle(Update update, TelegramClient telegramClient) {
+	public void handle(Update update, TelegramClient telegramClient) {
 		if (update.hasCallbackQuery()) {
 			String callbackData = update.getCallbackQuery().getData().split("_")[0];
 			CallbackProcessor callbackProcessor = processorMap.getOrDefault(callbackData, processorMap.get("none"));
 			callbackProcessor.process(update, telegramClient);
 		}
-		return CompletableFuture.completedFuture(null);
+		CompletableFuture.completedFuture(null);
 	}
 
 }

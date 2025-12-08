@@ -2,13 +2,15 @@ package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.event.database.DatabaseUpdateEvent;
 import org.cekpelunasan.event.database.EventType;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.savings.SavingsService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.InputStream;
@@ -27,14 +29,11 @@ public class UploadTabCommandHandler implements CommandProcessor {
 	private static final String COMMAND = "/uploadtab";
 	private static final String CSV_EXTENSION = ".csv";
 	private static final String UPLOAD_DIRECTORY = "files";
-	private static final String ERROR_UNAUTHORIZED = "Unauthorized";
 	private static final String ERROR_FORMAT = "❗ *Format salah.*\nGunakan `/upload <link_csv>`";
 
 	private final ApplicationEventPublisher publisher;
 	private final SavingsService savingsService;
 
-	@Value("${telegram.bot.owner}")
-	private String botOwner;
 
 	@Override
 	public String getCommand() {
@@ -47,24 +46,21 @@ public class UploadTabCommandHandler implements CommandProcessor {
 	}
 
 	@Override
+	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
+
+	@Override
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> processUpload(chatId, text, telegramClient));
 	}
 
 	private void processUpload(long chatId, String text, TelegramClient telegramClient) {
-		if (!isAdmin(chatId)) {
-			sendMessage(chatId, ERROR_UNAUTHORIZED, telegramClient);
-			return;
-		}
-
 		String fileUrl = extractFileUrl(text, chatId, telegramClient);
 		if (fileUrl != null) {
 			processFile(fileUrl);
 		}
-	}
-
-	private boolean isAdmin(long chatId) {
-		return botOwner.equals(String.valueOf(chatId));
 	}
 
 	private String extractFileUrl(String text, long chatId, TelegramClient telegramClient) {

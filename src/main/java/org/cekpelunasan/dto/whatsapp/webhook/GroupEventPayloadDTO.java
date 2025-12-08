@@ -17,6 +17,6 @@ public class GroupEventPayloadDTO {
 	@JsonProperty("chat_id")
 	private String chatId;
 
-	private String type; // join, leave, promote, demote
+	private String type;
 	private List<String> jids;
 }

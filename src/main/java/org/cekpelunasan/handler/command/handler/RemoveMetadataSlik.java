@@ -1,10 +1,12 @@
 package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.slik.GenerateMetadataSlikForUncompletedDocument;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -14,8 +16,7 @@ import java.util.concurrent.CompletableFuture;
 public class RemoveMetadataSlik implements CommandProcessor {
 
 	private final GenerateMetadataSlikForUncompletedDocument generateMetadataSlikForUncompletedDocument;
-	@Value("${telegram.bot.owner}")
-	private String owner;
+
 
 	@Override
 	public String getCommand() {
@@ -28,10 +29,13 @@ public class RemoveMetadataSlik implements CommandProcessor {
 	}
 
 	@Override
+	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
+
+	@Override
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
-		if (chatId != Long.parseLong(owner)) {
-			return CompletableFuture.runAsync(() -> sendMessage(chatId, "Hanya Admin yang dapat menggunakan command ini", telegramClient));
-		}
 		return CompletableFuture.runAsync(() ->{
 			String key = text.replace("/remdata ", "");
 			if (key.isEmpty()) {

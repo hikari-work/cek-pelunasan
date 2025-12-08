@@ -3,7 +3,6 @@ package org.cekpelunasan.utils;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.Bills;
-import org.cekpelunasan.entity.Repayment;
 import org.cekpelunasan.service.simulasi.SimulasiService;
 import org.springframework.stereotype.Component;
 
@@ -110,26 +109,6 @@ public class TagihanUtils {
 			String.format("Rp%,d,-", bills.getFullPayment()),
 			bills.getAccountOfficer(),
 			LocalDateTime.now().plusHours(7).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
-		);
-	}
-
-	public String getAllPelunasan(Repayment dto) {
-		return String.format("""
-				🔷 *%s*
-				┌────────────────────────
-				│ 📎 *DATA NASABAH*
-				│ └── 🔖 SPK    : `%s`
-				│ └── 📍 Alamat : %s
-				│
-				│ 💳 *INFORMASI KREDIT*
-				│ └── 💰 Plafond : %s
-				└────────────────────────
-				
-				""",
-			dto.getName(),
-			dto.getCustomerId(),
-			dto.getAddress(),
-			rupiahFormatUtils.formatRupiah(dto.getPlafond())
 		);
 	}
 	private Long calculateTotalPayment(Bills bills) {

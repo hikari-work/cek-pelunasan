@@ -1,6 +1,8 @@
 package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.KolekTas;
 import org.cekpelunasan.handler.callback.pagination.PaginationKolekTas;
 import org.cekpelunasan.handler.command.CommandProcessor;
@@ -10,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
@@ -32,6 +35,12 @@ public class KolekTasHandler implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return "Kolek Tas";
+	}
+
+	@Override
+	@RequireAuth(roles = {AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
 	}
 
 	@Override

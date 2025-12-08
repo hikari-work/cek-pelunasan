@@ -26,7 +26,6 @@ public class TelegramBot {
 	public void startBot(Update update) {
 		if (update.hasMessage() && update.getMessage().hasText()) {
 			commandHandler.handle(update);
-			return;
 		}
 		if (update.hasCallbackQuery()) {
 			// Handle a callback using the callback handler

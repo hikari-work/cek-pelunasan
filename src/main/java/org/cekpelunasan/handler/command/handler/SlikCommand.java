@@ -2,19 +2,20 @@ package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.handler.command.template.MessageTemplate;
-import org.cekpelunasan.service.auth.AuthorizedChats;
-import org.cekpelunasan.service.slik.IsUserGetPermissionToViewResume;
 import org.cekpelunasan.service.slik.PDFReader;
-import org.cekpelunasan.service.slik.S3ClientConfiguration;
+import org.cekpelunasan.configuration.S3ClientConfiguration;
 import org.cekpelunasan.service.users.UserService;
+import org.cekpelunasan.service.telegram.TelegramMessageService;
 import org.cekpelunasan.utils.button.SlikButtonConfirmation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
@@ -42,8 +43,6 @@ public class SlikCommand implements CommandProcessor {
 
 	private static final String ERROR_KTP_REQUIRED =
 		"⚠️ No KTP harus diisi\n\nGunakan: `/slik <16 digit KTP ID>` atau `/slik <nama>`";
-	private static final String ERROR_NO_PERMISSION =
-		"🔒 Anda tidak memiliki izin untuk melihat resume KTP ini";
 	private static final String SUCCESS_KTP_FOUND =
 		"✅ Data ditemukan. Pilih opsi di bawah:";
 	private static final String ERROR_SLIK_NOT_REQUESTED =
@@ -58,12 +57,10 @@ public class SlikCommand implements CommandProcessor {
 	private int maxResults;
 
 	private final S3ClientConfiguration s3Connector;
-	private final AuthorizedChats authorizedChats;
-	private final MessageTemplate messageTemplate;
 	private final UserService userService;
 	private final PDFReader pdfReader;
-	private final IsUserGetPermissionToViewResume isUserGetPermissionToViewResume;
 	private final SlikButtonConfirmation slikButtonConfirmation;
+	private final TelegramMessageService telegramMessageService;
 
 	@Override
 	public String getCommand() {
@@ -76,21 +73,21 @@ public class SlikCommand implements CommandProcessor {
 	}
 
 	@Override
+	@RequireAuth(roles = {AccountOfficerRoles.AO, AccountOfficerRoles.ADMIN, AccountOfficerRoles.PIMP})
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
+
+	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			try {
-				if (!authorizedChats.isAuthorized(chatId)) {
-					log.warn("Unauthorized access attempt - Chat ID: {}", chatId);
-					sendMessage(chatId, messageTemplate.unathorizedMessage(), telegramClient);
-					return;
-				}
-
 				String query = extractQuery(text);
 				if (query.isEmpty()) {
-					sendMessage(chatId, ERROR_KTP_REQUIRED, telegramClient);
-					return;
-				}
+                    telegramMessageService.sendText(chatId, ERROR_KTP_REQUIRED, telegramClient);
+                    return;
+                }
 
 				if (isValidKtpId(query)) {
 					handleKtpIdSearch(query, chatId, telegramClient);
@@ -98,12 +95,12 @@ public class SlikCommand implements CommandProcessor {
 					handleNameSearch(query, chatId, telegramClient);
 				}
 
-			} catch (Exception e) {
-				log.error("Error processing SLIK command - Chat ID: {}", chatId, e);
-				sendMessage(chatId, ERROR_PROCESSING, telegramClient);
-			}
-		});
-	}
+            } catch (Exception e) {
+                log.error("Error processing SLIK command - Chat ID: {}", chatId, e);
+                telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
+            }
+        });
+    }
 
 	/**
 	 * Handles search by KTP ID (16 digits)
@@ -112,20 +109,14 @@ public class SlikCommand implements CommandProcessor {
 		log.info("Processing KTP ID search - ID: {}", ktpId);
 
 		try {
-			if (!isUserGetPermissionToViewResume.isUserGetPermissionToViewResume(ktpId)) {
-				log.warn("User denied permission for KTP ID: {}", ktpId);
-				sendMessage(chatId, ERROR_NO_PERMISSION, telegramClient);
-				return;
-			}
-
 			InlineKeyboardMarkup keyboard = slikButtonConfirmation.sendSlikCommand(ktpId);
-			sendMessage(chatId, keyboard, telegramClient);
+			telegramMessageService.sendKeyboard(chatId, keyboard, telegramClient);
 
-		} catch (Exception e) {
-			log.error("Error in KTP ID search - ID: {}", ktpId, e);
-			sendMessage(chatId, ERROR_PROCESSING, telegramClient);
-		}
-	}
+        } catch (Exception e) {
+            log.error("Error in KTP ID search - ID: {}", ktpId, e);
+            telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
+        }
+    }
 
 	/**
 	 * Handles search by name with concurrent ID extraction
@@ -136,10 +127,10 @@ public class SlikCommand implements CommandProcessor {
 		try {
 			Optional<User> userOptional = userService.findUserByChatId(chatId);
 			if (userOptional.isEmpty()) {
-				log.warn("User not found for Chat ID: {}", chatId);
-				sendMessage(chatId, ERROR_SLIK_NOT_REQUESTED, telegramClient);
-				return;
-			}
+                log.warn("User not found for Chat ID: {}", chatId);
+                telegramMessageService.sendText(chatId, ERROR_SLIK_NOT_REQUESTED, telegramClient);
+                return;
+            }
 
 			User user = userOptional.get();
 			String searchKey = user.getUserCode() + "_" + query.trim();
@@ -148,10 +139,10 @@ public class SlikCommand implements CommandProcessor {
 			List<String> results = s3Connector.listObjectFoundByName(searchKey);
 
 			if (results.isEmpty()) {
-				log.info("No results found for query: {}", query);
-				sendMessage(chatId, buildNoResultsMessage(query), telegramClient);
-				return;
-			}
+                log.info("No results found for query: {}", query);
+                telegramMessageService.sendText(chatId, buildNoResultsMessage(query), telegramClient);
+                return;
+            }
 
 			if (results.size() > maxResults) {
 				log.warn("Search returned too many results: {} (max: {})", results.size(), maxResults);
@@ -159,13 +150,13 @@ public class SlikCommand implements CommandProcessor {
 			}
 
 			String searchResultsMessage = buildSearchResultsMessageConcurrent(query, results, user);
-			sendMessage(chatId, searchResultsMessage, telegramClient);
+			telegramMessageService.sendText(chatId, searchResultsMessage, telegramClient);
 
-		} catch (Exception e) {
-			log.error("Error in name search - Query: {}, Chat ID: {}", query, chatId, e);
-			sendMessage(chatId, ERROR_PROCESSING, telegramClient);
-		}
-	}
+        } catch (Exception e) {
+            log.error("Error in name search - Query: {}, Chat ID: {}", query, chatId, e);
+            telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
+        }
+    }
 
 	/**
 	 * Extracts the search query from command text
@@ -318,40 +309,6 @@ public class SlikCommand implements CommandProcessor {
 			ktpCommand,
 			"/doc " + entry.contentKey()
 		);
-	}
-
-	/**
-	 * Sends a message to Telegram
-	 */
-	private void sendMessage(long chatId, String text, TelegramClient telegramClient) {
-		try {
-			telegramClient.execute(SendMessage.builder()
-				.chatId(chatId)
-				.text(text)
-				.parseMode(MARKDOWN_PARSE_MODE)
-				.disableWebPagePreview(true)
-				.build());
-		} catch (Exception e) {
-			log.error("Error sending message - Chat ID: {}", chatId, e);
-		}
-	}
-
-	/**
-	 * Sends a message with keyboard to Telegram
-	 */
-	private void sendMessage(long chatId, InlineKeyboardMarkup keyboard,
-							 TelegramClient telegramClient) {
-		try {
-			telegramClient.execute(SendMessage.builder()
-				.chatId(chatId)
-				.text(SlikCommand.SUCCESS_KTP_FOUND)
-				.parseMode(MARKDOWN_PARSE_MODE)
-				.replyMarkup(keyboard)
-				.disableWebPagePreview(true)
-				.build());
-		} catch (Exception e) {
-			log.error("Error sending message with keyboard - Chat ID: {}", chatId, e);
-		}
 	}
 
 	/**

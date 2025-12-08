@@ -1,26 +1,27 @@
 package org.cekpelunasan.repository;
 
 import org.cekpelunasan.entity.Bills;
-import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.FluentQuery;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
+
 
 
 @Repository
 public interface BillsRepository extends JpaRepository<Bills, String> {
 
 	@Modifying
-	@Query("DELETE FROM Bills ")
+	@Query(value = "TRUNCATE TABLE tagihan", nativeQuery = true)
 	void deleteAllFast();
+
+	@Query("SELECT b FROM Bills b WHERE b.officeLocation = :branch AND b.noSpk NOT IN (SELECT p.id FROM Paying p)")
+	List<Bills> findUnpaidBillsByBranch(String branch);
 
 	Page<Bills> findByAccountOfficerAndPayDown(String accountOfficer, String payDown, Pageable pageable);
 
@@ -44,7 +45,7 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 
 
 	@Query("SELECT DISTINCT b.branch FROM Bills b")
-	Set<String> findDistinctBranchByBrach();
+	Set<String> findDistinctBranchByBranch();
 
 	@Query("SELECT DISTINCT b.accountOfficer FROM Bills b")
 	Set<String> findDistinctByAccountOfficer();

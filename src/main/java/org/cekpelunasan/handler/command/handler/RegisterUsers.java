@@ -1,6 +1,7 @@
 package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
+import org.cekpelunasan.annotation.RequireAuth;
 import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.handler.command.CommandProcessor;
@@ -10,6 +11,7 @@ import org.cekpelunasan.service.slik.SendNotificationSlikUpdated;
 import org.cekpelunasan.service.users.UserService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.Optional;
@@ -39,6 +41,12 @@ public class RegisterUsers implements CommandProcessor {
 	}
 
 	@Override
+	@RequireAuth(roles = {AccountOfficerRoles.AO, AccountOfficerRoles.PIMP, AccountOfficerRoles.ADMIN})
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
+
+	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
@@ -58,18 +66,16 @@ public class RegisterUsers implements CommandProcessor {
 			}
 
 			User user = userOptional.get();
-
 			if (target.length() == 3 && isValidAO(target)) {
-				registerUser(user, AccountOfficerRoles.AO, target, "AO", chatId, telegramClient);
-				CompletableFuture.runAsync(sendNotificationSlikUpdated::run);
-				return;
-			}
-
+                registerUser(user, AccountOfficerRoles.AO, target, "AO", chatId, telegramClient);
+                CompletableFuture.runAsync(sendNotificationSlikUpdated::runTest);
+                return;
+            }
 			if (isNumber(target) && isValidBranch(target)) {
-				registerUser(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, telegramClient);
-				CompletableFuture.runAsync(sendNotificationSlikUpdated::run);
-				return;
-			}
+                registerUser(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, telegramClient);
+                CompletableFuture.runAsync(sendNotificationSlikUpdated::runTest);
+                return;
+            }
 			sendMessage(chatId, "❌ *Format tidak valid*\n\nContoh: /otor 1234567890", telegramClient);
 		});
 	}

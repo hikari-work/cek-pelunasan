@@ -2,6 +2,8 @@ package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.event.database.DatabaseUpdateEvent;
 import org.cekpelunasan.event.database.EventType;
 import org.cekpelunasan.handler.command.CommandProcessor;
@@ -9,6 +11,7 @@ import org.cekpelunasan.service.kolektas.KolekTasService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.InputStream;
@@ -45,6 +48,12 @@ public class UploadTasHandler implements CommandProcessor {
 	@Override
 	public String getDescription() {
 		return "Upload dan proses file CSV untuk update data koleksi tas";
+	}
+
+	@Override
+	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
 	}
 
 	@Override

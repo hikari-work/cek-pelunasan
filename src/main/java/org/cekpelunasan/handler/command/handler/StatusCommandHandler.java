@@ -1,6 +1,8 @@
 package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.service.credithistory.CreditHistoryService;
@@ -42,6 +44,7 @@ public class StatusCommandHandler implements CommandProcessor {
 
 	@Override
 	@Async
+	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		try {
 			long chatId = update.getMessage().getChatId();

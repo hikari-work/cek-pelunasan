@@ -1,17 +1,17 @@
 package org.cekpelunasan.handler.command.handler;
 
 import lombok.RequiredArgsConstructor;
+import org.cekpelunasan.annotation.RequireAuth;
+import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.CreditHistory;
 import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingButton;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.handler.command.template.MessageTemplate;
-import org.cekpelunasan.service.auth.AuthorizedChats;
 import org.cekpelunasan.service.credithistory.CreditHistoryService;
+import org.cekpelunasan.service.telegram.TelegramMessageService;
 import org.cekpelunasan.utils.FormatPhoneNumberUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
@@ -24,11 +24,10 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class CanvasingCommandHandler implements CommandProcessor {
 
-	private final AuthorizedChats authorizedChats1;
-	private final MessageTemplate messageTemplate;
 	private final CreditHistoryService creditHistoryService;
-	private final PaginationCanvassingButton paginationCanvassingButton;
-	private final FormatPhoneNumberUtils formatPhoneNumberUtils;
+ private final PaginationCanvassingButton paginationCanvassingButton;
+ private final FormatPhoneNumberUtils formatPhoneNumberUtils;
+ private final TelegramMessageService telegramMessageService;
 
 
 	@Override
@@ -44,30 +43,30 @@ public class CanvasingCommandHandler implements CommandProcessor {
 	}
 
 	@Override
+	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
+	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+		return CommandProcessor.super.process(update, telegramClient);
+	}
+
+	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			String address = text.length() > 11 ? text.substring(11).trim() : "";
-			if (!authorizedChats1.isAuthorized(chatId)) {
-				log.info("Canvasing Is Not auth to user {}", chatId);
-				sendMessage(chatId, messageTemplate.unathorizedMessage(), telegramClient);
-				return;
-			}
 			if (address.isEmpty()) {
-				log.info("Address Is Empty");
-				sendMessage(chatId, "Alamat Harus Diisi", telegramClient);
-				return;
-			}
+                log.info("Address Is Empty");
+                telegramMessageService.sendText(chatId, "Alamat Harus Diisi", telegramClient);
+                return;
+            }
 			List<String> addressList = Arrays.stream(text.split(" ")).filter(s -> !s.equals(getCommand())).toList();
 			Page<CreditHistory> creditHistories = creditHistoryService.searchAddressByKeywords(addressList, 0);
-
 			if (creditHistories.isEmpty()) {
-				log.info("Data Canvasing {} Not Found", address);
-				sendMessage(chatId, String.format("""
-					Data dengan alamat %s Tidak Ditemukan
-					""", address), telegramClient);
-				return;
-			}
+                log.info("Data Canvasing {} Not Found", address);
+                telegramMessageService.sendText(chatId, String.format("""
+                    Data dengan alamat %s Tidak Ditemukan
+                    """, address), telegramClient);
+                return;
+            }
 			log.info("Sending Canvasing....");
 			StringBuilder messageBuilder = new StringBuilder(String.format("\uD83D\uDCC4 Halaman 1 dari %d\n\n", creditHistories.getTotalPages()));
 			creditHistories.forEach(dto -> messageBuilder.append(String.format("""
@@ -87,25 +86,11 @@ public class CanvasingCommandHandler implements CommandProcessor {
 			)));
 
 
-			InlineKeyboardMarkup markup = paginationCanvassingButton.dynamicButtonName(creditHistories, 0, address);
-			sendMessage(chatId, messageBuilder.toString(), telegramClient, markup);
-		});
+            InlineKeyboardMarkup markup = paginationCanvassingButton.dynamicButtonName(creditHistories, 0, address);
+            telegramMessageService.sendTextWithKeyboard(chatId, messageBuilder.toString(), markup, telegramClient);
+        });
 
-
-	}
-
-	public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
-		try {
-			telegramClient.execute(SendMessage.builder()
-				.chatId(chatId.toString())
-				.text(text)
-				.replyMarkup(markup)
-				.parseMode("Markdown")
-				.build());
-		} catch (Exception e) {
-			log.error("Error");
-		}
-	}
+    }
 
 	private String formatName(String name) {
 		return name.toUpperCase();

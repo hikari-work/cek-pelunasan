@@ -58,7 +58,7 @@ public class HotKolekService {
 	}
     
     private List<Bills> filterBills(String branch, BiFunction<BillsRepository, String, List<Bills>> billsFetcher) {
-        List<String> payings = payingRepository.findAll().stream().map(Paying::getId).toList();
+        List<String> payings = billsRepository.findUnpaidBillsByBranch(branch).stream().map(Bills::getNoSpk).toList();
         List<Bills> bills = billsFetcher.apply(billsRepository, branch);
         bills.removeIf(bill -> payings.contains(bill.getNoSpk()));
         bills.removeIf(bill -> !bill.getOfficeLocation().equals(branch));
@@ -73,33 +73,19 @@ public class HotKolekService {
 			.build())
 			.toList());
 	}
-	@Transactional
-	public void deleteAllPaying() {
-		payingRepository.deleteAll();
-	}
-
-	@Transactional
-	public void deleteAllPaying(List<String> spkList) {
-		payingRepository.deleteAllById(spkList);
-	}
 
 	private boolean isValidBillsHotKolek(Bills bills) {
 		if (bills == null) {
 			return true;
 		}
-
 		if (bills.getMinInterest() <= 0 && bills.getMinPrincipal() <= 0) {
 			return true;
 		}
-
-
 		if (bills.getMinInterest() > 0) {
 			if (bills.getMinInterest() > bills.getInterest()) {
 				return true;
 			}
 		}
-
-
 		if (bills.getMinPrincipal() > 0) {
 			if (bills.getMinPrincipal() > bills.getPrincipal()) {
 				return true;

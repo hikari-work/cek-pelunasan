@@ -30,55 +30,6 @@ public class PelunasanDto {
 
 		return baki + bunga + penalti + dendaVal;
 	}
-	public String toTelegramMessage() {
-		NumberFormat formatter = NumberFormat.getInstance(new Locale("id", "ID"));
-
-		return """
-        <b>👤 Nama   :</b> %s
-        <b>📄 SPK    :</b> %s
-        <b>🗺 Alamat :</b> %s
-        
-        <blockquote expandable><code><b>💰 DETAIL PELUNASAN</b>
-        ┌────────────────────────────
-        │ <b>Plafond           :</b> Rp %s
-        │ <b>Baki Debet       :</b> Rp %s
-        │ <b>%-16s:</b> Rp %s
-        │ <b>Penalty %s x Bunga:</b> Rp %s
-        │ <b>Denda            :</b> Rp %s
-        └────────────────────────────
-        <b>💵 Total Pelunasan: Rp %s</b>
-        </code>
-        <b>📅 JADWAL</b>
-        <b>Tanggal Realisasi  :</b> %s
-        <b>Tanggal Jatuh Tempo:</b> %s
-        <b>Rencana Pelunasan  :</b> %s
-        
-        </blockquote>
-        """.formatted(
-			escapeHtml(this.nama != null ? this.nama : "-"),
-			escapeHtml(this.spk != null ? this.spk : "-"),
-			escapeHtml(this.alamat != null ? this.alamat : "-"),
-			this.plafond != null ? formatter.format(this.plafond) : "0",
-			this.bakiDebet != null ? formatter.format(this.bakiDebet) : "0",
-			this.typeBunga,
-			this.perhitunganBunga != null ? formatter.format(this.perhitunganBunga) : "0",
-			this.multiplierPenalty,
-			this.penalty != null ? formatter.format(this.penalty) : "0",
-			this.denda != null ? formatter.format(this.denda) : "0",
-			formatter.format(getTotalPelunasan()),
-			escapeHtml(this.tglRealisasi != null ? this.tglRealisasi : "-"),
-			escapeHtml(this.tglJatuhTempo != null ? this.tglJatuhTempo : "-"),
-			escapeHtml(this.rencanaPelunasan != null ? this.rencanaPelunasan : "-")
-		);
-	}
-	private String escapeHtml(String text) {
-		if (text == null) return "";
-		return text.replace("&", "&amp;")
-			.replace("<", "&lt;")
-			.replace(">", "&gt;")
-			.replace("\"", "&quot;")
-			.replace("'", "&#x27;");
-	}
 	public String toWhatsAppMessageClean() {
 		NumberFormat formatter = NumberFormat.getInstance(new Locale("id", "ID"));
 

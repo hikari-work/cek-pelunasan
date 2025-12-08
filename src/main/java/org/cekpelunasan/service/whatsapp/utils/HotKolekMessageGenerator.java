@@ -19,7 +19,6 @@ public class HotKolekMessageGenerator {
 		*HOT COLLECTION BULAN %s*
 		*TAGIHAN YG PENGARUH NPL*
 		
-		
 		""", bulanTahun));
 
 		for (LocationBills location : locationBills) {
@@ -40,7 +39,6 @@ public class HotKolekMessageGenerator {
 			}
 		}
 		builder.append("""
-		
 		
 		Bagi AO yg sudah mendapat tagihan dan tdk pengaruh NPL bisa langsung di hapus.
 		Semoga NPL bulan ini bisa turun ,ttp semangat dan jaga kesehatan.""");
