@@ -41,7 +41,7 @@ public class RegisterUsers implements CommandProcessor {
 	}
 
 	@Override
-	@RequireAuth(roles = {AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
+	@RequireAuth(roles = {AccountOfficerRoles.AO, AccountOfficerRoles.PIMP, AccountOfficerRoles.ADMIN})
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CommandProcessor.super.process(update, telegramClient);
 	}
@@ -66,18 +66,16 @@ public class RegisterUsers implements CommandProcessor {
 			}
 
 			User user = userOptional.get();
-
 			if (target.length() == 3 && isValidAO(target)) {
-				registerUser(user, AccountOfficerRoles.AO, target, "AO", chatId, telegramClient);
-				CompletableFuture.runAsync(sendNotificationSlikUpdated::run);
-				return;
-			}
-
+                registerUser(user, AccountOfficerRoles.AO, target, "AO", chatId, telegramClient);
+                CompletableFuture.runAsync(sendNotificationSlikUpdated::runTest);
+                return;
+            }
 			if (isNumber(target) && isValidBranch(target)) {
-				registerUser(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, telegramClient);
-				CompletableFuture.runAsync(sendNotificationSlikUpdated::run);
-				return;
-			}
+                registerUser(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, telegramClient);
+                CompletableFuture.runAsync(sendNotificationSlikUpdated::runTest);
+                return;
+            }
 			sendMessage(chatId, "❌ *Format tidak valid*\n\nContoh: /otor 1234567890", telegramClient);
 		});
 	}

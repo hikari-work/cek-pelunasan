@@ -8,6 +8,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.cekpelunasan.annotation.RequireAuth;
 import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.service.auth.AuthorizedChats;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -25,7 +26,7 @@ public class AuthorizationAspect {
 	private final TelegramClient telegramClientSender;
 
 	@Around("@annotation(requireAuth)")
-	public Object checkAuth(ProceedingJoinPoint joinPoint, RequireAuth requireAuth) throws Throwable {
+	public Object checkAuth(@NotNull ProceedingJoinPoint joinPoint, RequireAuth requireAuth) throws Throwable {
 		Object[] args = joinPoint.getArgs();
 		Update update = null;
 		TelegramClient telegramClient = null;

@@ -8,6 +8,7 @@ import org.cekpelunasan.handler.callback.pagination.PaginationCanvassingByTab;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.savings.SavingsService;
 import org.cekpelunasan.utils.CanvasingUtils;
+import org.cekpelunasan.service.telegram.TelegramMessageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
@@ -28,8 +29,9 @@ import java.util.stream.Collectors;
 public class CanvasingTabCommandHandler implements CommandProcessor {
 
 	private final SavingsService savingsService;
-	private final PaginationCanvassingByTab paginationCanvassingByTab;
-	private final CanvasingUtils canvasingUtils;
+ private final PaginationCanvassingByTab paginationCanvassingByTab;
+ private final CanvasingUtils canvasingUtils;
+ private final TelegramMessageService telegramMessageService;
 
 	@Override
 	public String getCommand() {
@@ -52,12 +54,11 @@ public class CanvasingTabCommandHandler implements CommandProcessor {
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			String address = text.length() > 8 ? text.substring(8).trim() : "";
-
 			if (address.isEmpty()) {
-				log.info("Address Is Not Valid");
-				sendMessage(chatId, "Format salah, silahkan gunakan /canvas <alamat>", telegramClient);
-				return;
-			}
+                log.info("Address Is Not Valid");
+                telegramMessageService.sendText(chatId, "Format salah, silahkan gunakan /canvas <alamat>", telegramClient);
+                return;
+            }
 			List<String> addressList = Arrays.stream(address.split(","))
 				.flatMap(part -> Arrays.stream(part.trim().split("\\s+")))
 				.filter(s -> !s.isEmpty())
@@ -66,12 +67,11 @@ public class CanvasingTabCommandHandler implements CommandProcessor {
 			log.info("Searching with keywords: {}", addressList);
 
 			Page<Savings> savingsPage = savingsService.findFilteredSavings(addressList, PageRequest.of(0, 5));
-
 			if (savingsPage.isEmpty()) {
-				log.info("Canvasing data is empty...");
-				sendMessage(chatId, "Tidak ada data yang ditemukan", telegramClient);
-				return;
-			}
+                log.info("Canvasing data is empty...");
+                telegramMessageService.sendText(chatId, "Tidak ada data yang ditemukan", telegramClient);
+                return;
+            }
 			log.info("Sending Cancasing...");
 
 			StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
@@ -79,21 +79,8 @@ public class CanvasingTabCommandHandler implements CommandProcessor {
 				.append("📄 Halaman 1 dari ").append(savingsPage.getTotalPages()).append("\n\n");
 			savingsPage.forEach(dto -> message.append(canvasingUtils.canvasingTab(dto)));
 
-			InlineKeyboardMarkup markup = paginationCanvassingByTab.dynamicButtonName(savingsPage, 0, address);
-			sendMessage(chatId, message.toString(), markup, telegramClient);
-		});
-	}
-
-	public void sendMessage(Long chatId, String text, InlineKeyboardMarkup markup, TelegramClient telegramClient) {
-		try {
-			telegramClient.execute(SendMessage.builder()
-				.chatId(chatId)
-				.text(text)
-				.parseMode("Markdown")
-				.replyMarkup(markup)
-				.build());
-		} catch (TelegramApiException e) {
-			log.info(e.getMessage());
-		}
-	}
+            InlineKeyboardMarkup markup = paginationCanvassingByTab.dynamicButtonName(savingsPage, 0, address);
+            telegramMessageService.sendTextWithKeyboard(chatId, message.toString(), markup, telegramClient);
+        });
+    }
 }

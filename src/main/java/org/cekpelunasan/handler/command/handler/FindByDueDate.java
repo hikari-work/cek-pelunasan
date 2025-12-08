@@ -9,11 +9,11 @@ import org.cekpelunasan.handler.callback.pagination.PaginationBillsByNameCallbac
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.service.Bill.BillService;
 import org.cekpelunasan.service.users.UserService;
+import org.cekpelunasan.service.telegram.TelegramMessageService;
 import org.cekpelunasan.utils.DateUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
@@ -25,9 +25,10 @@ import java.util.concurrent.CompletableFuture;
 @Component
 @RequiredArgsConstructor
 public class FindByDueDate implements CommandProcessor {
-	private final UserService userService;
-	private final BillService billService;
-	private final DateUtils dateUtils;
+ private final UserService userService;
+ private final BillService billService;
+ private final DateUtils dateUtils;
+ private final TelegramMessageService telegramMessageService;
 
 
 	@Override
@@ -52,10 +53,10 @@ public class FindByDueDate implements CommandProcessor {
 		return CompletableFuture.runAsync(() -> {
 
 			Optional<User> userOpt = userService.findUserByChatId(chatId);
-			if (userOpt.isEmpty()) {
-				sendMessage(chatId, "❌ *User tidak ditemukan*", telegramClient);
-				return;
-			}
+   			if (userOpt.isEmpty()) {
+                telegramMessageService.sendText(chatId, "❌ *User tidak ditemukan*", telegramClient);
+                return;
+            }
 
 			User user = userOpt.get();
 			String userCode = user.getUserCode();
@@ -69,11 +70,10 @@ public class FindByDueDate implements CommandProcessor {
 					default -> Page.empty();
 				};
 			}
-
 			if (billsPage != null && billsPage.isEmpty()) {
-				sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
-				return;
-			}
+                telegramMessageService.sendText(chatId, "❌ *Data tidak ditemukan*", telegramClient);
+                return;
+            }
 
 			StringBuilder builder = new StringBuilder("Halaman 1 dari " + (billsPage != null ? billsPage.getTotalPages() : 0) + "\n📋 *Daftar Tagihan Jatuh Tempo Hari Ini:*\n\n");
 			if (billsPage != null) {
@@ -86,9 +86,9 @@ public class FindByDueDate implements CommandProcessor {
 					.dynamicButtonName(billsPage, 0, userCode);
 			}
 
-			sendMessage(chatId, builder.toString(), telegramClient, markup);
-		});
-	}
+            telegramMessageService.sendTextWithKeyboard(chatId, builder.toString(), markup, telegramClient);
+        });
+    }
 
 	public String messageBuilder(Bills bills) {
 		return String.format("""
@@ -127,16 +127,5 @@ public class FindByDueDate implements CommandProcessor {
 		return String.format("Rp %,d", amount);
 	}
 
-	public void sendMessage(Long chatId, String text, TelegramClient telegramClient, InlineKeyboardMarkup markup) {
-		try {
-			telegramClient.execute(SendMessage.builder()
-				.chatId(chatId.toString())
-				.text(text)
-				.replyMarkup(markup)
-				.parseMode("Markdown")
-				.build());
-		} catch (Exception e) {
-			log.error("Error");
-		}
-	}
+    
 }

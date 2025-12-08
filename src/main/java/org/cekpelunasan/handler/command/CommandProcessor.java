@@ -2,6 +2,7 @@ package org.cekpelunasan.handler.command;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.cekpelunasan.service.telegram.TelegramMessageService;
 import org.telegram.telegrambots.meta.api.methods.CopyMessage;
 import org.telegram.telegrambots.meta.api.methods.ForwardMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
@@ -40,17 +41,9 @@ public interface CommandProcessor {
 		return CompletableFuture.completedFuture(null);
 	}
 
-	default void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
-		try {
-			telegramClient.execute(SendMessage.builder()
-				.chatId(chatId)
-				.text(text)
-				.parseMode("Markdown")
-				.build());
-		} catch (TelegramApiException e) {
-			log.info(e.getMessage());
-		}
-	}
+ default void sendMessage(Long chatId, String text, TelegramClient telegramClient) {
+        TelegramMessageService.sendTextStatic(chatId, text, telegramClient);
+    }
 
 	default void copyMessage(Long fromChatId, Integer messageId, Long toChatId, TelegramClient bot) {
 		CopyMessage copy = CopyMessage.builder()
@@ -76,27 +69,23 @@ public interface CommandProcessor {
 			log.info("Error forwarding message: {}", e.getMessage());
 		}
 	}
-	default void sendDocument(Long chatId, String text, InputFile inputFile, TelegramClient telegramClient) {
-		try {
-			telegramClient.execute(SendDocument.builder()
-				.chatId(chatId)
-				.caption(text)
-				.document(inputFile)
-				.build());
-		} catch (TelegramApiException e) {
-			log.info("Error sending document: {}", e.getMessage());
-		}
-	}
-	default void sendMessage(Long chatId, String text, InlineKeyboardMarkup markup, TelegramClient telegramClient) {
-		try {
-			telegramClient.execute(SendMessage.builder()
-				.chatId(chatId)
-					.replyMarkup(markup)
-				.text(text)
-				.parseMode("Markdown")
-				.build());
-		} catch (TelegramApiException e) {
-			log.info(e.getMessage());
-		}
-	}
+    default void sendDocument(Long chatId, String text, InputFile inputFile, TelegramClient telegramClient) {
+        // Convert InputFile to bytes may not be trivial; keep existing path for captionless doc via service
+        // If caption is needed, prepend text into a separate message
+        // Here we fallback to Telegram client only for InputFile variant if necessary in future
+        // Prefer using TelegramMessageService.sendDocument(byte[])
+        log.warn("Prefer TelegramMessageService.sendDocument(byte[]) in handlers; this default may bypass service.");
+        try {
+            telegramClient.execute(SendDocument.builder()
+                .chatId(chatId)
+                .caption(text)
+                .document(inputFile)
+                .build());
+        } catch (TelegramApiException e) {
+            log.info("Error sending document: {}", e.getMessage());
+        }
+    }
+    default void sendMessage(Long chatId, String text, InlineKeyboardMarkup markup, TelegramClient telegramClient) {
+        TelegramMessageService.sendTextWithKeyboardStatic(chatId, text, markup, telegramClient);
+    }
 }

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.annotation.RequireAuth;
 import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.handler.command.CommandProcessor;
-import org.cekpelunasan.service.slik.S3ClientConfiguration;
+import org.cekpelunasan.configuration.S3ClientConfiguration;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.InputFile;

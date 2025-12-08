@@ -1,4 +1,4 @@
-package org.cekpelunasan.service.slik;
+package org.cekpelunasan.configuration;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -10,6 +10,7 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.*;
 
 import java.net.URI;
@@ -42,12 +43,15 @@ public class S3ClientConfiguration {
 	@Bean
 	public S3Client s3Client() {
 		try {
-			String endpointUrl = buildEndpointUrl();
+			String endpointUrl = endpoint.startsWith("http") ? endpoint : buildEndpointUrl();
 			log.info("Initializing S3Client with endpoint: {}", endpointUrl);
 
 			S3Client client = S3Client.builder()
 				.endpointOverride(URI.create(endpointUrl))
 				.credentialsProvider(createCredentialsProvider())
+				.serviceConfiguration(S3Configuration.builder()
+					.pathStyleAccessEnabled(true)
+					.build())
 				.region(Region.US_EAST_1)
 				.build();
 
@@ -90,21 +94,27 @@ public class S3ClientConfiguration {
 		List<String> allObject = new ArrayList<>();
 		String continuationToken = null;
 		boolean isTruncated = true;
+
 		while (isTruncated) {
 			ListObjectsV2Request.Builder requestBuilder = ListObjectsV2Request.builder()
 				.bucket(bucket)
 				.prefix(prefix);
+
 			if (continuationToken != null) {
 				requestBuilder.continuationToken(continuationToken);
 			}
+
 			ListObjectsV2Response response = s3Client().listObjectsV2(requestBuilder.build());
-			for (S3Object object : response.contents()) {
-				allObject.add(object.key());
+
+			if (response.contents() != null) {
+				for (S3Object object : response.contents()) {
+					allObject.add(object.key());
+				}
 			}
+
 			continuationToken = response.nextContinuationToken();
 			isTruncated = response.isTruncated();
 		}
 		return allObject;
 	}
-
 }

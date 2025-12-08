@@ -18,13 +18,13 @@ public class GenerateMetadataSlikForUncompletedDocument {
 
 	private static final Logger log = LoggerFactory.getLogger(GenerateMetadataSlikForUncompletedDocument.class);
 
-	private final S3Client s3Connector;
+	private final S3Client s3Client;
 
 	@Value("${r2.bucket}")
 	private String bucket;
 
-	public GenerateMetadataSlikForUncompletedDocument(S3Client s3Connector) {
-		this.s3Connector = s3Connector;
+	public GenerateMetadataSlikForUncompletedDocument(S3Client s3Client) {
+		this.s3Client = s3Client;
 	}
 
 	/**
@@ -59,7 +59,7 @@ public class GenerateMetadataSlikForUncompletedDocument {
 	 * Ambil metadata dari S3 lalu bungkus di HashMap baru (biar bisa diedit)
 	 */
 	private Map<String, String> getObjectMetadata(String objectKey) {
-		HeadObjectResponse headResponse = s3Connector.headObject(
+		HeadObjectResponse headResponse = s3Client.headObject(
 			HeadObjectRequest.builder()
 				.bucket(bucket)
 				.key(objectKey)
@@ -82,6 +82,6 @@ public class GenerateMetadataSlikForUncompletedDocument {
 			.build();
 
 		log.info("Copying object with new metadata: {}", objectKey);
-		s3Connector.copyObject(copyRequest);
+		s3Client.copyObject(copyRequest);
 	}
 }
