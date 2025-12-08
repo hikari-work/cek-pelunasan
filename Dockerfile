@@ -3,4 +3,4 @@ WORKDIR /app
 COPY app.jar app.jar
 
 # Cloud Run menggunakan variabel PORT, kita arahkan server.port ke sana
-ENTRYPOINT ["java", "-XX:+UseShenandoahGC", "-Xmx756m", "-Xmn128m", "-jar", "app.jar", "--server.port=${PORT}"]
+ENTRYPOINT ["java", "-XX:+UseShenandoahGC", "-Xmx756m", "-Xmn128m", "-jar", "app.jar", "--server.port=5000"]
