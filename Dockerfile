@@ -1,6 +1,15 @@
+FROM maven:3.9.6-amazoncorretto-21 AS build
+WORKDIR /app
+
+COPY pom.xml .
+
+RUN mvn dependency:go-offline
+
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+
 FROM amazoncorretto:21-al2023-jdk
 WORKDIR /app
-COPY app.jar app.jar
-
-# Cloud Run menggunakan variabel PORT, kita arahkan server.port ke sana
-ENTRYPOINT ["java", "-XX:+UseShenandoahGC", "-Xmx756m", "-Xmn128m", "-jar", "app.jar", "--server.port=5000"]
+COPY --from=build /app/target/*.jar app.jar
+ENTRYPOINT ["java", "-XX:+UseShenandoahGC", "-Xmx256m", "-Xmn128m", "-jar", "app.jar", "--server.port=8000"]
