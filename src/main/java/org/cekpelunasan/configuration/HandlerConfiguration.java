@@ -5,11 +5,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/*
-Using interceptor to intercept all requests to the /webhook endpoint.
-Also intercepts all requests to the /whatsapp endpoint.
+/**
+ * Configuration class for Web MVC handlers and interceptors.
+ * <p>
+ * This class registers interceptors to pre-process requests for specific endpoints,
+ * such as /webhook and /v2/whatsapp.
+ * </p>
  */
-
 @Configuration
 public class HandlerConfiguration implements WebMvcConfigurer {
 
@@ -19,6 +21,11 @@ public class HandlerConfiguration implements WebMvcConfigurer {
 		this.webhookInterceptor = webhookInterceptor;
 	}
 
+	/**
+	 * Registers interceptors to the registry.
+	 *
+	 * @param registry The {@link InterceptorRegistry} to add interceptors to.
+	 */
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry.addInterceptor(webhookInterceptor)

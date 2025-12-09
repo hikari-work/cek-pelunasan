@@ -12,7 +12,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,16 +50,16 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 		return "";
 	}
 
-
-
 	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
 		return CompletableFuture.runAsync(() -> {
 			String fileUrl = extractFileUrl(text, chatId, telegramClient);
-			if (fileUrl == null) return;
+			if (fileUrl == null)
+				return;
 			List<User> allUser = userService.findAllUsers();
-			notifyUsers(allUser, "⚠ *Sedang melakukan update data, mohon jangan kirim perintah apapun...*", telegramClient);
+			notifyUsers(allUser, "⚠ *Sedang melakukan update data, mohon jangan kirim perintah apapun...*",
+					telegramClient);
 
 			processFileAndNotifyUsers(fileUrl, allUser, telegramClient);
 		});
@@ -70,8 +71,8 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 
 		boolean success = downloadAndProcessFile(fileUrl, fileName);
 		String resultMessage = success
-			? "✅ *Database berhasil di proses*"
-			: "⚠ *Gagal update. Akan dicoba ulang.*";
+				? "✅ *Database berhasil di proses*"
+				: "⚠ *Gagal update. Akan dicoba ulang.*";
 
 		notifyUsers(allUsers, resultMessage, telegramClient);
 	}
@@ -102,7 +103,7 @@ public class CreditHistoryUpdateCommandHandler implements CommandProcessor {
 	}
 
 	private boolean downloadAndProcessFile(String fileUrl, String fileName) {
-		try (InputStream inputStream = new URL(fileUrl).openStream()) {
+		try (InputStream inputStream = URI.create(fileUrl).toURL().openStream()) {
 			Path outputPath = Paths.get("files", fileName);
 			Files.createDirectories(outputPath.getParent());
 			Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);

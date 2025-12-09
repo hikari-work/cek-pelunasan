@@ -1,5 +1,6 @@
 package org.cekpelunasan.service.users;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.repository.UserRepository;
@@ -16,12 +17,12 @@ public class UserService {
 	private final UserRepository userRepository;
 
 	@Transactional
-	public void insertNewUsers(Long chatId) {
+	@SuppressWarnings("null")
+	public void insertNewUsers(@NonNull Long chatId) {
 		userRepository.save(User.builder()
-			.chatId(chatId)
-			.build());
+				.chatId(chatId)
+				.build());
 	}
-
 
 	@Transactional
 	public Long countUsers() {
@@ -34,23 +35,27 @@ public class UserService {
 	}
 
 	@Transactional
-	public void deleteUser(Long chatId) {
+	@SuppressWarnings("null")
+	public void deleteUser(@NonNull Long chatId) {
 		userRepository.deleteById(chatId);
 	}
 
 	@Transactional
-	public Optional<User> findUserByChatId(Long chatId) {
+	@SuppressWarnings("null")
+	public Optional<User> findUserByChatId(@NonNull Long chatId) {
 		return userRepository.findById(chatId);
 	}
 
 	@Transactional
-	public String findUserBranch(Long chatId) {
+	@SuppressWarnings("null")
+	public String findUserBranch(@NonNull Long chatId) {
 		Optional<User> byId = userRepository.findById(chatId);
 		return byId.map(User::getBranch).orElse(null);
 	}
 
 	@Transactional
-	public void saveUserBranch(Long chatId, String branch) {
+	@SuppressWarnings("null")
+	public void saveUserBranch(@NonNull Long chatId, String branch) {
 		userRepository.findById(chatId).ifPresent(user -> {
 			user.setBranch(branch);
 			userRepository.save(user);

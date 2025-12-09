@@ -15,7 +15,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -133,7 +134,7 @@ public class UploadTasHandler implements CommandProcessor {
 		Path outputPath = Paths.get(UPLOAD_DIRECTORY, fileName);
 		Files.createDirectories(outputPath.getParent());
 
-		try (InputStream inputStream = new URL(fileUrl).openStream()) {
+		try (InputStream inputStream = URI.create(fileUrl).toURL().openStream()) { // Changed URL constructor
 			Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
 		}
 

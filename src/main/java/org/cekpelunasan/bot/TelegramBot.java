@@ -8,6 +8,12 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+/**
+ * Component responsible for handling incoming Telegram updates.
+ * <p>
+ * This class routes updates to appropriate handlers such as {@link CommandHandler} or {@link CallbackHandler}.
+ * </p>
+ */
 @Component
 @RequiredArgsConstructor
 public class TelegramBot {
@@ -17,10 +23,14 @@ public class TelegramBot {
 	private final CommandHandler commandHandler;
 	private final CallbackHandler callbackHandler;
 
-	/*
-	Main handler for routing messages to the appropriate handler.
-	Using a callback handler or using a command handler.
-	Async annotation to tell JVM not to block the main thread.
+	/**
+	 * Main entry point for processing Telegram updates.
+	 * <p>
+	 * This method is executed asynchronously to avoid blocking the main thread.
+	 * It delegates the update to specific handlers based on the update type (message, callback query, etc.).
+	 * </p>
+	 *
+	 * @param update The incoming {@link Update} object from Telegram.
 	 */
 	@Async
 	public void startBot(Update update) {
@@ -30,6 +40,9 @@ public class TelegramBot {
 		if (update.hasCallbackQuery()) {
 			// Handle a callback using the callback handler
 			callbackHandler.handle(update, telegramClient);
+		}
+		if (update.hasInlineQuery()) {
+
 		}
 
 

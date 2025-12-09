@@ -13,7 +13,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -59,7 +60,8 @@ public class UploadValidationCustomer implements CommandProcessor {
 		return CompletableFuture.runAsync(() -> {
 
 			String fileUrl = extractFileUrl(text, chatId, telegramClient);
-			if (fileUrl == null) return;
+			if (fileUrl == null)
+				return;
 
 			List<User> allUsers = userService.findAllUsers();
 
@@ -77,21 +79,21 @@ public class UploadValidationCustomer implements CommandProcessor {
 	}
 
 	private void processFileAndNotifyUsers(String fileUrl, List<User> allUsers, TelegramClient telegramClient) {
-    String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+		String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
 
-    boolean success = downloadAndProcessFile(fileUrl, fileName);
-    
-    // Format current date and time
-    String currentDateTime = LocalDateTime.now()
-		.plusHours(7)
-		.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
-    
-    String resultMessage = success
-        ? String.format("✅ *Update berhasil: Data Validasi CIF diperbarui pada %s*", currentDateTime)
-        : "⚠ *Gagal update. Data Validasi CIF, Akan dicoba ulang.*";
+		boolean success = downloadAndProcessFile(fileUrl, fileName);
 
-    notifyUsers(allUsers, resultMessage, telegramClient);
-}
+		// Format current date and time
+		String currentDateTime = LocalDateTime.now()
+				.plusHours(7)
+				.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
+
+		String resultMessage = success
+				? String.format("✅ *Update berhasil: Data Validasi CIF diperbarui pada %s*", currentDateTime)
+				: "⚠ *Gagal update. Data Validasi CIF, Akan dicoba ulang.*";
+
+		notifyUsers(allUsers, resultMessage, telegramClient);
+	}
 
 	private void notifyUsers(List<User> users, String message, TelegramClient client) {
 		users.forEach(user -> {
@@ -110,7 +112,7 @@ public class UploadValidationCustomer implements CommandProcessor {
 	}
 
 	private boolean downloadAndProcessFile(String fileUrl, String fileName) {
-		try (InputStream inputStream = new URL(fileUrl).openStream()) {
+		try (InputStream inputStream = URI.create(fileUrl).toURL().openStream()) {
 			Path outputPath = Paths.get("files", fileName);
 			Files.createDirectories(outputPath.getParent());
 			Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);

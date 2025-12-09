@@ -14,7 +14,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,7 +33,6 @@ public class UploadSimulasi implements CommandProcessor {
 	private final SimulasiService simulasiService;
 	@Value("${telegram.bot.owner}")
 	private String owner;
-
 
 	@Override
 	public String getCommand() {
@@ -75,12 +75,12 @@ public class UploadSimulasi implements CommandProcessor {
 		boolean success = downloadAndProcessFile(fileUrl, fileName);
 		// Format current date and time
 		String currentDateTime = LocalDateTime.now()
-			.plusHours(7)
-			.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
+				.plusHours(7)
+				.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
 
 		String resultMessage = success
-			? String.format("✅ *Update berhasil: Data Simulasi diperbarui pada %s*", currentDateTime)
-			: "⚠ *Gagal update. Data Pelunasan, Akan dicoba ulang.*";
+				? String.format("✅ *Update berhasil: Data Simulasi diperbarui pada %s*", currentDateTime)
+				: "⚠ *Gagal update. Data Pelunasan, Akan dicoba ulang.*";
 
 		notifyUsers(allUsers, resultMessage, telegramClient);
 	}
@@ -103,7 +103,7 @@ public class UploadSimulasi implements CommandProcessor {
 	}
 
 	private boolean downloadAndProcessFile(String fileUrl, String fileName) {
-		try (InputStream inputStream = new URL(fileUrl).openStream()) {
+		try (InputStream inputStream = URI.create(fileUrl).toURL().openStream()) {
 			Path outputPath = Paths.get("files", fileName);
 			Files.createDirectories(outputPath.getParent());
 			Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);

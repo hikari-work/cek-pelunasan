@@ -10,7 +10,6 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 
-
 @Component
 @RequiredArgsConstructor
 public class OnAppStart implements ApplicationRunner {
@@ -38,6 +37,7 @@ public class OnAppStart implements ApplicationRunner {
 			ngrokService.deleteWebhook();
 
 			try {
+				@SuppressWarnings("resource")
 				TelegramBotsLongPollingApplication botsApplication = new TelegramBotsLongPollingApplication();
 				botsApplication.registerBot(botToken, myTelegramBot);
 				logger.info("Long Polling Bot started successfully!");

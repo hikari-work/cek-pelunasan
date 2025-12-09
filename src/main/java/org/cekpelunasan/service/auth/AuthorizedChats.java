@@ -1,5 +1,6 @@
 package org.cekpelunasan.service.auth;
 
+import lombok.NonNull;
 import org.cekpelunasan.entity.AccountOfficerRoles;
 import org.cekpelunasan.entity.User;
 import org.cekpelunasan.repository.UserRepository;
@@ -33,7 +34,8 @@ public class AuthorizedChats {
 		authorizedChats.remove(chatId);
 	}
 
-	public AccountOfficerRoles getUserRoles(Long chatId) {
+	@SuppressWarnings("null")
+	public AccountOfficerRoles getUserRoles(@NonNull Long chatId) {
 		return userRepository.findById(chatId).map(User::getRoles).orElse(null);
 	}
 

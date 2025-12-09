@@ -14,7 +14,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,7 +34,6 @@ public class UploadTabCommandHandler implements CommandProcessor {
 
 	private final ApplicationEventPublisher publisher;
 	private final SavingsService savingsService;
-
 
 	@Override
 	public String getCommand() {
@@ -104,7 +104,7 @@ public class UploadTabCommandHandler implements CommandProcessor {
 		Path outputPath = Paths.get(UPLOAD_DIRECTORY, fileName);
 		Files.createDirectories(outputPath.getParent());
 
-		try (InputStream inputStream = new URL(fileUrl).openStream()) {
+		try (InputStream inputStream = URI.create(fileUrl).toURL().openStream()) {
 			Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
 		}
 

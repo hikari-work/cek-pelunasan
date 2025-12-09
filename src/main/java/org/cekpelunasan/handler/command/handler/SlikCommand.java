@@ -14,7 +14,7 @@ import org.cekpelunasan.utils.button.SlikButtonConfirmation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
@@ -28,7 +28,8 @@ import java.util.stream.Collectors;
 
 /**
  * Handles SLIK commands for retrieving and processing KTP data.
- * Provides functionality to search by KTP ID or by name with concurrent processing.
+ * Provides functionality to search by KTP ID or by name with concurrent
+ * processing.
  */
 @Slf4j
 @Component
@@ -36,19 +37,13 @@ import java.util.stream.Collectors;
 public class SlikCommand implements CommandProcessor {
 
 	private static final String KTP_ID_PATTERN = "\\b\\d{16}\\b";
-	private static final DateTimeFormatter DATE_FORMATTER =
-		DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 	private static final String COMMAND_PREFIX = "/slik ";
-	private static final String MARKDOWN_PARSE_MODE = "Markdown";
 
-	private static final String ERROR_KTP_REQUIRED =
-		"⚠️ No KTP harus diisi\n\nGunakan: `/slik <16 digit KTP ID>` atau `/slik <nama>`";
-	private static final String SUCCESS_KTP_FOUND =
-		"✅ Data ditemukan. Pilih opsi di bawah:";
-	private static final String ERROR_SLIK_NOT_REQUESTED =
-		"❌ SLIK belum di-request atau Anda belum validasi AO\n\nCaranya: `/otor <3 Huruf Inisial>`";
-	private static final String ERROR_PROCESSING =
-		"⚠️ Terjadi kesalahan saat memproses pencarian. Silakan coba lagi.";
+	private static final String ERROR_KTP_REQUIRED = "⚠️ No KTP harus diisi\n\nGunakan: `/slik <16 digit KTP ID>` atau `/slik <nama>`";
+
+	private static final String ERROR_SLIK_NOT_REQUESTED = "❌ SLIK belum di-request atau Anda belum validasi AO\n\nCaranya: `/otor <3 Huruf Inisial>`";
+	private static final String ERROR_PROCESSING = "⚠️ Terjadi kesalahan saat memproses pencarian. Silakan coba lagi.";
 
 	@Value("${slik.search-timeout-seconds:30}")
 	private long searchTimeoutSeconds;
@@ -73,7 +68,7 @@ public class SlikCommand implements CommandProcessor {
 	}
 
 	@Override
-	@RequireAuth(roles = {AccountOfficerRoles.AO, AccountOfficerRoles.ADMIN, AccountOfficerRoles.PIMP})
+	@RequireAuth(roles = { AccountOfficerRoles.AO, AccountOfficerRoles.ADMIN, AccountOfficerRoles.PIMP })
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CommandProcessor.super.process(update, telegramClient);
 	}
@@ -85,9 +80,9 @@ public class SlikCommand implements CommandProcessor {
 			try {
 				String query = extractQuery(text);
 				if (query.isEmpty()) {
-                    telegramMessageService.sendText(chatId, ERROR_KTP_REQUIRED, telegramClient);
-                    return;
-                }
+					telegramMessageService.sendText(chatId, ERROR_KTP_REQUIRED, telegramClient);
+					return;
+				}
 
 				if (isValidKtpId(query)) {
 					handleKtpIdSearch(query, chatId, telegramClient);
@@ -95,12 +90,12 @@ public class SlikCommand implements CommandProcessor {
 					handleNameSearch(query, chatId, telegramClient);
 				}
 
-            } catch (Exception e) {
-                log.error("Error processing SLIK command - Chat ID: {}", chatId, e);
-                telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
-            }
-        });
-    }
+			} catch (Exception e) {
+				log.error("Error processing SLIK command - Chat ID: {}", chatId, e);
+				telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
+			}
+		});
+	}
 
 	/**
 	 * Handles search by KTP ID (16 digits)
@@ -112,11 +107,11 @@ public class SlikCommand implements CommandProcessor {
 			InlineKeyboardMarkup keyboard = slikButtonConfirmation.sendSlikCommand(ktpId);
 			telegramMessageService.sendKeyboard(chatId, keyboard, telegramClient);
 
-        } catch (Exception e) {
-            log.error("Error in KTP ID search - ID: {}", ktpId, e);
-            telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
-        }
-    }
+		} catch (Exception e) {
+			log.error("Error in KTP ID search - ID: {}", ktpId, e);
+			telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
+		}
+	}
 
 	/**
 	 * Handles search by name with concurrent ID extraction
@@ -127,10 +122,10 @@ public class SlikCommand implements CommandProcessor {
 		try {
 			Optional<User> userOptional = userService.findUserByChatId(chatId);
 			if (userOptional.isEmpty()) {
-                log.warn("User not found for Chat ID: {}", chatId);
-                telegramMessageService.sendText(chatId, ERROR_SLIK_NOT_REQUESTED, telegramClient);
-                return;
-            }
+				log.warn("User not found for Chat ID: {}", chatId);
+				telegramMessageService.sendText(chatId, ERROR_SLIK_NOT_REQUESTED, telegramClient);
+				return;
+			}
 
 			User user = userOptional.get();
 			String searchKey = user.getUserCode() + "_" + query.trim();
@@ -139,10 +134,10 @@ public class SlikCommand implements CommandProcessor {
 			List<String> results = s3Connector.listObjectFoundByName(searchKey);
 
 			if (results.isEmpty()) {
-                log.info("No results found for query: {}", query);
-                telegramMessageService.sendText(chatId, buildNoResultsMessage(query), telegramClient);
-                return;
-            }
+				log.info("No results found for query: {}", query);
+				telegramMessageService.sendText(chatId, buildNoResultsMessage(query), telegramClient);
+				return;
+			}
 
 			if (results.size() > maxResults) {
 				log.warn("Search returned too many results: {} (max: {})", results.size(), maxResults);
@@ -152,11 +147,11 @@ public class SlikCommand implements CommandProcessor {
 			String searchResultsMessage = buildSearchResultsMessageConcurrent(query, results, user);
 			telegramMessageService.sendText(chatId, searchResultsMessage, telegramClient);
 
-        } catch (Exception e) {
-            log.error("Error in name search - Query: {}, Chat ID: {}", query, chatId, e);
-            telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
-        }
-    }
+		} catch (Exception e) {
+			log.error("Error in name search - Query: {}, Chat ID: {}", query, chatId, e);
+			telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
+		}
+	}
 
 	/**
 	 * Extracts the search query from command text
@@ -180,15 +175,15 @@ public class SlikCommand implements CommandProcessor {
 		log.info("Building search results - Query: {}, Documents: {}", query, documents.size());
 
 		StringBuilder builder = new StringBuilder(String.format("""
-            🔍 *HASIL PENCARIAN*
-            ━━━━━━━━━━━━━━━━━━━
-            
-            📝 Kata kunci: *%s*
-            🔢 Ditemukan: *%d dokumen*
-            👤 User: *%s*
-            
-            📋 *DAFTAR DOKUMEN*
-            """, query, documents.size(), user.getUserCode()));
+				🔍 *HASIL PENCARIAN*
+				━━━━━━━━━━━━━━━━━━━
+
+				📝 Kata kunci: *%s*
+				🔢 Ditemukan: *%d dokumen*
+				👤 User: *%s*
+
+				📋 *DAFTAR DOKUMEN*
+				""", query, documents.size(), user.getUserCode()));
 
 		List<DocumentEntry> entries = extractDocumentEntriesConcurrent(documents);
 
@@ -198,9 +193,9 @@ public class SlikCommand implements CommandProcessor {
 		}
 
 		builder.append(String.format("""
-            
-            ℹ️ _Tap pada command untuk menyalin dan mendapatkan file_
-            ⏱️ _Generated: %s_""", LocalDateTime.now().format(DATE_FORMATTER)));
+
+				ℹ️ _Tap pada command untuk menyalin dan mendapatkan file_
+				⏱️ _Generated: %s_""", LocalDateTime.now().format(DATE_FORMATTER)));
 
 		long duration = System.currentTimeMillis() - startTime;
 		log.info("Search results built in {} ms", duration);
@@ -213,22 +208,22 @@ public class SlikCommand implements CommandProcessor {
 	 */
 	private List<DocumentEntry> extractDocumentEntriesConcurrent(List<String> documents) {
 		List<CompletableFuture<DocumentEntry>> futures = documents.stream()
-			.map(this::createExtractionTask)
-			.toList();
+				.map(this::createExtractionTask)
+				.toList();
 
 		try {
 			return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-				.thenApply(v -> futures.stream()
-					.map(CompletableFuture::join)
-					.collect(Collectors.toList()))
-				.orTimeout(searchTimeoutSeconds, java.util.concurrent.TimeUnit.SECONDS)
-				.get();
+					.thenApply(v -> futures.stream()
+							.map(CompletableFuture::join)
+							.collect(Collectors.toList()))
+					.orTimeout(searchTimeoutSeconds, java.util.concurrent.TimeUnit.SECONDS)
+					.get();
 		} catch (InterruptedException | ExecutionException e) {
 			log.error("Error in concurrent extraction", e);
 			Thread.currentThread().interrupt();
 			return documents.stream()
-				.map(doc -> new DocumentEntry(doc, null))
-				.collect(Collectors.toList());
+					.map(doc -> new DocumentEntry(doc, null))
+					.collect(Collectors.toList());
 		}
 	}
 
@@ -237,29 +232,29 @@ public class SlikCommand implements CommandProcessor {
 	 */
 	private CompletableFuture<DocumentEntry> createExtractionTask(String contentKey) {
 		return CompletableFuture.supplyAsync(() -> {
-				try {
-					log.debug("Extracting ID for document: {}", contentKey);
-					byte[] fileContent = s3Connector.getFile(contentKey);
+			try {
+				log.debug("Extracting ID for document: {}", contentKey);
+				byte[] fileContent = s3Connector.getFile(contentKey);
 
-					if (fileContent == null || fileContent.length == 0) {
-						log.warn("S3 file not found or empty: {}", contentKey);
-						return new DocumentEntry(contentKey, null);
-					}
-
-					String idNumber = pdfReader.generateIDNumber(fileContent);
-					log.debug("Extracted ID: {}, Document: {}", idNumber, contentKey);
-					return new DocumentEntry(contentKey, idNumber);
-
-				} catch (Exception e) {
-					log.error("Error extracting document entry: {}", contentKey, e);
+				if (fileContent == null || fileContent.length == 0) {
+					log.warn("S3 file not found or empty: {}", contentKey);
 					return new DocumentEntry(contentKey, null);
 				}
-			})
-			.orTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
-			.exceptionally(ex -> {
-				log.error("Timeout extracting document: {}", contentKey, ex);
+
+				String idNumber = pdfReader.generateIDNumber(fileContent);
+				log.debug("Extracted ID: {}, Document: {}", idNumber, contentKey);
+				return new DocumentEntry(contentKey, idNumber);
+
+			} catch (Exception e) {
+				log.error("Error extracting document entry: {}", contentKey, e);
 				return new DocumentEntry(contentKey, null);
-			});
+			}
+		})
+				.orTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+				.exceptionally(ex -> {
+					log.error("Timeout extracting document: {}", contentKey, ex);
+					return new DocumentEntry(contentKey, null);
+				});
 	}
 
 	/**
@@ -267,55 +262,51 @@ public class SlikCommand implements CommandProcessor {
 	 */
 	private String buildNoResultsMessage(String query) {
 		return String.format("""
-            🔍 *HASIL PENCARIAN*
-            ━━━━━━━━━━━━━━━━━━━
-            
-            ❌ *Tidak ditemukan hasil untuk "%s"*
-            
-            Kemungkinan:
-            • SLIK belum di-request
-            • Anda belum validasi sebagai AO
-            • Penulisan tidak sesuai (case sensitive)
-            
-            💡 Silakan validasi AO terlebih dahulu:
-            `/otor <3 Huruf Inisial>`
-            
-            _Coba dengan kata kunci lain atau periksa penulisan kembali_
-            """, query);
+				🔍 *HASIL PENCARIAN*
+				━━━━━━━━━━━━━━━━━━━
+
+				❌ *Tidak ditemukan hasil untuk "%s"*
+
+				Kemungkinan:
+				• SLIK belum di-request
+				• Anda belum validasi sebagai AO
+				• Penulisan tidak sesuai (case sensitive)
+
+				💡 Silakan validasi AO terlebih dahulu:
+				`/otor <3 Huruf Inisial>`
+
+				_Coba dengan kata kunci lain atau periksa penulisan kembali_
+				""", query);
 	}
 
 	/**
 	 * Builds a single document entry
 	 */
 	private String buildDocumentEntry(int index, DocumentEntry entry) {
-		String idNumberDisplay = entry.idNumber() != null ?
-			"`" + entry.idNumber() + "`" : "_Tidak ditemukan_";
-		String ktpCommand = entry.idNumber() != null ?
-			"`/slik " + entry.idNumber() + "`" : "_Tidak ditemukan_";
+		String idNumberDisplay = entry.idNumber() != null ? "`" + entry.idNumber() + "`" : "_Tidak ditemukan_";
+		String ktpCommand = entry.idNumber() != null ? "`/slik " + entry.idNumber() + "`" : "_Tidak ditemukan_";
 
 		return String.format("""
-            
-            📄 *Dokumen #%d*
-            ┌─────────────────────
-            │ 📂 Nama: `%s`
-            │ 🪪 No KTP: %s
-            │ 🎯 Command: %s
-            │ 📋 Original: `%s`
-            └─────────────────────
-            """,
-			index,
-			entry.contentKey(),
-			idNumberDisplay,
-			ktpCommand,
-			"/doc " + entry.contentKey()
-		);
+
+				📄 *Dokumen #%d*
+				┌─────────────────────
+				│ 📂 Nama: `%s`
+				│ 🪪 No KTP: %s
+				│ 🎯 Command: %s
+				│ 📋 Original: `%s`
+				└─────────────────────
+				""",
+				index,
+				entry.contentKey(),
+				idNumberDisplay,
+				ktpCommand,
+				"/doc " + entry.contentKey());
 	}
 
 	/**
 	 * Inner class to hold document entry data
 	 */
-		private record DocumentEntry(String contentKey, String idNumber) {
-
+	private record DocumentEntry(String contentKey, String idNumber) {
 
 	}
 }

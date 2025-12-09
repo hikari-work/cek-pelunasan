@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import lombok.NonNull;
 
 @Service
 @RequiredArgsConstructor
@@ -28,13 +29,12 @@ public class KolekTasService {
 	private static final Logger log = LoggerFactory.getLogger(KolekTasService.class);
 	private final KolekTasRepository kolekTasRepository;
 
+	public Page<KolekTas> findKolekByKelompok(String kelompok, int page, int size) {
+		int zeroBasedPage = page > 0 ? page - 1 : 0;
+		return kolekTasRepository.findByKelompokIgnoreCase(kelompok, PageRequest.of(zeroBasedPage, size));
+	}
 
-   public Page<KolekTas> findKolekByKelompok(String kelompok, int page, int size) {
-       int zeroBasedPage = page > 0 ? page - 1 : 0;
-       return kolekTasRepository.findByKelompokIgnoreCase(kelompok, PageRequest.of(zeroBasedPage, size));
-   }
-
-	public void saveAll(List<KolekTas> kolekTas) {
+	public void saveAll(@NonNull List<KolekTas> kolekTas) {
 		kolekTasRepository.saveAll(kolekTas);
 	}
 
@@ -53,7 +53,7 @@ public class KolekTasService {
 		try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
 			String[] line;
 			reader.readNext();
-			while ((line = reader.readNext())  != null) {
+			while ((line = reader.readNext()) != null) {
 				currentBatch.add(mapToKolekTas(line));
 				if (currentBatch.size() >= BATCH_SIZE) {
 					List<KolekTas> batcToSave = new ArrayList<>(currentBatch);
@@ -94,20 +94,22 @@ public class KolekTasService {
 
 	public KolekTas mapToKolekTas(String[] line) {
 		return KolekTas.builder()
-			.kelompok(line[0])
-			.kantor(line[1])
-			.rekening(line[2])
-			.nama(line[3])
-			.alamat(line[4])
-			.noHp(line[5])
-			.kolek(line[6])
-			.nominal(formatRupiah(Long.parseLong(line[7])))
-			.accountOfficer(line[8])
-			.cif(line[9])
-			.build();
+				.kelompok(line[0])
+				.kantor(line[1])
+				.rekening(line[2])
+				.nama(line[3])
+				.alamat(line[4])
+				.noHp(line[5])
+				.kolek(line[6])
+				.nominal(formatRupiah(Long.parseLong(line[7])))
+				.accountOfficer(line[8])
+				.cif(line[9])
+				.build();
 	}
+
 	public String formatRupiah(Long amount) {
-		if (amount == null) return "Rp0";
+		if (amount == null)
+			return "Rp0";
 		DecimalFormatSymbols symbols = new DecimalFormatSymbols();
 		symbols.setGroupingSeparator('.');
 		symbols.setDecimalSeparator(',');

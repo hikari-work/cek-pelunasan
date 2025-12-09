@@ -18,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import lombok.NonNull;
 
 @Slf4j
 @Service
@@ -33,9 +34,10 @@ public class CustomerHistoryService {
 		}
 		Object[] row = result.getFirst();
 		return Arrays.stream(row)
-			.map(val -> val != null ? ((Number) val).longValue() : 0L)
-			.collect(Collectors.toList());
+				.map(val -> val != null ? ((Number) val).longValue() : 0L)
+				.collect(Collectors.toList());
 	}
+
 	public Long countCustomerHistory() {
 		return customerHistoryRepository.count();
 	}
@@ -97,15 +99,14 @@ public class CustomerHistoryService {
 		System.out.println("Semua data telah disimpan.");
 	}
 
-
-	public void saveBatch(List<CustomerHistory> batch) {
+	public void saveBatch(@NonNull List<CustomerHistory> batch) {
 		customerHistoryRepository.saveAll(batch);
 	}
 
 	public CustomerHistory mapToCustomerHistory(String[] line) {
 		return CustomerHistory.builder()
-			.customerId(line[0])
-			.collectStatus(line[1])
-			.build();
+				.customerId(line[0])
+				.collectStatus(line[1])
+				.build();
 	}
 }

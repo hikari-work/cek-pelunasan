@@ -5,8 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.handler.command.CommandProcessor;
 import org.cekpelunasan.handler.command.template.MessageTemplate;
 import org.cekpelunasan.service.auth.AuthorizedChats;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -21,8 +20,8 @@ public class StartCommandHandler implements CommandProcessor {
 
 	private final TelegramClient telegramClient;
 	private static final String START_MESSAGE = """
-       👋 *PONG!!!*
-       """;
+			👋 *PONG!!!*
+			""";
 
 	private final AuthorizedChats authService;
 	private final MessageTemplate messageTemplateService;
@@ -61,10 +60,10 @@ public class StartCommandHandler implements CommandProcessor {
 	private void sendMessage(long chatId, String text, TelegramClient telegramClient) {
 		try {
 			SendMessage message = SendMessage.builder()
-				.chatId(chatId)
-				.text(text)
-				.parseMode("Markdown")
-				.build();
+					.chatId(chatId)
+					.text(text)
+					.parseMode("Markdown")
+					.build();
 
 			telegramClient.executeAsync(message);
 			log.debug("Message sent to chat: {}", chatId);

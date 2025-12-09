@@ -21,8 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.Objects;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import lombok.NonNull;
 
 @Service
 @RequiredArgsConstructor
@@ -30,11 +32,10 @@ public class CreditHistoryService {
 	private static final Logger log = LoggerFactory.getLogger(CreditHistoryService.class);
 	private final CreditHistoryRepository creditHistoryRepository;
 
-
 	public Page<CreditHistory> searchAddressByKeywords(List<String> keywords, int page) {
 		log.info("Searching for address with keywords: {}", keywords);
 		Specification<CreditHistory> specification = (root, query, cb) -> {
-			assert query != null;
+			Objects.requireNonNull(query);
 			query.distinct(true);
 
 			Subquery<String> subquery = query.subquery(String.class);
@@ -42,15 +43,15 @@ public class CreditHistoryService {
 			Root<CreditHistory> subRoot = subquery.from(CreditHistory.class);
 
 			subquery.select(subRoot.get("customerId"))
-				.where(cb.equal(cb.upper(subRoot.get("status")), "A"));
+					.where(cb.equal(cb.upper(subRoot.get("status")), "A"));
 
 			List<Predicate> predicates = keywords.stream()
-				.map(String::trim)
-				.filter(word -> !word.isEmpty())
-				.map(word -> cb.like(
-					cb.upper(root.get("address")),
-					"%" + word.toUpperCase() + "%"))
-				.toList();
+					.map(String::trim)
+					.filter(word -> !word.isEmpty())
+					.map(word -> cb.like(
+							cb.upper(root.get("address")),
+							"%" + word.toUpperCase() + "%"))
+					.toList();
 
 			Predicate addressCondition = cb.and(predicates.toArray(new Predicate[0]));
 			Predicate notInSubQuery = cb.not(root.get("customerId").in(subquery));
@@ -65,7 +66,7 @@ public class CreditHistoryService {
 		return results;
 	}
 
-	public void saveAll(List<CreditHistory> creditHistories) {
+	public void saveAll(@NonNull List<CreditHistory> creditHistories) {
 		creditHistoryRepository.saveAll(creditHistories);
 	}
 
@@ -124,14 +125,14 @@ public class CreditHistoryService {
 
 	public CreditHistory mapToCreditHistory(String[] line) {
 		return CreditHistory.builder()
-			.date(Long.parseLong(line[0]))
-			.creditId(line[1])
-			.customerId(line[2])
-			.name(line[3])
-			.status(line[4])
-			.address(line[5])
-			.phone(line[6])
-			.build();
+				.date(Long.parseLong(line[0]))
+				.creditId(line[1])
+				.customerId(line[2])
+				.name(line[3])
+				.status(line[4])
+				.address(line[5])
+				.phone(line[6])
+				.build();
 	}
 
 	public Long countCreditHistory() {

@@ -16,10 +16,10 @@ public class HotKolekMessageGenerator {
 
 		String bulanTahun = getMonthAndYear(LocalDate.now());
 		StringBuilder builder = new StringBuilder(String.format("""
-		*HOT COLLECTION BULAN %s*
-		*TAGIHAN YG PENGARUH NPL*
-		
-		""", bulanTahun));
+				*HOT COLLECTION BULAN %s*
+				*TAGIHAN YG PENGARUH NPL*
+
+				""", bulanTahun));
 
 		for (LocationBills location : locationBills) {
 			builder.append("\n");
@@ -39,9 +39,9 @@ public class HotKolekMessageGenerator {
 			}
 		}
 		builder.append("""
-		
-		Bagi AO yg sudah mendapat tagihan dan tdk pengaruh NPL bisa langsung di hapus.
-		Semoga NPL bulan ini bisa turun ,ttp semangat dan jaga kesehatan.""");
+
+				Bagi AO yg sudah mendapat tagihan dan tdk pengaruh NPL bisa langsung di hapus.
+				Semoga NPL bulan ini bisa turun ,ttp semangat dan jaga kesehatan.""");
 		return builder.toString();
 	}
 
@@ -52,24 +52,27 @@ public class HotKolekMessageGenerator {
 
 		for (int i = 0; i < bills.size(); i++) {
 			Bills bill = bills.get(i);
-			if (bill == null) continue;
+			if (bill == null)
+				continue;
 
 			String name = truncate(bill.getName());
 			String line = String.format(
-				"%2d. %-13s %-22s %10s",
-				i + 1,
-				bill.getNoSpk() != null ? bill.getNoSpk() : "",
-				"*" + name + "*",
-				formatToShort(bill.getDebitTray())
-			);
+					"%2d. %-13s %-22s %10s",
+					i + 1,
+					bill.getNoSpk() != null ? bill.getNoSpk() : "",
+					"*" + name + "*",
+					formatToShort(bill.getDebitTray()));
 
 			builder.append(line).append("\n");
 		}
 	}
+
 	private String truncate(String text) {
-		if (text == null) return "";
+		if (text == null)
+			return "";
 		return text.length() <= 20 ? text : text.substring(0, 20);
 	}
+
 	public static String formatToShort(long value) {
 		if (value >= 1_000_000) {
 			double jt = value / 1_000_000.0;
@@ -81,6 +84,7 @@ public class HotKolekMessageGenerator {
 			return String.valueOf(value);
 		}
 	}
+
 	private static String trimDecimal(double val) {
 		if (val == (long) val) {
 			return String.format("%d", (long) val);
@@ -88,7 +92,6 @@ public class HotKolekMessageGenerator {
 			return String.format("%.1f", val);
 		}
 	}
-
 
 	@Getter
 	@AllArgsConstructor
@@ -107,15 +110,15 @@ public class HotKolekMessageGenerator {
 		private final String header;
 		private final List<Bills> bills;
 
-
 		public boolean isEmpty() {
 			return bills.isEmpty();
 		}
 
 	}
+
 	private String getMonthAndYear(LocalDate date) {
-		String bulan = date.getMonth().getDisplayName(TextStyle.FULL, new Locale("id", "ID"))
-			.toUpperCase();
+		String bulan = date.getMonth().getDisplayName(TextStyle.FULL, Locale.of("id", "ID"))
+				.toUpperCase();
 		int tahun = date.getYear();
 		return bulan + " " + tahun;
 	}

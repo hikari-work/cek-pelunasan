@@ -32,7 +32,7 @@ public class InfoCifCommandHandler implements CommandProcessor {
 	}
 
 	@Override
-	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO})
+	@RequireAuth(roles = { AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO })
 	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
 		return CommandProcessor.super.process(update, telegramClient);
 	}
@@ -49,35 +49,35 @@ public class InfoCifCommandHandler implements CommandProcessor {
 	}
 
 	private String formatCollectSummary(String cif, List<Long> counts) {
-    	String[] statuses = {
-        	"🌟 LANCAR", "⚜️ DALAM PERHATIAN", "⭐ KURANG LANCAR",
-        	"💫 DIRAGUKAN", "❗ MACET"
-    	};
-    
-    	long total = counts.stream().mapToLong(Long::valueOf).sum();
-    	StringBuilder sb = new StringBuilder();
+		String[] statuses = {
+				"🌟 LANCAR", "⚜️ DALAM PERHATIAN", "⭐ KURANG LANCAR",
+				"💫 DIRAGUKAN", "❗ MACET"
+		};
 
-    	sb.append("📊 *RINGKASAN KOLEKTIBILITAS*\n")
-      	.append("╔══════════════════════════\n")
-      	.append("║ 🆔 CIF: `").append(cif).append("`\n")
-      	.append("╠══════════════════════════\n")
-      	.append("║ 📈 *STATUS KREDIT*\n");
-    
-    	// Add credit status data
-    	for (int i = 0; i < counts.size(); i++) {
-        	if (counts.get(i) > 0) {
-            	double percent = (counts.get(i) * 100.0) / total;
-            	sb.append(String.format("║ %s: %d hari (%.1f%%)\n",
-                	statuses[i], counts.get(i), percent));
-        	}
-    	}
-    
-    	// Add footer with timestamp
-    	sb.append("╚══════════════════════════\n")
-      	.append("⚡️ _Update: ")
-      	.append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM HH:mm")))
-      	.append("_");
-    
-    	return sb.toString();
-}
+		long total = counts.stream().mapToLong(Long::longValue).sum();
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("📊 *RINGKASAN KOLEKTIBILITAS*\n")
+				.append("╔══════════════════════════\n")
+				.append("║ 🆔 CIF: `").append(cif).append("`\n")
+				.append("╠══════════════════════════\n")
+				.append("║ 📈 *STATUS KREDIT*\n");
+
+		// Add credit status data
+		for (int i = 0; i < counts.size(); i++) {
+			if (counts.get(i) > 0) {
+				double percent = (counts.get(i) * 100.0) / total;
+				sb.append(String.format("║ %s: %d hari (%.1f%%)\n",
+						statuses[i], counts.get(i), percent));
+			}
+		}
+
+		// Add footer with timestamp
+		sb.append("╚══════════════════════════\n")
+				.append("⚡️ _Update: ")
+				.append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM HH:mm")))
+				.append("_");
+
+		return sb.toString();
+	}
 }

@@ -14,7 +14,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -56,7 +57,6 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 		log.info("Received command: {}", text);
 		return CompletableFuture.runAsync(() -> processRequest(chatId, text, telegramClient));
 	}
-
 
 	private void processRequest(long chatId, String text, TelegramClient telegramClient) {
 		String fileUrl = extractFileUrl(text);
@@ -125,7 +125,7 @@ public class BillsUpdateDataHandler implements CommandProcessor {
 		Path filePath = Paths.get(UPLOAD_DIRECTORY, fileName);
 		Files.createDirectories(filePath.getParent());
 
-		try (InputStream input = new URL(fileUrl).openStream()) {
+		try (InputStream input = URI.create(fileUrl).toURL().openStream()) {
 			Files.copy(input, filePath, StandardCopyOption.REPLACE_EXISTING);
 		}
 

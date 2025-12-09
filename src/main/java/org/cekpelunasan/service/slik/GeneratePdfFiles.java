@@ -1,6 +1,5 @@
 package org.cekpelunasan.service.slik;
 
-
 import com.itextpdf.html2pdf.HtmlConverter;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -49,18 +48,17 @@ public class GeneratePdfFiles {
 	private String responseFromEndpoint(byte[] body, boolean fasilitasAktif) {
 		logger.info("Getting Content");
 		RequestBody requestBody = new MultipartBody.Builder()
-			.setType(MultipartBody.FORM)
-			.addFormDataPart("fileToUpload", "ideb.txt",
-				RequestBody.create(body, MediaType.parse("text/plain")))
-			.addFormDataPart("fasilitasAktif", fasilitasAktif ? "y" : "n")
-			.build();
-
+				.setType(MultipartBody.FORM)
+				.addFormDataPart("fileToUpload", "ideb.txt",
+						RequestBody.create(body, MediaType.parse("text/plain")))
+				.addFormDataPart("fasilitasAktif", fasilitasAktif ? "y" : "n")
+				.build();
 
 		Request request = new okhttp3.Request.Builder()
-			.url(pdfEndpointUrl)
-			.header("User-Agent", USER_AGENT)
-			.post(requestBody)
-			.build();
+				.url(pdfEndpointUrl)
+				.header("User-Agent", USER_AGENT)
+				.post(requestBody)
+				.build();
 		logger.info("Generated request");
 		try (Response response = okHttpClient.newCall(request).execute()) {
 			if (!response.isSuccessful()) {
@@ -106,7 +104,7 @@ public class GeneratePdfFiles {
 		image.removeAttr("style");
 		image.attr("style", "width: 160px;");
 
-		Element headerTable= new Element("table");
+		Element headerTable = new Element("table");
 		headerTable.attr("style", "width: 100%; border: none; margin-bottom: 20px; border-collapse: collapse;");
 
 		Element row = new Element("tr");
@@ -121,27 +119,26 @@ public class GeneratePdfFiles {
 		row.appendChild(tdLeft);
 
 		Element tdRight = new Element("td");
-		tdRight.attr("style", "border: none; vertical-align: middle; text-align: right; width: 1%; white-space: nowrap;");
+		tdRight.attr("style",
+				"border: none; vertical-align: middle; text-align: right; width: 1%; white-space: nowrap;");
 		tdRight.appendChild(image);
 		row.appendChild(tdRight);
-
 
 		document.body().prependChild(headerTable);
 
 		logger.debug("Header layout converted to Table for PDF stability");
 	}
 
-
 	public byte[] generatePdfBytes(Document htmlContent) {
 		if (htmlContent == null) {
 			return null;
 		}
-		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()){
-			PdfWriter writer = new PdfWriter(baos);
-			PdfDocument document = new PdfDocument(writer);
+		try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				PdfWriter writer = new PdfWriter(baos);
+				PdfDocument document = new PdfDocument(writer)) {
 			PageSize pdfSize = new PageSize(842, 595);
 			String htmlWithCss = "<html><head><style>@page { size: A4 landscape; margin: 15mm; }</style></head><body>"
-				+ htmlContent.html() + "</body></html>";
+					+ htmlContent.html() + "</body></html>";
 			document.setDefaultPageSize(pdfSize);
 			HtmlConverter.convertToPdf(htmlWithCss, writer);
 			return baos.toByteArray();
@@ -153,6 +150,7 @@ public class GeneratePdfFiles {
 			return null;
 		}
 	}
+
 	private void removePrintButtons(Document doc) {
 		doc.select("div.text-right").forEach(element -> {
 			if (!element.select("button#print").isEmpty()) {
@@ -171,7 +169,8 @@ public class GeneratePdfFiles {
 
 			Element table = new Element("table");
 
-			table.attr("style", "width: 300px; border-collapse: collapse; font-family: sans-serif; font-size: 12px; border: 0.5px solid blue; margin-top: 50px; page-break-inside: avoid;");
+			table.attr("style",
+					"width: 300px; border-collapse: collapse; font-family: sans-serif; font-size: 12px; border: 0.5px solid blue; margin-top: 50px; page-break-inside: avoid;");
 
 			Element tbody = new Element("tbody");
 			table.appendChild(tbody);
@@ -180,7 +179,8 @@ public class GeneratePdfFiles {
 			for (int i = 0; i < 3 && i < children.size(); i++) {
 				Element originalDiv = children.get(i);
 				Element td = new Element("td");
-				td.attr("style", "border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;");
+				td.attr("style",
+						"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;");
 				td.text(originalDiv.text());
 				row1.appendChild(td);
 			}

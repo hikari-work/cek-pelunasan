@@ -9,6 +9,7 @@ import org.cekpelunasan.repository.PayingRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.NonNull;
 
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -22,56 +23,56 @@ import java.util.function.BiFunction;
 public class HotKolekService {
 
 	private final PayingRepository payingRepository;
-    private final BillsRepository billsRepository;
-
+	private final BillsRepository billsRepository;
 
 	private String getMonth() {
 		YearMonth month = YearMonth.now();
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
 		return formatter.format(month);
 	}
+
 	private String getLastMonth() {
 		YearMonth month = YearMonth.now().minusMonths(1);
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
 		return formatter.format(month);
 	}
-    
-    public List<Bills> findDueDate(String branch) {
-        return filterBills(branch, 
-            (repo, br) -> repo.findByDueDateContaining(getMonth()));
-    }
-    
-    public List<Bills> findFirstPay(String branch) {
+
+	public List<Bills> findDueDate(String branch) {
+		return filterBills(branch,
+				(repo, br) -> repo.findByDueDateContaining(getMonth()));
+	}
+
+	public List<Bills> findFirstPay(String branch) {
 		log.info("Finding {}", getLastMonth());
-        return filterBills(branch, 
-            (repo, br) -> repo.findByRealizationIsContainingIgnoreCase(getLastMonth()));
-    }
-    
-    public List<Bills> findMinimalPay(String branch) {
+		return filterBills(branch,
+				(repo, br) -> repo.findByRealizationIsContainingIgnoreCase(getLastMonth()));
+	}
+
+	public List<Bills> findMinimalPay(String branch) {
 		List<Bills> bills = filterBills(branch,
-			(repo, br) -> new ArrayList<>(repo.findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(
-				0L, 0L, br, Pageable.unpaged()).stream().toList()));
+				(repo, br) -> new ArrayList<>(repo.findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(
+						0L, 0L, br, Pageable.unpaged()).stream().toList()));
 		log.info("Found {} bills", bills.size());
 		bills.removeIf(this::isValidBillsHotKolek);
 		log.info("Found {} bills from Filter", bills.size());
 		return bills;
 	}
-    
-    private List<Bills> filterBills(String branch, BiFunction<BillsRepository, String, List<Bills>> billsFetcher) {
-        List<String> payings = billsRepository.findUnpaidBillsByBranch(branch).stream().map(Bills::getNoSpk).toList();
-        List<Bills> bills = billsFetcher.apply(billsRepository, branch);
-        bills.removeIf(bill -> payings.contains(bill.getNoSpk()));
-        bills.removeIf(bill -> !bill.getOfficeLocation().equals(branch));
-        return bills;
-    }
+
+	private List<Bills> filterBills(String branch, BiFunction<BillsRepository, String, List<Bills>> billsFetcher) {
+		List<String> payings = billsRepository.findUnpaidBillsByBranch(branch).stream().map(Bills::getNoSpk).toList();
+		List<Bills> bills = billsFetcher.apply(billsRepository, branch);
+		bills.removeIf(bill -> payings.contains(bill.getNoSpk()));
+		bills.removeIf(bill -> !bill.getOfficeLocation().equals(branch));
+		return bills;
+	}
 
 	@Transactional
-	public void saveAllPaying(List<String> list) {
+	public void saveAllPaying(@NonNull List<String> list) {
 		payingRepository.saveAll(list.stream().map(spk -> Paying.builder()
-			.id(spk)
-			.paid(true)
-			.build())
-			.toList());
+				.id(spk)
+				.paid(true)
+				.build())
+				.toList());
 	}
 
 	private boolean isValidBillsHotKolek(Bills bills) {

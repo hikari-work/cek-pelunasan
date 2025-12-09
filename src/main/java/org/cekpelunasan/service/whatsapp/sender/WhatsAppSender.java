@@ -11,8 +11,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -42,6 +40,7 @@ public class WhatsAppSender {
 		};
 	}
 
+	@SuppressWarnings("null")
 	public HttpHeaders headers() {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setBasicAuth(username, password);
@@ -49,7 +48,8 @@ public class WhatsAppSender {
 		return headers;
 	}
 
-	public ResponseEntity<GenericResponseDTO> request(String url, BaseMessageRequestDTO messageRequestDTO) {
+	@SuppressWarnings("null")
+	public ResponseEntity<GenericResponseDTO> request(@NonNull String url, BaseMessageRequestDTO messageRequestDTO) {
 		try {
 			String jsonBody = objectMapper.writeValueAsString(messageRequestDTO);
 
@@ -62,7 +62,9 @@ public class WhatsAppSender {
 			throw new RuntimeException("Failed to send WhatsApp message", e);
 		}
 	}
-	public ResponseEntity<GenericResponseDTO> request(String url, MessageActionDTO messageActionDTO) {
+
+	@SuppressWarnings("null")
+	public ResponseEntity<GenericResponseDTO> request(@NonNull String url, MessageActionDTO messageActionDTO) {
 		try {
 			String jsonBody = objectMapper.writeValueAsString(messageActionDTO);
 			url = url.replace("{message_id}", messageActionDTO.getMessageId());

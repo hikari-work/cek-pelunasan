@@ -16,6 +16,13 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.Arrays;
 
+/**
+ * Aspect for handling authorization logic.
+ * <p>
+ * This aspect intercepts methods annotated with {@link RequireAuth} to verify user permissions.
+ * It checks if the chat ID is authorized and if the user possesses the required roles.
+ * </p>
+ */
 @Aspect
 @Component
 @RequiredArgsConstructor
@@ -25,6 +32,14 @@ public class AuthorizationAspect {
 	private final AuthorizedChats authorizedChats;
 	private final TelegramClient telegramClientSender;
 
+	/**
+	 * Intercepts method execution to perform authorization checks.
+	 *
+	 * @param joinPoint   The join point representing the intercepted method.
+	 * @param requireAuth The {@link RequireAuth} annotation instance containing the required roles.
+	 * @return The result of the method execution or {@code null} if authorization fails.
+	 * @throws Throwable If any error occurs during method execution.
+	 */
 	@Around("@annotation(requireAuth)")
 	public Object checkAuth(@NotNull ProceedingJoinPoint joinPoint, RequireAuth requireAuth) throws Throwable {
 		Object[] args = joinPoint.getArgs();
@@ -62,6 +77,7 @@ public class AuthorizationAspect {
 				.build());
 			return null;
 		}
+		
 		return joinPoint.proceed();
 	}
 }

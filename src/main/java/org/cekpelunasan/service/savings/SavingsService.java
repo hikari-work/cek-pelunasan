@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
+import lombok.NonNull;
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +33,7 @@ public class SavingsService {
 	private final SavingsRepository savingsRepository;
 	private final EntityManager em;
 
-
-	public void batchSavingAccounts(List<Savings> savingsList) {
+	public void batchSavingAccounts(@NonNull List<Savings> savingsList) {
 		savingsRepository.saveAll(savingsList);
 	}
 
@@ -41,6 +41,7 @@ public class SavingsService {
 		Pageable pageable = PageRequest.of(page, 5);
 		return savingsRepository.findByNameContainingIgnoreCaseAndBranch(name, branch, pageable);
 	}
+
 	public Savings findByCif(String cif) {
 		return savingsRepository.findByCif(cif);
 	}
@@ -83,7 +84,8 @@ public class SavingsService {
 		savingsRepository.deleteAllFast();
 	}
 
-	private void processBatch(List<Savings> batch, ExecutorService executor, Semaphore semaphore) throws InterruptedException {
+	private void processBatch(List<Savings> batch, ExecutorService executor, Semaphore semaphore)
+			throws InterruptedException {
 		List<Savings> batchToSave = new ArrayList<>(batch);
 		semaphore.acquire();
 		executor.submit(() -> {
@@ -99,19 +101,19 @@ public class SavingsService {
 
 	public Savings mapToSavings(String[] line) {
 		return Savings.builder()
-			.branch(line[0])
-			.type(line[1])
-			.cif(line[2])
-			.tabId(line[3])
-			.name(line[4])
-			.address(line[5])
-			.balance(parseBigDecimal(line[6]))
-			.transaction(parseBigDecimal(line[7]))
-			.accountOfficer(line[8])
-			.phone(line[9])
-			.minimumBalance(parseBigDecimal(line[10]))
-			.blockingBalance(parseBigDecimal(line[11]))
-			.build();
+				.branch(line[0])
+				.type(line[1])
+				.cif(line[2])
+				.tabId(line[3])
+				.name(line[4])
+				.address(line[5])
+				.balance(parseBigDecimal(line[6]))
+				.transaction(parseBigDecimal(line[7]))
+				.accountOfficer(line[8])
+				.phone(line[9])
+				.minimumBalance(parseBigDecimal(line[10]))
+				.blockingBalance(parseBigDecimal(line[11]))
+				.build();
 	}
 
 	private BigDecimal parseBigDecimal(String value) {
@@ -121,9 +123,9 @@ public class SavingsService {
 	public Set<String> listAllBranch(String name) {
 		System.out.println(name);
 		return savingsRepository.findAllByNameContainingIgnoreCase(name).stream()
-			.sorted()
-			.peek(System.out::println)
-			.collect(Collectors.toCollection(LinkedHashSet::new));
+				.sorted()
+				.peek(System.out::println)
+				.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	public Optional<Savings> findById(String id) {
@@ -131,16 +133,18 @@ public class SavingsService {
 		return savingsRepository.findByTabId(id);
 	}
 
-
 	@Transactional
-	public Page<Savings> findFilteredSavings(List<String> addressKeywords, Pageable pageable) {
+	@SuppressWarnings("null")
+	public Page<Savings> findFilteredSavings(List<String> addressKeywords, @NonNull Pageable pageable) {
 		log.info("Starting findFilteredSavings with keywords: {} and page: {}", addressKeywords, pageable);
 		try {
-			CompletableFuture<List<Savings>> resultsFuture = CompletableFuture.supplyAsync(() -> executeUniqueRecordsQuery(addressKeywords, pageable));
-			CompletableFuture<Long> countFuture = CompletableFuture.supplyAsync(() -> executeCountUniqueQuery(addressKeywords));
+			CompletableFuture<List<Savings>> resultsFuture = CompletableFuture
+					.supplyAsync(() -> executeUniqueRecordsQuery(addressKeywords, pageable));
+			CompletableFuture<Long> countFuture = CompletableFuture
+					.supplyAsync(() -> executeCountUniqueQuery(addressKeywords));
 			CompletableFuture.allOf(resultsFuture, countFuture).join();
 
-			List<Savings> resultList = resultsFuture.get();
+			List<Savings> resultList = Objects.requireNonNullElse(resultsFuture.get(), Collections.emptyList());
 			Long total = countFuture.get();
 
 			log.info("Query completed successfully. Found {} unique CIFs matching keywords.", total);
@@ -202,11 +206,12 @@ public class SavingsService {
 		Subquery<String> billsSubquery = query.subquery(String.class);
 		Root<Bills> billsRoot = billsSubquery.from(Bills.class);
 		billsSubquery.select(billsRoot.get("customerId"))
-			.where(cb.isNotNull(billsRoot.get("customerId")));
+				.where(cb.isNotNull(billsRoot.get("customerId")));
 		return cb.not(root.get("cif").in(billsSubquery));
 	}
 
-	private Subquery<Long> buildMinIdSubquery(CriteriaQuery<?> query, CriteriaBuilder cb, List<String> addressKeywords) {
+	private Subquery<Long> buildMinIdSubquery(CriteriaQuery<?> query, CriteriaBuilder cb,
+			List<String> addressKeywords) {
 		Subquery<Long> minIdSubquery = query.subquery(Long.class);
 		Root<Savings> subRoot = minIdSubquery.from(Savings.class);
 
@@ -214,8 +219,8 @@ public class SavingsService {
 		Predicate notInBills = buildNotInBillsPredicate(cb, subRoot, query);
 
 		minIdSubquery.select(cb.min(subRoot.get("id")))
-			.where(cb.and(addressPredicate, notInBills))
-			.groupBy(subRoot.get("cif"));
+				.where(cb.and(addressPredicate, notInBills))
+				.groupBy(subRoot.get("cif"));
 
 		return minIdSubquery;
 	}
@@ -226,21 +231,21 @@ public class SavingsService {
 		}
 
 		List<String> processedKeywords = addressKeywords.stream()
-			.filter(k -> k != null && !k.trim().isEmpty())
-			.map(String::trim)
-			.map(String::toLowerCase)
-			.toList();
+				.filter(k -> k != null && !k.trim().isEmpty())
+				.map(String::trim)
+				.map(String::toLowerCase)
+				.toList();
 
 		if (processedKeywords.isEmpty()) {
 			return cb.conjunction();
 		}
 
 		List<Predicate> likePredicates = processedKeywords.stream()
-			.map(keyword -> {
-				log.debug("Adding LIKE predicate for keyword: '{}'", keyword);
-				return cb.like(cb.lower(root.get("address")), "%" + keyword + "%");
-			})
-			.toList();
+				.map(keyword -> {
+					log.debug("Adding LIKE predicate for keyword: '{}'", keyword);
+					return cb.like(cb.lower(root.get("address")), "%" + keyword + "%");
+				})
+				.toList();
 
 		return cb.and(likePredicates.toArray(new Predicate[0]));
 	}

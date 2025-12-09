@@ -15,7 +15,6 @@ import java.io.FileOutputStream;
 @SpringBootTest
 public class GenerateTest {
 
-
 	@Autowired
 	private GeneratePdfFiles generatePdfFiles;
 
@@ -30,6 +29,7 @@ public class GenerateTest {
 		Assertions.assertNotNull(document);
 		System.out.println(document.html());
 	}
+
 	@Test
 	void generateByte() {
 		long start = System.currentTimeMillis();
@@ -43,9 +43,9 @@ public class GenerateTest {
 		byte[] bytes = generatePdfFiles.generatePdfBytes(document);
 		log.info("Generate PDF In {} ms", System.currentTimeMillis() - start);
 		Assertions.assertNotNull(bytes);
-		try (FileOutputStream outputStream = new FileOutputStream("KTP_3175040206810003.pdf")){
+		try (FileOutputStream outputStream = new FileOutputStream("KTP_3175040206810003.pdf")) {
 			outputStream.write(bytes);
-		}catch (Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
