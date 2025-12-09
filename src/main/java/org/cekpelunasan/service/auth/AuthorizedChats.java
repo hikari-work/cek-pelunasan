@@ -34,7 +34,6 @@ public class AuthorizedChats {
 		authorizedChats.remove(chatId);
 	}
 
-	@SuppressWarnings("null")
 	public AccountOfficerRoles getUserRoles(@NonNull Long chatId) {
 		return userRepository.findById(chatId).map(User::getRoles).orElse(null);
 	}

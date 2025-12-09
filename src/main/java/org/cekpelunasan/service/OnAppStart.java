@@ -1,6 +1,7 @@
 package org.cekpelunasan.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.controller.LongPollingBot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,10 +13,14 @@ import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class OnAppStart implements ApplicationRunner {
 
 	@Value("${telegram.bot.token}")
 	private String botToken;
+
+	@Value("${webhook.mode}")
+	private boolean webhookMode;
 
 	private static final Logger logger = LoggerFactory.getLogger(OnAppStart.class);
 
@@ -32,6 +37,11 @@ public class OnAppStart implements ApplicationRunner {
 		if (isWebhookActive) {
 			logger.info(">> MODE: WEBHOOK (Ngrok Active). Long Polling disabled.");
 		} else {
+			if (webhookMode) {
+				log.info("Switched Manual Webhook Setting");
+				log.info("Please Setting to https://api.telegram.org/bot{}/setWebhook?url=", botToken);
+				return;
+			};
 			logger.info(">> MODE: LONG POLLING (Ngrok Inactive/Error).");
 
 			ngrokService.deleteWebhook();

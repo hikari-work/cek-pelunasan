@@ -22,6 +22,7 @@ public class NgrokService {
 	@NonNull
 	private String ngrokApiUrl;
 
+
 	public NgrokService(@Value("${telegram.bot.token}") String botToken) {
 		this.restTemplate = new RestTemplate();
 		this.botToken = botToken;

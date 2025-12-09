@@ -7,7 +7,40 @@ services:
       dockerfile: Dockerfile
     container_name: cek-pelunasan-app
     ports:
-      - "8000:8000"
+      - "${PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      - PORT=${PORT:-8080}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod}
+
+
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DATABASE_USERNAME=${DATABASE_USERNAME:-}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-}
+
+
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_BOT_OWNER=${TELEGRAM_BOT_OWNER:-}
+
+
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
+      - R2_ACCESS_KEY=${R2_ACCESS_KEY:-}
+      - R2_SECRET_KEY=${R2_SECRET_KEY:-}
+      - R2_ENDPOINT=${R2_ENDPOINT:-}
+      - R2_BUCKET=${R2_BUCKET:-}
+
+      - WHATSAPP_GATEWAY_URL=${WHATSAPP_GATEWAY_URL:-}
+      - WHATSAPP_GATEWAY_USERNAME=${WHATSAPP_GATEWAY_USERNAME:-}
+      - WHATSAPP_GATEWAY_PASSWORD=${WHATSAPP_GATEWAY_PASSWORD:-}
+      - ADMIN_WHATSAPP=${ADMIN_WHATSAPP:-}
+
+      # Other
+      - WEBHOOK_MODE=${WEBHOOK_MODE:-}
+
+      # Google Cloud specific
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-}
+
     deploy:
       resources:
         limits:
