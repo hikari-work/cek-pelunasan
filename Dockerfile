@@ -12,4 +12,4 @@ RUN mvn clean package -DskipTests
 FROM amazoncorretto:21-al2023-jdk
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-ENTRYPOINT ["java", "-XX:+UseShenandoahGC", "-Xmx512m", "-Xmn256m", "-jar", "app.jar", "--server.port=8000"]
+ENTRYPOINT ["java", "-XX:+UseShenandoahGC", "-Xmx512m", "-Xmn256m", "-jar", "app.jar", "--server.port=8080"]
