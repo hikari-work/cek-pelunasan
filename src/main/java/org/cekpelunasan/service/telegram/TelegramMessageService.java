@@ -33,11 +33,11 @@ public class TelegramMessageService {
         }
     }
 
-    public Message sendKeyboard(Long chatId, InlineKeyboardMarkup keyboard, TelegramClient telegramClient) {
+    public Message sendKeyboard(Long chatId, InlineKeyboardMarkup keyboard, TelegramClient telegramClient, String text) {
         try {
             SendMessage msg = SendMessage.builder()
                 .chatId(chatId)
-                .text("")
+                .text(text)
                 .replyMarkup(keyboard)
                 .parseMode(DEFAULT_PARSE_MODE)
                 .build();

@@ -133,15 +133,16 @@ public class GeneratePdfFiles {
 		if (htmlContent == null) {
 			return null;
 		}
+
 		try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				PdfWriter writer = new PdfWriter(baos);
-				PdfDocument document = new PdfDocument(writer)) {
-			PageSize pdfSize = new PageSize(842, 595);
+			 PdfWriter writer = new PdfWriter(baos)) {
 			String htmlWithCss = "<html><head><style>@page { size: A4 landscape; margin: 15mm; }</style></head><body>"
-					+ htmlContent.html() + "</body></html>";
-			document.setDefaultPageSize(pdfSize);
+				+ htmlContent.html() + "</body></html>";
+
 			HtmlConverter.convertToPdf(htmlWithCss, writer);
+
 			return baos.toByteArray();
+
 		} catch (IOException e) {
 			logger.error("Error generating PDF bytes", e);
 			return null;

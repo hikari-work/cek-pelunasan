@@ -105,7 +105,7 @@ public class SlikCommand implements CommandProcessor {
 
 		try {
 			InlineKeyboardMarkup keyboard = slikButtonConfirmation.sendSlikCommand(ktpId);
-			telegramMessageService.sendKeyboard(chatId, keyboard, telegramClient);
+			telegramMessageService.sendKeyboard(chatId, keyboard, telegramClient, "Silahkan Pilih untuk Mode Laporan Slik");
 
 		} catch (Exception e) {
 			log.error("Error in KTP ID search - ID: {}", ktpId, e);
