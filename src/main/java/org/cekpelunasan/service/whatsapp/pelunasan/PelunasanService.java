@@ -186,7 +186,7 @@ public class PelunasanService {
 	}
 
 	private boolean isAfterCurrentDay(LocalDate date) {
-		return date.getDayOfMonth() > getCurrentDate().getDayOfMonth();
+		return date.getDayOfMonth() >= getCurrentDate().getDayOfMonth();
 	}
 
 	private boolean isSameMonthAndYear(LocalDate date1, LocalDate date2) {
