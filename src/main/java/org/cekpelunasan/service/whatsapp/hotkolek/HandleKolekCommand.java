@@ -31,8 +31,8 @@ public class HandleKolekCommand {
 
 	private static final List<KiosConfig> KIOS_CONFIGS = List.of(
 		new KiosConfig("1075", ""),
-		new KiosConfig("1172", "KLJ"),
-		new KiosConfig("1173", "KJB")
+		new KiosConfig("KLJ", "KLJ"),
+		new KiosConfig("KJB", "KJB")
 	);
 	private final HotKolekMessageGenerator hotKolekMessageGenerator;
 
