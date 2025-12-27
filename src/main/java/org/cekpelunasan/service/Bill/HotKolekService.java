@@ -50,7 +50,7 @@ public class HotKolekService {
 
 	public List<Bills> findMinimalPay(String branch) {
 		List<Bills> bills = filterBills(branch,
-				(repo, br) -> new ArrayList<>(repo.findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(
+				(repo, br) -> new ArrayList<>(repo.findByMinInterestOrMinPrincipalIsGreaterThanAndKios(
 						0L, 0L, br, Pageable.unpaged()).stream().toList()));
 		log.info("Getting bills {}", branch);
 		log.info("Found {} bills", bills.size());

@@ -59,7 +59,7 @@ public class BillService {
 	}
 
 	public Page<Bills> findMinimalPaymentByBranch(String branch, int page, int size) {
-		return billsRepository.findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(0L, 0L, branch,
+		return billsRepository.findByMinInterestOrMinPrincipalIsGreaterThanAndKios(0L, 0L, branch,
 				PageRequest.of(page, size));
 	}
 
