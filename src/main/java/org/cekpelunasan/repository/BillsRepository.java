@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -43,6 +44,16 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 	AND (b.minInterest + b.minPrincipal) > 0
 	""")
 	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndKios(Long minInterest, Long minimalPrincipal, String kios, Pageable pageable);
+
+	@Query("""
+    SELECT b FROM Bills b
+    WHERE b.branch = '1075'
+    AND b.kios = :kios
+    AND (COALESCE(b.minInterest, 0) + COALESCE(b.minPrincipal, 0)) > :minTotal
+""")
+	Page<Bills> findByKiosAndTotalMin(@Param("kios") String kios,
+									  @Param("minTotal") Long minTotal,
+									  Pageable pageable);
 
 	@Query("""
 		SELECT b FROM Bills b
