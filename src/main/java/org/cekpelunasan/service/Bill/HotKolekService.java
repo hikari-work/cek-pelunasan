@@ -52,6 +52,7 @@ public class HotKolekService {
 		List<Bills> bills = filterBills(branch,
 				(repo, br) -> new ArrayList<>(repo.findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(
 						0L, 0L, br, Pageable.unpaged()).stream().toList()));
+		log.info("Getting bills {}", branch);
 		log.info("Found {} bills", bills.size());
 		bills.removeIf(this::isValidBillsHotKolek);
 		log.info("Found {} bills from Filter", bills.size());
