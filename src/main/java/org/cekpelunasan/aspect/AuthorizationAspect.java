@@ -53,12 +53,10 @@ public class AuthorizationAspect {
 			}
 		}
 		if (update == null || telegramClient == null) {
-			log.error("Update or TelegramClient is null");
 			return joinPoint.proceed();
 		}
 		long chatId = update.getMessage().getChatId();
 		if (!authorizedChats.isAuthorized(chatId)) {
-			log.warn("User {} is not authorized", chatId);
 			telegramClientSender.executeAsync(SendMessage.builder()
 					.chatId(chatId)
 					.text("Anda tidak memiliki akses ke bot ini")
@@ -70,7 +68,6 @@ public class AuthorizationAspect {
 		boolean hasRequiredRoles = Arrays.stream(requiredRoles)
 			.anyMatch(role -> role == roles);
 		if (!hasRequiredRoles) {
-			log.warn("User {} has no required roles: {}", chatId, requiredRoles);
 			telegramClientSender.executeAsync(SendMessage.builder()
 					.chatId(chatId)
 					.text("Anda tidak memiliki akses ke bot ini")

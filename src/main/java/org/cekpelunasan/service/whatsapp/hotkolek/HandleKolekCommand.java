@@ -24,7 +24,7 @@ public class HandleKolekCommand {
 	private final HotKolekService hotKolekService;
 	private final WhatsAppSenderService whatsAppSenderService;
 	private static final String COMMAND_PREFIX = ".";
-	private static final String HOT_KOLEK_PATTERN = "^\\.\\d{12}(?:\\s\\d{12})*$";
+	private static final String HOT_KOLEK_PATTERN = "^" + COMMAND_PREFIX + "\\d{12}(?:\\s\\d{12})*$";
 	private static final String SPK_NUMBER_PATTERN = "^\\d{12}$";
 	private static final String GROUP_SUFFIX = "@g.us";
 	private static final String INDIVIDUAL_SUFFIX = "@s.whatsapp.net";
@@ -44,6 +44,7 @@ public class HandleKolekCommand {
 
 	private void processKolekCommand(WhatsAppWebhookDTO command) {
 		String messageText = command.getMessage().getText();
+		log.info("Processing Hot Kolek");
 
 		if (!isValidHotKolekCommand(messageText)) {
 			log.debug("Invalid hot kolek command received: {}", messageText);
@@ -55,6 +56,7 @@ public class HandleKolekCommand {
 		sendReactionAsync(command);
 
 		List<String> spkNumbers = extractSpkNumbers(messageText);
+		log.info("SPK Number is {}", spkNumbers);
 		savePayedBills(spkNumbers);
 
 		String responseMessage = generateHotKolekMessage();
@@ -79,8 +81,10 @@ public class HandleKolekCommand {
 
 	private boolean isValidHotKolekCommand(String text) {
 		if (text == null || text.trim().isEmpty()) {
+			log.info("Not Valid");
 			return false;
 		}
+		log.info("Valid: {} is {}", text, Pattern.matches(HOT_KOLEK_PATTERN, text.trim()));
 		return Pattern.matches(HOT_KOLEK_PATTERN, text.trim());
 	}
 
@@ -109,6 +113,7 @@ public class HandleKolekCommand {
 
 	private String generateHotKolekMessage() {
 		try {
+			log.info("List Kios is {}", KIOS_CONFIGS.stream().toList());
 			List<CompletableFuture<BillsData>> futures = KIOS_CONFIGS.stream()
 				.map(this::fetchBillsDataAsync)
 				.toList();
@@ -144,6 +149,7 @@ public class HandleKolekCommand {
 		CompletableFuture<List<Bills>> dueDateFuture = CompletableFuture
 			.supplyAsync(() -> getBillsByType(config, BillType.DUE_DATE));
 
+
 		return CompletableFuture.allOf(minimalPayFuture, firstPayFuture, dueDateFuture)
 			.thenApply(v -> new BillsData(
 				minimalPayFuture.join(),
@@ -175,8 +181,10 @@ public class HandleKolekCommand {
 				case FIRST_PAY -> hotKolekService.findFirstPay(config.code());
 				case DUE_DATE -> hotKolekService.findDueDate(config.code());
 			};
+			log.debug("Data Bills from service: {}", bills.size());
+			log.debug("Data Kios config: {}", config);
 
-			return filterBillsByKios(bills, config.kiosFilter());
+			return bills;
 		} catch (Exception e) {
 			log.error("Error fetching bills for config {} and type {}", config, billType, e);
 			return List.of();
@@ -223,8 +231,8 @@ public class HandleKolekCommand {
 
 	private record KiosConfig(String code, String kiosFilter) {
 		public KiosConfig {
-			if (code == null || code.trim().isEmpty()) {
-				throw new IllegalArgumentException("Kios code cannot be null or empty");
+			if (code == null) {
+				code = "";
 			}
 			kiosFilter = kiosFilter == null ? "" : kiosFilter;
 		}

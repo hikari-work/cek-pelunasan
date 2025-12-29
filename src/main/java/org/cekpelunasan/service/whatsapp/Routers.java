@@ -34,7 +34,7 @@ public class Routers {
 
 	private static final String COMMAND_PREFIX = ".";
 	private static final String ADMIN_SHORTCUT_PREFIX = "/";
-	private static final String HOT_KOLEK_PATTERN = "^\\.\\d{12}(?:\\s\\d{12})*$";
+	private static final String HOT_KOLEK_PATTERN = "^" + COMMAND_PREFIX + "\\d{12}(?:\\s\\d{12})*$";
 
 	@Async
 	@SuppressWarnings("UnusedReturnValue")
@@ -64,6 +64,7 @@ public class Routers {
 		if (!messageText.startsWith(COMMAND_PREFIX)) {
 			return;
 		}
+		log.info("Is Command");
 
 		routeCommand(webhook, messageText);
 	}

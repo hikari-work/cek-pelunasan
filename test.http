@@ -1,0 +1,63 @@
+### GET request to example server
+GET https://examples.http-client.intellij.net/get
+    ?generated-in=IntelliJ IDEA
+
+###
+
+DELETE https://pbifjqmcvlgdnuverpjc.supabase.co/rest/v1/cashflows?id=eq.4e99f8b6-2ff2-42c3-b512-575ca5b7bd6c
+apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiaWZqcW1jdmxnZG51dmVycGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTY1NzEsImV4cCI6MjA3OTg3MjU3MX0.ocSzuMUCCvGqueMLl9SehIit5K5QI479R1VbJVBUTvg
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiaWZqcW1jdmxnZG51dmVycGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTY1NzEsImV4cCI6MjA3OTg3MjU3MX0.ocSzuMUCCvGqueMLl9SehIit5K5QI479R1VbJVBUTvg
+
+###
+GET https://pbifjqmcvlgdnuverpjc.supabase.co/rest/v1/cashflows
+apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiaWZqcW1jdmxnZG51dmVycGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTY1NzEsImV4cCI6MjA3OTg3MjU3MX0.ocSzuMUCCvGqueMLl9SehIit5K5QI479R1VbJVBUTvg
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiaWZqcW1jdmxnZG51dmVycGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTY1NzEsImV4cCI6MjA3OTg3MjU3MX0.ocSzuMUCCvGqueMLl9SehIit5K5QI479R1VbJVBUTvg
+
+
+###
+POST https://pbifjqmcvlgdnuverpjc.supabase.co/rest/v1/cashflows
+apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiaWZqcW1jdmxnZG51dmVycGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTY1NzEsImV4cCI6MjA3OTg3MjU3MX0.ocSzuMUCCvGqueMLl9SehIit5K5QI479R1VbJVBUTvg
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiaWZqcW1jdmxnZG51dmVycGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTY1NzEsImV4cCI6MjA3OTg3MjU3MX0.ocSzuMUCCvGqueMLl9SehIit5K5QI479R1VbJVBUTvg
+
+[
+  {
+    "id": "377b9c71-b3d2-4c97-a648-2adaf5424df6",
+    "tanggal": "2025-12-18T18:47:00+00:00",
+    "tipe": "masuk",
+    "sumber": "penjualan",
+    "nominal": 1800.00,
+    "keterangan": "Laba dari pesanan ORD2025-1018",
+    "referensi_id": "485a69ce-2e36-4148-9810-b5213f82a108",
+    "created_at": "2025-12-18T11:48:31.721172+00:00"
+  },
+  {
+    "id": "9ed96628-a5bc-419d-937d-2ce7eaf299a4",
+    "tanggal": "2025-12-18T18:49:00+00:00",
+    "tipe": "masuk",
+    "sumber": "penjualan",
+    "nominal": 10440.00,
+    "keterangan": "Laba dari pesanan ORD-2025-12-18",
+    "referensi_id": "050a5e9c-78d5-4848-a34a-aa8eff45a17d",
+    "created_at": "2025-12-18T11:50:08.08002+00:00"
+  },
+  {
+    "id": "4e99f8b6-2ff2-4293-b512-575cafb7bd6c",
+    "tanggal": "2025-12-18T18:50:00+00:00",
+    "tipe": "keluar",
+    "sumber": "pengeluaran",
+    "nominal": 1.00,
+    "keterangan": "Pengeluaran: Promosi website",
+    "referensi_id": "7f1a14d3-95e2-44f4-a40c-c598c82bcefe",
+    "created_at": "2025-12-18T11:50:56.020539+00:00"
+  },
+  {
+    "id": "a0f84a28-b086-42a8-92dc-966d435e949e",
+    "tanggal": "2025-12-19T10:21:00+00:00",
+    "tipe": "masuk",
+    "sumber": "penjualan",
+    "nominal": 11000.00,
+    "keterangan": "Laba dari pesanan Orf.0876",
+    "referensi_id": "c0dd1666-9ee6-4bc0-bdf7-2e285adbd831",
+    "created_at": "2025-12-19T03:22:13.537104+00:00"
+  }
+]
