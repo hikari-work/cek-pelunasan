@@ -125,7 +125,6 @@ public class Routers {
 			webhook.getCleanSenderId().equals(adminWhatsApp);
 	}
 
-	// Command type checkers
 	public boolean isHotKolekCommand(WhatsAppWebhookDTO webhook) {
 		return isValidTextMessage(webhook) &&
 			webhook.getMessage().getText().matches(HOT_KOLEK_PATTERN);

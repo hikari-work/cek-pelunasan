@@ -43,7 +43,6 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
     """)
 	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndKios(Long minInterest, Long minimalPrincipal, String kios, Pageable pageable);
 
-	// Method baru: Filter by branch dan kios
 	@Query("""
     SELECT b FROM Bills b
     WHERE b.branch = :branch
@@ -55,7 +54,6 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 											   @Param("minTotal") Long minTotal,
 											   Pageable pageable);
 
-	// Method baru: Filter by branch saja (untuk semua kios)
 	@Query("""
     SELECT b FROM Bills b
     WHERE b.branch = :branch
@@ -65,7 +63,6 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 										@Param("minTotal") Long minTotal,
 										Pageable pageable);
 
-	// Hapus method lama ini (tidak dipakai lagi)
 	@Query("""
     SELECT b FROM Bills b
     WHERE b.branch = '1075'
