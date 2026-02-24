@@ -13,11 +13,11 @@ public interface CustomerHistoryRepository extends JpaRepository<CustomerHistory
 
 	@Query(value = """
 		    SELECT
-		        SUM(CASE WHEN collect_status = '01' THEN 1 ELSE 0 END),
-		        SUM(CASE WHEN collect_status = '02' THEN 1 ELSE 0 END),
-		        SUM(CASE WHEN collect_status = '03' THEN 1 ELSE 0 END),
-		        SUM(CASE WHEN collect_status = '04' THEN 1 ELSE 0 END),
-		        SUM(CASE WHEN collect_status = '05' THEN 1 ELSE 0 END)
+		        SUM(IF(collect_status = '01', 1, 0)),
+		        SUM(IF(collect_status = '02', 1, 0)),
+		        SUM(IF(collect_status = '03', 1, 0)),
+		        SUM(IF(collect_status = '04', 1, 0)),
+		        SUM(IF(collect_status = '05', 1, 0))
 		    FROM customer_history
 		    WHERE customer_id = :customerId
 		""", nativeQuery = true)

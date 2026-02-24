@@ -19,29 +19,12 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 	@Query(value = "TRUNCATE TABLE tagihan", nativeQuery = true)
 	void deleteAllFast();
 
-	@Query("SELECT b FROM Bills b WHERE b.branch = :branch AND b.noSpk NOT IN (SELECT p.id FROM Paying p)")
-	List<Bills> findUnpaidBillsByBranch(String branch);
 
 	Page<Bills> findByAccountOfficerAndPayDown(String accountOfficer, String payDown, Pageable pageable);
 
 	Page<Bills> findByBranchAndPayDownOrderByAccountOfficer(String branch, String payDown, Pageable pageable);
 
 	Page<Bills> findByNameContainingIgnoreCaseAndBranch(String name, String branch, Pageable pageable);
-
-	@Query("""
-       SELECT b FROM Bills b
-       WHERE b.officeLocation = :branch
-       AND (b.minInterest + b.minPrincipal) > 0
-       """)
-	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(Long minInterest, Long minPrincipal, String branch, Pageable pageable);
-
-	@Query("""
-    SELECT b FROM Bills b
-    WHERE b.branch = '1075'
-    AND b.kios = :kios
-    AND (b.minInterest + b.minPrincipal) > 0
-    """)
-	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndKios(Long minInterest, Long minimalPrincipal, String kios, Pageable pageable);
 
 	@Query("""
     SELECT b FROM Bills b
@@ -86,17 +69,12 @@ public interface BillsRepository extends JpaRepository<Bills, String> {
 	@Query("SELECT DISTINCT b.accountOfficer FROM Bills b")
 	Set<String> findDistinctByAccountOfficer();
 
-	// Method baru: Filter due date by branch
 	@Query("SELECT b FROM Bills b WHERE b.branch = :branch AND b.dueDate LIKE CONCAT(:dueDate, '%')")
 	List<Bills> findByBranchAndDueDateContaining(@Param("branch") String branch, @Param("dueDate") String dueDate);
 
-	// Method baru: Filter realization by branch
 	@Query("SELECT b FROM Bills b WHERE b.branch = :branch AND LOWER(b.realization) LIKE CONCAT(LOWER(:realization), '%')")
 	List<Bills> findByBranchAndRealizationContaining(@Param("branch") String branch, @Param("realization") String realization);
 
-	List<Bills> findByDueDateContaining(String dueDate);
-
-	List<Bills> findByRealizationIsContainingIgnoreCase(String branch);
 
 	List<Bills> findAllByBranch(String branch);
 }
