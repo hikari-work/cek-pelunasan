@@ -144,19 +144,6 @@ public class HotKolekService {
 		if (bills == null) {
 			return true;
 		}
-		if (bills.getMinInterest() <= 0 && bills.getMinPrincipal() <= 0) {
-			log.info("Removed {} because minimal interest lower or equals than 0 and minimal principal lower or equals than 0", bills.getName());
-			return true;
-		}
-		if (bills.getMinInterest() > 0 && bills.getMinInterest() > (bills.getInterest() * 2)) {
-			log.info("Removed {} because minimal interest lower than 0 and minimal interest greater than interest ", bills.getName());
-			return true;
-		}
-		if (bills.getMinPrincipal() > 0 && bills.getMinPrincipal() > (bills.getPrincipal() * 2)) {
-			log.info("Removed {} because minimal principal lower than 0 and minimal principal greater than principal ", bills.getName());
-			return true;
-		}
-
 		try {
 			int dayLate = Integer.parseInt(bills.getDayLate());
 			if (dayLate > 120) {
