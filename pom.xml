@@ -19,7 +19,27 @@
     <properties>
         <java.version>21</java.version>
         <kotlin.version>2.2.0</kotlin.version>
+        <tdlight.version>3.4.4+td.1.8.52</tdlight.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>mchv</id>
+            <url>https://mvn.mchv.eu/repository/mchv/</url>
+        </repository>
+    </repositories>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>it.tdlight</groupId>
+                <artifactId>tdlight-java-bom</artifactId>
+                <version>${tdlight.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -98,6 +118,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- TDLight — pengganti Bot API (migrasi bertahap) -->
+        <dependency>
+            <groupId>it.tdlight</groupId>
+            <artifactId>tdlight-java</artifactId>
+        </dependency>
+
+        <!-- Bot API lama — akan dihapus setelah Phase 8 selesai -->
         <dependency>
             <groupId>org.telegram</groupId>
             <artifactId>telegrambots-springboot-longpolling-starter</artifactId>
@@ -126,6 +153,7 @@
         </dependency>
 
 
+        <!-- Bot API lama — akan dihapus setelah Phase 8 selesai -->
         <dependency>
             <groupId>org.telegram</groupId>
             <artifactId>telegrambots-client</artifactId>
@@ -157,6 +185,38 @@
         </dependency>
 
     </dependencies>
+
+    <profiles>
+        <!-- Native TDLight untuk Linux amd64 (OpenSSL 3.x — Amazon Linux 2023 / Ubuntu 22.04+) -->
+        <profile>
+            <id>linux</id>
+            <activation>
+                <os><family>unix</family></os>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>it.tdlight</groupId>
+                    <artifactId>tdlight-natives</artifactId>
+                    <classifier>linux_amd64_gnu_ssl3</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Native TDLight untuk Windows amd64 (development) -->
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os><family>windows</family></os>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>it.tdlight</groupId>
+                    <artifactId>tdlight-natives</artifactId>
+                    <classifier>windows_amd64</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
     <build>
         <plugins>
@@ -265,6 +325,8 @@
                     </annotationProcessorPaths>
                     <source>8</source>
                     <target>8</target>
+                    <!-- workaround: TDLight JARs trigger NPE bug di javac in-process mode -->
+                    <fork>true</fork>
                 </configuration>
             </plugin>
         </plugins>

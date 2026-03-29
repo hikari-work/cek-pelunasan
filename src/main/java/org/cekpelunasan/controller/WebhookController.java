@@ -1,9 +1,9 @@
 package org.cekpelunasan.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.cekpelunasan.bot.TelegramBot;
-import org.cekpelunasan.dto.whatsapp.webhook.WhatsAppWebhookDTO;
-import org.cekpelunasan.service.whatsapp.Routers;
+import org.cekpelunasan.platform.telegram.bot.TelegramBot;
+import org.cekpelunasan.platform.whatsapp.dto.webhook.WhatsAppWebhookDTO;
+import org.cekpelunasan.platform.whatsapp.service.Routers;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

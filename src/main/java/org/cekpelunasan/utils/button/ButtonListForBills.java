@@ -1,6 +1,6 @@
 package org.cekpelunasan.utils.button;
 
-import org.cekpelunasan.entity.Bills;
+import org.cekpelunasan.core.entity.Bills;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;

@@ -6,8 +6,8 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.cekpelunasan.annotation.RequireAuth;
-import org.cekpelunasan.entity.AccountOfficerRoles;
-import org.cekpelunasan.service.auth.AuthorizedChats;
+import org.cekpelunasan.core.entity.AccountOfficerRoles;
+import org.cekpelunasan.core.service.auth.AuthorizedChats;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -64,6 +64,9 @@ public class AuthorizationAspect {
 			return null;
 		}
 		AccountOfficerRoles roles = authorizedChats.getUserRoles(chatId);
+		if (roles == AccountOfficerRoles.ADMIN) {
+			return joinPoint.proceed();
+		}
 		AccountOfficerRoles[] requiredRoles = requireAuth.roles();
 		boolean hasRequiredRoles = Arrays.stream(requiredRoles)
 			.anyMatch(role -> role == roles);

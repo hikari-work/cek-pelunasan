@@ -2,8 +2,8 @@ package org.cekpelunasan.utils;
 
 
 import lombok.RequiredArgsConstructor;
-import org.cekpelunasan.entity.Bills;
-import org.cekpelunasan.service.simulasi.SimulasiService;
+import org.cekpelunasan.core.entity.Bills;
+import org.cekpelunasan.core.service.simulasi.SimulasiService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;

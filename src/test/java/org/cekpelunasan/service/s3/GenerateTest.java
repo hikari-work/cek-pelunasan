@@ -1,7 +1,7 @@
 package org.cekpelunasan.service.s3;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cekpelunasan.service.slik.GeneratePdfFiles;
+import org.cekpelunasan.core.service.slik.GeneratePdfFiles;
 import org.cekpelunasan.configuration.S3ClientConfiguration;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Assertions;

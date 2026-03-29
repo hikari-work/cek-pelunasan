@@ -2,8 +2,8 @@ package org.cekpelunasan.configuration;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.cekpelunasan.entity.Logging;
-import org.cekpelunasan.repository.LoggingRepository;
+import org.cekpelunasan.core.entity.Logging;
+import org.cekpelunasan.core.repository.LoggingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

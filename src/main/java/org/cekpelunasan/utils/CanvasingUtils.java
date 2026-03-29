@@ -1,7 +1,7 @@
 package org.cekpelunasan.utils;
 
 import lombok.RequiredArgsConstructor;
-import org.cekpelunasan.entity.Savings;
+import org.cekpelunasan.core.entity.Savings;
 import org.springframework.stereotype.Component;
 
 @Component

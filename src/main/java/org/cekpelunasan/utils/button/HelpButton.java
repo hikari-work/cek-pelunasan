@@ -1,6 +1,6 @@
 package org.cekpelunasan.utils.button;
 
-import org.cekpelunasan.service.NgrokService;
+import org.cekpelunasan.core.lifecycle.NgrokService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

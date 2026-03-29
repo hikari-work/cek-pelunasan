@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn compile:*)",
+      "Bash(1 ls:*)",
+      "Bash(jar tf:*)",
+      "Bash(javap -p -classpath ~/.m2/repository/it/tdlight/tdlight-java/3.4.4+td.1.8.52/tdlight-java-3.4.4+td.1.8.52.jar it.tdlight.client.TDLibSettings)",
+      "Bash(javap:*)"
+    ]
+  }
+}
