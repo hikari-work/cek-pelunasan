@@ -1,4 +1,6 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,8 +14,8 @@ import org.cekpelunasan.core.service.users.UserService;
 import org.cekpelunasan.utils.SystemUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+
 
 import java.util.concurrent.CompletableFuture;
 
@@ -40,8 +42,8 @@ public class StatusCommandHandler extends AbstractCommandHandler {
 	@Override
 	@Async
 	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-		long chatId = update.getMessage().getChatId();
+	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+		long chatId = update.message.chatId;
 		long startTime = System.currentTimeMillis();
 
 		CompletableFuture<Long> billCount = CompletableFuture.supplyAsync(billService::countAllBills);
@@ -61,10 +63,10 @@ public class StatusCommandHandler extends AbstractCommandHandler {
 						systemLoadFuture.get(),
 						customerHistoryCount.get(),
 						executionTime);
-					sendMessage(chatId, statusMessage, telegramClient);
+					sendMessage(chatId, statusMessage, client);
 				} catch (Exception e) {
 					log.error("Error processing status command", e);
-					sendMessage(chatId, "❌ Error mengambil data status. Silakan coba lagi.", telegramClient);
+					sendMessage(chatId, "❌ Error mengambil data status. Silakan coba lagi.", client);
 				}
 			});
 	}

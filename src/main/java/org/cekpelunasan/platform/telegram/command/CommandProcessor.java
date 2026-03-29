@@ -1,19 +1,19 @@
 package org.cekpelunasan.platform.telegram.command;
 
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import java.util.concurrent.CompletableFuture;
 
 public interface CommandProcessor {
 
-	String getCommand();
+    String getCommand();
 
-	String getDescription();
+    String getDescription();
 
-	CompletableFuture<Void> process(Update update, TelegramClient telegramClient);
+    CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client);
 
-	default CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
-		return CompletableFuture.completedFuture(null);
-	}
+    default CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
+        return CompletableFuture.completedFuture(null);
+    }
 }

@@ -1,4 +1,6 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,8 +13,8 @@ import org.cekpelunasan.core.service.users.UserService;
 import org.cekpelunasan.utils.CsvDownloadUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -42,17 +44,17 @@ public class UploadValidationCustomer extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-		return super.process(update, telegramClient);
+	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+		return super.process(update, client);
 	}
 
 	@Override
 	@Async
-	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
 			String fileUrl = CsvDownloadUtils.extractUrl(text);
 			if (fileUrl == null) {
-				sendMessage(chatId, "❗ *Format salah.*\nGunakan `/validupload <link_csv>`", telegramClient);
+				sendMessage(chatId, "❗ *Format salah.*\nGunakan `/validupload <link_csv>`", client);
 				return;
 			}
 			List<User> allUsers = userService.findAllUsers();
@@ -62,15 +64,15 @@ public class UploadValidationCustomer extends AbstractCommandHandler {
 			try {
 				Path filePath = CsvDownloadUtils.downloadCsv(fileUrl);
 				customerHistoryService.parseCsvAndSaveIntoDatabase(filePath);
-				notifyUsers(allUsers, String.format("✅ *Update berhasil: Data Validasi CIF diperbarui pada %s*", currentDateTime), telegramClient);
+				notifyUsers(allUsers, String.format("✅ *Update berhasil: Data Validasi CIF diperbarui pada %s*", currentDateTime), client);
 			} catch (Exception e) {
 				log.error("Gagal memproses file dari URL: {}", fileUrl, e);
-				notifyUsers(allUsers, "⚠ *Gagal update. Data Validasi CIF, Akan dicoba ulang.*", telegramClient);
+				notifyUsers(allUsers, "⚠ *Gagal update. Data Validasi CIF, Akan dicoba ulang.*", client);
 			}
 		});
 	}
 
-	private void notifyUsers(List<User> users, String message, TelegramClient client) {
+	private void notifyUsers(List<User> users, String message, SimpleTelegramClient client) {
 		users.forEach(user -> {
 			sendMessage(user.getChatId(), message, client);
 			try {

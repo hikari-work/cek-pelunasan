@@ -1,4 +1,6 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,8 +13,8 @@ import org.cekpelunasan.core.service.users.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+
 
 import java.util.concurrent.CompletableFuture;
 
@@ -40,17 +42,17 @@ public class DeleteUserAccessCommand extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-		return super.process(update, telegramClient);
+	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+		return super.process(update, client);
 	}
 
 	@Override
 	@Async
-	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
 			String[] parts = text.split(" ");
 			if (parts.length < 2) {
-				sendMessage(chatId, messageTemplate.notValidDeauthFormat(), telegramClient);
+				sendMessage(chatId, messageTemplate.notValidDeauthFormat(), client);
 				return;
 			}
 			try {
@@ -58,10 +60,10 @@ public class DeleteUserAccessCommand extends AbstractCommandHandler {
 				log.info("{} Sudah ditendang", target);
 				userService.deleteUser(target);
 				authorizedChats.deleteUser(target);
-				sendMessage(target, messageTemplate.unathorizedMessage(), telegramClient);
-				sendMessage(ownerId, "Sukses", telegramClient);
+				sendMessage(target, messageTemplate.unathorizedMessage(), client);
+				sendMessage(ownerId, "Sukses", client);
 			} catch (NumberFormatException e) {
-				sendMessage(chatId, messageTemplate.notValidNumber(), telegramClient);
+				sendMessage(chatId, messageTemplate.notValidNumber(), client);
 			}
 		});
 	}

@@ -1,4 +1,6 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.annotation.RequireAuth;
@@ -7,8 +9,8 @@ import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.configuration.S3ClientConfiguration;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+
 
 import java.util.concurrent.CompletableFuture;
 
@@ -30,25 +32,25 @@ public class DocSlikCommandHandler extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-		return super.process(update, telegramClient);
+	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+		return super.process(update, client);
 	}
 
 	@Override
 	@Async
-	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
 			String name = text.replace("/doc ", "").trim();
 			if (name.isEmpty() || name.equals("/doc")) {
-				sendMessage(chatId, "Nama Harus Diisi", telegramClient);
+				sendMessage(chatId, "Nama Harus Diisi", client);
 				return;
 			}
 			byte[] file = s3Connector.getFile(name);
 			if (file.length == 0) {
-				sendMessage(chatId, "File tidak ditemukan", telegramClient);
+				sendMessage(chatId, "File tidak ditemukan", client);
 				return;
 			}
-			sendDocument(chatId, name, file, telegramClient);
+			sendDocument(chatId, name, file, client);
 		});
 	}
 }

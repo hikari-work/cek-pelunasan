@@ -1,4 +1,6 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.annotation.RequireAuth;
@@ -13,8 +15,8 @@ import org.cekpelunasan.utils.SavingsUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -41,38 +43,38 @@ public class SavingsFindCommandHandler extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-		return super.process(update, telegramClient);
+	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+		return super.process(update, client);
 	}
 
 	@Override
 	@Async
-	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
 			String name = text.replace("/tab ", "").trim();
 			if (name.isEmpty() || name.equals("/tab")) {
-				sendMessage(chatId, "Nama Harus Diisi", telegramClient);
+				sendMessage(chatId, "Nama Harus Diisi", client);
 				return;
 			}
 			String userBranch = userService.findUserBranch(chatId);
 			if (userBranch == null) {
 				Set<String> branches = savingsService.listAllBranch(name);
 				if (branches.isEmpty()) {
-					sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
+					sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
 					return;
 				}
-				sendMessage(chatId, "Data ditemukan dalam beberapa cabang", selectSavingsBranch.dynamicSelectBranch(branches, name), telegramClient);
+				sendMessage(chatId, "Data ditemukan dalam beberapa cabang", selectSavingsBranch.dynamicSelectBranch(branches, name), client);
 				return;
 			}
 			Page<Savings> byNameAndBranch = savingsService.findByNameAndBranch(name, userBranch, 0);
 			if (byNameAndBranch.isEmpty()) {
-				sendMessage(chatId, "❌ *Data tidak ditemukan*", telegramClient);
+				sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
 				return;
 			}
 			sendMessage(chatId,
 				"Data ditemukan dalam beberapa cabang\n" + savingsUtils.buildMessage(byNameAndBranch, 0, System.currentTimeMillis()),
 				paginationSavingsButton.keyboardMarkup(byNameAndBranch, userBranch, 0, name),
-				telegramClient);
+				client);
 		});
 	}
 }

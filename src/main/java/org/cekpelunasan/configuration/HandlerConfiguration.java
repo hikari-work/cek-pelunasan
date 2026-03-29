@@ -29,7 +29,7 @@ public class HandlerConfiguration implements WebMvcConfigurer {
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		registry.addInterceptor(webhookInterceptor)
-			.addPathPatterns("/webhook")
+			//.addPathPatterns("/webhook")
 			.addPathPatterns("/v2/whatsapp");
 	}
 

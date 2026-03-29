@@ -1,4 +1,6 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.annotation.RequireAuth;
@@ -7,8 +9,8 @@ import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.core.service.simulasi.SimulasiService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+
 
 import java.util.concurrent.CompletableFuture;
 
@@ -30,17 +32,17 @@ public class MinimalHandler extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-		return super.process(update, telegramClient);
+	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+		return super.process(update, client);
 	}
 
 	@Override
 	@Async
-	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
 			String noSpk = text.replace("/minimal ", "");
 			if (!noSpk.matches("\\d{12}")) {
-				sendMessage(chatId, "❌ Nomor SPK harus berupa 12 digit angka.\nContoh yang benar: 123456789012", telegramClient);
+				sendMessage(chatId, "❌ Nomor SPK harus berupa 12 digit angka.\nContoh yang benar: 123456789012", client);
 				return;
 			}
 			long minimalBayar = simulasiService.minimalBayar(noSpk);
@@ -56,9 +58,9 @@ public class MinimalHandler extends AbstractCommandHandler {
 					""",
 					noSpk,
 					String.format("%,d", minimalBayar).replace(',', '.')
-				), telegramClient);
+				), client);
 			} else {
-				sendMessage(chatId, "Angsuran Aman Sampai Akhir Bulan", telegramClient);
+				sendMessage(chatId, "Angsuran Aman Sampai Akhir Bulan", client);
 			}
 		});
 	}

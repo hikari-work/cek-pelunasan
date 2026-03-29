@@ -1,4 +1,6 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.annotation.RequireAuth;
@@ -13,8 +15,8 @@ import org.cekpelunasan.utils.MinimalPayUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -40,17 +42,17 @@ public class MinimalPayCommand extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.AO, AccountOfficerRoles.PIMP, AccountOfficerRoles.ADMIN})
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-		return super.process(update, telegramClient);
+	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+		return super.process(update, client);
 	}
 
 	@Override
 	@Async
-	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
 			Optional<User> userOpt = userService.findUserByChatId(chatId);
 			if (userOpt.isEmpty()) {
-				sendMessage(chatId, "❌ *User tidak ditemukan*", telegramClient);
+				sendMessage(chatId, "❌ *User tidak ditemukan*", client);
 				return;
 			}
 
@@ -64,7 +66,7 @@ public class MinimalPayCommand extends AbstractCommandHandler {
 			};
 
 			if (bills.isEmpty()) {
-				sendMessage(chatId, "❌ *Tidak ada tagihan dengan minimal bayar tersisa.*", telegramClient);
+				sendMessage(chatId, "❌ *Tidak ada tagihan dengan minimal bayar tersisa.*", client);
 				return;
 			}
 
@@ -80,7 +82,7 @@ public class MinimalPayCommand extends AbstractCommandHandler {
 				▢ _Pembayaran harus dilakukan sebelum jatuh bayar_
 				""");
 
-			sendMessage(chatId, message.toString(), paginationToMinimalPay.dynamicButtonName(bills, 0, userCode), telegramClient);
+			sendMessage(chatId, message.toString(), paginationToMinimalPay.dynamicButtonName(bills, 0, userCode), client);
 		});
 	}
 }

@@ -1,4 +1,6 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.annotation.RequireAuth;
@@ -11,8 +13,8 @@ import org.cekpelunasan.core.service.slik.SendNotificationSlikUpdated;
 import org.cekpelunasan.core.service.users.UserService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -38,23 +40,23 @@ public class RegisterUsers extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.AO, AccountOfficerRoles.PIMP, AccountOfficerRoles.ADMIN})
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-		return super.process(update, telegramClient);
+	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+		return super.process(update, client);
 	}
 
 	@Override
 	@Async
-	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
 			String[] parts = text.split(" ");
 			if (parts.length < 2) {
-				sendMessage(chatId, "Gunakan /otor <kode cabang> atau\n/otor <kode ao>", telegramClient);
+				sendMessage(chatId, "Gunakan /otor <kode cabang> atau\n/otor <kode ao>", client);
 				return;
 			}
 
 			Optional<User> userOptional = userService.findUserByChatId(chatId);
 			if (userOptional.isEmpty()) {
-				sendMessage(chatId, "User tidak ditemukan", telegramClient);
+				sendMessage(chatId, "User tidak ditemukan", client);
 				return;
 			}
 
@@ -62,24 +64,24 @@ public class RegisterUsers extends AbstractCommandHandler {
 			String target = parts[1];
 
 			if (target.length() == 3 && billService.findAllAccountOfficer().contains(target)) {
-				registerUser(user, AccountOfficerRoles.AO, target, "AO", chatId, telegramClient);
+				registerUser(user, AccountOfficerRoles.AO, target, "AO", chatId, client);
 				CompletableFuture.runAsync(sendNotificationSlikUpdated::runTest);
 				return;
 			}
 			if (isNumber(target) && billService.lisAllBranch().contains(target)) {
-				registerUser(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, telegramClient);
+				registerUser(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, client);
 				CompletableFuture.runAsync(sendNotificationSlikUpdated::runTest);
 				return;
 			}
-			sendMessage(chatId, "❌ *Format tidak valid*\n\nContoh: /otor 1234567890", telegramClient);
+			sendMessage(chatId, "❌ *Format tidak valid*\n\nContoh: /otor 1234567890", client);
 		});
 	}
 
-	private void registerUser(User user, AccountOfficerRoles role, String code, String label, long chatId, TelegramClient telegramClient) {
+	private void registerUser(User user, AccountOfficerRoles role, String code, String label, long chatId, SimpleTelegramClient client) {
 		user.setUserCode(code);
 		user.setRoles(role);
 		userRepository.save(user);
-		sendMessage(chatId, "✅ User berhasil didaftarkan sebagai *" + label + "*", telegramClient);
+		sendMessage(chatId, "✅ User berhasil didaftarkan sebagai *" + label + "*", client);
 	}
 
 	private boolean isNumber(String str) {

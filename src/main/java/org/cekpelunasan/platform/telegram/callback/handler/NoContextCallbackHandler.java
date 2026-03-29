@@ -1,41 +1,32 @@
 package org.cekpelunasan.platform.telegram.callback.handler;
 
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.telegram.callback.AbstractCallbackHandler;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
 public class NoContextCallbackHandler extends AbstractCallbackHandler {
-	@Override
-	public String getCallBackData() {
-		return "noop";
-	}
+    @Override
+    public String getCallBackData() {
+        return "noop";
+    }
 
-	@Override
-	@Async
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-		return CompletableFuture.runAsync(() -> {
-			String message = "🐊 Pap Dulu Dong Maniess";
-			log.info("Someone Makes Mistakes...");
-			AnswerCallbackQuery answerCallbackQuery = AnswerCallbackQuery.builder()
-				.showAlert(true)
-				.text(message)
-				.callbackQueryId(update.getCallbackQuery().getId())
-				.build();
-			try {
-				telegramClient.execute(answerCallbackQuery);
-			} catch (TelegramApiException e) {
-				log.warn("Error sending callback query answer: {}", e.getMessage());
-			}
-
-		});
-	}
+    @Override
+    @Async
+    public CompletableFuture<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
+        return CompletableFuture.runAsync(() -> {
+            log.info("Someone Makes Mistakes...");
+            TdApi.AnswerCallbackQuery answer = new TdApi.AnswerCallbackQuery();
+            answer.callbackQueryId = update.id;
+            answer.text = "🐊 Pap Dulu Dong Maniess";
+            answer.showAlert = true;
+            client.send(answer, r -> {});
+        });
+    }
 }

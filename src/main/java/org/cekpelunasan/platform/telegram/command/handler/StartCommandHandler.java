@@ -1,4 +1,6 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
@@ -6,8 +8,8 @@ import org.cekpelunasan.utils.MessageTemplate;
 import org.cekpelunasan.core.service.auth.AuthorizedChats;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+
 
 import java.util.concurrent.CompletableFuture;
 
@@ -32,11 +34,11 @@ public class StartCommandHandler extends AbstractCommandHandler {
 
 	@Override
 	@Async
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
+	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
-			long chatId = update.getMessage().getChatId();
+			long chatId = update.message.chatId;
 			String messageText = authService.isAuthorized(chatId) ? START_MESSAGE : messageTemplate.unathorizedMessage();
-			sendMessage(chatId, messageText, telegramClient);
+			sendMessage(chatId, messageText, client);
 		});
 	}
 }

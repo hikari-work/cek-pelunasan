@@ -1,13 +1,13 @@
 package org.cekpelunasan.platform.telegram.callback.pagination;
 
+import it.tdlight.jni.TdApi;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 @Component
 public class PaginationCanvassingByTab {
 
-	public InlineKeyboardMarkup dynamicButtonName(Page<?> page, int currentPage, String query) {
-		return PaginationMarkupBuilder.build(page, currentPage, "canvas", query);
-	}
+    public TdApi.ReplyMarkupInlineKeyboard dynamicButtonName(Page<?> page, int currentPage, String query) {
+        return PaginationMarkupBuilder.build(page, currentPage, "canvas", query);
+    }
 }

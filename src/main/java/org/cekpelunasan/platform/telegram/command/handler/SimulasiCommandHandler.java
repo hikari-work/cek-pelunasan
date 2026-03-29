@@ -1,4 +1,6 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.annotation.RequireAuth;
@@ -8,8 +10,8 @@ import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.core.service.simulasi.SimulasiService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+
 
 import java.util.concurrent.CompletableFuture;
 
@@ -31,17 +33,17 @@ public class SimulasiCommandHandler extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-		return super.process(update, telegramClient);
+	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+		return super.process(update, client);
 	}
 
 	@Override
 	@Async
-	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
 			String[] data = text.trim().split("\\s+");
 			if (data.length < 3) {
-				sendMessage(chatId, "❌ Format salah!\nGunakan format seperti ini:\n/simulasi <No SPK> <Nominal>\nContoh: /simulasi 123456789012 5000000", telegramClient);
+				sendMessage(chatId, "❌ Format salah!\nGunakan format seperti ini:\n/simulasi <No SPK> <Nominal>\nContoh: /simulasi 123456789012 5000000", client);
 				return;
 			}
 
@@ -49,7 +51,7 @@ public class SimulasiCommandHandler extends AbstractCommandHandler {
 			String nominalStr = data[2];
 
 			if (!noSpk.matches("\\d{12}")) {
-				sendMessage(chatId, "❌ Nomor SPK harus berupa 12 digit angka.\nContoh yang benar: 123456789012", telegramClient);
+				sendMessage(chatId, "❌ Nomor SPK harus berupa 12 digit angka.\nContoh yang benar: 123456789012", client);
 				return;
 			}
 
@@ -57,7 +59,7 @@ public class SimulasiCommandHandler extends AbstractCommandHandler {
 			try {
 				nominal = Long.parseLong(nominalStr);
 			} catch (NumberFormatException e) {
-				sendMessage(chatId, "❌ Nominal harus berupa angka. Contoh: 5000000", telegramClient);
+				sendMessage(chatId, "❌ Nominal harus berupa angka. Contoh: 5000000", client);
 				return;
 			}
 
@@ -78,7 +80,7 @@ public class SimulasiCommandHandler extends AbstractCommandHandler {
 				formatCurrency(simulasi.getMasukI()),
 				simulasi.getMaxDate()
 			);
-			sendMessage(chatId, response, telegramClient);
+			sendMessage(chatId, response, client);
 		});
 	}
 

@@ -1,4 +1,6 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+import it.tdlight.client.SimpleTelegramClient;
+import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,9 +16,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.generics.TelegramClient;
+
+
+
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -67,30 +69,30 @@ public class SlikCommand extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = { AccountOfficerRoles.AO, AccountOfficerRoles.ADMIN, AccountOfficerRoles.PIMP })
-	public CompletableFuture<Void> process(Update update, TelegramClient telegramClient) {
-		return super.process(update, telegramClient);
+	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+		return super.process(update, client);
 	}
 
 	@Override
 	@Async
-	public CompletableFuture<Void> process(long chatId, String text, TelegramClient telegramClient) {
+	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
 			try {
 				String query = extractQuery(text);
 				if (query.isEmpty()) {
-					telegramMessageService.sendText(chatId, ERROR_KTP_REQUIRED, telegramClient);
+					telegramMessageService.sendText(chatId, ERROR_KTP_REQUIRED, client);
 					return;
 				}
 
 				if (isValidKtpId(query)) {
-					handleKtpIdSearch(query, chatId, telegramClient);
+					handleKtpIdSearch(query, chatId, client);
 				} else {
-					handleNameSearch(query, chatId, telegramClient);
+					handleNameSearch(query, chatId, client);
 				}
 
 			} catch (Exception e) {
 				log.error("Error processing SLIK command - Chat ID: {}", chatId, e);
-				telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
+				telegramMessageService.sendText(chatId, ERROR_PROCESSING, client);
 			}
 		});
 	}
@@ -98,30 +100,30 @@ public class SlikCommand extends AbstractCommandHandler {
 	/**
 	 * Handles search by KTP ID (16 digits)
 	 */
-	private void handleKtpIdSearch(String ktpId, long chatId, TelegramClient telegramClient) {
+	private void handleKtpIdSearch(String ktpId, long chatId, SimpleTelegramClient client) {
 		log.info("Processing KTP ID search - ID: {}", ktpId);
 
 		try {
-			InlineKeyboardMarkup keyboard = slikButtonConfirmation.sendSlikCommand(ktpId);
-			telegramMessageService.sendKeyboard(chatId, keyboard, telegramClient, "Silahkan Pilih untuk Mode Laporan Slik");
+			TdApi.ReplyMarkupInlineKeyboard keyboard = slikButtonConfirmation.sendSlikCommand(ktpId);
+			telegramMessageService.sendKeyboard(chatId, keyboard, client, "Silahkan Pilih untuk Mode Laporan Slik");
 
 		} catch (Exception e) {
 			log.error("Error in KTP ID search - ID: {}", ktpId, e);
-			telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
+			telegramMessageService.sendText(chatId, ERROR_PROCESSING, client);
 		}
 	}
 
 	/**
 	 * Handles search by name with concurrent ID extraction
 	 */
-	private void handleNameSearch(String query, long chatId, TelegramClient telegramClient) {
+	private void handleNameSearch(String query, long chatId, SimpleTelegramClient client) {
 		log.info("Processing name search - Query: {}, Chat ID: {}", query, chatId);
 
 		try {
 			Optional<User> userOptional = userService.findUserByChatId(chatId);
 			if (userOptional.isEmpty()) {
 				log.warn("User not found for Chat ID: {}", chatId);
-				telegramMessageService.sendText(chatId, ERROR_SLIK_NOT_REQUESTED, telegramClient);
+				telegramMessageService.sendText(chatId, ERROR_SLIK_NOT_REQUESTED, client);
 				return;
 			}
 
@@ -133,7 +135,7 @@ public class SlikCommand extends AbstractCommandHandler {
 
 			if (results.isEmpty()) {
 				log.info("No results found for query: {}", query);
-				telegramMessageService.sendText(chatId, buildNoResultsMessage(query), telegramClient);
+				telegramMessageService.sendText(chatId, buildNoResultsMessage(query), client);
 				return;
 			}
 
@@ -143,11 +145,11 @@ public class SlikCommand extends AbstractCommandHandler {
 			}
 
 			String searchResultsMessage = buildSearchResultsMessageConcurrent(query, results, user);
-			telegramMessageService.sendText(chatId, searchResultsMessage, telegramClient);
+			telegramMessageService.sendText(chatId, searchResultsMessage, client);
 
 		} catch (Exception e) {
 			log.error("Error in name search - Query: {}, Chat ID: {}", query, chatId, e);
-			telegramMessageService.sendText(chatId, ERROR_PROCESSING, telegramClient);
+			telegramMessageService.sendText(chatId, ERROR_PROCESSING, client);
 		}
 	}
 
