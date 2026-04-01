@@ -26,9 +26,4 @@ public class ContactDTO {
 	 */
 	private String vcard;
 
-	/**
-	 * Context information associated with the contact message.
-	 */
-	@JsonProperty("contextInfo")
-	private ContextInfoDTO contextInfo;
 }

@@ -45,9 +45,4 @@ public class LocationDTO {
 	@JsonProperty("JPEGThumbnail")
 	private String jpegThumbnail;
 
-	/**
-	 * Context information associated with the location message.
-	 */
-	@JsonProperty("contextInfo")
-	private ContextInfoDTO contextInfo;
 }

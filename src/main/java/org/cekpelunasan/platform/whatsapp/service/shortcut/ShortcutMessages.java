@@ -33,14 +33,14 @@ public class ShortcutMessages {
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> sendShortcutMessage(WhatsAppWebhookDTO message) {
 		log.info("Goto ShortCutMessage");
-		String text = message.getMessage().getText();
+		String text = message.getPayload().getBody();
 		String response = shortcutResponses.get(text);
 
 		if (response != null) {
 			return CompletableFuture.runAsync(() ->
 				whatsAppSenderService.updateMessage(
 					message.buildChatId(),
-					message.getMessage().getId(),
+					message.getPayload().getId(),
 					response
 				)
 			);

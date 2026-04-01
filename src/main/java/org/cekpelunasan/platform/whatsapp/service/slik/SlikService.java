@@ -21,7 +21,7 @@ public class SlikService {
 	}
 
 	public void handleSlikService(WhatsAppWebhookDTO webhookDTO) {
-		String text = webhookDTO.getMessage().getText().substring(".s ".length());
+		String text = webhookDTO.getPayload().getBody().substring(".s ".length());
 		String fileName = getMatchingItems(text, getBucketList());
 		if (fileName == null) {
 			return;

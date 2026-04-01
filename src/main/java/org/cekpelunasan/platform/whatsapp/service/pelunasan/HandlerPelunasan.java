@@ -43,7 +43,7 @@ public class HandlerPelunasan {
 				return;
 			}
 
-			String spkNumber = extractSpkNumber(command.getMessage().getText());
+			String spkNumber = extractSpkNumber(command.getPayload().getBody());
 			if (!isValidSpkNumber(spkNumber)) {
 				sendErrorMessage(command, "Format SPK tidak valid. Gunakan format: .p [12-digit SPK]");
 				return;
@@ -63,7 +63,7 @@ public class HandlerPelunasan {
 		}
 	}
 	private boolean isValidPelunasanCommand(WhatsAppWebhookDTO command) {
-		String text = command.getMessage().getText();
+		String text = command.getPayload().getBody();
 
 		if (text == null || !text.startsWith(PELUNASAN_COMMAND_PREFIX)) {
 			log.info("Invalid pelunasan command format: {}", text);
@@ -160,7 +160,7 @@ public class HandlerPelunasan {
 			try {
 				whatsAppSenderService.sendReactionToMessage(
 					command.buildChatId(),
-					command.getMessage().getId()
+					command.getPayload().getId()
 				);
 			} catch (Exception e) {
 				log.warn("Failed to send reaction: {}", e.getMessage());
@@ -171,7 +171,7 @@ public class HandlerPelunasan {
 		try {
 			whatsAppSenderService.updateMessage(
 				command.buildChatId(),
-				command.getMessage().getId(),
+				command.getPayload().getId(),
 				message
 			);
 			log.info("Message updated for admin user: {}", command.getCleanSenderId());
@@ -204,7 +204,7 @@ public class HandlerPelunasan {
 		log.info("Processing pelunasan command - Sender: {}, ChatId: {}, MessageId: {}, Text: '{}'",
 			command.getCleanSenderId(),
 			command.getCleanChatId(),
-			command.getMessage().getId(),
-			command.getMessage().getText());
+			command.getPayload().getId(),
+			command.getPayload().getBody());
 	}
 }

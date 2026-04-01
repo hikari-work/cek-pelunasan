@@ -122,8 +122,8 @@ public class VirtualAccountHandler {
 			accountNumber.substring(6, 12);
 	}
 	public void handler(WhatsAppWebhookDTO webhook) {
-		whatsAppSenderService.sendWhatsAppText(webhook.buildChatId(), generateVirtualAccountMessage(webhook.getMessage().getText().substring(".va ".length())));
-		if (findAccount(webhook.getMessage().getText().substring(".va ".length())) instanceof Savings) {
+		whatsAppSenderService.sendWhatsAppText(webhook.buildChatId(), generateVirtualAccountMessage(webhook.getPayload().getBody().substring(".va ".length())));
+		if (findAccount(webhook.getPayload().getBody().substring(".va ".length())) instanceof Savings) {
 			whatsAppSenderService.sendWhatsAppText(webhook.buildChatId(), "Nomor _Virtual Account_ tersebut harus didaftarkan secara manual");
 		}
 	}

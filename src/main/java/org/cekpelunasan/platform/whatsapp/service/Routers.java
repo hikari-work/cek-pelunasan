@@ -39,10 +39,12 @@ public class Routers {
 	@Async
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> handle(WhatsAppWebhookDTO webhook) {
-		log.info("Received webhook from={} id={} from={}", webhook.getCleanChatId(), webhook.getMessage().getId(), webhook.getFrom());
+		log.info("Received webhook event={} id={} from={}", webhook.getEvent(),
+				webhook.getPayload() != null ? webhook.getPayload().getId() : null,
+				webhook.getFrom());
 
 		if (!isValidTextMessage(webhook)) {
-			log.debug("Invalid message: {}", webhook.getMessage());
+			log.debug("Skipping non-text or invalid webhook event={}", webhook.getEvent());
 			return CompletableFuture.completedFuture(null);
 		}
 		processCommand(webhook);
@@ -50,16 +52,14 @@ public class Routers {
 	}
 
 	private void processCommand(WhatsAppWebhookDTO webhook) {
-		String messageText = webhook.getMessage().getText();
+		String messageText = webhook.getPayload().getBody();
 		log.debug("Received message: {} from Admin {}", messageText, webhook.getFrom());
-
 
 		if (isAdminShortcut(webhook)) {
 			log.info("Routing to Shortcut Service");
 			shortcutMessages.sendShortcutMessage(webhook);
 			return;
 		}
-
 
 		if (!messageText.startsWith(COMMAND_PREFIX)) {
 			return;
@@ -73,17 +73,13 @@ public class Routers {
 		if (isHotKolekCommand(webhook)) {
 			log.info("Routing to Hot Kolek Service, isGroup={}", webhook.isGroupChat());
 			CompletableFuture.runAsync(() -> handleKolekCommand.handleKolekCommand(webhook));
-		}
-		else if (isPelunasanCommand(webhook)) {
+		} else if (isPelunasanCommand(webhook)) {
 			handlerPelunasan.handlePelunasan(webhook).join();
-		}
-		else if (isTabunganCommand(text)) {
+		} else if (isTabunganCommand(text)) {
 			tabunganService.handleTabungan(webhook);
-		}
-		else if (isMinimalBayarCommand(webhook, text)) {
+		} else if (isMinimalBayarCommand(webhook, text)) {
 			log.warn("Minimal Bayar command not yet implemented");
-		}
-		else if (isJatuhBayarCommand(webhook, text)) {
+		} else if (isJatuhBayarCommand(webhook, text)) {
 			jatuhBayarService.handle(webhook);
 		} else if (isValidSlikCommand(webhook)) {
 			slikService.handleSlikService(webhook);
@@ -92,47 +88,49 @@ public class Routers {
 		} else if (isVirtualAccount(webhook)) {
 			log.info("Routing to Virtual Account Service");
 			virtualAccountHandler.handler(webhook);
-
 		} else {
 			log.debug("Unknown command: {}", text);
 		}
 	}
 
 	private boolean isVirtualAccount(WhatsAppWebhookDTO webhookDTO) {
-		return webhookDTO.getMessage().getText().startsWith(COMMAND_PREFIX + "va");
+		return webhookDTO.getPayload().getBody().startsWith(COMMAND_PREFIX + "va");
 	}
 
 	private boolean isValidTextMessage(WhatsAppWebhookDTO webhook) {
-		return webhook.getMessage() != null && webhook.getMessage().getText() != null;
+		return "message".equals(webhook.getEvent())
+				&& webhook.getPayload() != null
+				&& webhook.getPayload().getBody() != null;
 	}
 
 	private boolean isValidSlikCommand(WhatsAppWebhookDTO webhook) {
-		return isValidTextMessage(webhook) &&
-			webhook.getMessage().getText().startsWith(COMMAND_PREFIX + "s");
+		return isValidTextMessage(webhook)
+				&& webhook.getPayload().getBody().startsWith(COMMAND_PREFIX + "s");
 	}
 
 	private boolean isAdminShortcut(WhatsAppWebhookDTO webhook) {
-		return isFromAdmin(webhook) &&
-			webhook.getMessage().getText().startsWith(ADMIN_SHORTCUT_PREFIX);
+		return isFromAdmin(webhook)
+				&& webhook.getPayload().getBody().startsWith(ADMIN_SHORTCUT_PREFIX);
 	}
 
 	private boolean isFromAdmin(WhatsAppWebhookDTO webhook) {
-		return webhook.getFrom().contains(adminWhatsApp);
+		return webhook.getFrom() != null && webhook.getFrom().contains(adminWhatsApp);
 	}
 
 	private boolean isAdminInGroup(WhatsAppWebhookDTO webhook) {
-		return webhook.isGroupChat() &&
-			webhook.getCleanSenderId().equals(adminWhatsApp);
+		return webhook.isGroupChat()
+				&& webhook.getCleanSenderId() != null
+				&& webhook.getCleanSenderId().equals(adminWhatsApp);
 	}
 
 	public boolean isHotKolekCommand(WhatsAppWebhookDTO webhook) {
-		return isValidTextMessage(webhook) &&
-			webhook.getMessage().getText().matches(HOT_KOLEK_PATTERN);
+		return isValidTextMessage(webhook)
+				&& webhook.getPayload().getBody().matches(HOT_KOLEK_PATTERN);
 	}
 
 	public boolean isPelunasanCommand(WhatsAppWebhookDTO webhook) {
-		return isValidTextMessage(webhook) &&
-			webhook.getMessage().getText().startsWith(COMMAND_PREFIX + "p");
+		return isValidTextMessage(webhook)
+				&& webhook.getPayload().getBody().startsWith(COMMAND_PREFIX + "p");
 	}
 
 	private boolean isTabunganCommand(String text) {

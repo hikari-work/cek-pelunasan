@@ -34,14 +34,14 @@ public class TabunganService {
 		if (!isValidTabunganCommand(command)) {
 			return CompletableFuture.completedFuture(null);
 		}
-		Optional<Savings> savings = savingsService.findById(command.getMessage().getText().substring(".p ".length()));
+		Optional<Savings> savings = savingsService.findById(command.getPayload().getBody().substring(".p ".length()));
 		savings.ifPresentOrElse(saving -> {
 			if (command.getFrom().contains(adminWhatsApp)) {
 				String message = savingsUtils.getSavings(saving);
-				whatsAppSenderService.sendReactionToMessage(command.buildChatId(), command.getMessage().getId());
-				whatsAppSenderService.updateMessage(command.buildChatId(), command.getMessage().getId(), message);
+				whatsAppSenderService.sendReactionToMessage(command.buildChatId(), command.getPayload().getId());
+				whatsAppSenderService.updateMessage(command.buildChatId(), command.getPayload().getId(), message);
 			} else {
-				whatsAppSenderService.sendReactionToMessage(command.buildChatId(), command.getMessage().getId());
+				whatsAppSenderService.sendReactionToMessage(command.buildChatId(), command.getPayload().getId());
 				whatsAppSenderService.sendWhatsAppText(command.buildChatId(), savingsUtils.getSavings(saving));
 			}
 		}, () -> whatsAppSenderService.sendWhatsAppText(command.buildChatId(), "Data tidak ditemukan."));
@@ -49,6 +49,6 @@ public class TabunganService {
 	}
 
 	public boolean isValidTabunganCommand(WhatsAppWebhookDTO command) {
-		return command.getMessage().getText().matches("^\\.t \\d{12}$");
+		return command.getPayload().getBody().matches("^\\.t \\d{12}$");
 	}
 }

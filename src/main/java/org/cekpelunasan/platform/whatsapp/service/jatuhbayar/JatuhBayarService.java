@@ -45,7 +45,7 @@ public class JatuhBayarService {
 						if (isFirst.getAndSet(false)) {
 							whatsAppSenderService.updateMessage(
 								command.buildChatId(),
-								command.getMessage().getId(),
+								command.getPayload().getId(),
 								message
 							);
 						} else {

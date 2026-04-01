@@ -2,7 +2,6 @@ package org.cekpelunasan.platform.whatsapp.service.sender;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.platform.whatsapp.dto.send.*;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -15,44 +14,36 @@ public class WhatsAppSenderService {
 
 	@SuppressWarnings("UnusedReturnValue")
 	public GenericResponseDTO sendWhatsAppText(String phone, String message) {
-		SendTextMessageDTO textMessageDTO = new SendTextMessageDTO();
-		textMessageDTO.setPhone(phone);
-		textMessageDTO.setMessage(message);
-		String url = sender.buildUrl(TypeMessage.TEXT);
-		ResponseEntity<GenericResponseDTO> response = sender.request(url, textMessageDTO);
-		return response.getBody();
+		SendTextMessageDTO dto = new SendTextMessageDTO();
+		dto.setPhone(phone);
+		dto.setMessage(message);
+		return sender.request(sender.buildPath(TypeMessage.TEXT), dto).block();
 	}
 
 	@SuppressWarnings("UnusedReturnValue")
 	public GenericResponseDTO sendWhatsAppText(String phone, String message, String replyMessageId) {
-		SendTextMessageDTO textMessageDTO = new SendTextMessageDTO();
-		textMessageDTO.setPhone(phone);
-		textMessageDTO.setMessage(message);
-		textMessageDTO.setReplyMessageId(replyMessageId);
-		String url = sender.buildUrl(TypeMessage.TEXT);
-		ResponseEntity<GenericResponseDTO> response = sender.request(url, textMessageDTO);
-		return response.getBody();
+		SendTextMessageDTO dto = new SendTextMessageDTO();
+		dto.setPhone(phone);
+		dto.setMessage(message);
+		dto.setReplyMessageId(replyMessageId);
+		return sender.request(sender.buildPath(TypeMessage.TEXT), dto).block();
 	}
 
 	@SuppressWarnings("UnusedReturnValue")
 	public GenericResponseDTO updateMessage(String phone, String messageId, String message) {
-		MessageUpdateDTO update = new MessageUpdateDTO();
-		update.setPhone(phone);
-		update.setMessageId(messageId);
-		update.setMessage(message);
-		String url = sender.buildUrl(TypeMessage.UPDATE);
-		ResponseEntity<GenericResponseDTO> response = sender.request(url, update);
-		return response.getBody();
+		MessageUpdateDTO dto = new MessageUpdateDTO();
+		dto.setPhone(phone);
+		dto.setMessageId(messageId);
+		dto.setMessage(message);
+		return sender.request(sender.buildPath(TypeMessage.UPDATE), dto).block();
 	}
 
 	public GenericResponseDTO sendReactionToMessage(String phone, String messageId) {
-		MessageReactionDTO reactionDTO = new MessageReactionDTO();
-		reactionDTO.setPhone(phone);
-		reactionDTO.setMessageId(messageId);
-		List<String> reaction = List.of("👌","✍","🙏", "👍", "🤝","👊");
-		reactionDTO.setEmoji(reaction.get((int) (Math.random() * reaction.size())));
-		String url = sender.buildUrl(TypeMessage.REACTION);
-		ResponseEntity<GenericResponseDTO> response = sender.request(url, reactionDTO);
-		return response.getBody();
+		MessageReactionDTO dto = new MessageReactionDTO();
+		dto.setPhone(phone);
+		dto.setMessageId(messageId);
+		List<String> reactions = List.of("👌", "✍", "🙏", "👍", "🤝", "👊");
+		dto.setEmoji(reactions.get((int) (Math.random() * reactions.size())));
+		return sender.request(sender.buildPath(TypeMessage.REACTION), dto).block();
 	}
 }

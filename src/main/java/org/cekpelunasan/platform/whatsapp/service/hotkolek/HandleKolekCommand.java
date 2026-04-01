@@ -43,7 +43,7 @@ public class HandleKolekCommand {
 	}
 
 	private void processKolekCommand(WhatsAppWebhookDTO command) {
-		String messageText = command.getMessage().getText();
+		String messageText = command.getPayload().getBody();
 		log.info("Processing Hot Kolek");
 
 		if (!isValidHotKolekCommand(messageText)) {
@@ -70,7 +70,7 @@ public class HandleKolekCommand {
 			try {
 				Thread.sleep(2000L);
 				String chatId = buildChatId(command);
-				String messageId = command.getMessage().getId();
+				String messageId = command.getPayload().getId();
 				GenericResponseDTO genericResponseDTO = whatsAppSenderService.sendReactionToMessage(chatId, messageId);
 				log.debug("Successfully sent reaction: {}", genericResponseDTO);
 			} catch (Exception e) {
