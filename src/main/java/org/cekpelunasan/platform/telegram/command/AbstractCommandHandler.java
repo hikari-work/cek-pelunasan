@@ -22,12 +22,7 @@ public abstract class AbstractCommandHandler implements CommandProcessor {
         return process(update.message.chatId, messageText.text.text, client);
     }
 
-    @Override
-    public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
-        return CompletableFuture.completedFuture(null);
-    }
-
-    protected void sendMessage(long chatId, String text, SimpleTelegramClient client) {
+	protected void sendMessage(long chatId, String text, SimpleTelegramClient client) {
         telegramMessageService.sendText(chatId, text, client);
     }
 

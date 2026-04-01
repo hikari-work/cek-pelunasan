@@ -124,13 +124,6 @@
             <artifactId>tdlight-java</artifactId>
         </dependency>
 
-        <!-- Bot API lama — akan dihapus setelah Phase 8 selesai -->
-        <dependency>
-            <groupId>org.telegram</groupId>
-            <artifactId>telegrambots-springboot-longpolling-starter</artifactId>
-            <version>9.2.0</version>
-        </dependency>
-
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
@@ -153,12 +146,6 @@
         </dependency>
 
 
-        <!-- Bot API lama — akan dihapus setelah Phase 8 selesai -->
-        <dependency>
-            <groupId>org.telegram</groupId>
-            <artifactId>telegrambots-client</artifactId>
-            <version>8.3.0</version>
-        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
