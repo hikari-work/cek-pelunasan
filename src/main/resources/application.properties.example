@@ -1,0 +1,55 @@
+# ============================================================
+# MONGODB REACTIVE
+# ============================================================
+spring.data.mongodb.uri=${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/cek_pelunasan}
+
+# ============================================================
+# TELEGRAM BOT
+# ============================================================
+telegram.bot.token=${TELEGRAM_BOT_TOKEN:}
+telegram.bot.owner=${TELEGRAM_BOT_OWNER:}
+
+# ============================================================
+# TDLIGHT
+# Dapatkan api.id dan api.hash dari https://my.telegram.org
+# ============================================================
+telegram.api.id=${TELEGRAM_API_ID:}
+telegram.api.hash=${TELEGRAM_API_HASH:}
+telegram.session.path=${TELEGRAM_SESSION_PATH:./tdlight-session}
+
+# ============================================================
+# CLOUDFLARE R2 (S3-compatible)
+# ============================================================
+r2.access.key=${R2_ACCESS_KEY:}
+r2.account.id=${R2_ACCOUNT_ID:}
+r2.secret.key=${R2_SECRET_KEY:}
+r2.endpoint=${R2_ENDPOINT:}
+r2.bucket=${R2_BUCKET:}
+
+# ============================================================
+# WHATSAPP GATEWAY
+# ============================================================
+whatsapp.gateway.url=${WHATSAPP_GATEWAY_URL:http://localhost:3000}
+whatsapp.gateway.username=${WHATSAPP_GATEWAY_USERNAME:admin}
+whatsapp.gateway.password=${WHATSAPP_GATEWAY_PASSWORD:admin}
+admin.whatsapp=${ADMIN_WHATSAPP:}
+
+# ============================================================
+# SLIK PDF (optional — ada default value)
+# ============================================================
+pdf.endpoint.url=${PDF_ENDPOINT_URL:https://kredit.suryayudha.id/ideb/generate.php}
+pdf.logo.url=${PDF_LOGO_URL:https://kredit.suryayudha.id/ideb/logo.png}
+slik.pdf.max-size=${SLIK_PDF_MAX_SIZE:5242880000}
+slik.search-timeout-seconds=${SLIK_SEARCH_TIMEOUT_SECONDS:30}
+slik.max-results=${SLIK_MAX_RESULTS:50}
+
+# ============================================================
+# SERVER
+# ============================================================
+server.port=${SERVER_PORT:8080}
+
+# ============================================================
+# ACTUATOR
+# ============================================================
+management.endpoints.web.exposure.include=health,info,prometheus
+management.endpoint.health.show-details=always
