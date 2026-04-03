@@ -1,12 +1,11 @@
 package org.cekpelunasan.core.repository;
 
 import org.cekpelunasan.core.entity.User;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
-	List<User> findByUserCode(String userCode);
+public interface UserRepository extends ReactiveMongoRepository<User, Long> {
+    Flux<User> findByUserCode(String userCode);
 }

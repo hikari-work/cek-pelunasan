@@ -52,7 +52,7 @@ public class KolekTasHandler extends AbstractCommandHandler {
 				return;
 			}
 			String data = parts[1].trim().toLowerCase();
-			Page<KolekTas> kolek = kolekTasService.findKolekByKelompok(data, 0, 5);
+			Page<KolekTas> kolek = kolekTasService.findKolekByKelompok(data, 0, 5).block();
 			StringBuilder sb = new StringBuilder();
 			kolek.forEach(k -> sb.append(kolekTasUtils.buildKolekTas(k)));
 			sendMessage(chatId, sb.toString(), paginationKolekTas.dynamicButtonName(kolek, 0, data), client);

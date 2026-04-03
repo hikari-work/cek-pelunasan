@@ -55,8 +55,7 @@ public class UploadTabCommandHandler extends AbstractCommandHandler {
 			}
 			try {
 				Path filePath = CsvDownloadUtils.downloadCsv(fileUrl);
-				savingsService.deleteAll();
-				savingsService.parseCsvAndSaveIntoDatabase(filePath);
+				savingsService.parseCsvAndSaveIntoDatabase(filePath).block();
 				publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.SAVING, true));
 			} catch (Exception e) {
 				log.error("Gagal memproses file dari URL: {}", fileUrl, e);

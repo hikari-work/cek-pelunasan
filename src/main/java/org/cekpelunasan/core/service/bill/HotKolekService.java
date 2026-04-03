@@ -8,8 +8,8 @@ import org.cekpelunasan.core.repository.BillsRepository;
 import org.cekpelunasan.core.repository.PayingRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.NonNull;
+import reactor.core.publisher.Mono;
 
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -37,107 +37,93 @@ public class HotKolekService {
 		return formatter.format(month);
 	}
 
-	public List<Bills> findDueDate(String kiosCode) {
+	public Mono<List<Bills>> findDueDate(String kiosCode) {
 		log.debug("Finding due date bills for kios: '{}', month: '{}'", kiosCode, getMonth());
-		List<Bills> bills = billsRepository.findByBranchAndDueDateContaining(TARGET_BRANCH, getMonth());
-		log.debug("Raw bills from findByBranchAndDueDateContaining: {}", bills.size());
-		return filterBillsByKios(bills, kiosCode);
+		return billsRepository.findByBranchAndDueDateContaining(TARGET_BRANCH, getMonth())
+			.collectList()
+			.flatMap(bills -> filterBillsByKios(bills, kiosCode));
 	}
 
-	public List<Bills> findFirstPay(String kiosCode) {
+	public Mono<List<Bills>> findFirstPay(String kiosCode) {
 		log.debug("Finding first pay bills for kios: '{}', lastMonth: '{}'", kiosCode, getLastMonth());
-		List<Bills> bills = billsRepository.findByBranchAndRealizationContaining(TARGET_BRANCH, getLastMonth());
-		log.debug("Raw bills from findByBranchAndRealizationContaining: {}", bills.size());
-		return filterBillsByKios(bills, kiosCode);
+		return billsRepository.findByBranchAndRealizationContaining(TARGET_BRANCH, getLastMonth())
+			.collectList()
+			.flatMap(bills -> filterBillsByKios(bills, kiosCode));
 	}
 
-	public List<Bills> findMinimalPay(String kiosCode) {
+	public Mono<List<Bills>> findMinimalPay(String kiosCode) {
 		log.debug("Getting minimal pay bills for kios: '{}'", kiosCode);
-
-		List<Bills> bills;
-
-		if (TARGET_BRANCH.equals(kiosCode)) {
-
-			bills = new ArrayList<>(
-				billsRepository.findByBranchAndTotalMin(TARGET_BRANCH, 0L, Pageable.unpaged())
-					.getContent()
-			);
-			log.debug("Query: findByBranchAndTotalMin(branch={}, minTotal=0) - will filter for NULL/empty kios", TARGET_BRANCH);
-		} else if (kiosCode == null || kiosCode.trim().isEmpty()) {
-			bills = new ArrayList<>(
-				billsRepository.findByBranchAndTotalMin(TARGET_BRANCH, 0L, Pageable.unpaged())
-					.getContent()
-			);
-			log.debug("Query: findByBranchAndTotalMin(branch={}, minTotal=0) - no kios filter", TARGET_BRANCH);
+		Mono<List<Bills>> billsMono;
+		if (TARGET_BRANCH.equals(kiosCode) || kiosCode == null || kiosCode.trim().isEmpty()) {
+			billsMono = billsRepository.findByBranchAndTotalMin(TARGET_BRANCH, 0L, Pageable.unpaged()).collectList();
 		} else {
-			bills = new ArrayList<>(
-				billsRepository.findByBranchAndKiosAndTotalMin(TARGET_BRANCH, kiosCode, 0L, Pageable.unpaged())
-					.getContent()
-			);
-			log.debug("Query: findByBranchAndKiosAndTotalMin(branch={}, kios={}, minTotal=0)", TARGET_BRANCH, kiosCode);
+			billsMono = billsRepository.findByBranchAndKiosAndTotalMin(TARGET_BRANCH, kiosCode, 0L, Pageable.unpaged()).collectList();
 		}
-
-		log.debug("Raw bills from repository: {}", bills.size());
-
-		List<Bills> filteredBills = filterBillsByKios(bills, kiosCode);
-		log.debug("Total bills after filterBillsByKios: {}", filteredBills.size());
-
-		filteredBills.removeIf(this::isNotValidBills);
-		log.debug("Found {} bills after validation", filteredBills.size());
-
-		return filteredBills;
-	}
-
-	private List<Bills> filterBillsByKios(List<Bills> bills, String kiosCode) {
-		log.debug("Filtering bills for kios: '{}', input size: {}", kiosCode, bills.size());
-
-		if (bills.isEmpty()) {
-			log.debug("No bills to filter, returning empty list");
-			return bills;
-		}
-
-		List<String> paidSpks = payingRepository.findAll()
-			.stream()
-			.map(Paying::getId)
-			.toList();
-
-		log.debug("Found {} paid bills to exclude", paidSpks.size());
-
-		int beforePayingFilter = bills.size();
-		bills.removeIf(bill -> paidSpks.contains(bill.getNoSpk()));
-		log.debug("After paid filter: {} -> {}", beforePayingFilter, bills.size());
-
-		int beforeKiosFilter = bills.size();
-
-		if (TARGET_BRANCH.equals(kiosCode)) {
-			bills.removeIf(bill -> {
-				String billKios = bill.getKios();
-				boolean isEmptyOrNull = billKios == null || billKios.trim().isEmpty();
-				log.trace("Bill {} kios: '{}', isEmptyOrNull: {}", bill.getNoSpk(), billKios, isEmptyOrNull);
-				return !isEmptyOrNull;
+		return billsMono
+			.defaultIfEmpty(List.of())
+			.flatMap(bills -> filterBillsByKios(bills, kiosCode))
+			.map(filtered -> {
+				filtered.removeIf(this::isNotValidBills);
+				log.debug("Found {} bills after validation", filtered.size());
+				return filtered;
 			});
-			log.debug("After kios NULL/empty filter (for branch code): {} -> {}", beforeKiosFilter, bills.size());
-		} else if (kiosCode != null && !kiosCode.trim().isEmpty()) {
-			bills.removeIf(bill -> !kiosCode.equals(bill.getKios()));
-			log.debug("After kios '{}' filter: {} -> {}", kiosCode, beforeKiosFilter, bills.size());
-		}
-		int beforeBranchFilter = bills.size();
-		bills.removeIf(bill -> !TARGET_BRANCH.equals(bill.getBranch()));
-		log.debug("After branch 1075 filter: {} -> {}", beforeBranchFilter, bills.size());
-
-		return bills;
 	}
 
-	@Transactional
-	public void saveAllPaying(@NonNull List<String> list) {
+	public Mono<List<Bills>> findUnpaidBillsByBranch(String branch) {
+		return payingRepository.findAll()
+			.map(Paying::getId)
+			.collectList()
+			.flatMap(paidIds -> {
+				if (paidIds.isEmpty()) {
+					return billsRepository.findAllByBranch(branch).collectList();
+				}
+				return billsRepository.findByBranchAndNoSpkNotIn(branch, paidIds).collectList();
+			});
+	}
+
+	private Mono<List<Bills>> filterBillsByKios(List<Bills> bills, String kiosCode) {
+		log.debug("Filtering bills for kios: '{}', input size: {}", kiosCode, bills.size());
+		if (bills.isEmpty()) {
+			return Mono.just(bills);
+		}
+		return payingRepository.findAll().map(Paying::getId).collectList()
+			.map(paidSpks -> {
+				List<Bills> mutableBills = new ArrayList<>(bills);
+				int beforePayingFilter = mutableBills.size();
+				mutableBills.removeIf(bill -> paidSpks.contains(bill.getNoSpk()));
+				log.debug("After paid filter: {} -> {}", beforePayingFilter, mutableBills.size());
+
+				int beforeKiosFilter = mutableBills.size();
+				if (TARGET_BRANCH.equals(kiosCode)) {
+					mutableBills.removeIf(bill -> {
+						String billKios = bill.getKios();
+						boolean isEmptyOrNull = billKios == null || billKios.trim().isEmpty();
+						log.trace("Bill {} kios: '{}', isEmptyOrNull: {}", bill.getNoSpk(), billKios, isEmptyOrNull);
+						return !isEmptyOrNull;
+					});
+					log.debug("After kios NULL/empty filter (for branch code): {} -> {}", beforeKiosFilter, mutableBills.size());
+				} else if (kiosCode != null && !kiosCode.trim().isEmpty()) {
+					mutableBills.removeIf(bill -> !kiosCode.equals(bill.getKios()));
+					log.debug("After kios '{}' filter: {} -> {}", kiosCode, beforeKiosFilter, mutableBills.size());
+				}
+				int beforeBranchFilter = mutableBills.size();
+				mutableBills.removeIf(bill -> !TARGET_BRANCH.equals(bill.getBranch()));
+				log.debug("After branch 1075 filter: {} -> {}", beforeBranchFilter, mutableBills.size());
+
+				return mutableBills;
+			});
+	}
+
+	public Mono<Void> saveAllPaying(@NonNull List<String> list) {
 		log.debug("Saving {} paying records", list.size());
-		payingRepository.saveAll(list.stream()
+		return payingRepository.saveAll(list.stream()
 			.map(spk -> Paying.builder()
 				.id(spk)
 				.paid(true)
 				.build())
-			.toList());
-		log.debug("Successfully saved {} paying records", list.size());
+			.toList())
+			.then()
+			.doOnSuccess(v -> log.debug("Successfully saved {} paying records", list.size()));
 	}
 
 	private boolean isNotValidBills(Bills bills) {

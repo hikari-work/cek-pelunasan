@@ -8,6 +8,8 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import reactor.core.publisher.Mono;
+
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,15 +36,17 @@ public class AuthorizedChats {
 		authorizedChats.remove(chatId);
 	}
 
-	public AccountOfficerRoles getUserRoles(@NonNull Long chatId) {
-		return userRepository.findById(chatId).map(User::getRoles).orElse(null);
+	public Mono<AccountOfficerRoles> getUserRoles(@NonNull Long chatId) {
+		return userRepository.findById(chatId).map(User::getRoles);
 	}
 
 	@EventListener(ApplicationReadyEvent.class)
 	public void preRun() {
-		List<User> all = userRepository.findAll();
-		for (User user : all) {
-			authorizedChats.add(user.getChatId());
+		List<User> all = userRepository.findAll().collectList().block();
+		if (all != null) {
+			for (User user : all) {
+				authorizedChats.add(user.getChatId());
+			}
 		}
 	}
 }

@@ -56,9 +56,9 @@ public class SavingsFindCommandHandler extends AbstractCommandHandler {
 				sendMessage(chatId, "Nama Harus Diisi", client);
 				return;
 			}
-			String userBranch = userService.findUserBranch(chatId);
+			String userBranch = userService.findUserBranch(chatId).block();
 			if (userBranch == null) {
-				Set<String> branches = savingsService.listAllBranch(name);
+				Set<String> branches = savingsService.listAllBranch(name).block();
 				if (branches.isEmpty()) {
 					sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
 					return;
@@ -66,7 +66,7 @@ public class SavingsFindCommandHandler extends AbstractCommandHandler {
 				sendMessage(chatId, "Data ditemukan dalam beberapa cabang", selectSavingsBranch.dynamicSelectBranch(branches, name), client);
 				return;
 			}
-			Page<Savings> byNameAndBranch = savingsService.findByNameAndBranch(name, userBranch, 0);
+			Page<Savings> byNameAndBranch = savingsService.findByNameAndBranch(name, userBranch, 0).block();
 			if (byNameAndBranch.isEmpty()) {
 				sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
 				return;

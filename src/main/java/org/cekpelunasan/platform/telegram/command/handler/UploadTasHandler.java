@@ -55,8 +55,7 @@ public class UploadTasHandler extends AbstractCommandHandler {
 			}
 			try {
 				Path filePath = CsvDownloadUtils.downloadCsv(fileUrl);
-				kolekTasService.deleteAll();
-				kolekTasService.parseCsvAndSave(filePath);
+				kolekTasService.parseCsvAndSave(filePath).block();
 				log.info("File berhasil diproses: {}", CsvDownloadUtils.extractFileName(fileUrl));
 				publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.KOLEK_TAS, true));
 			} catch (Exception e) {

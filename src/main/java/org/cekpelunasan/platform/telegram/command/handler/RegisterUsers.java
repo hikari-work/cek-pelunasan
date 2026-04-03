@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 
 
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -54,21 +53,20 @@ public class RegisterUsers extends AbstractCommandHandler {
 				return;
 			}
 
-			Optional<User> userOptional = userService.findUserByChatId(chatId);
-			if (userOptional.isEmpty()) {
+			User user = userService.findUserByChatId(chatId).block();
+			if (user == null) {
 				sendMessage(chatId, "User tidak ditemukan", client);
 				return;
 			}
 
-			User user = userOptional.get();
 			String target = parts[1];
 
-			if (target.length() == 3 && billService.findAllAccountOfficer().contains(target)) {
+			if (target.length() == 3 && billService.findAllAccountOfficer().block().contains(target)) {
 				registerUser(user, AccountOfficerRoles.AO, target, "AO", chatId, client);
 				CompletableFuture.runAsync(sendNotificationSlikUpdated::runTest);
 				return;
 			}
-			if (isNumber(target) && billService.lisAllBranch().contains(target)) {
+			if (isNumber(target) && billService.lisAllBranch().block().contains(target)) {
 				registerUser(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, client);
 				CompletableFuture.runAsync(sendNotificationSlikUpdated::runTest);
 				return;

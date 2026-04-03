@@ -1,10 +1,8 @@
 package org.cekpelunasan.core.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * Entity representing 'Kolek Tas' (Collection Task/Bag).
@@ -18,16 +16,14 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Entity
-@Table(name = "kolek_tas")
+@Document(collection = "kolek_tas")
 public class KolekTas {
 
 	/**
 	 * The unique identifier for the record.
 	 */
 	@Id
-	@GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
-	private Long id;
+	private String id;
 
 	/**
 	 * The group (kelompok) the record belongs to.

@@ -55,12 +55,12 @@ public class CreditHistoryUpdateCommandHandler extends AbstractCommandHandler {
 				sendMessage(chatId, "❗ *Format salah.*\nGunakan `/uploadcredit <link_csv>`", client);
 				return;
 			}
-			List<User> allUsers = userService.findAllUsers();
+			List<User> allUsers = userService.findAllUsers().collectList().block();
 			notifyUsers(allUsers, "⚠ *Sedang melakukan update data, mohon jangan kirim perintah apapun...*", client);
 			sendMessage(allUsers.getFirst().getChatId(), "⏳ *Sedang update database canvasing*", client);
 			try {
 				Path filePath = CsvDownloadUtils.downloadCsv(fileUrl);
-				creditHistoryService.parseCsvAndSaveIt(filePath);
+				creditHistoryService.parseCsvAndSaveIt(filePath).block();
 				notifyUsers(allUsers, "✅ *Database berhasil di proses*", client);
 			} catch (Exception e) {
 				log.error("Gagal memproses file dari URL: {}", fileUrl, e);

@@ -1,20 +1,22 @@
 package org.cekpelunasan.core.service.slik;
 
-import com.itextpdf.html2pdf.HtmlConverter;
-import com.itextpdf.kernel.geom.PageSize;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfWriter;
-import okhttp3.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.Margin;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -31,64 +33,76 @@ public class GeneratePdfFiles {
 	@Value("${pdf.logo.url:https://kredit.suryayudha.id/ideb/logo.png}")
 	private String logoUrl;
 
-	private final OkHttpClient okHttpClient;
+	private final WebClient webClient;
+	private final Browser browser;
 
-	public GeneratePdfFiles(OkHttpClient okHttpClient) {
-		this.okHttpClient = Objects.requireNonNull(okHttpClient, "OkHttpClient cannot be null");
+	public GeneratePdfFiles(WebClient whatsappWebClient, Browser playwrightBrowser) {
+		this.webClient = whatsappWebClient;
+		this.browser = playwrightBrowser;
 	}
 
-	public String generateHtmlContent(byte[] pdfBytes, boolean fasilitasAktif) {
+	/**
+	 * Full reactive pipeline: fetch HTML → parse/manipulate → render PDF.
+	 */
+	public Mono<byte[]> generatePdf(byte[] pdfBytes, boolean fasilitasAktif) {
 		if (pdfBytes == null || pdfBytes.length == 0) {
 			logger.warn("PDF bytes is null or empty");
-			return null;
+			return Mono.empty();
 		}
-		return responseFromEndpoint(pdfBytes, fasilitasAktif);
+		return fetchHtmlFromEndpoint(pdfBytes, fasilitasAktif)
+			.flatMap(this::parseAndManipulateHtml)
+			.map(Document::outerHtml)
+			.flatMap(this::renderPdfWithPlaywright);
 	}
 
-	private String responseFromEndpoint(byte[] body, boolean fasilitasAktif) {
-		logger.info("Getting Content");
-		RequestBody requestBody = new MultipartBody.Builder()
-				.setType(MultipartBody.FORM)
-				.addFormDataPart("fileToUpload", "ideb.txt",
-						RequestBody.create(body, MediaType.parse("text/plain")))
-				.addFormDataPart("fasilitasAktif", fasilitasAktif ? "y" : "n")
-				.build();
+	private Mono<String> fetchHtmlFromEndpoint(byte[] body, boolean fasilitasAktif) {
+		MultipartBodyBuilder builder = new MultipartBodyBuilder();
+		builder.part("fileToUpload", body)
+			.filename("ideb.txt")
+			.contentType(MediaType.TEXT_PLAIN);
+		builder.part("fasilitasAktif", fasilitasAktif ? "y" : "n");
 
-		Request request = new okhttp3.Request.Builder()
-				.url(pdfEndpointUrl)
-				.header("User-Agent", USER_AGENT)
-				.post(requestBody)
-				.build();
-		logger.info("Generated request");
-		try (Response response = okHttpClient.newCall(request).execute()) {
-			if (!response.isSuccessful()) {
-				logger.error("Failed to get response from endpoint. Status code: {}", response.code());
-				return null;
-			}
-
-			ResponseBody responseBody = response.body();
-			return responseBody.string();
-		} catch (IOException e) {
-			logger.error("Error calling PDF endpoint", e);
-			return null;
-		} catch (Exception e) {
-			logger.error("Unexpected error in responseFromEndpoint", e);
-			return null;
-		}
+		return webClient.post()
+			.uri(pdfEndpointUrl)
+			.header("User-Agent", USER_AGENT)
+			.body(BodyInserters.fromMultipartData(builder.build()))
+			.retrieve()
+			.bodyToMono(String.class)
+			.onErrorResume(e -> {
+				logger.error("Error fetching HTML from PDF endpoint: {}", e.getMessage());
+				return Mono.empty();
+			});
 	}
 
-	public Document parsingHtmlContentAndManipulatePages(String htmlContent) {
+	private Mono<Document> parseAndManipulateHtml(String htmlContent) {
 		if (htmlContent == null || htmlContent.isBlank()) {
 			logger.warn("HTML content is null or blank");
-			return null;
+			return Mono.empty();
 		}
+		return Mono.fromCallable(() -> {
+			Document document = Jsoup.parse(htmlContent);
+			removeScriptTag(document);
+			insertingImages(document);
+			removePrintButtons(document);
+			fixSignatureGrid(document);
+			return document;
+		}).subscribeOn(Schedulers.boundedElastic());
+	}
 
-		Document document = Jsoup.parse(htmlContent);
-		removeScriptTag(document);
-		insertingImages(document);
-		removePrintButtons(document);
-		fixSignatureGrid(document);
-		return document;
+	private Mono<byte[]> renderPdfWithPlaywright(String html) {
+		return Mono.<byte[]>fromCallable(() -> {
+			try (Page page = browser.newPage()) {
+				page.setContent(html);
+				return page.pdf(new Page.PdfOptions()
+					.setFormat("A4")
+					.setLandscape(true)
+					.setMargin(new Margin()
+						.setTop("15mm")
+						.setBottom("15mm")
+						.setLeft("15mm")
+						.setRight("15mm")));
+			}
+		}).subscribeOn(Schedulers.boundedElastic());
 	}
 
 	private void removeScriptTag(Document doc) {
@@ -120,36 +134,12 @@ public class GeneratePdfFiles {
 
 		Element tdRight = new Element("td");
 		tdRight.attr("style",
-				"border: none; vertical-align: middle; text-align: right; width: 1%; white-space: nowrap;");
+			"border: none; vertical-align: middle; text-align: right; width: 1%; white-space: nowrap;");
 		tdRight.appendChild(image);
 		row.appendChild(tdRight);
 
 		document.body().prependChild(headerTable);
-
 		logger.debug("Header layout converted to Table for PDF stability");
-	}
-
-	public byte[] generatePdfBytes(Document htmlContent) {
-		if (htmlContent == null) {
-			return null;
-		}
-
-		try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			 PdfWriter writer = new PdfWriter(baos)) {
-			String htmlWithCss = "<html><head><style>@page { size: A4 landscape; margin: 15mm; }</style></head><body>"
-				+ htmlContent.html() + "</body></html>";
-
-			HtmlConverter.convertToPdf(htmlWithCss, writer);
-
-			return baos.toByteArray();
-
-		} catch (IOException e) {
-			logger.error("Error generating PDF bytes", e);
-			return null;
-		} catch (Exception e) {
-			logger.error("Unexpected error in generatePdfBytes", e);
-			return null;
-		}
 	}
 
 	private void removePrintButtons(Document doc) {
@@ -161,17 +151,14 @@ public class GeneratePdfFiles {
 	}
 
 	private void fixSignatureGrid(Document doc) {
-
 		Element gridDiv = doc.selectFirst("div[style*='display: grid']");
 
 		if (gridDiv != null) {
-
 			List<Element> children = new ArrayList<>(gridDiv.children());
 
 			Element table = new Element("table");
-
 			table.attr("style",
-					"width: 300px; border-collapse: collapse; font-family: sans-serif; font-size: 12px; border: 0.5px solid blue; margin-top: 50px; page-break-inside: avoid;");
+				"width: 300px; border-collapse: collapse; font-family: sans-serif; font-size: 12px; border: 0.5px solid blue; margin-top: 50px; page-break-inside: avoid;");
 
 			Element tbody = new Element("tbody");
 			table.appendChild(tbody);
@@ -181,7 +168,7 @@ public class GeneratePdfFiles {
 				Element originalDiv = children.get(i);
 				Element td = new Element("td");
 				td.attr("style",
-						"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;");
+					"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;");
 				td.text(originalDiv.text());
 				row1.appendChild(td);
 			}

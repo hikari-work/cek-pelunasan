@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,13 +14,12 @@ import java.util.regex.Pattern;
 @Component
 public class PDFReader {
 
-	public String generateIDNumber(byte[] object) {
+	public Mono<String> generateIDNumber(byte[] object) {
 		if (object == null) {
 			log.warn("Received null byte array in generateIDNumber");
-			return null;
+			return Mono.empty();
 		}
-
-		try {
+		return Mono.fromCallable(() -> {
 			PDDocument document = PDDocument.load(object);
 			PDFTextStripper stripper = new PDFTextStripper();
 			String text = stripper.getText(document);
@@ -26,15 +27,11 @@ public class PDFReader {
 
 			Pattern pattern = Pattern.compile("\\d{16}\\b");
 			Matcher matcher = pattern.matcher(text);
-			if (matcher.find()) {
-				return matcher.group();
-			} else {
-				return null;
-			}
-
-		} catch (Exception e) {
+			return matcher.find() ? matcher.group() : null;
+		}).subscribeOn(Schedulers.boundedElastic())
+		.onErrorResume(e -> {
 			log.error("Error in generateIDNumber: {}", e.getMessage(), e);
-			return null;
-		}
+			return Mono.empty();
+		});
 	}
 }

@@ -62,7 +62,7 @@ public class ServicesCallbackHandler extends AbstractCallbackHandler {
     }
 
     private void handlePelunasan(long chatId, long messageId, String query, SimpleTelegramClient client) {
-        Set<String> branches = billService.lisAllBranch();
+        Set<String> branches = billService.lisAllBranch().block();
         if (branches.isEmpty()) {
             sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
             return;
@@ -74,7 +74,7 @@ public class ServicesCallbackHandler extends AbstractCallbackHandler {
     }
 
     private void handleTabungan(long chatId, long messageId, String query, SimpleTelegramClient client) {
-        Set<String> branches = savingsService.listAllBranch(query);
+        Set<String> branches = savingsService.listAllBranch(query).block();
         if (branches.isEmpty()) {
             sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
             return;

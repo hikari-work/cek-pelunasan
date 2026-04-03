@@ -54,7 +54,7 @@ public class CanvasingCommandHandler extends AbstractCommandHandler {
 				return;
 			}
 			List<String> addressList = Arrays.stream(text.split(" ")).filter(s -> !s.equals(getCommand())).toList();
-			Page<CreditHistory> creditHistories = creditHistoryService.searchAddressByKeywords(addressList, 0);
+			Page<CreditHistory> creditHistories = creditHistoryService.searchAddressByKeywords(addressList, 0).block();
 			if (creditHistories.isEmpty()) {
 				sendMessage(chatId, String.format("Data dengan alamat %s Tidak Ditemukan\n", address), client);
 				return;

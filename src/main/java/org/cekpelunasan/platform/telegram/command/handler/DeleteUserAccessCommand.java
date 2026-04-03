@@ -58,7 +58,7 @@ public class DeleteUserAccessCommand extends AbstractCommandHandler {
 			try {
 				long target = Long.parseLong(parts[1]);
 				log.info("{} Sudah ditendang", target);
-				userService.deleteUser(target);
+				userService.deleteUser(target).block();
 				authorizedChats.deleteUser(target);
 				sendMessage(target, messageTemplate.unathorizedMessage(), client);
 				sendMessage(ownerId, "Sukses", client);

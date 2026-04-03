@@ -37,7 +37,7 @@ public class PaginationToCanvasing extends AbstractCallbackHandler {
             long chatId = update.chatId;
             int page = Integer.parseInt(data[2]);
             List<String> addressList = Arrays.asList(address.split(" "));
-            Page<CreditHistory> creditHistoriesPage = creditHistoryService.searchAddressByKeywords(addressList, page);
+            Page<CreditHistory> creditHistoriesPage = creditHistoryService.searchAddressByKeywords(addressList, page).block();
             log.info("Data = {}", callbackData);
             if (creditHistoriesPage.isEmpty()) {
                 sendMessage(chatId, String.format("Data dengan alamat %s Tidak Ditemukan\n", address), client);

@@ -72,7 +72,7 @@ public class Routers {
 	private void routeCommand(WhatsAppWebhookDTO webhook, String text) {
 		if (isHotKolekCommand(webhook)) {
 			log.info("Routing to Hot Kolek Service, isGroup={}", webhook.isGroupChat());
-			CompletableFuture.runAsync(() -> handleKolekCommand.handleKolekCommand(webhook));
+			handleKolekCommand.handleKolekCommand(webhook);
 		} else if (isPelunasanCommand(webhook)) {
 			handlerPelunasan.handlePelunasan(webhook).join();
 		} else if (isTabunganCommand(text)) {

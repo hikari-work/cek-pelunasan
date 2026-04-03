@@ -1,9 +1,6 @@
 package org.cekpelunasan.core.service.savings;
 
 import com.opencsv.CSVReader;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
-import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.core.entity.Bills;
 import org.cekpelunasan.core.entity.Savings;
@@ -11,19 +8,24 @@ import org.cekpelunasan.core.repository.SavingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.*;
+import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import lombok.NonNull;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+import reactor.util.retry.Retry;
+
+import java.time.Duration;
 
 import java.io.FileReader;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
-import lombok.NonNull;
 
 @Service
 @RequiredArgsConstructor
@@ -31,222 +33,146 @@ public class SavingsService {
 
 	private static final Logger log = LoggerFactory.getLogger(SavingsService.class);
 	private final SavingsRepository savingsRepository;
-	private final EntityManager em;
+	private final ReactiveMongoTemplate mongoTemplate;
 
-	public void batchSavingAccounts(@NonNull List<Savings> savingsList) {
-		savingsRepository.saveAll(savingsList);
+	public Mono<Void> batchSavingAccounts(@NonNull List<Savings> savingsList) {
+		return savingsRepository.saveAll(savingsList).then();
 	}
 
-	public Page<Savings> findByNameAndBranch(String name, String branch, int page) {
+	public Mono<Page<Savings>> findByNameAndBranch(String name, String branch, int page) {
 		Pageable pageable = PageRequest.of(page, 5);
-		return savingsRepository.findByNameContainingIgnoreCaseAndBranch(name, branch, pageable);
+		Mono<List<Savings>> content = savingsRepository
+			.findByNameContainingIgnoreCaseAndBranch(name, branch, pageable).collectList();
+		Mono<Long> total = savingsRepository
+			.countByNameContainingIgnoreCaseAndBranch(name, branch).defaultIfEmpty(0L);
+		return Mono.zip(content, total)
+			.map(t -> new PageImpl<>(t.getT1(), pageable, t.getT2()));
 	}
 
-	public Savings findByCif(String cif) {
+	public Mono<Savings> findByCif(String cif) {
 		return savingsRepository.findByCif(cif);
 	}
 
-	public void parseCsvAndSaveIntoDatabase(Path path) {
-		final int BATCH_SIZE = 1000;
-		final int MAX_CONCURRENT_TASK = Runtime.getRuntime().availableProcessors() * 10;
-
-		ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-		Semaphore semaphore = new Semaphore(MAX_CONCURRENT_TASK);
-		List<Savings> currentBatch = new ArrayList<>(BATCH_SIZE);
-		int counter = 0;
-
-		try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
-			String[] line;
-			while ((line = reader.readNext()) != null) {
-				currentBatch.add(mapToSavings(line));
-				if (currentBatch.size() >= BATCH_SIZE) {
-					processBatch(currentBatch, executor, semaphore);
-					counter += BATCH_SIZE;
-					log.info("Submitted Batch {}", counter);
-					currentBatch.clear();
-				}
-			}
-
-			if (!currentBatch.isEmpty()) {
-				processBatch(currentBatch, executor, semaphore);
-				log.info("Submitted final batch: {}", counter + currentBatch.size());
-			}
-
-			executor.shutdown();
-			log.info("CSV file parsed and data saved to database successfully.");
-		} catch (Exception e) {
-			log.error("Error parsing CSV file: {}", e.getMessage(), e);
-		}
+	public Mono<Void> parseCsvAndSaveIntoDatabase(Path path) {
+		return savingsRepository.deleteAll()
+			.then(Flux.<String[]>create(sink -> {
+					try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
+						String[] line;
+						while ((line = reader.readNext()) != null) {
+							sink.next(line);
+						}
+						sink.complete();
+					} catch (Exception e) {
+						log.error("Error parsing CSV file: {}", e.getMessage(), e);
+						sink.error(e);
+					}
+				})
+				.subscribeOn(Schedulers.boundedElastic())
+				.map(this::mapToSavings)
+				.buffer(500)
+				.flatMap(batch -> batchSavingAccounts(batch)
+					.retryWhen(Retry.backoff(3, Duration.ofSeconds(1))),
+					Runtime.getRuntime().availableProcessors())
+				.then())
+			.doFinally(signal -> System.gc())
+			.doOnSuccess(v -> log.info("CSV savings selesai disimpan."));
 	}
 
-	@Transactional
-	public void deleteAll() {
-		savingsRepository.deleteAllFast();
-	}
-
-	private void processBatch(List<Savings> batch, ExecutorService executor, Semaphore semaphore)
-			throws InterruptedException {
-		List<Savings> batchToSave = new ArrayList<>(batch);
-		semaphore.acquire();
-		executor.submit(() -> {
-			try {
-				batchSavingAccounts(batchToSave);
-			} catch (Exception e) {
-				log.error("Error saving batch: {}", e.getMessage(), e);
-			} finally {
-				semaphore.release();
-			}
-		});
+	public Mono<Void> deleteAll() {
+		return savingsRepository.deleteAll();
 	}
 
 	public Savings mapToSavings(String[] line) {
 		return Savings.builder()
-				.branch(line[0])
-				.type(line[1])
-				.cif(line[2])
-				.tabId(line[3])
-				.name(line[4])
-				.address(line[5])
-				.balance(parseBigDecimal(line[6]))
-				.transaction(parseBigDecimal(line[7]))
-				.accountOfficer(line[8])
-				.phone(line[9])
-				.minimumBalance(parseBigDecimal(line[10]))
-				.blockingBalance(parseBigDecimal(line[11]))
-				.build();
+			.branch(line[0])
+			.type(line[1])
+			.cif(line[2])
+			.tabId(line[3])
+			.name(line[4])
+			.address(line[5])
+			.balance(parseBigDecimal(line[6]))
+			.transaction(parseBigDecimal(line[7]))
+			.accountOfficer(line[8])
+			.phone(line[9])
+			.minimumBalance(parseBigDecimal(line[10]))
+			.blockingBalance(parseBigDecimal(line[11]))
+			.build();
 	}
 
 	private BigDecimal parseBigDecimal(String value) {
 		return BigDecimal.valueOf(Long.parseLong(value));
 	}
 
-	public Set<String> listAllBranch(String name) {
-		System.out.println(name);
-		return savingsRepository.findAllByNameContainingIgnoreCase(name).stream()
-				.sorted()
-				.peek(System.out::println)
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+	public Mono<Set<String>> listAllBranch(String name) {
+		Criteria criteria = Criteria.where("name").regex(name, "i");
+		org.springframework.data.mongodb.core.query.Query query =
+			new org.springframework.data.mongodb.core.query.Query(criteria);
+		return mongoTemplate.findDistinct(query, "branch", Savings.class, String.class)
+			.filter(b -> b != null && !b.isBlank())
+			.sort()
+			.collectList()
+			.map(LinkedHashSet::new);
 	}
 
-	public Optional<Savings> findById(String id) {
+	public Mono<Savings> findById(String id) {
 		log.info("Searching for account with ID: {}", id);
 		return savingsRepository.findByTabId(id);
 	}
 
-	@Transactional
-	@SuppressWarnings("null")
-	public Page<Savings> findFilteredSavings(List<String> addressKeywords, @NonNull Pageable pageable) {
+	public Mono<Page<Savings>> findFilteredSavings(List<String> addressKeywords, @NonNull Pageable pageable) {
 		log.info("Starting findFilteredSavings with keywords: {} and page: {}", addressKeywords, pageable);
-		try {
-			CompletableFuture<List<Savings>> resultsFuture = CompletableFuture
-					.supplyAsync(() -> executeUniqueRecordsQuery(addressKeywords, pageable));
-			CompletableFuture<Long> countFuture = CompletableFuture
-					.supplyAsync(() -> executeCountUniqueQuery(addressKeywords));
-			CompletableFuture.allOf(resultsFuture, countFuture).join();
 
-			List<Savings> resultList = Objects.requireNonNullElse(resultsFuture.get(), Collections.emptyList());
-			Long total = countFuture.get();
+		Mono<List<String>> billsCifsMono = mongoTemplate
+			.findDistinct("customerId", Bills.class, String.class)
+			.filter(cif -> cif != null && !cif.isBlank())
+			.collectList();
 
-			log.info("Query completed successfully. Found {} unique CIFs matching keywords.", total);
-			return new PageImpl<>(resultList, pageable, total);
-		} catch (Exception e) {
-			log.error("Error in findFilteredSavings: {}", e.getMessage(), e);
-			throw new RuntimeException("Failed to execute filtered savings query: " + e.getMessage(), e);
-		}
+		return billsCifsMono.flatMap(billsCifs -> {
+			Criteria addressCriteria = buildAddressCriteria(addressKeywords);
+			Criteria notInBills = Criteria.where("cif").nin(billsCifs);
+			Criteria combined = new Criteria().andOperator(addressCriteria, notInBills);
+
+			AggregationOperation match = Aggregation.match(combined);
+			AggregationOperation group = Aggregation.group("cif").first("$$ROOT").as("doc");
+			AggregationOperation replaceRoot = Aggregation.replaceRoot("doc");
+			AggregationOperation skip = Aggregation.skip(pageable.getOffset());
+			AggregationOperation limit = Aggregation.limit(pageable.getPageSize());
+
+			Mono<List<Savings>> resultsMono = mongoTemplate.aggregate(
+				Aggregation.newAggregation(match, group, replaceRoot, skip, limit),
+				Savings.class, Savings.class
+			).collectList();
+
+			AggregationOperation countGroup = Aggregation.group("cif");
+			AggregationOperation countAll = Aggregation.count().as("total");
+			Mono<Long> countMono = mongoTemplate.aggregate(
+				Aggregation.newAggregation(match, countGroup, countAll),
+				Savings.class, org.bson.Document.class
+			).collectList()
+				.map(results -> {
+					if (results == null || results.isEmpty()) return 0L;
+					return ((Number) results.get(0).get("total")).longValue();
+				});
+
+			return Mono.zip(resultsMono, countMono)
+				.map(t -> {
+					log.info("Query completed successfully. Found {} unique CIFs matching keywords.", t.getT2());
+					return (Page<Savings>) new PageImpl<>(t.getT1(), pageable, t.getT2());
+				});
+		});
 	}
 
-	private List<Savings> executeUniqueRecordsQuery(List<String> addressKeywords, Pageable pageable) {
-		long startTime = System.currentTimeMillis();
-		try {
-			CriteriaBuilder cb = em.getCriteriaBuilder();
-
-			CriteriaQuery<Savings> query = cb.createQuery(Savings.class);
-
-			Root<Savings> root = query.from(Savings.class);
-
-			Subquery<Long> minIdSubquery = buildMinIdSubquery(query, cb, addressKeywords);
-
-			query.select(root).where(root.get("id").in(minIdSubquery));
-			TypedQuery<Savings> typedQuery = em.createQuery(query);
-			typedQuery.setFirstResult((int) pageable.getOffset());
-			typedQuery.setMaxResults(pageable.getPageSize());
-
-			List<Savings> result = typedQuery.getResultList();
-			log.debug("Executed record query in {} ms", System.currentTimeMillis() - startTime);
-			return result;
-		} catch (Exception e) {
-			log.error("Error executing unique records query: {}", e.getMessage(), e);
-			throw e;
-		}
-	}
-
-	private Long executeCountUniqueQuery(List<String> addressKeywords) {
-		long startTime = System.currentTimeMillis();
-		try {
-			CriteriaBuilder cb = em.getCriteriaBuilder();
-			CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
-			Root<Savings> countRoot = countQuery.from(Savings.class);
-
-			countQuery.select(cb.countDistinct(countRoot.get("cif")));
-
-			Predicate addressPredicate = buildAddressPredicates(cb, countRoot, addressKeywords);
-			Predicate notInBills = buildNotInBillsPredicate(cb, countRoot, countQuery);
-			countQuery.where(cb.and(addressPredicate, notInBills));
-
-			Long result = em.createQuery(countQuery).getSingleResult();
-			log.debug("Executed count query in {} ms", System.currentTimeMillis() - startTime);
-			return result;
-		} catch (Exception e) {
-			log.error("Error executing count query: {}", e.getMessage(), e);
-			throw e;
-		}
-	}
-
-	private Predicate buildNotInBillsPredicate(CriteriaBuilder cb, Root<Savings> root, CriteriaQuery<?> query) {
-		Subquery<String> billsSubquery = query.subquery(String.class);
-		Root<Bills> billsRoot = billsSubquery.from(Bills.class);
-		billsSubquery.select(billsRoot.get("customerId"))
-				.where(cb.isNotNull(billsRoot.get("customerId")));
-		return cb.not(root.get("cif").in(billsSubquery));
-	}
-
-	private Subquery<Long> buildMinIdSubquery(CriteriaQuery<?> query, CriteriaBuilder cb,
-			List<String> addressKeywords) {
-		Subquery<Long> minIdSubquery = query.subquery(Long.class);
-		Root<Savings> subRoot = minIdSubquery.from(Savings.class);
-
-		Predicate addressPredicate = buildAddressPredicates(cb, subRoot, addressKeywords);
-		Predicate notInBills = buildNotInBillsPredicate(cb, subRoot, query);
-
-		minIdSubquery.select(cb.min(subRoot.get("id")))
-				.where(cb.and(addressPredicate, notInBills))
-				.groupBy(subRoot.get("cif"));
-
-		return minIdSubquery;
-	}
-
-	private Predicate buildAddressPredicates(CriteriaBuilder cb, Root<Savings> root, List<String> addressKeywords) {
+	private Criteria buildAddressCriteria(List<String> addressKeywords) {
 		if (addressKeywords == null || addressKeywords.isEmpty()) {
-			return cb.conjunction();
+			return new Criteria();
 		}
-
-		List<String> processedKeywords = addressKeywords.stream()
-				.filter(k -> k != null && !k.trim().isEmpty())
-				.map(String::trim)
-				.map(String::toLowerCase)
-				.toList();
-
-		if (processedKeywords.isEmpty()) {
-			return cb.conjunction();
+		List<Criteria> predicates = addressKeywords.stream()
+			.filter(k -> k != null && !k.trim().isEmpty())
+			.map(k -> Criteria.where("address").regex(k.trim(), "i"))
+			.collect(Collectors.toList());
+		if (predicates.isEmpty()) {
+			return new Criteria();
 		}
-
-		List<Predicate> likePredicates = processedKeywords.stream()
-				.map(keyword -> {
-					log.debug("Adding LIKE predicate for keyword: '{}'", keyword);
-					return cb.like(cb.lower(root.get("address")), "%" + keyword + "%");
-				})
-				.toList();
-
-		return cb.and(likePredicates.toArray(new Predicate[0]));
+		return new Criteria().andOperator(predicates.toArray(new Criteria[0]));
 	}
 }

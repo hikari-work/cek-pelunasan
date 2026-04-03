@@ -37,13 +37,12 @@ public class ShortcutMessages {
 		String response = shortcutResponses.get(text);
 
 		if (response != null) {
-			return CompletableFuture.runAsync(() ->
-				whatsAppSenderService.updateMessage(
-					message.buildChatId(),
-					message.getPayload().getId(),
-					response
-				)
-			);
+			whatsAppSenderService.updateMessage(
+				message.buildChatId(),
+				message.getPayload().getId(),
+				response
+			).subscribe();
+			return CompletableFuture.completedFuture(null);
 		}
 
 		log.warn("Unknown shortcut command: {}", text);

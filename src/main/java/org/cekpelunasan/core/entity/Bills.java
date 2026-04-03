@@ -1,10 +1,8 @@
 package org.cekpelunasan.core.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * Entity class for the bills (tagihan) table.
@@ -18,9 +16,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Entity
-@Table(name = "tagihan", indexes = { @Index(name = "idx_name", columnList = "name"),
-		@Index(name = "idx_branch", columnList = "branch") })
+@Document(collection = "tagihan")
 public class Bills {
 
 	/**

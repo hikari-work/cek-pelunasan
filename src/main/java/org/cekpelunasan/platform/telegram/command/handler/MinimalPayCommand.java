@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 
 
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -50,19 +49,17 @@ public class MinimalPayCommand extends AbstractCommandHandler {
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
-			Optional<User> userOpt = userService.findUserByChatId(chatId);
-			if (userOpt.isEmpty()) {
+			User user = userService.findUserByChatId(chatId).block();
+			if (user == null) {
 				sendMessage(chatId, "❌ *User tidak ditemukan*", client);
 				return;
 			}
-
-			User user = userOpt.get();
 			String userCode = user.getUserCode();
 			if (user.getRoles() == null) return;
 
 			Page<Bills> bills = switch (user.getRoles()) {
-				case AO -> billService.findMinimalPaymentByAccountOfficer(userCode, 0, 5);
-				case PIMP, ADMIN -> billService.findMinimalPaymentByBranch(userCode, 0, 5);
+				case AO -> billService.findMinimalPaymentByAccountOfficer(userCode, 0, 5).block();
+				case PIMP, ADMIN -> billService.findMinimalPaymentByBranch(userCode, 0, 5).block();
 			};
 
 			if (bills.isEmpty()) {

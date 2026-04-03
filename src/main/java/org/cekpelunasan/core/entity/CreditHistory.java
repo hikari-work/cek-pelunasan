@@ -1,10 +1,8 @@
 package org.cekpelunasan.core.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * Entity representing the credit history of a customer.
@@ -17,15 +15,14 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Entity(name = "credit_history")
+@Document(collection = "credit_history")
 public class CreditHistory {
 
 	/**
 	 * The unique identifier for the credit history record.
 	 */
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private String id;
 
 	/**
 	 * The date of the credit history record (timestamp).

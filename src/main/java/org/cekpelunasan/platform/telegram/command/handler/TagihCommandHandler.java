@@ -54,7 +54,7 @@ public class TagihCommandHandler extends AbstractCommandHandler {
 			}
 			long start = System.currentTimeMillis();
 			try {
-				Bills bills = billService.getBillById(parts[1]);
+				Bills bills = billService.getBillById(parts[1]).block();
 				if (bills == null) {
 					sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
 					return;

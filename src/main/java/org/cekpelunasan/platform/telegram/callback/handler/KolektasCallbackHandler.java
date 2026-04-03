@@ -51,7 +51,7 @@ public class KolektasCallbackHandler extends AbstractCallbackHandler {
                 sendMessage(chatId, "Data Tidak Valid", client);
                 return;
             }
-            Page<KolekTas> kolek = kolekTasService.findKolekByKelompok(data, page + 1, 5);
+            Page<KolekTas> kolek = kolekTasService.findKolekByKelompok(data, page + 1, 5).block();
             StringBuilder stringBuilder = new StringBuilder();
             log.info("Sending Kolek Tas For Group {}", data);
             kolek.forEach(k -> stringBuilder.append(kolekTasUtils.buildKolekTas(k)));

@@ -45,7 +45,7 @@ public class MinimalHandler extends AbstractCommandHandler {
 				sendMessage(chatId, "❌ Nomor SPK harus berupa 12 digit angka.\nContoh yang benar: 123456789012", client);
 				return;
 			}
-			long minimalBayar = simulasiService.minimalBayar(noSpk);
+			long minimalBayar = simulasiService.minimalBayar(noSpk).block();
 			if (minimalBayar > 0) {
 				sendMessage(chatId, String.format("""
 					📊 *Hasil Minimal Masuk Angsuran*

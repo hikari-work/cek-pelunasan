@@ -1,27 +1,10 @@
 package org.cekpelunasan.core.repository;
 
 import org.cekpelunasan.core.entity.CustomerHistory;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
+// NOTE: countCollectStatusByCustomer() removed — implemented in CustomerHistoryService via ReactiveMongoTemplate
 @Repository
-public interface CustomerHistoryRepository extends JpaRepository<CustomerHistory, Long> {
-
-	@Query(value = """
-		    SELECT
-		        SUM(CASE WHEN collect_status = '01' THEN 1 ELSE 0 END),
-		        SUM(CASE WHEN collect_status = '02' THEN 1 ELSE 0 END),
-		        SUM(CASE WHEN collect_status = '03' THEN 1 ELSE 0 END),
-		        SUM(CASE WHEN collect_status = '04' THEN 1 ELSE 0 END),
-		        SUM(CASE WHEN collect_status = '05' THEN 1 ELSE 0 END)
-		    FROM customer_history
-		    WHERE customer_id = :customerId
-		""", nativeQuery = true)
-	List<Object[]> countCollectStatusByCustomer(@Param("customerId") String customerId);
-
-
+public interface CustomerHistoryRepository extends ReactiveMongoRepository<CustomerHistory, String> {
 }

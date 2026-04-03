@@ -3,8 +3,10 @@ package org.cekpelunasan.platform.whatsapp.service.slik;
 import org.cekpelunasan.platform.whatsapp.dto.webhook.WhatsAppWebhookDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.util.List;
 
@@ -14,10 +16,10 @@ public class SlikService {
 	@Value("${r2.bucket}")
 	private String bucket;
 
-	private final S3Client s3Connector;
+	private final S3AsyncClient s3AsyncClient;
 
-	public SlikService(S3Client s3Connector) {
-		this.s3Connector = s3Connector;
+	public SlikService(S3AsyncClient s3AsyncClient) {
+		this.s3AsyncClient = s3AsyncClient;
 	}
 
 	public void handleSlikService(WhatsAppWebhookDTO webhookDTO) {
@@ -34,17 +36,19 @@ public class SlikService {
 	}
 
 	public List<String> getBucketList() {
-		ListObjectsV2Request request = ListObjectsV2Request.builder()
-			.bucket(bucket)
-			.build();
-		ListObjectsV2Response response = s3Connector.listObjectsV2(request);
-		return response.contents().stream().map(S3Object::key).toList();
+		try {
+			ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucket).build();
+			ListObjectsV2Response response = s3AsyncClient.listObjectsV2(request).get();
+			return response.contents().stream().map(S3Object::key).toList();
+		} catch (Exception e) {
+			return List.of();
+		}
 	}
+
 	public String getMatchingItems(String name, List<String> items) {
 		return items.stream()
 			.filter(item -> item.toLowerCase().contains(name.toLowerCase()))
 			.findFirst()
 			.orElse(null);
 	}
-
 }

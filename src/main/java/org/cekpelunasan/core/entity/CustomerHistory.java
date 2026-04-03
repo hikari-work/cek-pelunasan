@@ -1,10 +1,8 @@
 package org.cekpelunasan.core.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * Entity representing the history of a customer's collection status.
@@ -17,15 +15,14 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Entity(name = "customer_history")
+@Document(collection = "customer_history")
 public class CustomerHistory {
 
 	/**
 	 * The unique identifier for this history record.
 	 */
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private String id;
 
 	/**
 	 * The customer ID.

@@ -46,11 +46,11 @@ public class StatusCommandHandler extends AbstractCommandHandler {
 		long chatId = update.message.chatId;
 		long startTime = System.currentTimeMillis();
 
-		CompletableFuture<Long> billCount = CompletableFuture.supplyAsync(billService::countAllBills);
-		CompletableFuture<Long> customerHistoryCount = CompletableFuture.supplyAsync(customerHistoryService::countCustomerHistory);
-		CompletableFuture<Long> totalUsersFuture = CompletableFuture.supplyAsync(userService::countUsers);
+		CompletableFuture<Long> billCount = CompletableFuture.supplyAsync(() -> billService.countAllBills().block());
+		CompletableFuture<Long> customerHistoryCount = CompletableFuture.supplyAsync(() -> customerHistoryService.countCustomerHistory().block());
+		CompletableFuture<Long> totalUsersFuture = CompletableFuture.supplyAsync(() -> userService.countUsers().block());
 		CompletableFuture<String> systemLoadFuture = CompletableFuture.supplyAsync(() -> new SystemUtils().getSystemUtils());
-		CompletableFuture<Long> creditHistory = CompletableFuture.supplyAsync(creditHistoryService::countCreditHistory);
+		CompletableFuture<Long> creditHistory = CompletableFuture.supplyAsync(() -> creditHistoryService.countCreditHistory().block());
 
 		return CompletableFuture.allOf(totalUsersFuture, systemLoadFuture, creditHistory, customerHistoryCount, billCount)
 			.thenRunAsync(() -> {

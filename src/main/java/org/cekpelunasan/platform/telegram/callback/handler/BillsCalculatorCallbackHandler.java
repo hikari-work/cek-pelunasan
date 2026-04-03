@@ -34,7 +34,7 @@ public class BillsCalculatorCallbackHandler extends AbstractCallbackHandler {
             log.info("Bills Update Received");
             String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
             String[] parts = callbackData.split("_", 5);
-            Bills bills = billService.getBillById(parts[1]);
+            Bills bills = billService.getBillById(parts[1]).block();
             log.info("Bill ID: {}", parts[1]);
             if (bills == null) {
                 log.info("Bill ID Not Found");

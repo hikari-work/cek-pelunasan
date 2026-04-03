@@ -24,11 +24,11 @@ public class VirtualAccountHandler {
 	public record Account(String name, String accountNumber, String address) {}
 
 	public Object findAccount(String accountNumber) {
-		Bills bills = billService.getBillById(accountNumber);
+		Bills bills = billService.getBillById(accountNumber).block();
 		if (bills != null) {
 			return bills;
 		}
-		return savingsService.findById(accountNumber).orElse(null);
+		return savingsService.findById(accountNumber).block();
 	}
 
 	public Account getAccountDetails(String accountNumber) {
@@ -122,9 +122,9 @@ public class VirtualAccountHandler {
 			accountNumber.substring(6, 12);
 	}
 	public void handler(WhatsAppWebhookDTO webhook) {
-		whatsAppSenderService.sendWhatsAppText(webhook.buildChatId(), generateVirtualAccountMessage(webhook.getPayload().getBody().substring(".va ".length())));
+		whatsAppSenderService.sendWhatsAppText(webhook.buildChatId(), generateVirtualAccountMessage(webhook.getPayload().getBody().substring(".va ".length()))).subscribe();
 		if (findAccount(webhook.getPayload().getBody().substring(".va ".length())) instanceof Savings) {
-			whatsAppSenderService.sendWhatsAppText(webhook.buildChatId(), "Nomor _Virtual Account_ tersebut harus didaftarkan secara manual");
+			whatsAppSenderService.sendWhatsAppText(webhook.buildChatId(), "Nomor _Virtual Account_ tersebut harus didaftarkan secara manual").subscribe();
 		}
 	}
 }

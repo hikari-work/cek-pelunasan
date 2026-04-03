@@ -47,13 +47,13 @@ public class JatuhBayarService {
 								command.buildChatId(),
 								command.getPayload().getId(),
 								message
-							);
+							).subscribe();
 						} else {
 							whatsAppSenderService.sendWhatsAppText(
 								command.buildChatId(),
 								message,
 								null
-							);
+							).subscribe();
 						}
 						try {
 							Thread.sleep(1000);
@@ -74,7 +74,7 @@ public class JatuhBayarService {
 		LocalDate today = LocalDate.now();
 		String dayOfMonth = String.valueOf(today.getDayOfMonth());
 
-		return billService.findAllBillsByBranch(BRANCH_CODE)
+		return billService.findAllBillsByBranch(BRANCH_CODE).block()
 			.stream()
 			.filter(bill -> bill.getPayDown().equals(dayOfMonth))
 			.collect(Collectors.groupingBy(Bills::getAccountOfficer));
@@ -104,7 +104,7 @@ public class JatuhBayarService {
 			}
 
 			try {
-				Savings savings = savingsService.findByCif(bill.getCustomerId());
+				Savings savings = savingsService.findByCif(bill.getCustomerId()).block();
 				if (savings != null && savings.getPhone() != null && !savings.getPhone().isEmpty()) {
 					builder.append("   📱 No HP: ").append(savings.getPhone()).append("\n");
 				} else {

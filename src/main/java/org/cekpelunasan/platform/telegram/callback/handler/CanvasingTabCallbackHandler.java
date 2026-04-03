@@ -45,7 +45,7 @@ public class CanvasingTabCallbackHandler extends AbstractCallbackHandler {
                 .flatMap(part -> Arrays.stream(part.trim().split("\s+")))
                 .filter(s -> !s.isEmpty())
                 .toList();
-            Page<Savings> savings = savingsService.findFilteredSavings(address, PageRequest.of(page, 5));
+            Page<Savings> savings = savingsService.findFilteredSavings(address, PageRequest.of(page, 5)).block();
             if (savings.isEmpty()) {
                 sendMessage(update.chatId, "❌ *Data tidak ditemukan*", client);
                 return;

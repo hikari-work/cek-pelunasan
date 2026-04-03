@@ -63,7 +63,7 @@ public class SimulasiCommandHandler extends AbstractCommandHandler {
 				return;
 			}
 
-			SimulasiResult simulasi = simulasiService.getSimulasi(noSpk, nominal);
+			SimulasiResult simulasi = simulasiService.getSimulasi(noSpk, nominal).block();
 			String response = String.format(
 				"""
 					📊 *Hasil Simulasi Masuk Angsuran*

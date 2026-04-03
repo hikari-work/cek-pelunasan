@@ -43,7 +43,7 @@ public class DatabaseUpdateListener {
                 return;
             }
             String message = buildEventMessage(event);
-            List<User> users = userService.findAllUsers();
+            List<User> users = userService.findAllUsers().collectList().block();
             users.forEach(user -> telegramMessageService.sendText(user.getChatId(), message, client));
             log.info("Database update event processing completed");
         } catch (Exception e) {

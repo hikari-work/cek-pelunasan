@@ -57,14 +57,13 @@ public class UploadSimulasi extends AbstractCommandHandler {
 				sendMessage(chatId, "Url Nya Diisi Bang", client);
 				return;
 			}
-			List<User> users = userService.findAllUsers();
+			List<User> users = userService.findAllUsers().collectList().block();
 			String currentDateTime = LocalDateTime.now()
 					.plusHours(7)
 					.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
 			try {
 				Path filePath = CsvDownloadUtils.downloadCsv(fileUrl);
-				simulasiService.deleteAll();
-				simulasiService.parseCsv(filePath);
+				simulasiService.parseCsv(filePath).block();
 				notifyUsers(users, String.format("✅ *Update berhasil: Data Simulasi diperbarui pada %s*", currentDateTime), client);
 			} catch (Exception e) {
 				log.error("Gagal memproses file dari URL: {}", fileUrl, e);

@@ -19,7 +19,6 @@ import org.springframework.stereotype.Component;
 
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -50,21 +49,19 @@ public class FindByDueDate extends AbstractCommandHandler {
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
-			Optional<User> userOpt = userService.findUserByChatId(chatId);
-			if (userOpt.isEmpty()) {
+			User user = userService.findUserByChatId(chatId).block();
+			if (user == null) {
 				sendMessage(chatId, "❌ *User tidak ditemukan*", client);
 				return;
 			}
-
-			User user = userOpt.get();
 			String userCode = user.getUserCode();
 			String today = dateUtils.converterDate(LocalDateTime.now());
 
 			Page<Bills> billsPage = Page.empty();
 			if (user.getRoles() != null) {
 				billsPage = switch (user.getRoles()) {
-					case AO -> billService.findDueDateByAccountOfficer(userCode, today, 0, 5);
-					case PIMP -> billService.findBranchAndPayDown(userCode, today, 0, 5);
+					case AO -> billService.findDueDateByAccountOfficer(userCode, today, 0, 5).block();
+					case PIMP -> billService.findBranchAndPayDown(userCode, today, 0, 5).block();
 					default -> Page.empty();
 				};
 			}

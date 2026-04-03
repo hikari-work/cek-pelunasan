@@ -56,7 +56,7 @@ public class AuthCommandHandler extends AbstractCommandHandler {
             try {
                 long target = Long.parseLong(parts[1]);
                 log.info("Trying Auth {}", target);
-                userService.insertNewUsers(target);
+                userService.insertNewUsers(target).block();
                 authorizedChats.addAuthorizedChat(target);
                 sendMessage(target, messageTemplate.authorizedMessage(), client);
                 log.info("Success Auth {}", target);

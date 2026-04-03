@@ -57,13 +57,13 @@ public class UploadValidationCustomer extends AbstractCommandHandler {
 				sendMessage(chatId, "❗ *Format salah.*\nGunakan `/validupload <link_csv>`", client);
 				return;
 			}
-			List<User> allUsers = userService.findAllUsers();
+			List<User> allUsers = userService.findAllUsers().collectList().block();
 			String currentDateTime = LocalDateTime.now()
 					.plusHours(7)
 					.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
 			try {
 				Path filePath = CsvDownloadUtils.downloadCsv(fileUrl);
-				customerHistoryService.parseCsvAndSaveIntoDatabase(filePath);
+				customerHistoryService.parseCsvAndSaveIntoDatabase(filePath).block();
 				notifyUsers(allUsers, String.format("✅ *Update berhasil: Data Validasi CIF diperbarui pada %s*", currentDateTime), client);
 			} catch (Exception e) {
 				log.error("Gagal memproses file dari URL: {}", fileUrl, e);

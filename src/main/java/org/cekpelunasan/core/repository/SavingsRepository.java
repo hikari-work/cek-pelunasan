@@ -1,32 +1,22 @@
 package org.cekpelunasan.core.repository;
 
 import org.cekpelunasan.core.entity.Savings;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.Optional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Repository
-public interface SavingsRepository extends JpaRepository<Savings, Long>, JpaSpecificationExecutor<Savings> {
+public interface SavingsRepository extends ReactiveMongoRepository<Savings, String> {
 
-	@Modifying
-	@Query("DELETE FROM Savings")
-	void deleteAllFast();
+    Flux<Savings> findByNameContainingIgnoreCaseAndBranch(String name, String branch, Pageable pageable);
+    Mono<Long> countByNameContainingIgnoreCaseAndBranch(String name, String branch);
 
-	Page<Savings> findByNameContainingIgnoreCaseAndBranch(String name, String branch, Pageable pageable);
+    Mono<Savings> findByTabId(String tabId);
 
+    Flux<Savings> findByNameContainingIgnoreCase(String name);
 
-	Optional<Savings> findByTabId(String tabId);
-
-	@Query("SELECT DISTINCT b.branch FROM Savings b WHERE LOWER(b.name) LIKE LOWER(CONCAT('%', :name, '%'))")
-	List<String> findAllByNameContainingIgnoreCase(@Param("name") String name);
-
-    Savings findByCif(String cif);
+    Mono<Savings> findByCif(String cif);
 }

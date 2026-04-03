@@ -1,7 +1,8 @@
 package org.cekpelunasan.core.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * Entity representing a simulation calculation (Simulasi).
@@ -15,15 +16,13 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Entity
-@Table(name = "simulasi")
+@Document(collection = "simulasi")
 public class Simulasi {
 
 	/**
 	 * The unique identifier for the simulation (UUID).
 	 */
 	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
 	private String id;
 
 	/**

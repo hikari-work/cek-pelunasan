@@ -1,102 +1,64 @@
 package org.cekpelunasan.core.repository;
 
 import org.cekpelunasan.core.entity.Bills;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.Set;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Repository
-public interface BillsRepository extends JpaRepository<Bills, String> {
+public interface BillsRepository extends ReactiveMongoRepository<Bills, String> {
 
-	@Modifying
-	@Query(value = "TRUNCATE TABLE tagihan", nativeQuery = true)
-	void deleteAllFast();
+    // NOTE: findDistinctBranchByBranch(), findDistinctByAccountOfficer(), findUnpaidBillsByBranch()
+    // are REMOVED — implemented in BillService/HotKolekService via ReactiveMongoTemplate
 
-	@Query("SELECT b FROM Bills b WHERE b.branch = :branch AND b.noSpk NOT IN (SELECT p.id FROM Paying p)")
-	List<Bills> findUnpaidBillsByBranch(String branch);
+    Flux<Bills> findByAccountOfficerAndPayDown(String accountOfficer, String payDown, Pageable pageable);
+    Mono<Long> countByAccountOfficerAndPayDown(String accountOfficer, String payDown);
 
-	Page<Bills> findByAccountOfficerAndPayDown(String accountOfficer, String payDown, Pageable pageable);
+    Flux<Bills> findByBranchAndPayDownOrderByAccountOfficer(String branch, String payDown, Pageable pageable);
+    Mono<Long> countByBranchAndPayDown(String branch, String payDown);
 
-	Page<Bills> findByBranchAndPayDownOrderByAccountOfficer(String branch, String payDown, Pageable pageable);
+    Flux<Bills> findByNameContainingIgnoreCaseAndBranch(String name, String branch, Pageable pageable);
+    Mono<Long> countByNameContainingIgnoreCaseAndBranch(String name, String branch);
 
-	Page<Bills> findByNameContainingIgnoreCaseAndBranch(String name, String branch, Pageable pageable);
+    @Query("{ 'officeLocation': ?2, '$expr': { '$gt': [{ '$add': ['$minInterest', '$minPrincipal'] }, 0] } }")
+    Flux<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(Long minInterest, Long minPrincipal, String branch, Pageable pageable);
 
-	@Query("""
-       SELECT b FROM Bills b
-       WHERE b.officeLocation = :branch
-       AND (b.minInterest + b.minPrincipal) > 0
-       """)
-	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndBranch(Long minInterest, Long minPrincipal, String branch, Pageable pageable);
+    @Query("{ 'officeLocation': ?2, '$expr': { '$gt': [{ '$add': ['$minInterest', '$minPrincipal'] }, 0] } }")
+    Mono<Long> countByMinInterestOrMinPrincipalIsGreaterThanAndBranch(Long minInterest, Long minPrincipal, String branch);
 
-	@Query("""
-    SELECT b FROM Bills b
-    WHERE b.branch = '1075'
-    AND b.kios = :kios
-    AND (b.minInterest + b.minPrincipal) > 0
-    """)
-	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndKios(Long minInterest, Long minimalPrincipal, String kios, Pageable pageable);
+    @Query("{ 'branch': '1075', 'kios': ?2, '$expr': { '$gt': [{ '$add': ['$minInterest', '$minPrincipal'] }, 0] } }")
+    Flux<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndKios(Long minInterest, Long minPrincipal, String kios, Pageable pageable);
 
-	@Query("""
-    SELECT b FROM Bills b
-    WHERE b.branch = :branch
-    AND b.kios = :kios
-    AND (COALESCE(b.minInterest, 0) + COALESCE(b.minPrincipal, 0)) > :minTotal
-    """)
-	Page<Bills> findByBranchAndKiosAndTotalMin(@Param("branch") String branch,
-											   @Param("kios") String kios,
-											   @Param("minTotal") Long minTotal,
-											   Pageable pageable);
+    @Query("{ 'branch': ?0, 'kios': ?1, '$expr': { '$gt': [{ '$add': [{ '$ifNull': ['$minInterest', 0] }, { '$ifNull': ['$minPrincipal', 0] }] }, ?2] } }")
+    Flux<Bills> findByBranchAndKiosAndTotalMin(String branch, String kios, Long minTotal, Pageable pageable);
 
-	@Query("""
-    SELECT b FROM Bills b
-    WHERE b.branch = :branch
-    AND (COALESCE(b.minInterest, 0) + COALESCE(b.minPrincipal, 0)) > :minTotal
-    """)
-	Page<Bills> findByBranchAndTotalMin(@Param("branch") String branch,
-										@Param("minTotal") Long minTotal,
-										Pageable pageable);
+    @Query("{ 'branch': ?0, '$expr': { '$gt': [{ '$add': [{ '$ifNull': ['$minInterest', 0] }, { '$ifNull': ['$minPrincipal', 0] }] }, ?1] } }")
+    Flux<Bills> findByBranchAndTotalMin(String branch, Long minTotal, Pageable pageable);
 
-	@Query("""
-    SELECT b FROM Bills b
-    WHERE b.branch = '1075'
-    AND b.kios = :kios
-    AND (COALESCE(b.minInterest, 0) + COALESCE(b.minPrincipal, 0)) > :minTotal
-    """)
-	Page<Bills> findByKiosAndTotalMin(@Param("kios") String kios,
-									  @Param("minTotal") Long minTotal,
-									  Pageable pageable);
+    @Query("{ 'branch': '1075', 'kios': ?0, '$expr': { '$gt': [{ '$add': [{ '$ifNull': ['$minInterest', 0] }, { '$ifNull': ['$minPrincipal', 0] }] }, ?1] } }")
+    Flux<Bills> findByKiosAndTotalMin(String kios, Long minTotal, Pageable pageable);
 
-	@Query("""
-       SELECT b FROM Bills b
-       WHERE b.accountOfficer = :accountOfficer
-       AND (b.minInterest + b.minPrincipal) > 0
-       """)
-	Page<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndAccountOfficer(Long minInterest, Long minPrincipal, String accountOfficer, Pageable pageable);
+    @Query("{ 'accountOfficer': ?2, '$expr': { '$gt': [{ '$add': ['$minInterest', '$minPrincipal'] }, 0] } }")
+    Flux<Bills> findByMinInterestOrMinPrincipalIsGreaterThanAndAccountOfficer(Long minInterest, Long minPrincipal, String accountOfficer, Pageable pageable);
 
-	@Query("SELECT DISTINCT b.branch FROM Bills b")
-	Set<String> findDistinctBranchByBranch();
+    @Query("{ 'accountOfficer': ?2, '$expr': { '$gt': [{ '$add': ['$minInterest', '$minPrincipal'] }, 0] } }")
+    Mono<Long> countByMinInterestOrMinPrincipalIsGreaterThanAndAccountOfficer(Long minInterest, Long minPrincipal, String accountOfficer);
 
-	@Query("SELECT DISTINCT b.accountOfficer FROM Bills b")
-	Set<String> findDistinctByAccountOfficer();
+    @Query("{ 'branch': ?0, 'dueDate': { '$regex': '^?1' } }")
+    Flux<Bills> findByBranchAndDueDateContaining(String branch, String dueDate);
 
-	// Method baru: Filter due date by branch
-	@Query("SELECT b FROM Bills b WHERE b.branch = :branch AND b.dueDate LIKE CONCAT(:dueDate, '%')")
-	List<Bills> findByBranchAndDueDateContaining(@Param("branch") String branch, @Param("dueDate") String dueDate);
+    @Query("{ 'branch': ?0, 'realization': { '$regex': '^?1', '$options': 'i' } }")
+    Flux<Bills> findByBranchAndRealizationContaining(String branch, String realization);
 
-	// Method baru: Filter realization by branch
-	@Query("SELECT b FROM Bills b WHERE b.branch = :branch AND LOWER(b.realization) LIKE CONCAT(LOWER(:realization), '%')")
-	List<Bills> findByBranchAndRealizationContaining(@Param("branch") String branch, @Param("realization") String realization);
+    Flux<Bills> findByDueDateContaining(String dueDate);
 
-	List<Bills> findByDueDateContaining(String dueDate);
+    Flux<Bills> findByRealizationIsContainingIgnoreCase(String realization);
 
-	List<Bills> findByRealizationIsContainingIgnoreCase(String branch);
+    Flux<Bills> findAllByBranch(String branch);
 
-	List<Bills> findAllByBranch(String branch);
+    // For findByBranchAndNoSpkNotIn (used to implement findUnpaidBillsByBranch in service)
+    Flux<Bills> findByBranchAndNoSpkNotIn(String branch, Iterable<String> noSpkList);
 }

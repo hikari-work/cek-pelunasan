@@ -44,7 +44,7 @@ public class SavingNextButtonCallbackHandler extends AbstractCallbackHandler {
             int page = Integer.parseInt(parts[3]);
             long chatId = update.chatId;
             long messageId = update.messageId;
-            Page<Savings> savings = savingsService.findByNameAndBranch(query, branch, page);
+            Page<Savings> savings = savingsService.findByNameAndBranch(query, branch, page).block();
             if (savings.isEmpty()) {
                 log.info("Saving data Updated...");
                 sendMessage(chatId, "❌ *Data tidak ditemukan*", client);

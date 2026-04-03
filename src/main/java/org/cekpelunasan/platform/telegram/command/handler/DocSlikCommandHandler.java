@@ -45,8 +45,8 @@ public class DocSlikCommandHandler extends AbstractCommandHandler {
 				sendMessage(chatId, "Nama Harus Diisi", client);
 				return;
 			}
-			byte[] file = s3Connector.getFile(name);
-			if (file.length == 0) {
+			byte[] file = s3Connector.getFile(name).block();
+			if (file == null || file.length == 0) {
 				sendMessage(chatId, "File tidak ditemukan", client);
 				return;
 			}

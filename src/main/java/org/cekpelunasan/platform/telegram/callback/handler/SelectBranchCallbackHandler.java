@@ -46,7 +46,7 @@ public class SelectBranchCallbackHandler extends AbstractCallbackHandler {
             String name = parts[2];
             long chatId = update.chatId;
 
-            Page<Bills> billsPage = billService.findByNameAndBranch(name, branch, 0, 5);
+            Page<Bills> billsPage = billService.findByNameAndBranch(name, branch, 0, 5).block();
             if (billsPage.isEmpty()) {
                 log.info("Bills Is Empty....");
                 sendMessage(update.chatId, "❌ *Data tidak ditemukan*", client);

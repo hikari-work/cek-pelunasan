@@ -41,7 +41,7 @@ public class KantorHandler extends AbstractCommandHandler {
 	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
 			if (text.equals("/kantor")) {
-				String userBranch = userService.findUserBranch(chatId);
+				String userBranch = userService.findUserBranch(chatId).block();
 				if (userBranch == null) {
 					sendMessage(chatId, "Anda Tidak terdaftar di kantor manapun", client);
 					return;
@@ -54,7 +54,7 @@ public class KantorHandler extends AbstractCommandHandler {
 				sendMessage(chatId, "Format Kantor Tidak tepat!!!", client);
 				return;
 			}
-			userService.saveUserBranch(chatId, kantor);
+			userService.saveUserBranch(chatId, kantor).block();
 			sendMessage(chatId, String.format("Sukses mengubah kantor anda menjadi %s", kantor), client);
 		});
 	}

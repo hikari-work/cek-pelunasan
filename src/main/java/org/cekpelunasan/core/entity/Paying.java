@@ -1,8 +1,8 @@
 package org.cekpelunasan.core.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * Entity representing a paying status.
@@ -10,7 +10,7 @@ import lombok.*;
  * This seems to track whether a specific entity (identified by ID) has paid.
  * </p>
  */
-@Entity
+@Document(collection = "paying")
 @Getter
 @Setter
 @AllArgsConstructor

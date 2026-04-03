@@ -52,7 +52,7 @@ public class BroadcastCommandHandler extends AbstractCommandHandler {
             long replyMessageId = ((TdApi.MessageReplyToMessage) update.message.replyTo).messageId;
 
             try {
-                List<User> allUsers = userService.findAllUsers();
+                List<User> allUsers = userService.findAllUsers().collectList().block();
 
                 for (User user : allUsers) {
                     log.info("Copying To {}", user.getChatId());

@@ -16,7 +16,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -45,22 +44,20 @@ public class MinimalPayCallbackHandler extends AbstractCallbackHandler {
             int page = Integer.parseInt(data[2]);
             log.info("Bills Callback Received...");
 
-            Optional<User> userOpt = userService.findUserByChatId(chatId);
-            if (userOpt.isEmpty()) {
+            User user = userService.findUserByChatId(chatId).block();
+            if (user == null) {
                 log.info("User ID {} not Valid", chatId);
                 sendMessage(chatId, "❌ *User tidak ditemukan*", client);
                 return;
             }
-
-            User user = userOpt.get();
             String userCode = user.getUserCode();
 
             Page<Bills> bills = null;
             if (user.getRoles() != null) {
                 log.info("Finding Minimal Pay of {}", userCode);
                 bills = switch (user.getRoles()) {
-                    case AO -> billService.findMinimalPaymentByAccountOfficer(userCode, page, 5);
-                    case PIMP, ADMIN -> billService.findMinimalPaymentByBranch(userCode, page, 5);
+                    case AO -> billService.findMinimalPaymentByAccountOfficer(userCode, page, 5).block();
+                    case PIMP, ADMIN -> billService.findMinimalPaymentByBranch(userCode, page, 5).block();
                 };
             }
 

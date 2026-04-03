@@ -50,7 +50,7 @@ public class TagihWithNameCommandHandler extends AbstractCommandHandler {
 				return;
 			}
 			String name = parts[1].trim();
-			Set<String> branches = billService.lisAllBranch();
+			Set<String> branches = billService.lisAllBranch().block();
 			if (branches.isEmpty()) {
 				sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
 				return;

@@ -60,7 +60,7 @@ public class CanvasingTabCommandHandler extends AbstractCommandHandler {
 				.filter(s -> !s.isEmpty())
 				.collect(Collectors.toList());
 
-			Page<Savings> savingsPage = savingsService.findFilteredSavings(addressList, PageRequest.of(0, 5));
+			Page<Savings> savingsPage = savingsService.findFilteredSavings(addressList, PageRequest.of(0, 5)).block();
 			if (savingsPage.isEmpty()) {
 				sendMessage(chatId, "Tidak ada data yang ditemukan", client);
 				return;

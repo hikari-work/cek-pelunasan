@@ -1,7 +1,8 @@
 package org.cekpelunasan.core.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * Entity for logging HTTP requests and responses.
@@ -15,26 +16,22 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Entity
-@Table(name = "logging")
+@Document(collection = "logging")
 public class Logging {
 
 	/**
 	 * Unique identifier for the log entry (UUID).
 	 */
 	@Id
-	@GeneratedValue(strategy = GenerationType.UUID)
 	private String id;
 
 	/**
-	 * The raw request content. stored as Large Object (Lob).
+	 * The raw request content.
 	 */
-	@Lob
 	private String request;
 
 	/**
-	 * The raw response content, stored as Large Object (Lob).
+	 * The raw response content.
 	 */
-	@Lob
 	private String response;
 }

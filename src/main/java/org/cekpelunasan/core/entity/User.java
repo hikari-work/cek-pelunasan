@@ -1,11 +1,9 @@
 package org.cekpelunasan.core.entity;
 
 import jakarta.annotation.Nullable;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * Entity representing a user of the system (likely a Telegram user).
@@ -18,7 +16,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Entity(name = "users")
+@Document(collection = "users")
 public class User {
 
 	/**
@@ -43,7 +41,6 @@ public class User {
 	 * The role assigned to the user (optional).
 	 */
 	@Nullable
-	@Enumerated(EnumType.STRING)
 	private AccountOfficerRoles roles;
 
 }

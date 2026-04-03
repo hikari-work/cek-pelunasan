@@ -92,9 +92,9 @@ public class BillsByNameCalculatorCallbackHandler extends AbstractCallbackHandle
         String convertedDate = dateUtils.converterDate(today);
 
         if (query.length() == QUERY_MIN_LENGTH) {
-            return billService.findDueDateByAccountOfficer(query, convertedDate, callbackData.page(), PAGE_SIZE);
+            return billService.findDueDateByAccountOfficer(query, convertedDate, callbackData.page(), PAGE_SIZE).block();
         } else {
-            return billService.findBranchAndPayDown(query, convertedDate, callbackData.page(), PAGE_SIZE);
+            return billService.findBranchAndPayDown(query, convertedDate, callbackData.page(), PAGE_SIZE).block();
         }
     }
 

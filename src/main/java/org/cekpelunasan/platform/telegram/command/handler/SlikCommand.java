@@ -120,18 +120,17 @@ public class SlikCommand extends AbstractCommandHandler {
 		log.info("Processing name search - Query: {}, Chat ID: {}", query, chatId);
 
 		try {
-			Optional<User> userOptional = userService.findUserByChatId(chatId);
-			if (userOptional.isEmpty()) {
+			User user = userService.findUserByChatId(chatId).block();
+			if (user == null) {
 				log.warn("User not found for Chat ID: {}", chatId);
 				telegramMessageService.sendText(chatId, ERROR_SLIK_NOT_REQUESTED, client);
 				return;
 			}
-
-			User user = userOptional.get();
 			String searchKey = user.getUserCode() + "_" + query.trim();
 
 			log.debug("Searching S3 with key: {}", searchKey);
-			List<String> results = s3Connector.listObjectFoundByName(searchKey);
+			List<String> results = s3Connector.listObjectFoundByName(searchKey).collectList().block();
+			if (results == null) results = List.of();
 
 			if (results.isEmpty()) {
 				log.info("No results found for query: {}", query);
@@ -234,14 +233,14 @@ public class SlikCommand extends AbstractCommandHandler {
 		return CompletableFuture.supplyAsync(() -> {
 			try {
 				log.debug("Extracting ID for document: {}", contentKey);
-				byte[] fileContent = s3Connector.getFile(contentKey);
+				byte[] fileContent = s3Connector.getFile(contentKey).block();
 
 				if (fileContent == null || fileContent.length == 0) {
 					log.warn("S3 file not found or empty: {}", contentKey);
 					return new DocumentEntry(contentKey, null);
 				}
 
-				String idNumber = pdfReader.generateIDNumber(fileContent);
+				String idNumber = pdfReader.generateIDNumber(fileContent).block();
 				log.debug("Extracted ID: {}, Document: {}", idNumber, contentKey);
 				return new DocumentEntry(contentKey, idNumber);
 

@@ -56,8 +56,7 @@ public class BillsUpdateDataHandler extends AbstractCommandHandler {
             log.info("Command: /uploadtagihan Executed with file: {}", CsvDownloadUtils.extractFileName(fileUrl));
             try {
                 Path filePath = CsvDownloadUtils.downloadCsv(fileUrl);
-                billService.deleteAll();
-                billService.parseCsvAndSaveIntoDatabase(filePath);
+                billService.parseCsvAndSaveIntoDatabase(filePath).block();
                 publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.TAGIHAN, true));
             } catch (Exception e) {
                 log.error("Error processing CSV file: {}", fileUrl, e);

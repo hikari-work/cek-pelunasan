@@ -93,7 +93,7 @@ public class HandlerPelunasan {
 	private Bills fetchBillData(String spkNumber) {
 		try {
 			log.info("Fetching bill data for SPK: {}", spkNumber);
-			return billService.getBillById(spkNumber);
+			return billService.getBillById(spkNumber).block();
 		} catch (Exception e) {
 			log.error("Error fetching bill data for SPK {}: {}", spkNumber, e.getMessage(), e);
 			return null;
@@ -156,38 +156,34 @@ public class HandlerPelunasan {
 			command.getFrom().contains(adminWhatsApp);
 	}
 	private void sendReactionAsync(WhatsAppWebhookDTO command) {
-		CompletableFuture.runAsync(() -> {
-			try {
-				whatsAppSenderService.sendReactionToMessage(
-					command.buildChatId(),
-					command.getPayload().getId()
-				);
-			} catch (Exception e) {
-				log.warn("Failed to send reaction: {}", e.getMessage());
-			}
-		});
+		whatsAppSenderService.sendReactionToMessage(
+			command.buildChatId(),
+			command.getPayload().getId()
+		).subscribe(
+			ok -> {},
+			e -> log.warn("Failed to send reaction: {}", e.getMessage())
+		);
 	}
 	private void updateMessageForAdmin(WhatsAppWebhookDTO command, String message) {
-		try {
-			whatsAppSenderService.updateMessage(
-				command.buildChatId(),
-				command.getPayload().getId(),
-				message
-			);
-			log.info("Message updated for admin user: {}", command.getCleanSenderId());
-		} catch (Exception e) {
-			log.error("Error updating message for admin: {}", e.getMessage(), e);
-			sendRegularMessage(command, message);
-		}
+		whatsAppSenderService.updateMessage(
+			command.buildChatId(),
+			command.getPayload().getId(),
+			message
+		).subscribe(
+			ok -> log.info("Message updated for admin user: {}", command.getCleanSenderId()),
+			e -> {
+				log.error("Error updating message for admin: {}", e.getMessage(), e);
+				sendRegularMessage(command, message);
+			}
+		);
 	}
 
 	private void sendRegularMessage(WhatsAppWebhookDTO command, String message) {
-		try {
-			whatsAppSenderService.sendWhatsAppText(command.buildChatId(), message);
-			log.info("Message sent to user: {}", command.getCleanSenderId());
-		} catch (Exception e) {
-			log.error("Error sending message: {}", e.getMessage(), e);
-		}
+		whatsAppSenderService.sendWhatsAppText(command.buildChatId(), message)
+			.subscribe(
+				ok -> log.info("Message sent to user: {}", command.getCleanSenderId()),
+				e -> log.error("Error sending message: {}", e.getMessage(), e)
+			);
 	}
 	private void sendErrorMessage(WhatsAppWebhookDTO command, String errorMessage) {
 		try {

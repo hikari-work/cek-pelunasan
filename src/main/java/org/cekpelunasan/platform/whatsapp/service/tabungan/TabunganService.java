@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Component
@@ -34,17 +33,19 @@ public class TabunganService {
 		if (!isValidTabunganCommand(command)) {
 			return CompletableFuture.completedFuture(null);
 		}
-		Optional<Savings> savings = savingsService.findById(command.getPayload().getBody().substring(".p ".length()));
-		savings.ifPresentOrElse(saving -> {
+		Savings saving = savingsService.findById(command.getPayload().getBody().substring(".p ".length())).block();
+		if (saving != null) {
 			if (command.getFrom().contains(adminWhatsApp)) {
 				String message = savingsUtils.getSavings(saving);
-				whatsAppSenderService.sendReactionToMessage(command.buildChatId(), command.getPayload().getId());
-				whatsAppSenderService.updateMessage(command.buildChatId(), command.getPayload().getId(), message);
+				whatsAppSenderService.sendReactionToMessage(command.buildChatId(), command.getPayload().getId()).subscribe();
+				whatsAppSenderService.updateMessage(command.buildChatId(), command.getPayload().getId(), message).subscribe();
 			} else {
-				whatsAppSenderService.sendReactionToMessage(command.buildChatId(), command.getPayload().getId());
-				whatsAppSenderService.sendWhatsAppText(command.buildChatId(), savingsUtils.getSavings(saving));
+				whatsAppSenderService.sendReactionToMessage(command.buildChatId(), command.getPayload().getId()).subscribe();
+				whatsAppSenderService.sendWhatsAppText(command.buildChatId(), savingsUtils.getSavings(saving)).subscribe();
 			}
-		}, () -> whatsAppSenderService.sendWhatsAppText(command.buildChatId(), "Data tidak ditemukan."));
+		} else {
+			whatsAppSenderService.sendWhatsAppText(command.buildChatId(), "Data tidak ditemukan.").subscribe();
+		}
 		return CompletableFuture.completedFuture(null);
 	}
 

@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.telegram.callback.AbstractCallbackHandler;
 import org.cekpelunasan.core.service.slik.GeneratePdfFiles;
 import org.cekpelunasan.configuration.S3ClientConfiguration;
-import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -91,7 +90,7 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
             }
 
             log.debug("Fetching KTP file from S3 - ID: {}", ktpId);
-            byte[] fileContent = s3Connector.getFile(buildFileName(ktpId));
+            byte[] fileContent = s3Connector.getFile(buildFileName(ktpId)).block();
 
             if (fileContent == null || fileContent.length == 0) {
                 log.warn("KTP file not found - ID: {}", ktpId);
@@ -118,30 +117,13 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
                 return;
             }
 
-            log.debug("Generating HTML content for KTP - ID: {}", ktpId);
-            String htmlContent = generatePdfFiles.generateHtmlContent(fileContent, isActiveFacility);
-
-            if (htmlContent == null || htmlContent.trim().isEmpty()) {
-                log.warn("Failed to generate HTML content - KTP ID: {}", ktpId);
-                telegramMessageService.editText(chatId, messageId,
-                    String.format(FILE_NOT_FOUND_MESSAGE, ktpId), client);
-                return;
-            }
-
-            log.debug("Parsing HTML and generating PDF - KTP ID: {}", ktpId);
-            Document document = generatePdfFiles.parsingHtmlContentAndManipulatePages(htmlContent);
-
-            if (document == null) {
-                log.warn("Failed to parse HTML document - KTP ID: {}", ktpId);
-                telegramMessageService.editText(chatId, messageId, ERROR_MESSAGE, client);
-                return;
-            }
-
-            byte[] pdfBytes = generatePdfFiles.generatePdfBytes(document);
+            log.debug("Generating PDF for KTP - ID: {}", ktpId);
+            byte[] pdfBytes = generatePdfFiles.generatePdf(fileContent, isActiveFacility).block();
 
             if (pdfBytes == null || pdfBytes.length == 0) {
-                log.warn("Failed to generate PDF bytes - KTP ID: {}", ktpId);
-                telegramMessageService.editText(chatId, messageId, ERROR_MESSAGE, client);
+                log.warn("Failed to generate PDF - KTP ID: {}", ktpId);
+                telegramMessageService.editText(chatId, messageId,
+                    String.format(FILE_NOT_FOUND_MESSAGE, ktpId), client);
                 return;
             }
 

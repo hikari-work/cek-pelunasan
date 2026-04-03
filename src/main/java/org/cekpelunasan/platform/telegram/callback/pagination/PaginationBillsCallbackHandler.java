@@ -41,7 +41,7 @@ public class PaginationBillsCallbackHandler extends AbstractCallbackHandler {
             long chatId = update.chatId;
             long messageId = update.messageId;
 
-            Page<Bills> bills = billService.findByNameAndBranch(query, branch, page, 5);
+            Page<Bills> bills = billService.findByNameAndBranch(query, branch, page, 5).block();
             if (bills.isEmpty()) {
                 sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
                 return;

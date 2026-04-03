@@ -43,7 +43,7 @@ public class SavingsSelectBranchCallbackHandler extends AbstractCallbackHandler 
             String query = data[2];
             long chatId = update.chatId;
             long messageId = update.messageId;
-            Page<Savings> savings = savingsService.findByNameAndBranch(query, branchName, 0);
+            Page<Savings> savings = savingsService.findByNameAndBranch(query, branchName, 0).block();
             if (savings.isEmpty()) {
                 log.info("Branch Tab is Not Found...");
                 sendMessage(chatId, "❌ *Data tidak ditemukan*", client);

@@ -44,7 +44,7 @@ public class InfoCifCommandHandler extends AbstractCommandHandler {
 	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
 			String cif = text.replace("/infocif ", "").trim();
-			List<Long> collectCounts = customerHistoryService.findCustomerIdAndReturnListOfCollectNumber(cif);
+			List<Long> collectCounts = customerHistoryService.findCustomerIdAndReturnListOfCollectNumber(cif).block();
 			sendMessage(chatId, formatCollectSummary(cif, collectCounts), client);
 		});
 	}

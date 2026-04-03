@@ -34,6 +34,6 @@ public class PreRun {
 				.userCode("ADMIN")
 				.roles(AccountOfficerRoles.ADMIN)
 				.build();
-		userRepository.save(user);
+		userRepository.save(user).block();
 	}
 }
