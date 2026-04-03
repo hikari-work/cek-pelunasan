@@ -19,14 +19,20 @@ public class WebClientConfiguration {
     @Value("${whatsapp.gateway.password}")
     private String password;
 
+    @Value("${whatsapp.device.id:}")
+    private String deviceId;
+
     @Bean
     public WebClient whatsappWebClient() {
         String credentials = Base64.getEncoder()
                 .encodeToString((username + ":" + password).getBytes());
-        return WebClient.builder()
+        WebClient.Builder builder = WebClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader("Authorization", "Basic " + credentials)
-                .defaultHeader("Content-Type", "application/json")
-                .build();
+                .defaultHeader("Content-Type", "application/json");
+        if (deviceId != null && !deviceId.isBlank()) {
+            builder.defaultHeader("X-Device-Id", deviceId);
+        }
+        return builder.build();
     }
 }
