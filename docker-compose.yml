@@ -1,48 +1,53 @@
-version: '3.8'
-
 services:
+  whatsapp:
+    image: aldinokemal2104/go-whatsapp-web-multidevice
+    container_name: whatsapp-gateway
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - whatsapp_storages:/app/storages
+    command:
+      - rest
+      - --basic-auth=${WHATSAPP_GATEWAY_USERNAME:-admin}:${WHATSAPP_GATEWAY_PASSWORD:-admin}
+      - --port=3000
+      - --webhook=${WHATSAPP_WEBHOOK:-}
+      - --webhook-secret=${WHATSAPP_WEBHOOK_SECRET:-secret}
+
   cek-pelunasan:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: cek-pelunasan-app
+    restart: unless-stopped
     ports:
       - "${PORT:-8080}:8080"
     env_file:
       - .env
     environment:
       - PORT=${PORT:-8080}
-      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod}
-
-
       - DATABASE_URL=${DATABASE_URL:-}
       - DATABASE_USERNAME=${DATABASE_USERNAME:-}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD:-}
-
-
+      - MAX_POOL=${MAX_POOL:-10}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_BOT_OWNER=${TELEGRAM_BOT_OWNER:-}
-
-
+      - WEBHOOK_MODE=${WEBHOOK_MODE:-false}
       - R2_ACCOUNT_ID=${R2_ACCOUNT_ID:-}
       - R2_ACCESS_KEY=${R2_ACCESS_KEY:-}
       - R2_SECRET_KEY=${R2_SECRET_KEY:-}
       - R2_ENDPOINT=${R2_ENDPOINT:-}
-      - R2_BUCKET=${R2_BUCKET:-}
-
-      - WHATSAPP_GATEWAY_URL=${WHATSAPP_GATEWAY_URL:-}
-      - WHATSAPP_GATEWAY_USERNAME=${WHATSAPP_GATEWAY_USERNAME:-}
-      - WHATSAPP_GATEWAY_PASSWORD=${WHATSAPP_GATEWAY_PASSWORD:-}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME:-}
+      - WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:3000
+      - WHATSAPP_GATEWAY_USERNAME=${WHATSAPP_GATEWAY_USERNAME:-admin}
+      - WHATSAPP_GATEWAY_PASSWORD=${WHATSAPP_GATEWAY_PASSWORD:-admin}
       - ADMIN_WHATSAPP=${ADMIN_WHATSAPP:-}
-
-      # Other
-      - WEBHOOK_MODE=${WEBHOOK_MODE:-}
-
-      # Google Cloud specific
-      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-}
-
     deploy:
       resources:
         limits:
           memory: 512M
-    restart: unless-stopped
+    depends_on:
+      - whatsapp
+
+volumes:
+  whatsapp_storages:
