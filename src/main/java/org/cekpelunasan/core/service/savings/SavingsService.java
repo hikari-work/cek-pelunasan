@@ -90,17 +90,26 @@ public class SavingsService {
 			.tabId(line[3])
 			.name(line[4])
 			.address(line[5])
-			.balance(parseBigDecimal(line[6]))
-			.transaction(parseBigDecimal(line[7]))
-			.accountOfficer(line[8])
-			.phone(line[9])
-			.minimumBalance(parseBigDecimal(line[10]))
-			.blockingBalance(parseBigDecimal(line[11]))
+			.balance(parseBigDecimal(get(line, 6)))
+			.transaction(parseBigDecimal(get(line, 7)))
+			.accountOfficer(get(line, 8))
+			.phone(get(line, 9))
+			.minimumBalance(parseBigDecimal(get(line, 10)))
+			.blockingBalance(parseBigDecimal(get(line, 11)))
 			.build();
 	}
 
+	private String get(String[] line, int index) {
+		return index < line.length ? line[index] : null;
+	}
+
 	private BigDecimal parseBigDecimal(String value) {
-		return BigDecimal.valueOf(Long.parseLong(value));
+		if (value == null || value.isBlank()) return BigDecimal.ZERO;
+		try {
+			return BigDecimal.valueOf(Long.parseLong(value.trim()));
+		} catch (NumberFormatException e) {
+			return BigDecimal.ZERO;
+		}
 	}
 
 	public Mono<Set<String>> listAllBranch(String name) {
