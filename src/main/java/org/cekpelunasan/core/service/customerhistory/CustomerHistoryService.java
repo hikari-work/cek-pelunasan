@@ -47,8 +47,8 @@ public class CustomerHistoryService {
 			org.bson.Document.class
 		).collectList()
 			.map(results -> {
-				if (results == null || results.isEmpty()) return List.<Long>of();
-				org.bson.Document doc = results.get(0);
+				if (results == null || results.isEmpty()) return List.of();
+				org.bson.Document doc = results.getFirst();
 				List<Long> counts = new ArrayList<>();
 				for (String key : List.of("count01", "count02", "count03", "count04", "count05")) {
 					Object val = doc.get(key);
