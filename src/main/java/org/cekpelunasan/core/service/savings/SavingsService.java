@@ -57,10 +57,20 @@ public class SavingsService {
 		return savingsRepository.deleteAll()
 			.then(Flux.<String[]>create(sink -> {
 					try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
+						String[] header = reader.readNext(); // skip header row
+						if (header == null) { sink.complete(); return; }
+						log.info("CSV header: {} kolom", header.length);
+						long[] counts = {0, 0}; // [read, skipped]
 						String[] line;
 						while ((line = reader.readNext()) != null) {
+							counts[0]++;
+							if (line.length < 6) {
+								counts[1]++;
+								continue;
+							}
 							sink.next(line);
 						}
+						log.info("CSV dibaca: {} baris, dilewati (kolom kurang): {}", counts[0], counts[1]);
 						sink.complete();
 					} catch (Exception e) {
 						log.error("Error parsing CSV file: {}", e.getMessage(), e);
@@ -75,7 +85,9 @@ public class SavingsService {
 					Runtime.getRuntime().availableProcessors())
 				.then())
 			.doFinally(signal -> System.gc())
-			.doOnSuccess(v -> log.info("CSV savings selesai disimpan."));
+			.then(savingsRepository.count()
+				.doOnNext(total -> log.info("Total savings tersimpan di DB: {}", total))
+				.then());
 	}
 
 	public Mono<Void> deleteAll() {
