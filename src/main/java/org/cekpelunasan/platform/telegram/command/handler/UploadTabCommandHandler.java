@@ -54,12 +54,15 @@ public class UploadTabCommandHandler extends AbstractCommandHandler {
 				return;
 			}
 			try {
+				sendMessage(chatId, "⏳ Sedang memproses file CSV...", client);
 				Path filePath = CsvDownloadUtils.downloadCsv(fileUrl);
 				savingsService.parseCsvAndSaveIntoDatabase(filePath).block();
 				publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.SAVING, true));
+				sendMessage(chatId, "✅ Data tabungan berhasil diperbarui", client);
 			} catch (Exception e) {
 				log.error("Gagal memproses file dari URL: {}", fileUrl, e);
 				publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.SAVING, false));
+				sendMessage(chatId, "❌ Gagal memproses file: " + e.getMessage(), client);
 			}
 		});
 	}

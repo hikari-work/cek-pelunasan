@@ -1,6 +1,8 @@
 package org.cekpelunasan.configuration;
 
 import it.tdlight.Init;
+import it.tdlight.Log;
+import it.tdlight.Slf4JLogMessageHandler;
 import it.tdlight.client.APIToken;
 import it.tdlight.client.SimpleTelegramClientFactory;
 import it.tdlight.client.TDLibSettings;
@@ -52,6 +54,7 @@ public class TDLightConfiguration {
     public TDLibSettings tdLibSettings() throws Exception {
         log.info("Initializing TDLight natives...");
         Init.init();
+        Log.setLogMessageHandler(1, new Slf4JLogMessageHandler());
         log.info("TDLight natives loaded successfully.");
 
         APIToken apiToken = new APIToken(apiId, apiHash);

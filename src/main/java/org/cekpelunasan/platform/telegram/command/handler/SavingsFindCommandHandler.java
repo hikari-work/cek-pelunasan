@@ -3,6 +3,7 @@ import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.annotation.RequireAuth;
 import org.cekpelunasan.core.entity.AccountOfficerRoles;
 import org.cekpelunasan.core.entity.Savings;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class SavingsFindCommandHandler extends AbstractCommandHandler {
@@ -51,30 +53,35 @@ public class SavingsFindCommandHandler extends AbstractCommandHandler {
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return CompletableFuture.runAsync(() -> {
-			String name = text.replace("/tab ", "").trim();
-			if (name.isEmpty() || name.equals("/tab")) {
-				sendMessage(chatId, "Nama Harus Diisi", client);
-				return;
-			}
-			String userBranch = userService.findUserBranch(chatId).block();
-			if (userBranch == null) {
-				Set<String> branches = savingsService.listAllBranch(name).block();
-				if (branches.isEmpty()) {
+			try {
+				String name = text.replace("/tab ", "").trim();
+				if (name.isEmpty() || name.equals("/tab")) {
+					sendMessage(chatId, "Nama Harus Diisi", client);
+					return;
+				}
+				String userBranch = userService.findUserBranch(chatId).block();
+				if (userBranch == null) {
+					Set<String> branches = savingsService.listAllBranch(name).block();
+					if (branches == null || branches.isEmpty()) {
+						sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
+						return;
+					}
+					sendMessage(chatId, "Data ditemukan dalam beberapa cabang, pilih cabang:", selectSavingsBranch.dynamicSelectBranch(branches, name), client);
+					return;
+				}
+				Page<Savings> byNameAndBranch = savingsService.findByNameAndBranch(name, userBranch, 0).block();
+				if (byNameAndBranch == null || byNameAndBranch.isEmpty()) {
 					sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
 					return;
 				}
-				sendMessage(chatId, "Data ditemukan dalam beberapa cabang", selectSavingsBranch.dynamicSelectBranch(branches, name), client);
-				return;
+				sendMessage(chatId,
+					savingsUtils.buildMessage(byNameAndBranch, 0, System.currentTimeMillis()),
+					paginationSavingsButton.keyboardMarkup(byNameAndBranch, userBranch, 0, name),
+					client);
+			} catch (Exception e) {
+				log.error("Error /tab chatId={} text='{}': {}", chatId, text, e.getMessage(), e);
+				sendMessage(chatId, "❌ Terjadi kesalahan, coba lagi", client);
 			}
-			Page<Savings> byNameAndBranch = savingsService.findByNameAndBranch(name, userBranch, 0).block();
-			if (byNameAndBranch.isEmpty()) {
-				sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
-				return;
-			}
-			sendMessage(chatId,
-				"Data ditemukan dalam beberapa cabang\n" + savingsUtils.buildMessage(byNameAndBranch, 0, System.currentTimeMillis()),
-				paginationSavingsButton.keyboardMarkup(byNameAndBranch, userBranch, 0, name),
-				client);
 		});
 	}
 }
