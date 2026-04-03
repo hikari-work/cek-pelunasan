@@ -39,7 +39,8 @@ public class UserService {
 
 	@SuppressWarnings("null")
 	public Mono<String> findUserBranch(@NonNull Long chatId) {
-		return userRepository.findById(chatId).map(User::getBranch);
+		return userRepository.findById(chatId)
+			.flatMap(user -> Mono.justOrEmpty(user.getBranch()));
 	}
 
 	@SuppressWarnings("null")
