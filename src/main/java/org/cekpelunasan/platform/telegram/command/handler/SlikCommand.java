@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.annotation.RequireAuth;
 import org.cekpelunasan.core.entity.AccountOfficerRoles;
+import org.cekpelunasan.core.entity.User;
 import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.core.service.slik.PDFReader;
 import org.cekpelunasan.core.service.slik.SlikNameFormatter;
@@ -99,32 +100,44 @@ public class SlikCommand extends AbstractCommandHandler {
 				log.warn("User not found for chatId: {}", chatId);
 				telegramMessageService.sendText(chatId, ERROR_SLIK_NOT_REQUESTED, client);
 			}))
-			.flatMap(user -> {
-				String searchKey = user.getUserCode() + "_" + query.trim();
-				return s3Connector.listObjectFoundByName(searchKey)
-					.take(maxResults)
-					.flatMap(this::extractPageData, 10)
-					.filter(p -> p.idNumber() != null || p.dto() != null)
-					.collectList();
-			})
-			.flatMap(pages -> {
-				if (pages.isEmpty()) {
-					telegramMessageService.sendText(chatId, buildNoResultsMessage(query), client);
-					return Mono.empty();
-				}
-				slikSessionCache.put(chatId, new SlikSessionCache.SlikSession(pages, query));
-				String message = slikNameFormatter.format(pages.getFirst(), 0, pages.size());
-				TdApi.ReplyMarkupInlineKeyboard keyboard = paginationButton.build(0, pages.size());
-				telegramMessageService.sendKeyboard(chatId, keyboard, client, message);
-				log.info("Name search done — query: {}, total: {}", query, pages.size());
-				return Mono.empty();
-			})
+			.flatMap(user -> buildSearchFlux(user, query, chatId, client))
 			.onErrorResume(e -> {
 				log.error("Error in name search — query: {}, chatId: {}", query, chatId, e);
 				telegramMessageService.sendText(chatId, ERROR_PROCESSING, client);
 				return Mono.<Void>empty();
 			})
 			.then();
+	}
+
+	private Mono<Void> buildSearchFlux(User user, String query, long chatId, SimpleTelegramClient client) {
+		boolean isAdmin = AccountOfficerRoles.ADMIN == user.getRoles();
+
+		if (!isAdmin && (user.getUserCode() == null || user.getUserCode().isBlank())) {
+			telegramMessageService.sendText(chatId, ERROR_SLIK_NOT_REQUESTED, client);
+			return Mono.empty();
+		}
+
+		String prefix     = isAdmin ? "" : user.getUserCode() + "_";
+		String queryLower = query.trim().toLowerCase();
+
+		return s3Connector.listObjectFoundByName(prefix)
+			.filter(key -> !key.startsWith("KTP_") && key.toLowerCase().contains(queryLower))
+			.take(maxResults)
+			.flatMap(this::extractPageData, 10)
+			.filter(p -> p.idNumber() != null || p.dto() != null)
+			.collectList()
+			.flatMap(pages -> {
+				if (pages.isEmpty()) {
+					telegramMessageService.sendText(chatId, buildNoResultsMessage(query), client);
+					return Mono.empty();
+				}
+				slikSessionCache.put(chatId, new SlikSessionCache.SlikSession(pages, query));
+				TdApi.FormattedText message  = slikNameFormatter.format(pages.getFirst(), 0, pages.size());
+				TdApi.ReplyMarkupInlineKeyboard keyboard = paginationButton.build(0, pages.size());
+				telegramMessageService.sendKeyboardFormatted(chatId, keyboard, client, message);
+				log.info("Name search done — query: {}, total: {}, admin: {}", query, pages.size(), isAdmin);
+				return Mono.<Void>empty();
+			});
 	}
 
 	private Mono<SlikSessionCache.SlikPageData> extractPageData(String contentKey) {

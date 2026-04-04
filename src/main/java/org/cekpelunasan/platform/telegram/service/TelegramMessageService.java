@@ -162,6 +162,49 @@ public class TelegramMessageService {
         return sendTextWithKeyboard(chatId, text, keyboard, client);
     }
 
+    public long sendKeyboardFormatted(long chatId, TdApi.ReplyMarkupInlineKeyboard keyboard, SimpleTelegramClient client, TdApi.FormattedText formattedText) {
+        try {
+            CompletableFuture<Long> future = new CompletableFuture<>();
+            TdApi.SendMessage msg = new TdApi.SendMessage();
+            msg.chatId = chatId;
+            msg.replyMarkup = keyboard;
+            TdApi.InputMessageText content = new TdApi.InputMessageText();
+            content.text = formattedText;
+            msg.inputMessageContent = content;
+            client.send(msg, result -> {
+                if (result.isError()) {
+                    log.error("Failed to send formatted keyboard to {}: {}", chatId, result.getError().message);
+                    future.complete(0L);
+                } else {
+                    future.complete(result.get().id);
+                }
+            });
+            return future.get(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Failed to send formatted keyboard to {}", chatId, e);
+            return 0L;
+        }
+    }
+
+    public void editMessageWithFormattedMarkup(long chatId, long messageId, TdApi.FormattedText formattedText, TdApi.ReplyMarkupInlineKeyboard markup, SimpleTelegramClient client) {
+        try {
+            TdApi.EditMessageText edit = new TdApi.EditMessageText();
+            edit.chatId = chatId;
+            edit.messageId = messageId;
+            edit.replyMarkup = markup;
+            TdApi.InputMessageText content = new TdApi.InputMessageText();
+            content.text = formattedText;
+            edit.inputMessageContent = content;
+            client.send(edit, result -> {
+                if (result.isError()) {
+                    log.error("Failed to edit formatted message {} in chat {}: {}", messageId, chatId, result.getError().message);
+                }
+            });
+        } catch (Exception e) {
+            log.error("Failed to edit formatted message {} in chat {}", messageId, chatId, e);
+        }
+    }
+
     public TdApi.FormattedText parseMarkdown(String text, SimpleTelegramClient client) {
         try {
             CompletableFuture<TdApi.FormattedText> future = new CompletableFuture<>();

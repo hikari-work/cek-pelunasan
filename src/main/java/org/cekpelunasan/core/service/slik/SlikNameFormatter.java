@@ -1,6 +1,7 @@
 package org.cekpelunasan.core.service.slik;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.tdlight.jni.TdApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.core.service.slik.dto.SlikJsonDto;
@@ -13,16 +14,15 @@ import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SlikNameFormatter {
 
-    private static final int MAX_TELEGRAM_CHARS = 4000;
+    /** Sisakan untuk footer (/slik id + halaman). */
+    private static final int MAX_CONTENT_CHARS = 3800;
 
     private static final DateTimeFormatter DATETIME_IN  = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static final DateTimeFormatter DATE_IN      = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -30,6 +30,10 @@ public class SlikNameFormatter {
     private static final DateTimeFormatter DATE_OUT     = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final ObjectMapper objectMapper;
+
+    // ─────────────────────────────────────────────
+    // Parse
+    // ─────────────────────────────────────────────
 
     public Mono<SlikJsonDto> parse(byte[] jsonBytes) {
         return Mono.fromCallable(() -> {
@@ -46,194 +50,211 @@ public class SlikNameFormatter {
             .onErrorResume(e -> Mono.empty());
     }
 
-    public String format(SlikSessionCache.SlikPageData data, int current, int total) {
-        String message = data.dto() == null
+    // ─────────────────────────────────────────────
+    // Format → TdApi.FormattedText
+    // ─────────────────────────────────────────────
+
+    public TdApi.FormattedText format(SlikSessionCache.SlikPageData data, int current, int total) {
+        return data.dto() == null
             ? formatNoData(data, current, total)
             : formatFull(data, current, total);
-        return truncate(message);
     }
 
-    private String formatFull(SlikSessionCache.SlikPageData data, int current, int total) {
-        SlikJsonDto dto      = data.dto();
+    private TdApi.FormattedText formatFull(SlikSessionCache.SlikPageData data, int current, int total) {
+        SlikJsonDto dto = data.dto();
         SlikJsonDto.Individual ind = dto.individual();
-        SlikJsonDto.Header hdr     = dto.header();
+        SlikJsonDto.Header hdr = dto.header();
 
-        String namaDebitur = "";
-        if (ind.dataPokokDebitur() != null && !ind.dataPokokDebitur().isEmpty()) {
-            namaDebitur = ind.dataPokokDebitur().getFirst().namaDebitur();
-        }
+        String namaDebitur = ind.dataPokokDebitur() != null && !ind.dataPokokDebitur().isEmpty()
+            ? ind.dataPokokDebitur().getFirst().namaDebitur() : "";
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("📊 *HASIL SLIK — %s*\n", orDash(namaDebitur)));
-        sb.append("━━━━━━━━━━━━━━━━━━━━━\n");
+        MessageBuilder mb = new MessageBuilder();
 
+        // ── Header ──────────────────────────────
+        mb.bold("📊 HASIL SLIK — " + orDash(namaDebitur)); mb.append("\n");
+        mb.append("━━━━━━━━━━━━━━━━━━━━��\n");
         if (hdr != null) {
-            sb.append(String.format("📋 Ref: `%s`\n", orDash(hdr.kodeReferensiPengguna())));
-            sb.append(String.format("📅 Tanggal: %s\n", formatDateTime(hdr.tanggalPermintaan())));
+            mb.append("📋 Ref: "); mb.code(orDash(hdr.kodeReferensiPengguna())); mb.append("\n");
+            mb.append("📅 Tanggal: " + formatDateTime(hdr.tanggalPermintaan()) + "\n");
         }
 
+        // ── Debitur ─────────────────────────────
         if (ind.dataPokokDebitur() != null && !ind.dataPokokDebitur().isEmpty()) {
             SlikJsonDto.DataPokokDebitur deb = ind.dataPokokDebitur().getFirst();
-            sb.append("\n👤 *DATA DEBITUR*\n");
-            sb.append("┌─────────────────────\n");
-            sb.append(String.format("│ 🪪 KTP: `%s`\n", orDash(deb.noIdentitas())));
-            sb.append(String.format("│ 📍 Alamat: %s\n", orDash(deb.alamat())));
+            mb.append("\n👤 "); mb.bold("DATA DEBITUR\n");
+            mb.append("🪪 KTP: "); mb.code(orDash(deb.noIdentitas())); mb.append("\n");
+            mb.append("📍 Alamat: " + orDash(deb.alamat()) + "\n");
             if (isNotBlank(deb.tempatLahir()) || isNotBlank(deb.tanggalLahir())) {
-                sb.append(String.format("│ 🎂 Lahir: %s, %s\n",
-                    orDash(deb.tempatLahir()), formatDate(deb.tanggalLahir())));
+                mb.append("🎂 Lahir: " + orDash(deb.tempatLahir()) + ", " + formatDate(deb.tanggalLahir()) + "\n");
             }
-            sb.append(String.format("│ 💼 Pekerjaan: %s\n", orDash(deb.pekerjaanKet())));
-            sb.append("└─────────────────────\n");
+            mb.append("💼 Pekerjaan: " + orDash(deb.pekerjaanKet()) + "\n");
         }
 
+        // ── Ringkasan ────────────────────────────
         if (ind.ringkasanFasilitas() != null) {
             SlikJsonDto.RingkasanFasilitas rf = ind.ringkasanFasilitas();
-            sb.append("\n📈 *RINGKASAN FASILITAS*\n");
-            sb.append("┌─────────────────────\n");
-            sb.append(String.format("│ Kol. Terburuk : *%s*\n", orDash(rf.kualitasTerburuk())));
-            sb.append(String.format("│ Bulan Data    : %s\n", formatYearMonth(rf.kualitasBulanDataTerburuk())));
-            sb.append(String.format("│ Plafon Total  : %s\n", formatRupiah(rf.plafonEfektifTotal())));
-            sb.append(String.format("│ Baki Debet    : %s\n", formatRupiah(rf.bakiDebetTotal())));
-            sb.append("└─────────────────────\n");
+            mb.append("\n📈 "); mb.bold("RINGKASAN FASILITAS\n");
+            mb.append("Kol. Terburuk : "); mb.bold(orDash(rf.kualitasTerburuk())); mb.append("\n");
+            mb.append("Bulan Data    : " + formatYearMonth(rf.kualitasBulanDataTerburuk()) + "\n");
+            mb.append("Plafon Total  : " + formatRupiah(rf.plafonEfektifTotal()) + "\n");
+            mb.append("Baki Debet    : " + formatRupiah(rf.bakiDebetTotal()) + "\n");
         }
 
+        // ── Fasilitas (expandable blockquote per item) ──
         if (ind.fasilitas() != null && ind.fasilitas().kreditPembiayan() != null) {
             List<SlikJsonDto.KreditPembiayaan> list = ind.fasilitas().kreditPembiayan();
-            sb.append(String.format("\n💳 *FASILITAS KREDIT (%d)*\n", list.size()));
-            for (int i = 0; i < list.size(); i++) {
-                SlikJsonDto.KreditPembiayaan k = list.get(i);
-                sb.append(i == 0 ? "┌─────────────────────\n" : "├─────────────────────\n");
-                sb.append(String.format("│ *%d. %s*\n", i + 1, orDash(k.getLjkKet())));
-                if (isNotBlank(k.getCabangKet())) {
-                    sb.append(String.format("│    Cabang    : %s\n", k.getCabangKet()));
-                }
-                sb.append(String.format("│    Plafon    : %s\n", formatRupiah(k.getPlafonAwal())));
-                sb.append(String.format("│    Baki Debet: %s\n", formatRupiah(k.getBakiDebet())));
-                sb.append(String.format("│    Kondisi   : %s  |  Kol: %s\n",
-                    orDash(k.getKondisiKet()), orDash(k.getKualitasKet())));
-                if (isNotBlank(k.getJenisPenggunaanKet())) {
-                    sb.append(String.format("│    Penggunaan: %s\n", k.getJenisPenggunaanKet()));
-                }
-                if (isNotBlank(k.getTanggalAkadAwal()) || isNotBlank(k.getTanggalJatuhTempo())) {
-                    sb.append(String.format("│    Jangka    : %s → %s\n",
-                        formatDate(k.getTanggalAkadAwal()), formatDate(k.getTanggalJatuhTempo())));
-                }
+            mb.append("\n💳 "); mb.bold("FASILITAS KREDIT (" + list.size() + ")\n");
 
-                // Kolektibilitas terburuk & hari tunggakan max dari riwayat 24 bulan
-                String worstKol = findWorstKol(k.getTahunBulan());
-                String maxHt    = findMaxHt(k.getTahunBulan());
-                if (isNotBlank(worstKol)) {
-                    sb.append(String.format("│    Kol Terburuk (24bln): *%s*\n", worstKol));
+            int shown = 0;
+            for (SlikJsonDto.KreditPembiayaan k : list) {
+                String fasText = buildFasilitasText(shown + 1, k);
+                // Cek apakah masih muat sebelum footer (~200 chars)
+                if (mb.length() + fasText.length() + 200 > MAX_CONTENT_CHARS) {
+                    int remaining = list.size() - shown;
+                    mb.italic("_(+" + remaining + " fasilitas lainnya — gunakan /slik {ktp} untuk detail)_\n");
+                    break;
                 }
-                if (isNotBlank(maxHt) && !"0".equals(maxHt)) {
-                    sb.append(String.format("│    Max Hari Tunggakan  : %s hari\n", maxHt));
-                }
+                int start = mb.markStart();
+                mb.append(fasText);
+                mb.endExpandableBlockquote(start);
+                mb.append("\n");
+                shown++;
             }
-            sb.append("└─────────────────────\n");
         }
 
+        // ── Footer (selalu ada, bahkan jika pesan dipotong) ──
         if (isNotBlank(data.idNumber())) {
-            sb.append(String.format("\n🎯 `/slik %s`\n", data.idNumber()));
+            mb.append("\n🎯 "); mb.code("/slik " + data.idNumber()); mb.append("\n");
         }
+        mb.italic("📄 Halaman " + (current + 1) + " dari " + total);
 
-        sb.append(String.format("\n📄 _Halaman %d dari %d_", current + 1, total));
+        return mb.build();
+    }
+
+    private String buildFasilitasText(int index, SlikJsonDto.KreditPembiayaan k) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(index).append(". ").append(orDash(k.getLjkKet())).append("\n");
+        if (isNotBlank(k.getCabangKet())) sb.append("Cabang    : ").append(k.getCabangKet()).append("\n");
+        sb.append("Plafon    : ").append(formatRupiah(k.getPlafonAwal())).append(" | Baki: ").append(formatRupiah(k.getBakiDebet())).append("\n");
+        sb.append("Kondisi   : ").append(orDash(k.getKondisiKet())).append(" | Kol: ").append(orDash(k.getKualitasKet())).append("\n");
+        if (isNotBlank(k.getJenisPenggunaanKet())) sb.append("Penggunaan: ").append(k.getJenisPenggunaanKet()).append("\n");
+        if (isNotBlank(k.getTanggalAkadAwal()) || isNotBlank(k.getTanggalJatuhTempo())) {
+            sb.append("Jangka    : ").append(formatDate(k.getTanggalAkadAwal()))
+              .append(" → ").append(formatDate(k.getTanggalJatuhTempo())).append("\n");
+        }
+        String worstKol = findWorstKol(k.getTahunBulan());
+        String maxHt    = findMaxHt(k.getTahunBulan());
+        if (isNotBlank(worstKol)) sb.append("Kol Terburuk 24bln: ").append(worstKol).append("\n");
+        if (isNotBlank(maxHt) && !"0".equals(maxHt)) sb.append("Max Hari Tunggakan: ").append(maxHt).append(" hari\n");
         return sb.toString();
     }
 
-    private String formatNoData(SlikSessionCache.SlikPageData data, int current, int total) {
-        return String.format("""
-            📄 *DOKUMEN #%d*
-            ━━━━━━━━━━━━━━━━━━━━━
-            📂 File: `%s`
-            🪪 No KTP: %s
-            ℹ️ _Data SLIK tidak tersedia_
-
-            📄 _Halaman %d dari %d_""",
-            current + 1,
-            data.contentKey(),
-            isNotBlank(data.idNumber()) ? "`" + data.idNumber() + "`" : "_Tidak ditemukan_",
-            current + 1, total);
+    private TdApi.FormattedText formatNoData(SlikSessionCache.SlikPageData data, int current, int total) {
+        MessageBuilder mb = new MessageBuilder();
+        mb.bold("📄 DOKUMEN #" + (current + 1)); mb.append("\n");
+        mb.append("━━━━━━━━━━━━━━━━━━━━━\n");
+        mb.append("📂 File: "); mb.code(data.contentKey()); mb.append("\n");
+        mb.append("🪪 No KTP: ");
+        if (isNotBlank(data.idNumber())) mb.code(data.idNumber()); else mb.italic("Tidak ditemukan");
+        mb.append("\n"); mb.italic("Data SLIK tidak tersedia\n");
+        mb.append("\n"); mb.italic("📄 Halaman " + (current + 1) + " dari " + total);
+        return mb.build();
     }
 
-    /**
-     * Cari kolektibilitas terburuk (nilai tertinggi) dari riwayat 24 bulan.
-     * Key format: tahunBulan{n}Kol
-     */
+    // ─────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────
+
     private String findWorstKol(Map<String, String> tahunBulan) {
         return tahunBulan.entrySet().stream()
             .filter(e -> e.getKey().endsWith("Kol") && isNotBlank(e.getValue()))
             .map(Map.Entry::getValue)
-            .max(Comparator.comparingInt(s -> {
-                try { return Integer.parseInt(s.trim()); } catch (Exception ex) { return 0; }
-            }))
+            .max(Comparator.comparingInt(s -> { try { return Integer.parseInt(s.trim()); } catch (Exception ex) { return 0; } }))
             .orElse(null);
     }
 
-    /**
-     * Cari hari tunggakan tertinggi dari riwayat 24 bulan.
-     * Key format: tahunBulan{n}Ht
-     */
     private String findMaxHt(Map<String, String> tahunBulan) {
         return tahunBulan.entrySet().stream()
             .filter(e -> e.getKey().endsWith("Ht") && isNotBlank(e.getValue()))
             .map(Map.Entry::getValue)
-            .max(Comparator.comparingInt(s -> {
-                try { return Integer.parseInt(s.trim()); } catch (Exception ex) { return 0; }
-            }))
+            .max(Comparator.comparingInt(s -> { try { return Integer.parseInt(s.trim()); } catch (Exception ex) { return 0; } }))
             .orElse(null);
-    }
-
-    private String truncate(String message) {
-        if (message.length() <= MAX_TELEGRAM_CHARS) return message;
-        String suffix = "\n\n⚠️ _Pesan dipotong karena melebihi batas karakter Telegram_";
-        return message.substring(0, MAX_TELEGRAM_CHARS - suffix.length()) + suffix;
     }
 
     private String formatDateTime(String raw) {
         if (!isNotBlank(raw) || raw.length() < 14) return orDash(raw);
-        try {
-            return LocalDateTime.parse(raw, DATETIME_IN).format(DATETIME_OUT);
-        } catch (Exception e) {
-            return raw;
-        }
+        try { return LocalDateTime.parse(raw, DATETIME_IN).format(DATETIME_OUT); } catch (Exception e) { return raw; }
     }
 
     private String formatDate(String raw) {
         if (!isNotBlank(raw) || raw.length() < 8) return orDash(raw);
-        try {
-            return LocalDate.parse(raw.substring(0, 8), DATE_IN).format(DATE_OUT);
-        } catch (Exception e) {
-            return raw;
-        }
+        try { return LocalDate.parse(raw.substring(0, 8), DATE_IN).format(DATE_OUT); } catch (Exception e) { return raw; }
     }
 
     private String formatYearMonth(String raw) {
         if (!isNotBlank(raw) || raw.length() < 6) return orDash(raw);
-        try {
-            return raw.substring(4, 6) + "/" + raw.substring(0, 4);
-        } catch (Exception e) {
-            return raw;
-        }
+        try { return raw.substring(4, 6) + "/" + raw.substring(0, 4); } catch (Exception e) { return raw; }
     }
 
     private String formatRupiah(String raw) {
         if (!isNotBlank(raw)) return "Rp0";
         try {
-            long value = Long.parseLong(raw.trim());
+            long v = Long.parseLong(raw.trim());
             DecimalFormatSymbols sym = new DecimalFormatSymbols();
             sym.setGroupingSeparator('.');
             sym.setDecimalSeparator(',');
-            return new DecimalFormat("Rp#,##0", sym).format(value);
-        } catch (NumberFormatException e) {
-            return raw;
+            return new DecimalFormat("Rp#,##0", sym).format(v);
+        } catch (NumberFormatException e) { return raw; }
+    }
+
+    private String orDash(String s) { return isNotBlank(s) ? s : "-"; }
+
+    private boolean isNotBlank(String s) { return s != null && !s.isBlank(); }
+
+    // ─────────────────────────────────────────────
+    // MessageBuilder — builds FormattedText with entities
+    // Offset dihitung dalam UTF-16 code units (sesuai TDLib).
+    // Java String.length() sudah mengembalikan jumlah char UTF-16.
+    // ─────────────────────────────────────────────
+
+    private static class MessageBuilder {
+        private final StringBuilder sb = new StringBuilder();
+        private final List<TdApi.TextEntity> entities = new ArrayList<>();
+
+        MessageBuilder append(String s) { if (s != null) sb.append(s); return this; }
+
+        MessageBuilder bold(String s) { return entity(s, new TdApi.TextEntityTypeBold()); }
+        MessageBuilder code(String s) { return entity(s, new TdApi.TextEntityTypeCode()); }
+        MessageBuilder italic(String s) { return entity(s, new TdApi.TextEntityTypeItalic()); }
+
+        int markStart() { return sb.length(); }
+
+        void endExpandableBlockquote(int start) {
+            int len = sb.length() - start;
+            if (len > 0) addEntity(start, len, new TdApi.TextEntityTypeExpandableBlockQuote());
         }
-    }
 
-    private String orDash(String s) {
-        return isNotBlank(s) ? s : "-";
-    }
+        int length() { return sb.length(); }
 
-    private boolean isNotBlank(String s) {
-        return s != null && !s.isBlank();
+        TdApi.FormattedText build() {
+            return new TdApi.FormattedText(sb.toString(), entities.toArray(new TdApi.TextEntity[0]));
+        }
+
+        private MessageBuilder entity(String s, TdApi.TextEntityType type) {
+            if (s == null || s.isEmpty()) return this;
+            int start = sb.length();
+            sb.append(s);
+            addEntity(start, s.length(), type);
+            return this;
+        }
+
+        private void addEntity(int offset, int length, TdApi.TextEntityType type) {
+            if (length <= 0) return;
+            TdApi.TextEntity e = new TdApi.TextEntity();
+            e.offset = offset;
+            e.length = length;
+            e.type = type;
+            entities.add(e);
+        }
     }
 }

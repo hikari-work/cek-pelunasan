@@ -2,6 +2,7 @@ package org.cekpelunasan.platform.telegram.callback.handler;
 
 import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
+import it.tdlight.jni.TdApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.core.service.slik.SlikNameFormatter;
@@ -58,9 +59,9 @@ public class SlikNamePaginationCallbackHandler extends AbstractCallbackHandler {
                 return;
             }
 
-            String message = formatter.format(pages.get(page), page, pages.size());
+            TdApi.FormattedText message = formatter.format(pages.get(page), page, pages.size());
             TdApi.ReplyMarkupInlineKeyboard keyboard = paginationButton.build(page, pages.size());
-            editMessageWithMarkup(chatId, update.messageId, message, client, keyboard);
+            telegramMessageService.editMessageWithFormattedMarkup(chatId, update.messageId, message, keyboard, client);
 
             log.info("SLIK name pagination — chat: {}, page: {}/{}", chatId, page + 1, pages.size());
         });
