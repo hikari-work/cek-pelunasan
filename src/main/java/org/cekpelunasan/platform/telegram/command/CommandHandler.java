@@ -36,7 +36,7 @@ public class CommandHandler {
                 processor = processorMap.get("/id");
             }
             if (processor != null) {
-                processor.process(update, client);
+                processor.process(update, client).subscribe();
             }
         } catch (Exception e) {
             log.error("ERROR in handle: ", e);

@@ -1,7 +1,7 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+
 import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.annotation.RequireAuth;
@@ -13,11 +13,7 @@ import org.cekpelunasan.core.service.savings.SavingsService;
 import org.cekpelunasan.utils.CsvDownloadUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
-
-
-
-import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
@@ -41,29 +37,28 @@ public class UploadTabCommandHandler extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
-	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+	public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		return super.process(update, client);
 	}
 
 	@Override
-	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
-		return CompletableFuture.runAsync(() -> {
-			String fileUrl = CsvDownloadUtils.extractUrl(text);
-			if (fileUrl == null) {
-				sendMessage(chatId, ERROR_FORMAT, client);
-				return;
-			}
-			try {
-				sendMessage(chatId, "⏳ Sedang memproses file CSV...", client);
-				Path filePath = CsvDownloadUtils.downloadCsv(fileUrl);
-				savingsService.parseCsvAndSaveIntoDatabase(filePath).block();
+	public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
+		String fileUrl = CsvDownloadUtils.extractUrl(text);
+		if (fileUrl == null) {
+			return Mono.fromRunnable(() -> sendMessage(chatId, ERROR_FORMAT, client));
+		}
+		sendMessage(chatId, "⏳ Sedang memproses file CSV...", client);
+		return Mono.fromCallable(() -> CsvDownloadUtils.downloadCsv(fileUrl))
+			.flatMap(filePath -> savingsService.parseCsvAndSaveIntoDatabase(filePath))
+			.doOnSuccess(v -> {
 				publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.SAVING, true));
 				sendMessage(chatId, "✅ Data tabungan berhasil diperbarui", client);
-			} catch (Exception e) {
+			})
+			.onErrorResume(e -> {
 				log.error("Gagal memproses file dari URL: {}", fileUrl, e);
 				publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.SAVING, false));
-				sendMessage(chatId, "❌ Gagal memproses file: " + e.getMessage(), client);
-			}
-		});
+				return Mono.fromRunnable(() -> sendMessage(chatId, "❌ Gagal memproses file: " + e.getMessage(), client));
+			})
+			.then();
 	}
 }

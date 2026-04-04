@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.io.FileReader;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +47,7 @@ public class CreditHistoryService {
 				.map(String::trim)
 				.filter(word -> !word.isEmpty())
 				.map(word -> Criteria.where("address").regex(word, "i"))
-				.collect(Collectors.toList());
+				.toList();
 
 			Criteria addressCriteria = addressPredicates.isEmpty()
 				? new Criteria()

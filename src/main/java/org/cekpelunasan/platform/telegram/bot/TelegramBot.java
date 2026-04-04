@@ -3,10 +3,12 @@ package org.cekpelunasan.platform.telegram.bot;
 import it.tdlight.client.*;
 import it.tdlight.jni.TdApi;
 import jakarta.annotation.PreDestroy;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.telegram.callback.CallbackHandler;
 import org.cekpelunasan.platform.telegram.command.CommandHandler;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
@@ -25,10 +27,11 @@ public class TelegramBot implements ApplicationListener<ApplicationReadyEvent> {
     @Value("${telegram.bot.token}")
     private String botToken;
 
-    private SimpleTelegramClient client;
+    @Getter
+	private SimpleTelegramClient client;
 
     @Override
-    public void onApplicationEvent(ApplicationReadyEvent event) {
+    public void onApplicationEvent(@NotNull ApplicationReadyEvent event) {
         try {
             log.info("Starting TDLight client...");
             SimpleTelegramClientBuilder builder = factory.builder(settings);
@@ -53,11 +56,7 @@ public class TelegramBot implements ApplicationListener<ApplicationReadyEvent> {
         callbackHandler.handle(update, client);
     }
 
-    public SimpleTelegramClient getClient() {
-        return client;
-    }
-
-    @PreDestroy
+	@PreDestroy
     public void destroy() {
         if (client != null) {
             try {

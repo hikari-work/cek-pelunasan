@@ -5,8 +5,7 @@ import it.tdlight.jni.TdApi;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.telegram.service.TelegramMessageService;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 public abstract class AbstractCommandHandler implements CommandProcessor {
@@ -15,9 +14,9 @@ public abstract class AbstractCommandHandler implements CommandProcessor {
     protected TelegramMessageService telegramMessageService;
 
     @Override
-    public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+    public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
         if (!(update.message.content instanceof TdApi.MessageText messageText)) {
-            return CompletableFuture.completedFuture(null);
+            return Mono.empty();
         }
         return process(update.message.chatId, messageText.text.text, client);
     }

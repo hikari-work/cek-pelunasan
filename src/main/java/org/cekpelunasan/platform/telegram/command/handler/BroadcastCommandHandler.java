@@ -6,14 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.annotation.RequireAuth;
 import org.cekpelunasan.core.entity.AccountOfficerRoles;
-import org.cekpelunasan.core.entity.User;
 import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.core.service.users.UserService;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
@@ -38,26 +34,23 @@ public class BroadcastCommandHandler extends AbstractCommandHandler {
     }
 
     @Override
-    @Async
     @RequireAuth(roles = AccountOfficerRoles.ADMIN)
-    public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
-        return CompletableFuture.runAsync(() -> {
-            long chatId = update.message.chatId;
+    public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+        long chatId = update.message.chatId;
 
-            if (update.message.replyTo == null) {
-                sendMessage(chatId, "❗ *Format salah.*\nBalas pesan yang mau di-broadcast, lalu ketik `/broadcast`", client);
-                return;
-            }
+        if (update.message.replyTo == null) {
+            return Mono.fromRunnable(() ->
+                sendMessage(chatId, "❗ *Format salah.*\nBalas pesan yang mau di-broadcast, lalu ketik `/broadcast`", client));
+        }
 
-            long replyMessageId = ((TdApi.MessageReplyToMessage) update.message.replyTo).messageId;
+        long replyMessageId = ((TdApi.MessageReplyToMessage) update.message.replyTo).messageId;
 
-            try {
-                List<User> allUsers = userService.findAllUsers().collectList().block();
-
-                for (User user : allUsers) {
+        return userService.findAllUsers()
+            .collectList()
+            .flatMap(allUsers -> Mono.fromRunnable(() -> {
+                for (var user : allUsers) {
                     log.info("Copying To {}", user.getChatId());
                     copyMessage(chatId, replyMessageId, user.getChatId(), client);
-
                     try {
                         Thread.sleep(DELAY_BETWEEN_USERS_MS);
                     } catch (InterruptedException e) {
@@ -65,13 +58,12 @@ public class BroadcastCommandHandler extends AbstractCommandHandler {
                         log.warn("Thread interrupted saat delay antar user", e);
                     }
                 }
-
                 sendMessage(chatId, "✅ Broadcast copyMessage selesai ke " + allUsers.size() + " pengguna.", client);
-
-            } catch (Exception e) {
+            }))
+            .onErrorResume(e -> {
                 log.error("Gagal broadcast copyMessage", e);
-                sendMessage(chatId, "❗ Gagal melakukan broadcast salinan pesan.", client);
-            }
-        });
+                return Mono.fromRunnable(() -> sendMessage(chatId, "❗ Gagal melakukan broadcast salinan pesan.", client));
+            })
+            .then();
     }
 }

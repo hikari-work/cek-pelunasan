@@ -2,17 +2,14 @@ package org.cekpelunasan.core.event;
 
 import it.tdlight.client.SimpleTelegramClient;
 import lombok.extern.slf4j.Slf4j;
-import org.cekpelunasan.core.entity.User;
 import org.cekpelunasan.core.service.users.UserService;
 import org.cekpelunasan.platform.telegram.bot.TelegramBot;
 import org.cekpelunasan.platform.telegram.service.TelegramMessageService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Locale;
 
 @Slf4j
@@ -43,9 +40,11 @@ public class DatabaseUpdateListener {
                 return;
             }
             String message = buildEventMessage(event);
-            List<User> users = userService.findAllUsers().collectList().block();
-            users.forEach(user -> telegramMessageService.sendText(user.getChatId(), message, client));
-            log.info("Database update event processing completed");
+            userService.findAllUsers()
+                .doOnNext(user -> telegramMessageService.sendText(user.getChatId(), message, client))
+                .doOnError(e -> log.error("Error sending notification to user", e))
+                .doOnComplete(() -> log.info("Database update event processing completed"))
+                .subscribe();
         } catch (Exception e) {
             log.error("Error processing database update event", e);
         }

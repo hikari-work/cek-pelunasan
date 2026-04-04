@@ -10,13 +10,12 @@ import org.cekpelunasan.platform.telegram.callback.pagination.PaginationSavingsB
 import org.cekpelunasan.core.service.savings.SavingsService;
 import org.cekpelunasan.utils.SavingsUtils;
 import org.springframework.data.domain.Page;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -33,26 +32,27 @@ public class SavingNextButtonCallbackHandler extends AbstractCallbackHandler {
     }
 
     @Override
-    @Async
-    public CompletableFuture<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
-        return CompletableFuture.runAsync(() -> {
-            log.info("Generating Saving Data....");
-            String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
-            String[] parts = callbackData.split("_");
-            String query = parts[1];
-            String branch = parts[2];
-            int page = Integer.parseInt(parts[3]);
-            long chatId = update.chatId;
-            long messageId = update.messageId;
-            Page<Savings> savings = savingsService.findByNameAndBranch(query, branch, page).block();
-            if (savings.isEmpty()) {
-                log.info("Saving data Updated...");
-                sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
-                return;
-            }
-            String message = buildMessage(savings, page, System.currentTimeMillis());
-            editMessageWithMarkup(chatId, messageId, message, client, paginationSavingsButton.keyboardMarkup(savings, branch, page, query));
-        });
+    public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
+        log.info("Generating Saving Data....");
+        String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
+        String[] parts = callbackData.split("_");
+        String query = parts[1];
+        String branch = parts[2];
+        int page = Integer.parseInt(parts[3]);
+        long chatId = update.chatId;
+        long messageId = update.messageId;
+
+        return savingsService.findByNameAndBranch(query, branch, page)
+            .flatMap(savings -> Mono.fromRunnable(() -> {
+                if (savings.isEmpty()) {
+                    log.info("Saving data Updated...");
+                    sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
+                    return;
+                }
+                String message = buildMessage(savings, page, System.currentTimeMillis());
+                editMessageWithMarkup(chatId, messageId, message, client, paginationSavingsButton.keyboardMarkup(savings, branch, page, query));
+            }))
+            .then();
     }
 
     public String buildMessage(Page<Savings> savings, int page, long startTime) {

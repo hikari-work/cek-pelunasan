@@ -16,11 +16,8 @@ import org.cekpelunasan.core.service.users.UserService;
 import org.cekpelunasan.utils.button.SlikButtonConfirmation;
 import org.cekpelunasan.utils.button.SlikNamePaginationButton;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
-
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -62,23 +59,20 @@ public class SlikCommand extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = { AccountOfficerRoles.AO, AccountOfficerRoles.ADMIN, AccountOfficerRoles.PIMP })
-	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+	public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		return super.process(update, client);
 	}
 
 	@Override
-	@Async
-	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
+	public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		String query = extractQuery(text);
 		if (query.isEmpty()) {
-			telegramMessageService.sendText(chatId, ERROR_KTP_REQUIRED, client);
-			return CompletableFuture.completedFuture(null);
+			return Mono.fromRunnable(() -> telegramMessageService.sendText(chatId, ERROR_KTP_REQUIRED, client));
 		}
 		if (isValidKtpId(query)) {
-			handleKtpIdSearch(query, chatId, client);
-			return CompletableFuture.completedFuture(null);
+			return Mono.fromRunnable(() -> handleKtpIdSearch(query, chatId, client));
 		}
-		return handleNameSearch(query, chatId, client).toFuture();
+		return handleNameSearch(query, chatId, client);
 	}
 
 	private void handleKtpIdSearch(String ktpId, long chatId, SimpleTelegramClient client) {

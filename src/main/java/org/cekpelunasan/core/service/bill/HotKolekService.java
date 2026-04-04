@@ -132,7 +132,7 @@ public class HotKolekService {
 		}
 		try {
 			int dayLate = Integer.parseInt(bills.getDayLate());
-			if (dayLate > 120) {
+			if (dayLate > 125) {
 				log.info("Removed {} because above 120 days", bills.getName());
 				return true;
 			}

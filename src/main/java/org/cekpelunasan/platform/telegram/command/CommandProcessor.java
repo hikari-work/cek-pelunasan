@@ -2,8 +2,7 @@ package org.cekpelunasan.platform.telegram.command;
 
 import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
-
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Mono;
 
 public interface CommandProcessor {
 
@@ -11,9 +10,9 @@ public interface CommandProcessor {
 
     String getDescription();
 
-    CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client);
+    Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client);
 
-    default CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
-        return CompletableFuture.completedFuture(null);
+    default Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
+        return Mono.empty();
     }
 }

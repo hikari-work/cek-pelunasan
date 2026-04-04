@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class SlikSessionCache {
 
-    private static final long TTL_MS = 30 * 60 * 1000L; // 30 menit
+    private static final long TTL_MS = 30 * 60 * 1000L;
 
     private final ConcurrentHashMap<Long, CachedSession> sessions = new ConcurrentHashMap<>();
 

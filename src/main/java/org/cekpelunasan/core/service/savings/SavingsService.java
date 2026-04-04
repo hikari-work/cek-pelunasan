@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import lombok.NonNull;
 import reactor.core.publisher.Flux;
@@ -25,7 +26,6 @@ import java.io.FileReader;
 import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -126,8 +126,7 @@ public class SavingsService {
 
 	public Mono<Set<String>> listAllBranch(String name) {
 		Criteria criteria = Criteria.where("name").regex(name, "i");
-		org.springframework.data.mongodb.core.query.Query query =
-			new org.springframework.data.mongodb.core.query.Query(criteria);
+		Query query = new Query(criteria);
 		return mongoTemplate.findDistinct(query, "branch", Savings.class, String.class)
 			.filter(b -> b != null && !b.isBlank())
 			.sort()
@@ -177,7 +176,7 @@ public class SavingsService {
 			).collectList()
 				.map(results -> {
 					if (results == null || results.isEmpty()) return 0L;
-					return ((Number) results.get(0).get("total")).longValue();
+					return ((Number) results.getFirst().get("total")).longValue();
 				});
 
 			return Mono.zip(resultsMono, countMono)
@@ -195,7 +194,7 @@ public class SavingsService {
 		List<Criteria> predicates = addressKeywords.stream()
 			.filter(k -> k != null && !k.trim().isEmpty())
 			.map(k -> Criteria.where("address").regex(k.trim(), "i"))
-			.collect(Collectors.toList());
+			.toList();
 		if (predicates.isEmpty()) {
 			return new Criteria();
 		}

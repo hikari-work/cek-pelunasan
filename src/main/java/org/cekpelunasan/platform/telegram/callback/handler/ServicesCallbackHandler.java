@@ -9,12 +9,10 @@ import org.cekpelunasan.core.service.savings.SavingsService;
 import org.cekpelunasan.platform.telegram.callback.AbstractCallbackHandler;
 import org.cekpelunasan.platform.telegram.callback.pagination.SelectSavingsBranch;
 import org.cekpelunasan.utils.button.ButtonListForSelectBranch;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -32,56 +30,58 @@ public class ServicesCallbackHandler extends AbstractCallbackHandler {
     }
 
     @Override
-    @Async
-    public CompletableFuture<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
-        return CompletableFuture.runAsync(() -> {
-            String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
-            String[] parts = callbackData.split("_", 3);
-            if (parts.length < 3) {
-                log.error("Callback data not valid: {}", callbackData);
-                sendMessage(update.chatId, "❌ *Data callback tidak valid*", client);
-                return;
+    public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
+        String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
+        String[] parts = callbackData.split("_", 3);
+        if (parts.length < 3) {
+            log.error("Callback data not valid: {}", callbackData);
+            return Mono.fromRunnable(() -> sendMessage(update.chatId, "❌ *Data callback tidak valid*", client));
+        }
+
+        String service = parts[1];
+        String query = parts[2];
+        long chatId = update.chatId;
+        long messageId = update.messageId;
+
+        log.info("Services callback: service={}, query={}", service, query);
+
+        return switch (service) {
+            case "Pelunasan" -> handlePelunasan(chatId, messageId, query, client);
+            case "Tabungan" -> handleTabungan(chatId, messageId, query, client);
+            default -> {
+                log.warn("Unknown service: {}", service);
+                yield Mono.fromRunnable(() -> sendMessage(chatId, "❌ *Layanan tidak dikenali*", client));
             }
+        };
+    }
 
-            String service = parts[1];
-            String query = parts[2];
-            long chatId = update.chatId;
-            long messageId = update.messageId;
-
-            log.info("Services callback: service={}, query={}", service, query);
-
-            switch (service) {
-                case "Pelunasan" -> handlePelunasan(chatId, messageId, query, client);
-                case "Tabungan" -> handleTabungan(chatId, messageId, query, client);
-                default -> {
-                    log.warn("Unknown service: {}", service);
-                    sendMessage(chatId, "❌ *Layanan tidak dikenali*", client);
+    private Mono<Void> handlePelunasan(long chatId, long messageId, String query, SimpleTelegramClient client) {
+        return billService.lisAllBranch()
+            .flatMap(branches -> Mono.fromRunnable(() -> {
+                if (branches.isEmpty()) {
+                    sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
+                    return;
                 }
-            }
-        });
+                editMessageWithMarkup(chatId, messageId,
+                    "🏦 *Pilih Cabang untuk Pelunasan*\n\nNasabah: *" + query + "*",
+                    client,
+                    buttonListForSelectBranch.dynamicSelectBranch(branches, query));
+            }))
+            .then();
     }
 
-    private void handlePelunasan(long chatId, long messageId, String query, SimpleTelegramClient client) {
-        Set<String> branches = billService.lisAllBranch().block();
-        if (branches.isEmpty()) {
-            sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
-            return;
-        }
-        editMessageWithMarkup(chatId, messageId,
-            "🏦 *Pilih Cabang untuk Pelunasan*\n\nNasabah: *" + query + "*",
-            client,
-            buttonListForSelectBranch.dynamicSelectBranch(branches, query));
-    }
-
-    private void handleTabungan(long chatId, long messageId, String query, SimpleTelegramClient client) {
-        Set<String> branches = savingsService.listAllBranch(query).block();
-        if (branches.isEmpty()) {
-            sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
-            return;
-        }
-        editMessageWithMarkup(chatId, messageId,
-            "💰 *Pilih Cabang untuk Tabungan*\n\nNasabah: *" + query + "*",
-            client,
-            selectSavingsBranch.dynamicSelectBranch(branches, query));
+    private Mono<Void> handleTabungan(long chatId, long messageId, String query, SimpleTelegramClient client) {
+        return savingsService.listAllBranch(query)
+            .flatMap(branches -> Mono.fromRunnable(() -> {
+                if (branches.isEmpty()) {
+                    sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
+                    return;
+                }
+                editMessageWithMarkup(chatId, messageId,
+                    "💰 *Pilih Cabang untuk Tabungan*\n\nNasabah: *" + query + "*",
+                    client,
+                    selectSavingsBranch.dynamicSelectBranch(branches, query));
+            }))
+            .then();
     }
 }

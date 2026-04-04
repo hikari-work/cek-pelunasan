@@ -9,9 +9,9 @@ import org.cekpelunasan.core.service.slik.GeneratePdfFiles;
 import org.cekpelunasan.configuration.S3ClientConfiguration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -44,99 +44,63 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
     }
 
     @Override
-    public CompletableFuture<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
-                String[] data = callbackData.split("_");
+    public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
+        String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
+        String[] data = callbackData.split("_");
 
-                if (!isValidCallbackFormat(data)) {
-                    log.warn("Invalid callback format received: {}", callbackData);
-                    telegramMessageService.sendText(update.chatId, INVALID_CALLBACK_MESSAGE, client);
-                    return;
+        if (!isValidCallbackFormat(data)) {
+            log.warn("Invalid callback format received: {}", callbackData);
+            return Mono.fromRunnable(() -> telegramMessageService.sendText(update.chatId, INVALID_CALLBACK_MESSAGE, client));
+        }
+
+        String customerId = data[CUSTOMER_ID_INDEX];
+        Boolean isActiveFacility = data[IDENTIFIER_INDEX].equals(String.valueOf(ACTIVE_FACILITY_VALUE));
+        long chatId = update.chatId;
+        long messageId = update.messageId;
+
+        telegramMessageService.delete(chatId, messageId, client);
+
+        log.info("Processing SLIK request - Customer ID: {}, Active Facility: {}", customerId, isActiveFacility);
+
+        long notificationId = telegramMessageService.sendText(chatId, LOADING_MESSAGE, client);
+        if (notificationId == 0L) {
+            log.warn("Failed to send initial notification");
+            return Mono.empty();
+        }
+
+        return s3Connector.getFile(buildFileName(customerId))
+            .switchIfEmpty(Mono.fromRunnable(() -> {
+                log.warn("KTP file not found - ID: {}", customerId);
+                telegramMessageService.editText(chatId, notificationId, String.format(FILE_NOT_FOUND_MESSAGE, customerId), client);
+            }))
+            .flatMap(fileContent -> {
+                if (fileContent.length > maxFileSize) {
+                    log.warn("File size exceeds maximum - KTP ID: {}, Size: {}", customerId, fileContent.length);
+                    return Mono.fromRunnable(() ->
+                        telegramMessageService.editText(chatId, notificationId, "❌ File terlalu besar untuk diproses", client));
                 }
-                telegramMessageService.delete(update.chatId, update.messageId, client);
-
-                String customerId = data[CUSTOMER_ID_INDEX];
-                Boolean isActiveFacility = data[IDENTIFIER_INDEX].equals(String.valueOf(ACTIVE_FACILITY_VALUE));
-                long chatId = update.chatId;
-
-                log.info("Processing SLIK request - Customer ID: {}, Active Facility: {}",
-                    customerId, isActiveFacility);
-
-                processSlikSearchById(customerId, chatId, client, isActiveFacility);
-
-            } catch (ArrayIndexOutOfBoundsException e) {
-                log.error("Invalid callback data structure", e);
-                telegramMessageService.sendText(update.chatId, INVALID_CALLBACK_MESSAGE, client);
-            } catch (Exception e) {
-                log.error("Unexpected error processing callback", e);
-                telegramMessageService.sendText(update.chatId, ERROR_MESSAGE, client);
-            }
-        });
+                log.debug("Generating PDF for KTP - ID: {}", customerId);
+                return generatePdfFiles.generatePdf(fileContent, isActiveFacility)
+                    .switchIfEmpty(Mono.fromRunnable(() -> {
+                        log.warn("Failed to generate PDF - KTP ID: {}", customerId);
+                        telegramMessageService.editText(chatId, notificationId, String.format(FILE_NOT_FOUND_MESSAGE, customerId), client);
+                    }))
+                    .flatMap(pdfBytes -> Mono.fromRunnable(() -> {
+                        telegramMessageService.editText(chatId, notificationId, String.format(FILE_FOUND_MESSAGE, customerId), client);
+                        telegramMessageService.delete(chatId, notificationId, client);
+                        telegramMessageService.sendDocument(chatId, buildPdfFileName(customerId), pdfBytes, client);
+                        log.info("Successfully processed and sent PDF - KTP ID: {}", customerId);
+                    }));
+            })
+            .onErrorResume(e -> {
+                log.error("Unexpected error processing SLIK callback", e);
+                return Mono.fromRunnable(() -> telegramMessageService.sendText(chatId, ERROR_MESSAGE, client));
+            })
+            .then();
     }
 
     private boolean isValidCallbackFormat(String[] data) {
         return data != null && data.length >= CALLBACK_DATA_MIN_PARTS;
-    }
-
-    private void processSlikSearchById(String ktpId, long chatId, SimpleTelegramClient client,
-                                       Boolean isActiveFacility) {
-        try {
-            long notificationId = telegramMessageService.sendText(chatId, LOADING_MESSAGE, client);
-            if (notificationId == 0L) {
-                log.warn("Failed to send initial notification");
-                return;
-            }
-
-            log.debug("Fetching KTP file from S3 - ID: {}", ktpId);
-            byte[] fileContent = s3Connector.getFile(buildFileName(ktpId)).block();
-
-            if (fileContent == null || fileContent.length == 0) {
-                log.warn("KTP file not found - ID: {}", ktpId);
-                telegramMessageService.editText(chatId, notificationId,
-                    String.format(FILE_NOT_FOUND_MESSAGE, ktpId), client);
-                return;
-            }
-
-            processKtpFile(ktpId, fileContent, chatId, notificationId, client, isActiveFacility);
-
-        } catch (Exception e) {
-            log.error("Unexpected error in processSlikSearchById", e);
-            telegramMessageService.sendText(chatId, ERROR_MESSAGE, client);
-        }
-    }
-
-    private void processKtpFile(String ktpId, byte[] fileContent, long chatId, long messageId,
-                                 SimpleTelegramClient client, Boolean isActiveFacility) {
-        try {
-            if (fileContent.length > maxFileSize) {
-                log.warn("File size exceeds maximum allowed size - KTP ID: {}, Size: {}",
-                    ktpId, fileContent.length);
-                telegramMessageService.editText(chatId, messageId, "❌ File terlalu besar untuk diproses", client);
-                return;
-            }
-
-            log.debug("Generating PDF for KTP - ID: {}", ktpId);
-            byte[] pdfBytes = generatePdfFiles.generatePdf(fileContent, isActiveFacility).block();
-
-            if (pdfBytes == null || pdfBytes.length == 0) {
-                log.warn("Failed to generate PDF - KTP ID: {}", ktpId);
-                telegramMessageService.editText(chatId, messageId,
-                    String.format(FILE_NOT_FOUND_MESSAGE, ktpId), client);
-                return;
-            }
-
-            telegramMessageService.editText(chatId, messageId,
-                String.format(FILE_FOUND_MESSAGE, ktpId), client);
-            telegramMessageService.delete(chatId, messageId, client);
-            telegramMessageService.sendDocument(chatId, buildPdfFileName(ktpId), pdfBytes, client);
-
-            log.info("Successfully processed and sent PDF - KTP ID: {}", ktpId);
-        } catch (Exception e) {
-            log.error("Unexpected error in processKtpFile", e);
-            telegramMessageService.editText(chatId, messageId, ERROR_MESSAGE, client);
-        }
     }
 
     private String buildFileName(String ktpId) {

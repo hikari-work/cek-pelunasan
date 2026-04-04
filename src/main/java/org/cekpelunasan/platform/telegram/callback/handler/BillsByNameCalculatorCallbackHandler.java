@@ -11,12 +11,11 @@ import org.cekpelunasan.core.service.bill.BillService;
 import org.cekpelunasan.utils.DateUtils;
 import org.cekpelunasan.utils.TagihanUtils;
 import org.springframework.data.domain.Page;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -42,25 +41,29 @@ public class BillsByNameCalculatorCallbackHandler extends AbstractCallbackHandle
     }
 
     @Override
-    @Async
-    public CompletableFuture<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
-                long chatId = update.chatId;
-                long messageId = update.messageId;
+    public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
+        String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
+        long chatId = update.chatId;
+        long messageId = update.messageId;
 
-                CallbackData parsedData = parseCallbackData(callbackData);
+        CallbackData parsedData = parseCallbackData(callbackData);
 
-                if (isValidQuery(parsedData.query())) {
-                    processBillsQuery(parsedData, chatId, messageId, client);
-                } else {
-                    sendErrorMessage(chatId, client);
-                }
-            } catch (Exception e) {
+        if (!isValidQuery(parsedData.query())) {
+            return Mono.fromRunnable(() -> sendMessage(chatId, ERROR_MESSAGE, client));
+        }
+
+        return fetchBillsPageMono(parsedData)
+            .flatMap(billsPage -> Mono.fromRunnable(() -> {
+                log.info("Finding Bills By: {}", parsedData.query());
+                String messageText = buildBillsMessage(billsPage);
+                TdApi.ReplyMarkupInlineKeyboard markup = buildPaginationMarkup(billsPage, parsedData);
+                editMessageWithMarkup(chatId, messageId, messageText, client, markup);
+            }))
+            .onErrorResume(e -> {
                 log.error("Error processing callback", e);
-            }
-        });
+                return Mono.empty();
+            })
+            .then();
     }
 
     private CallbackData parseCallbackData(String data) {
@@ -76,25 +79,15 @@ public class BillsByNameCalculatorCallbackHandler extends AbstractCallbackHandle
         return length == QUERY_MIN_LENGTH || length == QUERY_MAX_LENGTH;
     }
 
-    private void processBillsQuery(CallbackData callbackData, long chatId, long messageId, SimpleTelegramClient client) {
-        log.info("Finding Bills By: {}", callbackData.query());
-
-        Page<Bills> billsPage = fetchBillsPage(callbackData);
-        String messageText = buildBillsMessage(billsPage);
-        TdApi.ReplyMarkupInlineKeyboard markup = buildPaginationMarkup(billsPage, callbackData);
-
-        editMessageWithMarkup(chatId, messageId, messageText, client, markup);
-    }
-
-    private Page<Bills> fetchBillsPage(CallbackData callbackData) {
+    private Mono<Page<Bills>> fetchBillsPageMono(CallbackData callbackData) {
         String query = callbackData.query();
         LocalDateTime today = LocalDateTime.now();
         String convertedDate = dateUtils.converterDate(today);
 
         if (query.length() == QUERY_MIN_LENGTH) {
-            return billService.findDueDateByAccountOfficer(query, convertedDate, callbackData.page(), PAGE_SIZE).block();
+            return billService.findDueDateByAccountOfficer(query, convertedDate, callbackData.page(), PAGE_SIZE);
         } else {
-            return billService.findBranchAndPayDown(query, convertedDate, callbackData.page(), PAGE_SIZE).block();
+            return billService.findBranchAndPayDown(query, convertedDate, callbackData.page(), PAGE_SIZE);
         }
     }
 
@@ -110,10 +103,6 @@ public class BillsByNameCalculatorCallbackHandler extends AbstractCallbackHandle
             callbackData.page(),
             callbackData.query()
         );
-    }
-
-    private void sendErrorMessage(long chatId, SimpleTelegramClient client) {
-        sendMessage(chatId, ERROR_MESSAGE, client);
     }
 
     private record CallbackData(String query, Integer page) {

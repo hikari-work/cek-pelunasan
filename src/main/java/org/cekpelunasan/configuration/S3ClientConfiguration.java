@@ -18,7 +18,7 @@ import software.amazon.awssdk.services.s3.model.*;
 import java.net.URI;
 
 @Configuration
-public class S3ClientConfiguration {
+public class S3ClientConfiguration{
 
 	private static final Logger log = LoggerFactory.getLogger(S3ClientConfiguration.class);
 
@@ -58,30 +58,44 @@ public class S3ClientConfiguration {
 	}
 
 	public Mono<byte[]> getFile(String key) {
-		GetObjectRequest request = GetObjectRequest.builder().bucket(bucket).key(key).build();
-		return Mono.fromFuture(s3AsyncClient().getObject(request, AsyncResponseTransformer.toBytes()))
-			.map(responseBytes -> responseBytes.asByteArray())
-			.onErrorResume(e -> {
-				log.error("Failed to download file from S3: {}", e.getMessage());
-				return Mono.empty();
-			});
+		try {
+			GetObjectRequest request = GetObjectRequest.builder().bucket(bucket).key(key).build();
+			return Mono.fromFuture(s3AsyncClient().getObject(request, AsyncResponseTransformer.toBytes()))
+				.map(responseBytes -> responseBytes.asByteArray())
+				.onErrorResume(e -> {
+					log.error("Failed to download file from S3: {}", e.getMessage());
+					return Mono.empty();
+				});
+		} catch (Exception e) {
+			log.error("S3 getFile setup error for key {}: {}", key, e.getMessage());
+			return Mono.empty();
+		}
 	}
 
 	public Flux<String> listObjectFoundByName(String prefix) {
-		ListObjectsV2Request initialRequest = ListObjectsV2Request.builder()
-			.bucket(bucket)
-			.prefix(prefix)
-			.build();
-		return Mono.fromFuture(s3AsyncClient().listObjectsV2(initialRequest))
-			.expand(response -> response.isTruncated()
-				? Mono.fromFuture(s3AsyncClient().listObjectsV2(
-					ListObjectsV2Request.builder()
-						.bucket(bucket)
-						.prefix(prefix)
-						.continuationToken(response.nextContinuationToken())
-						.build()))
-				: Mono.empty())
-			.flatMap(response -> Flux.fromIterable(response.contents()))
-			.map(S3Object::key);
+		try {
+			ListObjectsV2Request initialRequest = ListObjectsV2Request.builder()
+				.bucket(bucket)
+				.prefix(prefix)
+				.build();
+			return Mono.fromFuture(s3AsyncClient().listObjectsV2(initialRequest))
+				.expand(response -> response.isTruncated()
+					? Mono.fromFuture(s3AsyncClient().listObjectsV2(
+						ListObjectsV2Request.builder()
+							.bucket(bucket)
+							.prefix(prefix)
+							.continuationToken(response.nextContinuationToken())
+							.build()))
+					: Mono.empty())
+				.flatMap(response -> Flux.fromIterable(response.contents()))
+				.map(S3Object::key)
+				.onErrorResume(e -> {
+					log.error("Failed to list S3 objects with prefix {}: {}", prefix, e.getMessage());
+					return Flux.empty();
+				});
+		} catch (Exception e) {
+			log.error("S3 listObjectFoundByName setup error for prefix {}: {}", prefix, e.getMessage());
+			return Flux.empty();
+		}
 	}
 }

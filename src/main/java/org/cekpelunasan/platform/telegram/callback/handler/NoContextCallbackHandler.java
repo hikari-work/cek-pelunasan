@@ -4,10 +4,8 @@ import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.telegram.callback.AbstractCallbackHandler;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
@@ -18,9 +16,8 @@ public class NoContextCallbackHandler extends AbstractCallbackHandler {
     }
 
     @Override
-    @Async
-    public CompletableFuture<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
-        return CompletableFuture.runAsync(() -> {
+    public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
+        return Mono.fromRunnable(() -> {
             log.info("Someone Makes Mistakes...");
             TdApi.AnswerCallbackQuery answer = new TdApi.AnswerCallbackQuery();
             answer.callbackQueryId = update.id;

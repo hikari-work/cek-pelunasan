@@ -29,7 +29,7 @@ public class CallbackHandler {
             String prefix = callbackData.split("_")[0];
             CallbackProcessor processor = processorMap.getOrDefault(prefix, processorMap.get("none"));
             if (processor != null) {
-                processor.process(update, client);
+                processor.process(update, client).subscribe();
             }
         }
     }

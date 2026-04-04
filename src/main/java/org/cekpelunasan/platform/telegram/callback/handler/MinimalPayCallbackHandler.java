@@ -4,19 +4,16 @@ import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.cekpelunasan.core.entity.Bills;
-import org.cekpelunasan.core.entity.User;
+import org.cekpelunasan.core.entity.AccountOfficerRoles;
 import org.cekpelunasan.platform.telegram.callback.AbstractCallbackHandler;
 import org.cekpelunasan.platform.telegram.callback.pagination.PaginationToMinimalPay;
 import org.cekpelunasan.core.service.bill.BillService;
 import org.cekpelunasan.core.service.users.UserService;
 import org.cekpelunasan.utils.MinimalPayUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -34,48 +31,43 @@ public class MinimalPayCallbackHandler extends AbstractCallbackHandler {
     }
 
     @Override
-    @Async
-    public CompletableFuture<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
-        return CompletableFuture.runAsync(() -> {
-            long chatId = update.chatId;
-            String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
-            String[] data = callbackData.split("_");
+    public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
+        long chatId = update.chatId;
+        String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
+        String[] data = callbackData.split("_");
+        int page = Integer.parseInt(data[2]);
+        log.info("Bills Callback Received...");
 
-            int page = Integer.parseInt(data[2]);
-            log.info("Bills Callback Received...");
-
-            User user = userService.findUserByChatId(chatId).block();
-            if (user == null) {
+        return userService.findUserByChatId(chatId)
+            .switchIfEmpty(Mono.fromRunnable(() -> {
                 log.info("User ID {} not Valid", chatId);
                 sendMessage(chatId, "❌ *User tidak ditemukan*", client);
-                return;
-            }
-            String userCode = user.getUserCode();
-
-            Page<Bills> bills = null;
-            if (user.getRoles() != null) {
-                log.info("Finding Minimal Pay of {}", userCode);
-                bills = switch (user.getRoles()) {
-                    case AO -> billService.findMinimalPaymentByAccountOfficer(userCode, page, 5).block();
-                    case PIMP, ADMIN -> billService.findMinimalPaymentByBranch(userCode, page, 5).block();
-                };
-            }
-
-            if (bills != null && bills.isEmpty()) {
-                log.info("Minimal Pay Is Empty....");
-                sendMessage(chatId, "❌ *Tidak ada tagihan dengan minimal bayar tersisa.*", client);
-                return;
-            }
-
-            StringBuilder message = new StringBuilder("📋 *Daftar Tagihan Minimal Bayar:*\n\n");
-            if (bills != null) {
-                for (Bills bill : bills) {
-                    message.append(minimalPayUtils.minimalPay(bill));
+            }))
+            .flatMap(user -> {
+                String userCode = user.getUserCode();
+                if (user.getRoles() == null) {
+                    return Mono.empty();
                 }
-            }
-
-            TdApi.ReplyMarkupInlineKeyboard markup = paginationToMinimalPay.dynamicButtonName(bills, page, userCode);
-            editMessageWithMarkup(chatId, update.messageId, message.toString(), client, markup);
-        });
+                Mono<org.springframework.data.domain.Page<org.cekpelunasan.core.entity.Bills>> billsMono =
+                    switch (user.getRoles()) {
+                        case AO -> billService.findMinimalPaymentByAccountOfficer(userCode, page, 5);
+                        case PIMP, ADMIN -> billService.findMinimalPaymentByBranch(userCode, page, 5);
+                    };
+                return billsMono.flatMap(bills -> Mono.fromRunnable(() -> {
+                    if (bills.isEmpty()) {
+                        log.info("Minimal Pay Is Empty....");
+                        sendMessage(chatId, "❌ *Tidak ada tagihan dengan minimal bayar tersisa.*", client);
+                        return;
+                    }
+                    log.info("Finding Minimal Pay of {}", userCode);
+                    StringBuilder message = new StringBuilder("📋 *Daftar Tagihan Minimal Bayar:*\n\n");
+                    for (org.cekpelunasan.core.entity.Bills bill : bills) {
+                        message.append(minimalPayUtils.minimalPay(bill));
+                    }
+                    TdApi.ReplyMarkupInlineKeyboard markup = paginationToMinimalPay.dynamicButtonName(bills, page, userCode);
+                    editMessageWithMarkup(chatId, update.messageId, message.toString(), client, markup);
+                }));
+            })
+            .then();
     }
 }

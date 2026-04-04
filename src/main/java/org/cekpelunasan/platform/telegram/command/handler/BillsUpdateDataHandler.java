@@ -13,9 +13,9 @@ import org.cekpelunasan.core.service.bill.BillService;
 import org.cekpelunasan.utils.CsvDownloadUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -30,7 +30,7 @@ public class BillsUpdateDataHandler extends AbstractCommandHandler {
 
     @Override
     @RequireAuth(roles = AccountOfficerRoles.ADMIN)
-    public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+    public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
         return super.process(update, client);
     }
 
@@ -45,24 +45,22 @@ public class BillsUpdateDataHandler extends AbstractCommandHandler {
     }
 
     @Override
-    public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
-        return CompletableFuture.runAsync(() -> {
-            String fileUrl = CsvDownloadUtils.extractUrl(text);
-            if (fileUrl == null) {
-                log.warn("Invalid format from chat {}", chatId);
-                return;
-            }
-            sendMessage(chatId, PROCESSING_MESSAGE, client);
-            log.info("Command: /uploadtagihan Executed with file: {}", CsvDownloadUtils.extractFileName(fileUrl));
-            try {
-                Path filePath = CsvDownloadUtils.downloadCsv(fileUrl);
-                billService.parseCsvAndSaveIntoDatabase(filePath).block();
-                publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.TAGIHAN, true));
-            } catch (Exception e) {
+    public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
+        String fileUrl = CsvDownloadUtils.extractUrl(text);
+        if (fileUrl == null) {
+            log.warn("Invalid format from chat {}", chatId);
+            return Mono.empty();
+        }
+        sendMessage(chatId, PROCESSING_MESSAGE, client);
+        log.info("Command: /uploadtagihan Executed with file: {}", CsvDownloadUtils.extractFileName(fileUrl));
+        return Mono.fromCallable(() -> CsvDownloadUtils.downloadCsv(fileUrl))
+            .flatMap(filePath -> billService.parseCsvAndSaveIntoDatabase(filePath))
+            .doOnSuccess(v -> publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.TAGIHAN, true)))
+            .onErrorResume(e -> {
                 log.error("Error processing CSV file: {}", fileUrl, e);
                 sendMessage(chatId, ERROR_DOWNLOAD, client);
                 publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.TAGIHAN, false));
-            }
-        });
+                return Mono.empty();
+            });
     }
 }

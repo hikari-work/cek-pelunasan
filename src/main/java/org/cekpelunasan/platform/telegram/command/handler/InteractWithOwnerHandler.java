@@ -7,10 +7,9 @@ import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.core.service.auth.AuthorizedChats;
 import org.cekpelunasan.utils.button.DirectMessageButton;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,9 +34,8 @@ public class InteractWithOwnerHandler extends AbstractCommandHandler {
     }
 
     @Override
-    @Async
-    public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
-        return CompletableFuture.runAsync(() -> {
+    public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+        return Mono.fromRunnable(() -> {
             if (!(update.message.content instanceof TdApi.MessageText messageText)) {
                 return;
             }
@@ -61,8 +59,6 @@ public class InteractWithOwnerHandler extends AbstractCommandHandler {
             }
 
             if (update.message.replyTo instanceof TdApi.MessageReplyToMessage replyTo) {
-                // TODO: In TDLight, retrieving forwardFrom requires GetMessage RPC call
-                // log.warn("Forward-back to original sender not yet implemented in TDLight");
                 copyMessage(ownerId, replyTo.messageId, ownerId, client);
             }
         });

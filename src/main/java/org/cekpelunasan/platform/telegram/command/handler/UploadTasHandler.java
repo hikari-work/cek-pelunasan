@@ -1,7 +1,7 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+
 import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.annotation.RequireAuth;
@@ -13,11 +13,7 @@ import org.cekpelunasan.core.service.kolektas.KolekTasService;
 import org.cekpelunasan.utils.CsvDownloadUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
-
-
-
-import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
@@ -41,27 +37,27 @@ public class UploadTasHandler extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
-	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+	public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		return super.process(update, client);
 	}
 
 	@Override
-	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
-		return CompletableFuture.runAsync(() -> {
-			String fileUrl = CsvDownloadUtils.extractUrl(text);
-			if (fileUrl == null) {
-				sendMessage(chatId, ERROR_FORMAT, client);
-				return;
-			}
-			try {
-				Path filePath = CsvDownloadUtils.downloadCsv(fileUrl);
-				kolekTasService.parseCsvAndSave(filePath).block();
+	public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
+		String fileUrl = CsvDownloadUtils.extractUrl(text);
+		if (fileUrl == null) {
+			return Mono.fromRunnable(() -> sendMessage(chatId, ERROR_FORMAT, client));
+		}
+		return Mono.fromCallable(() -> CsvDownloadUtils.downloadCsv(fileUrl))
+			.flatMap(filePath -> kolekTasService.parseCsvAndSave(filePath))
+			.doOnSuccess(v -> {
 				log.info("File berhasil diproses: {}", CsvDownloadUtils.extractFileName(fileUrl));
 				publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.KOLEK_TAS, true));
-			} catch (Exception e) {
+			})
+			.onErrorResume(e -> {
 				log.error("Gagal memproses file dari URL: {}", fileUrl, e);
 				publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.KOLEK_TAS, false));
-			}
-		});
+				return Mono.empty();
+			})
+			.then();
 	}
 }

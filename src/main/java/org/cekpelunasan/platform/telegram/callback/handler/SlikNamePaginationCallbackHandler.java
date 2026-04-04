@@ -2,19 +2,17 @@ package org.cekpelunasan.platform.telegram.callback.handler;
 
 import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
-import it.tdlight.jni.TdApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.core.service.slik.SlikNameFormatter;
 import org.cekpelunasan.core.service.slik.SlikSessionCache;
 import org.cekpelunasan.platform.telegram.callback.AbstractCallbackHandler;
 import org.cekpelunasan.utils.button.SlikNamePaginationButton;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -31,9 +29,8 @@ public class SlikNamePaginationCallbackHandler extends AbstractCallbackHandler {
     }
 
     @Override
-    @Async
-    public CompletableFuture<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
-        return CompletableFuture.runAsync(() -> {
+    public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
+        return Mono.fromRunnable(() -> {
             String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
             String[] parts = callbackData.split("_");
 

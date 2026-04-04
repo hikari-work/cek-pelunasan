@@ -14,6 +14,8 @@ import org.cekpelunasan.platform.telegram.service.TelegramMessageService;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
+import reactor.core.publisher.Mono;
+
 import java.util.Arrays;
 
 @Aspect
@@ -43,7 +45,7 @@ public class AuthorizationAspect {
         long chatId = update.message.chatId;
         if (!authorizedChats.isAuthorized(chatId)) {
             telegramMessageService.sendText(chatId, "Anda tidak memiliki akses ke bot ini", client);
-            return null;
+            return Mono.empty();
         }
         AccountOfficerRoles roles = authorizedChats.getUserRoles(chatId).block();
         if (roles == AccountOfficerRoles.ADMIN) {
@@ -53,7 +55,7 @@ public class AuthorizationAspect {
         boolean hasRequiredRoles = Arrays.stream(requiredRoles).anyMatch(role -> role == roles);
         if (!hasRequiredRoles) {
             telegramMessageService.sendText(chatId, "Anda tidak memiliki akses ke bot ini", client);
-            return null;
+            return Mono.empty();
         }
         return joinPoint.proceed();
     }

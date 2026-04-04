@@ -1,7 +1,7 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+
 import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.annotation.RequireAuth;
@@ -9,15 +9,10 @@ import org.cekpelunasan.core.entity.AccountOfficerRoles;
 import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.core.service.bill.BillService;
 import org.cekpelunasan.core.service.credithistory.CreditHistoryService;
-import org.cekpelunasan.core.service.customerhistory.CustomerHistoryService;
 import org.cekpelunasan.core.service.users.UserService;
 import org.cekpelunasan.utils.SystemUtils;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-
-
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
@@ -27,7 +22,6 @@ public class StatusCommandHandler extends AbstractCommandHandler {
 	private final UserService userService;
 	private final BillService billService;
 	private final CreditHistoryService creditHistoryService;
-	private final CustomerHistoryService customerHistoryService;
 
 	@Override
 	public String getCommand() {
@@ -40,38 +34,35 @@ public class StatusCommandHandler extends AbstractCommandHandler {
 	}
 
 	@Override
-	@Async
 	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
-	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+	public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		long chatId = update.message.chatId;
 		long startTime = System.currentTimeMillis();
 
-		CompletableFuture<Long> billCount = CompletableFuture.supplyAsync(() -> billService.countAllBills().block());
-		CompletableFuture<Long> customerHistoryCount = CompletableFuture.supplyAsync(() -> customerHistoryService.countCustomerHistory().block());
-		CompletableFuture<Long> totalUsersFuture = CompletableFuture.supplyAsync(() -> userService.countUsers().block());
-		CompletableFuture<String> systemLoadFuture = CompletableFuture.supplyAsync(() -> new SystemUtils().getSystemUtils());
-		CompletableFuture<Long> creditHistory = CompletableFuture.supplyAsync(() -> creditHistoryService.countCreditHistory().block());
-
-		return CompletableFuture.allOf(totalUsersFuture, systemLoadFuture, creditHistory, customerHistoryCount, billCount)
-			.thenRunAsync(() -> {
-				try {
-					long executionTime = System.currentTimeMillis() - startTime;
-					String statusMessage = buildStatusMessage(
-						totalUsersFuture.get(),
-						creditHistory.get(),
-						billCount.get(),
-						systemLoadFuture.get(),
-						customerHistoryCount.get(),
-						executionTime);
-					sendMessage(chatId, statusMessage, client);
-				} catch (Exception e) {
-					log.error("Error processing status command", e);
-					sendMessage(chatId, "❌ Error mengambil data status. Silakan coba lagi.", client);
-				}
-			});
+		return Mono.zip(
+				userService.countUsers(),
+				creditHistoryService.countCreditHistory(),
+				billService.countAllBills(),
+				Mono.fromCallable(() -> new SystemUtils().getSystemUtils())
+			)
+			.flatMap(tuple -> {
+				long executionTime = System.currentTimeMillis() - startTime;
+				String statusMessage = buildStatusMessage(
+					tuple.getT1(),
+					tuple.getT2(),
+					tuple.getT3(),
+					tuple.getT4(),
+					executionTime);
+				return Mono.fromRunnable(() -> sendMessage(chatId, statusMessage, client));
+			})
+			.onErrorResume(e -> {
+				log.error("Error processing status command", e);
+				return Mono.fromRunnable(() -> sendMessage(chatId, "❌ Error mengambil data status. Silakan coba lagi.", client));
+			})
+			.then();
 	}
 
-	private String buildStatusMessage(long totalUsers, long credit, long totalBills, String systemLoad, long customerHistoryTotal, long executionTime) {
+	private String buildStatusMessage(long totalUsers, long credit, long totalBills, String systemLoad, long executionTime) {
 		return String.format("""
                 ⚡️ *PELUNASAN BOT STATUS*
                 ╔══════════════════════
@@ -82,7 +73,6 @@ public class StatusCommandHandler extends AbstractCommandHandler {
                 ┌────────────────────
                 │ 👥 Users     : %d
                 │ 📦 All Krd   : %d
-                │ 📦 Cek CIF   : %d
                 │ 💳 Tagihan   : %d
                 │ ⚙️ Load      : %s
                 └────────────────────
@@ -102,7 +92,7 @@ public class StatusCommandHandler extends AbstractCommandHandler {
                 ✨ _System is healthy and ready!_
                 ⏱️ _Generated in %dms_
                 """,
-			totalUsers, credit, customerHistoryTotal, totalBills, systemLoad, executionTime
+			totalUsers, credit, totalBills, systemLoad, executionTime
 		);
 	}
 }

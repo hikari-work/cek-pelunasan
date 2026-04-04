@@ -11,10 +11,8 @@ import org.cekpelunasan.utils.MessageTemplate;
 import org.cekpelunasan.core.service.auth.AuthorizedChats;
 import org.cekpelunasan.core.service.users.UserService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
@@ -40,30 +38,29 @@ public class AuthCommandHandler extends AbstractCommandHandler {
 
     @Override
     @RequireAuth(roles = AccountOfficerRoles.ADMIN)
-    public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+    public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
         return super.process(update, client);
     }
 
     @Override
-    @Async
-    public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
-        return CompletableFuture.runAsync(() -> {
-            String[] parts = text.split(" ");
-            if (parts.length < 2) {
-                sendMessage(chatId, messageTemplate.notValidDeauthFormat(), client);
-                return;
-            }
-            try {
-                long target = Long.parseLong(parts[1]);
-                log.info("Trying Auth {}", target);
-                userService.insertNewUsers(target).block();
+    public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
+        String[] parts = text.split(" ");
+        if (parts.length < 2) {
+            return Mono.fromRunnable(() -> sendMessage(chatId, messageTemplate.notValidDeauthFormat(), client));
+        }
+        long target;
+        try {
+            target = Long.parseLong(parts[1]);
+        } catch (NumberFormatException e) {
+            return Mono.fromRunnable(() -> sendMessage(chatId, messageTemplate.notValidNumber(), client));
+        }
+        log.info("Trying Auth {}", target);
+        return userService.insertNewUsers(target)
+            .doOnSuccess(v -> {
                 authorizedChats.addAuthorizedChat(target);
                 sendMessage(target, messageTemplate.authorizedMessage(), client);
                 log.info("Success Auth {}", target);
                 sendMessage(ownerId, "Sukses", client);
-            } catch (NumberFormatException e) {
-                sendMessage(chatId, messageTemplate.notValidNumber(), client);
-            }
-        });
+            });
     }
 }

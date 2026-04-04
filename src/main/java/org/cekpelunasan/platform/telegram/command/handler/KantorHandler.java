@@ -1,18 +1,14 @@
 package org.cekpelunasan.platform.telegram.command.handler;
+
 import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
-
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.annotation.RequireAuth;
 import org.cekpelunasan.core.entity.AccountOfficerRoles;
 import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.core.service.users.UserService;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-
-
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Mono;
 
 @Component
 @RequiredArgsConstructor
@@ -32,30 +28,24 @@ public class KantorHandler extends AbstractCommandHandler {
 
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.PIMP, AccountOfficerRoles.AO, AccountOfficerRoles.ADMIN})
-	public CompletableFuture<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
+	public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		return super.process(update, client);
 	}
 
 	@Override
-	@Async
-	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
-		return CompletableFuture.runAsync(() -> {
-			if (text.equals("/kantor")) {
-				String userBranch = userService.findUserBranch(chatId).block();
-				if (userBranch == null) {
-					sendMessage(chatId, "Anda Tidak terdaftar di kantor manapun", client);
-					return;
-				}
-				sendMessage(chatId, String.format("Anda sebelumnya terdaftar di kantor %s", userBranch), client);
-				return;
-			}
-			String kantor = text.replace("/kantor ", "").trim();
-			if (kantor.length() != 4) {
-				sendMessage(chatId, "Format Kantor Tidak tepat!!!", client);
-				return;
-			}
-			userService.saveUserBranch(chatId, kantor).block();
-			sendMessage(chatId, String.format("Sukses mengubah kantor anda menjadi %s", kantor), client);
-		});
+	public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
+		if (text.equals("/kantor")) {
+			return userService.findUserBranch(chatId)
+				.switchIfEmpty(Mono.fromRunnable(() -> sendMessage(chatId, "Anda Tidak terdaftar di kantor manapun", client)))
+				.flatMap(userBranch -> Mono.fromRunnable(() ->
+					sendMessage(chatId, String.format("Anda sebelumnya terdaftar di kantor %s", userBranch), client)))
+				.then();
+		}
+		String kantor = text.replace("/kantor ", "").trim();
+		if (kantor.length() != 4) {
+			return Mono.fromRunnable(() -> sendMessage(chatId, "Format Kantor Tidak tepat!!!", client));
+		}
+		return userService.saveUserBranch(chatId, kantor)
+			.doOnSuccess(v -> sendMessage(chatId, String.format("Sukses mengubah kantor anda menjadi %s", kantor), client));
 	}
 }

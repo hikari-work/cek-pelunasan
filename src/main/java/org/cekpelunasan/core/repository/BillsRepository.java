@@ -11,8 +11,6 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface BillsRepository extends ReactiveMongoRepository<Bills, String> {
 
-    // NOTE: findDistinctBranchByBranch(), findDistinctByAccountOfficer(), findUnpaidBillsByBranch()
-    // are REMOVED — implemented in BillService/HotKolekService via ReactiveMongoTemplate
 
     Flux<Bills> findByAccountOfficerAndPayDown(String accountOfficer, String payDown, Pageable pageable);
     Mono<Long> countByAccountOfficerAndPayDown(String accountOfficer, String payDown);

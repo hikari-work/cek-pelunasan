@@ -2,12 +2,11 @@ package org.cekpelunasan.platform.telegram.callback;
 
 import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
-
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Mono;
 
 public interface CallbackProcessor {
 
     String getCallBackData();
 
-    CompletableFuture<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client);
+    Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client);
 }
