@@ -130,17 +130,24 @@ public class SlikCommand extends AbstractCommandHandler {
 	private Mono<SlikSessionCache.SlikPageData> extractPageData(String contentKey) {
 		return s3Connector.getFile(contentKey)
 			.flatMap(pdfBytes -> pdfReader.generateIDNumber(pdfBytes))
-			.flatMap(idNumber ->
-				s3Connector.getFile(KTP_PREFIX + idNumber + KTP_EXTENSION)
+			.doOnNext(idNumber -> log.debug("Extracted idNumber={} from {}", idNumber, contentKey))
+			.flatMap(idNumber -> {
+				String ktpKey = KTP_PREFIX + idNumber + KTP_EXTENSION;
+				return s3Connector.getFile(ktpKey)
+					.doOnNext(b -> log.debug("Fetched {} ({} bytes)", ktpKey, b.length))
+					.doOnError(e -> log.warn("Failed to fetch {} from S3: {}", ktpKey, e.getMessage()))
 					.flatMap(jsonBytes -> slikNameFormatter.parse(jsonBytes)
 						.map(dto -> new SlikSessionCache.SlikPageData(contentKey, idNumber, dto))
 						.defaultIfEmpty(new SlikSessionCache.SlikPageData(contentKey, idNumber, null))
 					)
-					.defaultIfEmpty(new SlikSessionCache.SlikPageData(contentKey, idNumber, null))
-			)
+					.defaultIfEmpty(new SlikSessionCache.SlikPageData(contentKey, idNumber, null));
+			})
 			.defaultIfEmpty(new SlikSessionCache.SlikPageData(contentKey, null, null))
 			.timeout(java.time.Duration.ofSeconds(searchTimeoutSeconds))
-			.onErrorReturn(new SlikSessionCache.SlikPageData(contentKey, null, null));
+			.onErrorResume(e -> {
+				log.error("extractPageData failed for {}: {}", contentKey, e.getMessage());
+				return Mono.just(new SlikSessionCache.SlikPageData(contentKey, null, null));
+			});
 	}
 
 	private String buildNoResultsMessage(String query) {

@@ -13,16 +13,20 @@ import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SlikNameFormatter {
 
+    private static final int MAX_TELEGRAM_CHARS = 4000;
+
     private static final DateTimeFormatter DATETIME_IN  = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
     private static final DateTimeFormatter DATE_IN      = DateTimeFormatter.ofPattern("yyyyMMdd");
-    private static final DateTimeFormatter DATETIME_OUT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    private static final DateTimeFormatter DATETIME_OUT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final DateTimeFormatter DATE_OUT     = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final ObjectMapper objectMapper;
@@ -30,31 +34,29 @@ public class SlikNameFormatter {
     public Mono<SlikJsonDto> parse(byte[] jsonBytes) {
         return Mono.fromCallable(() -> objectMapper.readValue(jsonBytes, SlikJsonDto.class))
             .subscribeOn(Schedulers.boundedElastic())
-            .onErrorResume(e -> {
-                log.error("Failed to parse SLIK JSON: {}", e.getMessage());
-                return Mono.empty();
-            });
+            .doOnError(e -> log.error("Failed to parse SLIK JSON (size={} bytes): {}", jsonBytes.length, e.getMessage()))
+            .onErrorResume(e -> Mono.empty());
     }
 
     public String format(SlikSessionCache.SlikPageData data, int current, int total) {
-        if (data.dto() == null) {
-            return formatNoData(data, current, total);
-        }
-        return formatFull(data, current, total);
+        String message = data.dto() == null
+            ? formatNoData(data, current, total)
+            : formatFull(data, current, total);
+        return truncate(message);
     }
 
     private String formatFull(SlikSessionCache.SlikPageData data, int current, int total) {
-        SlikJsonDto dto = data.dto();
+        SlikJsonDto dto      = data.dto();
         SlikJsonDto.Individual ind = dto.individual();
-        SlikJsonDto.Header hdr = dto.header();
+        SlikJsonDto.Header hdr     = dto.header();
 
         String namaDebitur = "";
         if (ind.dataPokokDebitur() != null && !ind.dataPokokDebitur().isEmpty()) {
-            namaDebitur = ind.dataPokokDebitur().get(0).namaDebitur();
+            namaDebitur = ind.dataPokokDebitur().getFirst().namaDebitur();
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("📊 *HASIL SLIK — %s*\n", escape(namaDebitur)));
+        sb.append(String.format("📊 *HASIL SLIK — %s*\n", orDash(namaDebitur)));
         sb.append("━━━━━━━━━━━━━━━━━━━━━\n");
 
         if (hdr != null) {
@@ -63,7 +65,7 @@ public class SlikNameFormatter {
         }
 
         if (ind.dataPokokDebitur() != null && !ind.dataPokokDebitur().isEmpty()) {
-            SlikJsonDto.DataPokokDebitur deb = ind.dataPokokDebitur().get(0);
+            SlikJsonDto.DataPokokDebitur deb = ind.dataPokokDebitur().getFirst();
             sb.append("\n👤 *DATA DEBITUR*\n");
             sb.append("┌─────────────────────\n");
             sb.append(String.format("│ 🪪 KTP: `%s`\n", orDash(deb.noIdentitas())));
@@ -80,10 +82,10 @@ public class SlikNameFormatter {
             SlikJsonDto.RingkasanFasilitas rf = ind.ringkasanFasilitas();
             sb.append("\n📈 *RINGKASAN FASILITAS*\n");
             sb.append("┌─────────────────────\n");
-            sb.append(String.format("│ Kol. Terburuk: *%s*\n", orDash(rf.kualitasTerburuk())));
-            sb.append(String.format("│ Bulan Data: %s\n", formatYearMonth(rf.kualitasBulanDataTerburuk())));
-            sb.append(String.format("│ Plafon Total: %s\n", formatRupiah(rf.plafonEfektifTotal())));
-            sb.append(String.format("│ Baki Debet Total: %s\n", formatRupiah(rf.bakiDebetTotal())));
+            sb.append(String.format("│ Kol. Terburuk : *%s*\n", orDash(rf.kualitasTerburuk())));
+            sb.append(String.format("│ Bulan Data    : %s\n", formatYearMonth(rf.kualitasBulanDataTerburuk())));
+            sb.append(String.format("│ Plafon Total  : %s\n", formatRupiah(rf.plafonEfektifTotal())));
+            sb.append(String.format("│ Baki Debet    : %s\n", formatRupiah(rf.bakiDebetTotal())));
             sb.append("└─────────────────────\n");
         }
 
@@ -93,20 +95,30 @@ public class SlikNameFormatter {
             for (int i = 0; i < list.size(); i++) {
                 SlikJsonDto.KreditPembiayaan k = list.get(i);
                 sb.append(i == 0 ? "┌─────────────────────\n" : "├─────────────────────\n");
-                sb.append(String.format("│ *%d. %s*\n", i + 1, orDash(k.ljkKet())));
-                if (isNotBlank(k.cabangKet())) {
-                    sb.append(String.format("│    Cabang: %s\n", k.cabangKet()));
+                sb.append(String.format("│ *%d. %s*\n", i + 1, orDash(k.getLjkKet())));
+                if (isNotBlank(k.getCabangKet())) {
+                    sb.append(String.format("│    Cabang    : %s\n", k.getCabangKet()));
                 }
-                sb.append(String.format("│    Plafon: %s\n", formatRupiah(k.plafonAwal())));
-                sb.append(String.format("│    Baki Debet: %s\n", formatRupiah(k.bakiDebet())));
-                sb.append(String.format("│    Kondisi: %s  |  Kol: %s\n",
-                    orDash(k.kondisiKet()), orDash(k.kualitasKet())));
-                if (isNotBlank(k.jenisPenggunaanKet())) {
-                    sb.append(String.format("│    Penggunaan: %s\n", k.jenisPenggunaanKet()));
+                sb.append(String.format("│    Plafon    : %s\n", formatRupiah(k.getPlafonAwal())));
+                sb.append(String.format("│    Baki Debet: %s\n", formatRupiah(k.getBakiDebet())));
+                sb.append(String.format("│    Kondisi   : %s  |  Kol: %s\n",
+                    orDash(k.getKondisiKet()), orDash(k.getKualitasKet())));
+                if (isNotBlank(k.getJenisPenggunaanKet())) {
+                    sb.append(String.format("│    Penggunaan: %s\n", k.getJenisPenggunaanKet()));
                 }
-                if (isNotBlank(k.tanggalAkadAwal()) || isNotBlank(k.tanggalJatuhTempo())) {
-                    sb.append(String.format("│    Jangka: %s → %s\n",
-                        formatDate(k.tanggalAkadAwal()), formatDate(k.tanggalJatuhTempo())));
+                if (isNotBlank(k.getTanggalAkadAwal()) || isNotBlank(k.getTanggalJatuhTempo())) {
+                    sb.append(String.format("│    Jangka    : %s → %s\n",
+                        formatDate(k.getTanggalAkadAwal()), formatDate(k.getTanggalJatuhTempo())));
+                }
+
+                // Kolektibilitas terburuk & hari tunggakan max dari riwayat 24 bulan
+                String worstKol = findWorstKol(k.getTahunBulan());
+                String maxHt    = findMaxHt(k.getTahunBulan());
+                if (isNotBlank(worstKol)) {
+                    sb.append(String.format("│    Kol Terburuk (24bln): *%s*\n", worstKol));
+                }
+                if (isNotBlank(maxHt) && !"0".equals(maxHt)) {
+                    sb.append(String.format("│    Max Hari Tunggakan  : %s hari\n", maxHt));
                 }
             }
             sb.append("└─────────────────────\n");
@@ -135,6 +147,40 @@ public class SlikNameFormatter {
             current + 1, total);
     }
 
+    /**
+     * Cari kolektibilitas terburuk (nilai tertinggi) dari riwayat 24 bulan.
+     * Key format: tahunBulan{n}Kol
+     */
+    private String findWorstKol(Map<String, String> tahunBulan) {
+        return tahunBulan.entrySet().stream()
+            .filter(e -> e.getKey().endsWith("Kol") && isNotBlank(e.getValue()))
+            .map(Map.Entry::getValue)
+            .max(Comparator.comparingInt(s -> {
+                try { return Integer.parseInt(s.trim()); } catch (Exception ex) { return 0; }
+            }))
+            .orElse(null);
+    }
+
+    /**
+     * Cari hari tunggakan tertinggi dari riwayat 24 bulan.
+     * Key format: tahunBulan{n}Ht
+     */
+    private String findMaxHt(Map<String, String> tahunBulan) {
+        return tahunBulan.entrySet().stream()
+            .filter(e -> e.getKey().endsWith("Ht") && isNotBlank(e.getValue()))
+            .map(Map.Entry::getValue)
+            .max(Comparator.comparingInt(s -> {
+                try { return Integer.parseInt(s.trim()); } catch (Exception ex) { return 0; }
+            }))
+            .orElse(null);
+    }
+
+    private String truncate(String message) {
+        if (message.length() <= MAX_TELEGRAM_CHARS) return message;
+        String suffix = "\n\n⚠️ _Pesan dipotong karena melebihi batas karakter Telegram_";
+        return message.substring(0, MAX_TELEGRAM_CHARS - suffix.length()) + suffix;
+    }
+
     private String formatDateTime(String raw) {
         if (!isNotBlank(raw) || raw.length() < 14) return orDash(raw);
         try {
@@ -156,9 +202,7 @@ public class SlikNameFormatter {
     private String formatYearMonth(String raw) {
         if (!isNotBlank(raw) || raw.length() < 6) return orDash(raw);
         try {
-            String year  = raw.substring(0, 4);
-            String month = raw.substring(4, 6);
-            return month + "/" + year;
+            return raw.substring(4, 6) + "/" + raw.substring(0, 4);
         } catch (Exception e) {
             return raw;
         }
@@ -183,9 +227,5 @@ public class SlikNameFormatter {
 
     private boolean isNotBlank(String s) {
         return s != null && !s.isBlank();
-    }
-
-    private String escape(String s) {
-        return isNotBlank(s) ? s : "-";
     }
 }
