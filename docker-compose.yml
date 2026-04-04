@@ -13,26 +13,26 @@ services:
       - --port=3000
       - --webhook=${WHATSAPP_WEBHOOK:-}
       - --webhook-secret=${WHATSAPP_WEBHOOK_SECRET:-secret}
+    networks:
+      - app-network
 
-  cek-pelunasan:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: cek-pelunasan-app
-    restart: unless-stopped
+  app:
+    build: .
+    container_name: cek-pelunasan
+    restart: always
+    env_file: .env
+    environment:
+      - WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:3000
     ports:
       - "${SERVER_PORT:-8080}:8080"
-    env_file:
-      - .env
-    environment:
-      # Override internal WhatsApp URL agar pakai Docker network
-      - WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:3000
-    deploy:
-      resources:
-        limits:
-          memory: 512M
     depends_on:
       - whatsapp
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   whatsapp_storages:

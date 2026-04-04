@@ -53,7 +53,7 @@ public class Routers {
 
 	private void processCommand(WhatsAppWebhookDTO webhook) {
 		String messageText = webhook.getPayload().getBody();
-		log.debug("Received message: {} from Admin {}", messageText, webhook.getFrom());
+		log.info("Received message: {} from Admin {}", messageText, webhook.getFrom());
 
 		if (isAdminShortcut(webhook)) {
 			log.info("Routing to Shortcut Service");
