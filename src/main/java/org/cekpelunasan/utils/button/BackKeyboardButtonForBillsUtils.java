@@ -1,31 +1,28 @@
 package org.cekpelunasan.utils.button;
 
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+import it.tdlight.jni.TdApi;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 public class BackKeyboardButtonForBillsUtils {
 
-	public InlineKeyboardMarkup backButton(String query) {
-		String[] parts = query.split("_");
-		String name = parts[2];
-		String branch = parts[3];
-		String page = parts[4];
+    public TdApi.ReplyMarkupInlineKeyboard backButton(String query) {
+        String[] parts = query.split("_");
+        String name = parts[2];
+        String branch = parts[3];
+        String page = parts[4];
 
-		List<InlineKeyboardRow> inlineKeyboardRows = new ArrayList<>();
-		InlineKeyboardRow inlineKeyboardButtons = new InlineKeyboardRow();
+        TdApi.InlineKeyboardButton backButton = tdButton("◀️ Kembali", "paging_" + name + "_" + branch + "_" + page);
+        TdApi.InlineKeyboardButton[][] rows = {{backButton}};
+        return new TdApi.ReplyMarkupInlineKeyboard(rows);
+    }
 
-		InlineKeyboardButton backButton = InlineKeyboardButton.builder()
-			.text("◀️ Kembali")
-			.callbackData("paging_" + name + "_" + branch + "_" + page)
-			.build();
-		inlineKeyboardButtons.add(backButton);
-		inlineKeyboardRows.add(inlineKeyboardButtons);
-		return InlineKeyboardMarkup.builder()
-			.keyboard(inlineKeyboardRows)
-			.build();
-	}
+    private static TdApi.InlineKeyboardButton tdButton(String text, String data) {
+        TdApi.InlineKeyboardButton btn = new TdApi.InlineKeyboardButton();
+        btn.text = text;
+        TdApi.InlineKeyboardButtonTypeCallback type = new TdApi.InlineKeyboardButtonTypeCallback();
+        type.data = data.getBytes(StandardCharsets.UTF_8);
+        btn.type = type;
+        return btn;
+    }
 }

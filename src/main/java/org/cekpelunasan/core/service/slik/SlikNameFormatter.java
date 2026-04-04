@@ -1,0 +1,260 @@
+package org.cekpelunasan.core.service.slik;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import it.tdlight.jni.TdApi;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.cekpelunasan.core.service.slik.dto.SlikJsonDto;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class SlikNameFormatter {
+
+    /** Sisakan untuk footer (/slik id + halaman). */
+    private static final int MAX_CONTENT_CHARS = 3800;
+
+    private static final DateTimeFormatter DATETIME_IN  = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+    private static final DateTimeFormatter DATE_IN      = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter DATETIME_OUT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter DATE_OUT     = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    private final ObjectMapper objectMapper;
+
+    // ─────────────────────────────────────────────
+    // Parse
+    // ─────────────────────────────────────────────
+
+    public Mono<SlikJsonDto> parse(byte[] jsonBytes) {
+        return Mono.fromCallable(() -> {
+                try {
+                    return objectMapper.readValue(jsonBytes, SlikJsonDto.class);
+                } catch (Exception e) {
+                    log.debug("UTF-8 parse failed ({}), retrying as Windows-1252", e.getMessage());
+                    String content = new String(jsonBytes, java.nio.charset.Charset.forName("windows-1252"));
+                    return objectMapper.readValue(content, SlikJsonDto.class);
+                }
+            })
+            .subscribeOn(Schedulers.boundedElastic())
+            .doOnError(e -> log.error("Failed to parse SLIK JSON (size={} bytes): {}", jsonBytes.length, e.getMessage()))
+            .onErrorResume(e -> Mono.empty());
+    }
+
+    // ─────────────────────────────────────────────
+    // Format → TdApi.FormattedText
+    // ─────────────────────────────────────────────
+
+    public TdApi.FormattedText format(SlikSessionCache.SlikPageData data, int current, int total) {
+        return data.dto() == null
+            ? formatNoData(data, current, total)
+            : formatFull(data, current, total);
+    }
+
+    private TdApi.FormattedText formatFull(SlikSessionCache.SlikPageData data, int current, int total) {
+        SlikJsonDto dto = data.dto();
+        SlikJsonDto.Individual ind = dto.individual();
+        SlikJsonDto.Header hdr = dto.header();
+
+        String namaDebitur = ind.dataPokokDebitur() != null && !ind.dataPokokDebitur().isEmpty()
+            ? ind.dataPokokDebitur().getFirst().namaDebitur() : "";
+
+        MessageBuilder mb = new MessageBuilder();
+
+        // ── Header ──────────────────────────────
+        mb.bold("📊 HASIL SLIK — " + orDash(namaDebitur)); mb.append("\n");
+        mb.append("━━━━━━━━━━━━━━━━━━━━��\n");
+        if (hdr != null) {
+            mb.append("📋 Ref: "); mb.code(orDash(hdr.kodeReferensiPengguna())); mb.append("\n");
+            mb.append("📅 Tanggal: " + formatDateTime(hdr.tanggalPermintaan()) + "\n");
+        }
+
+        // ── Debitur ─────────────────────────────
+        if (ind.dataPokokDebitur() != null && !ind.dataPokokDebitur().isEmpty()) {
+            SlikJsonDto.DataPokokDebitur deb = ind.dataPokokDebitur().getFirst();
+            mb.append("\n👤 "); mb.bold("DATA DEBITUR\n");
+            mb.append("🪪 KTP: "); mb.code(orDash(deb.noIdentitas())); mb.append("\n");
+            mb.append("📍 Alamat: " + orDash(deb.alamat()) + "\n");
+            if (isNotBlank(deb.tempatLahir()) || isNotBlank(deb.tanggalLahir())) {
+                mb.append("🎂 Lahir: " + orDash(deb.tempatLahir()) + ", " + formatDate(deb.tanggalLahir()) + "\n");
+            }
+            mb.append("💼 Pekerjaan: " + orDash(deb.pekerjaanKet()) + "\n");
+        }
+
+        // ── Ringkasan ────────────────────────────
+        if (ind.ringkasanFasilitas() != null) {
+            SlikJsonDto.RingkasanFasilitas rf = ind.ringkasanFasilitas();
+            mb.append("\n📈 "); mb.bold("RINGKASAN FASILITAS\n");
+            mb.append("Kol. Terburuk : "); mb.bold(orDash(rf.kualitasTerburuk())); mb.append("\n");
+            mb.append("Bulan Data    : " + formatYearMonth(rf.kualitasBulanDataTerburuk()) + "\n");
+            mb.append("Plafon Total  : " + formatRupiah(rf.plafonEfektifTotal()) + "\n");
+            mb.append("Baki Debet    : " + formatRupiah(rf.bakiDebetTotal()) + "\n");
+        }
+
+        // ── Fasilitas (expandable blockquote per item) ──
+        if (ind.fasilitas() != null && ind.fasilitas().kreditPembiayan() != null) {
+            List<SlikJsonDto.KreditPembiayaan> list = ind.fasilitas().kreditPembiayan();
+            mb.append("\n💳 "); mb.bold("FASILITAS KREDIT (" + list.size() + ")\n");
+
+            int shown = 0;
+            for (SlikJsonDto.KreditPembiayaan k : list) {
+                String fasText = buildFasilitasText(shown + 1, k);
+                // Cek apakah masih muat sebelum footer (~200 chars)
+                if (mb.length() + fasText.length() + 200 > MAX_CONTENT_CHARS) {
+                    int remaining = list.size() - shown;
+                    mb.italic("_(+" + remaining + " fasilitas lainnya — gunakan /slik {ktp} untuk detail)_\n");
+                    break;
+                }
+                int start = mb.markStart();
+                mb.append(fasText);
+                mb.endExpandableBlockquote(start);
+                mb.append("\n");
+                shown++;
+            }
+        }
+
+        // ── Footer (selalu ada, bahkan jika pesan dipotong) ──
+        if (isNotBlank(data.idNumber())) {
+            mb.append("\n🎯 "); mb.code("/slik " + data.idNumber()); mb.append("\n");
+        }
+        mb.italic("📄 Halaman " + (current + 1) + " dari " + total);
+
+        return mb.build();
+    }
+
+    private String buildFasilitasText(int index, SlikJsonDto.KreditPembiayaan k) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(index).append(". ").append(orDash(k.getLjkKet())).append("\n");
+        if (isNotBlank(k.getCabangKet())) sb.append("Cabang    : ").append(k.getCabangKet()).append("\n");
+        sb.append("Plafon    : ").append(formatRupiah(k.getPlafonAwal())).append(" | Baki: ").append(formatRupiah(k.getBakiDebet())).append("\n");
+        sb.append("Kondisi   : ").append(orDash(k.getKondisiKet())).append(" | Kol: ").append(orDash(k.getKualitasKet())).append("\n");
+        if (isNotBlank(k.getJenisPenggunaanKet())) sb.append("Penggunaan: ").append(k.getJenisPenggunaanKet()).append("\n");
+        if (isNotBlank(k.getTanggalAkadAwal()) || isNotBlank(k.getTanggalJatuhTempo())) {
+            sb.append("Jangka    : ").append(formatDate(k.getTanggalAkadAwal()))
+              .append(" → ").append(formatDate(k.getTanggalJatuhTempo())).append("\n");
+        }
+        String worstKol = findWorstKol(k.getTahunBulan());
+        String maxHt    = findMaxHt(k.getTahunBulan());
+        if (isNotBlank(worstKol)) sb.append("Kol Terburuk 24bln: ").append(worstKol).append("\n");
+        if (isNotBlank(maxHt) && !"0".equals(maxHt)) sb.append("Max Hari Tunggakan: ").append(maxHt).append(" hari\n");
+        return sb.toString();
+    }
+
+    private TdApi.FormattedText formatNoData(SlikSessionCache.SlikPageData data, int current, int total) {
+        MessageBuilder mb = new MessageBuilder();
+        mb.bold("📄 DOKUMEN #" + (current + 1)); mb.append("\n");
+        mb.append("━━━━━━━━━━━━━━━━━━━━━\n");
+        mb.append("📂 File: "); mb.code(data.contentKey()); mb.append("\n");
+        mb.append("🪪 No KTP: ");
+        if (isNotBlank(data.idNumber())) mb.code(data.idNumber()); else mb.italic("Tidak ditemukan");
+        mb.append("\n"); mb.italic("Data SLIK tidak tersedia\n");
+        mb.append("\n"); mb.italic("📄 Halaman " + (current + 1) + " dari " + total);
+        return mb.build();
+    }
+
+    // ─────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────
+
+    private String findWorstKol(Map<String, String> tahunBulan) {
+        return tahunBulan.entrySet().stream()
+            .filter(e -> e.getKey().endsWith("Kol") && isNotBlank(e.getValue()))
+            .map(Map.Entry::getValue)
+            .max(Comparator.comparingInt(s -> { try { return Integer.parseInt(s.trim()); } catch (Exception ex) { return 0; } }))
+            .orElse(null);
+    }
+
+    private String findMaxHt(Map<String, String> tahunBulan) {
+        return tahunBulan.entrySet().stream()
+            .filter(e -> e.getKey().endsWith("Ht") && isNotBlank(e.getValue()))
+            .map(Map.Entry::getValue)
+            .max(Comparator.comparingInt(s -> { try { return Integer.parseInt(s.trim()); } catch (Exception ex) { return 0; } }))
+            .orElse(null);
+    }
+
+    private String formatDateTime(String raw) {
+        if (!isNotBlank(raw) || raw.length() < 14) return orDash(raw);
+        try { return LocalDateTime.parse(raw, DATETIME_IN).format(DATETIME_OUT); } catch (Exception e) { return raw; }
+    }
+
+    private String formatDate(String raw) {
+        if (!isNotBlank(raw) || raw.length() < 8) return orDash(raw);
+        try { return LocalDate.parse(raw.substring(0, 8), DATE_IN).format(DATE_OUT); } catch (Exception e) { return raw; }
+    }
+
+    private String formatYearMonth(String raw) {
+        if (!isNotBlank(raw) || raw.length() < 6) return orDash(raw);
+        try { return raw.substring(4, 6) + "/" + raw.substring(0, 4); } catch (Exception e) { return raw; }
+    }
+
+    private String formatRupiah(String raw) {
+        if (!isNotBlank(raw)) return "Rp0";
+        try {
+            long v = Long.parseLong(raw.trim());
+            DecimalFormatSymbols sym = new DecimalFormatSymbols();
+            sym.setGroupingSeparator('.');
+            sym.setDecimalSeparator(',');
+            return new DecimalFormat("Rp#,##0", sym).format(v);
+        } catch (NumberFormatException e) { return raw; }
+    }
+
+    private String orDash(String s) { return isNotBlank(s) ? s : "-"; }
+
+    private boolean isNotBlank(String s) { return s != null && !s.isBlank(); }
+
+    // ─────────────────────────────────────────────
+    // MessageBuilder — builds FormattedText with entities
+    // Offset dihitung dalam UTF-16 code units (sesuai TDLib).
+    // Java String.length() sudah mengembalikan jumlah char UTF-16.
+    // ─────────────────────────────────────────────
+
+    private static class MessageBuilder {
+        private final StringBuilder sb = new StringBuilder();
+        private final List<TdApi.TextEntity> entities = new ArrayList<>();
+
+        MessageBuilder append(String s) { if (s != null) sb.append(s); return this; }
+
+        MessageBuilder bold(String s) { return entity(s, new TdApi.TextEntityTypeBold()); }
+        MessageBuilder code(String s) { return entity(s, new TdApi.TextEntityTypeCode()); }
+        MessageBuilder italic(String s) { return entity(s, new TdApi.TextEntityTypeItalic()); }
+
+        int markStart() { return sb.length(); }
+
+        void endExpandableBlockquote(int start) {
+            int len = sb.length() - start;
+            if (len > 0) addEntity(start, len, new TdApi.TextEntityTypeExpandableBlockQuote());
+        }
+
+        int length() { return sb.length(); }
+
+        TdApi.FormattedText build() {
+            return new TdApi.FormattedText(sb.toString(), entities.toArray(new TdApi.TextEntity[0]));
+        }
+
+        private MessageBuilder entity(String s, TdApi.TextEntityType type) {
+            if (s == null || s.isEmpty()) return this;
+            int start = sb.length();
+            sb.append(s);
+            addEntity(start, s.length(), type);
+            return this;
+        }
+
+        private void addEntity(int offset, int length, TdApi.TextEntityType type) {
+            if (length <= 0) return;
+            TdApi.TextEntity e = new TdApi.TextEntity();
+            e.offset = offset;
+            e.length = length;
+            e.type = type;
+            entities.add(e);
+        }
+    }
+}
