@@ -34,3 +34,9 @@ build/
 .vscode/
 
 files/Nominatif%20Baru.csv
+
+# Claude Code internal files
+.claude/
+CLAUDE.md
+PLAN.md
+unhandled-callbacks.md
