@@ -140,6 +140,11 @@ public class SavingsService {
 		return savingsRepository.findByTabId(id);
 	}
 
+	public Flux<Savings> findByName(String name, int limit) {
+		log.info("Searching savings by name: {} (limit {})", name, limit);
+		return savingsRepository.findByNameContainingIgnoreCase(name).take(limit);
+	}
+
 	public Mono<Page<Savings>> findFilteredSavings(List<String> addressKeywords, @NonNull Pageable pageable) {
 		log.info("Starting findFilteredSavings with keywords: {} and page: {}", addressKeywords, pageable);
 
