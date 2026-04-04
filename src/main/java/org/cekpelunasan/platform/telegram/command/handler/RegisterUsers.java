@@ -13,8 +13,7 @@ import org.cekpelunasan.core.service.slik.SendNotificationSlikUpdated;
 import org.cekpelunasan.core.service.users.UserService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-
-
+import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -46,40 +45,53 @@ public class RegisterUsers extends AbstractCommandHandler {
 	@Override
 	@Async
 	public CompletableFuture<Void> process(long chatId, String text, SimpleTelegramClient client) {
-		return CompletableFuture.runAsync(() -> {
-			String[] parts = text.split(" ");
-			if (parts.length < 2) {
-				sendMessage(chatId, "Gunakan /otor <kode cabang> atau\n/otor <kode ao>", client);
-				return;
-			}
+		String[] parts = text.split(" ");
+		if (parts.length < 2) {
+			sendMessage(chatId, "Gunakan /otor <kode cabang> atau\n/otor <kode ao>", client);
+			return CompletableFuture.completedFuture(null);
+		}
 
-			User user = userService.findUserByChatId(chatId).block();
-			if (user == null) {
-				sendMessage(chatId, "User tidak ditemukan", client);
-				return;
-			}
+		String target = parts[1];
 
-			String target = parts[1];
+		Mono<Void> pipeline = userService.findUserByChatId(chatId)
+			.switchIfEmpty(Mono.fromRunnable(() ->
+				sendMessage(chatId, "User tidak ditemukan", client)))
+			.flatMap(user -> {
+				if (target.length() == 3) {
+					return billService.findAllAccountOfficer()
+						.flatMap(aoSet -> {
+							if (aoSet.contains(target)) {
+								return saveAndNotify(user, AccountOfficerRoles.AO, target, "AO", chatId, client);
+							}
+							return Mono.empty();
+						});
+				}
+				if (isNumber(target)) {
+					return billService.lisAllBranch()
+						.flatMap(branchSet -> {
+							if (branchSet.contains(target)) {
+								return saveAndNotify(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, client);
+							}
+							return Mono.empty();
+						});
+				}
+				sendMessage(chatId, "❌ *Format tidak valid*\n\nContoh: /otor 1234567890", client);
+				return Mono.empty();
+			})
+			.then();
 
-			if (target.length() == 3 && billService.findAllAccountOfficer().block().contains(target)) {
-				registerUser(user, AccountOfficerRoles.AO, target, "AO", chatId, client);
-				CompletableFuture.runAsync(sendNotificationSlikUpdated::runTest);
-				return;
-			}
-			if (isNumber(target) && billService.lisAllBranch().block().contains(target)) {
-				registerUser(user, AccountOfficerRoles.PIMP, target, "Pimpinan", chatId, client);
-				CompletableFuture.runAsync(sendNotificationSlikUpdated::runTest);
-				return;
-			}
-			sendMessage(chatId, "❌ *Format tidak valid*\n\nContoh: /otor 1234567890", client);
-		});
+		return pipeline.toFuture();
 	}
 
-	private void registerUser(User user, AccountOfficerRoles role, String code, String label, long chatId, SimpleTelegramClient client) {
+	private Mono<Void> saveAndNotify(User user, AccountOfficerRoles role, String code, String label, long chatId, SimpleTelegramClient client) {
 		user.setUserCode(code);
 		user.setRoles(role);
-		userRepository.save(user);
-		sendMessage(chatId, "✅ User berhasil didaftarkan sebagai *" + label + "*", client);
+		return userRepository.save(user)
+			.doOnSuccess(saved -> {
+				sendMessage(chatId, "✅ User berhasil didaftarkan sebagai *" + label + "*", client);
+				sendNotificationSlikUpdated.runTest();
+			})
+			.then();
 	}
 
 	private boolean isNumber(String str) {
