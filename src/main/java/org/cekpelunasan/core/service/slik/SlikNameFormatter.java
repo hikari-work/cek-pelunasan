@@ -32,7 +32,15 @@ public class SlikNameFormatter {
     private final ObjectMapper objectMapper;
 
     public Mono<SlikJsonDto> parse(byte[] jsonBytes) {
-        return Mono.fromCallable(() -> objectMapper.readValue(jsonBytes, SlikJsonDto.class))
+        return Mono.fromCallable(() -> {
+                try {
+                    return objectMapper.readValue(jsonBytes, SlikJsonDto.class);
+                } catch (Exception e) {
+                    log.debug("UTF-8 parse failed ({}), retrying as Windows-1252", e.getMessage());
+                    String content = new String(jsonBytes, java.nio.charset.Charset.forName("windows-1252"));
+                    return objectMapper.readValue(content, SlikJsonDto.class);
+                }
+            })
             .subscribeOn(Schedulers.boundedElastic())
             .doOnError(e -> log.error("Failed to parse SLIK JSON (size={} bytes): {}", jsonBytes.length, e.getMessage()))
             .onErrorResume(e -> Mono.empty());
