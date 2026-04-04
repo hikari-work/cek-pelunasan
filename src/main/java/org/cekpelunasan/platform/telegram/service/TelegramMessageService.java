@@ -8,11 +8,20 @@ import org.springframework.stereotype.Service;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 public class TelegramMessageService {
+
+    private static final ScheduledExecutorService FILE_CLEANUP =
+        Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "tdlight-file-cleanup");
+            t.setDaemon(true);
+            return t;
+        });
 
     public long sendText(long chatId, String text, SimpleTelegramClient client) {
         try {
@@ -133,10 +142,13 @@ public class TelegramMessageService {
 
             final Path finalTmpFile = tmpFile;
             client.send(msg, result -> {
-                try { Files.deleteIfExists(finalTmpFile); } catch (Exception ignored) {}
                 if (result.isError()) {
                     log.error("Failed to send document to {}: {}", chatId, result.getError().message);
                 }
+                // Delay deletion — TDLib may retry upload after callback fires
+                FILE_CLEANUP.schedule(() -> {
+                    try { Files.deleteIfExists(finalTmpFile); } catch (Exception ignored) {}
+                }, 5, TimeUnit.MINUTES);
             });
         } catch (Exception e) {
             log.error("Failed to send document to {}", chatId, e);
