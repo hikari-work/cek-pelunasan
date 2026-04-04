@@ -1,89 +1,143 @@
-# 🤖 Bot Cek Pelunasan
+# Bot Cek Pelunasan
 
-Bot Telegram untuk memudahkan pengecekan informasi pelunasan nasabah, termasuk status tagihan, denda, dan data Nasabah. Dibangun dengan Java dan Spring Boot, bot ini terintegrasi dengan database internal untuk memberikan informasi secara real-time.
+Bot Telegram & WhatsApp untuk manajemen data pelunasan kredit di lingkup koperasi/BPR. Dibangun dengan Spring Boot 3 + Java 21, menggunakan TDLight (TDLib) sebagai Telegram client dan MongoDB sebagai database utama.
 
-## ✨ Fitur Utama
+## Fitur
 
-- 🔍 **Pencarian Nasabah** berdasarkan nama atau nomor kontrak.
-- 📄 **Detail Informasi**: Menampilkan SPK, nama, alamat, produk, plafon, baki debet, tunggakan, denda, dan total tagihan.
-- 📊 **Statistik Sistem**: Menampilkan load system dan status koneksi database.
-- 🛡️ **Akses Terbatas**: Hanya pengguna yang terdaftar yang dapat menggunakan bot.
-- 🎁 **Informasi Tagihan**: Menampilkan tagihan lengkap, dari Pengaruh NPL, Jatuh Bayar.
-- 🥽 **Simulasi**: Dapat melakukan Simulasi pembayaran, dan menghitung minimal bayar.
-- 🔐 **Sistem Layanan Informasi Keuangan**: Melakukan request untuk mendapatkan dokumen asli dan generate Resume nya, membatasi user melakukan generate.
-- 🧷 **Marketing Dana**: User dapat mencari Tabungan dan Kolek Tabungan Berjangka.
-- 😎 **GEMINI** : Disertai Inline untuk bertanya lewat AI
+### Telegram
+| Command | Deskripsi |
+|---|---|
+| `/slik <ktp\|nama>` | Cari data SLIK — by 16-digit KTP atau nama (case-insensitive), tampil per halaman dengan Next/Prev. Admin dapat mencari semua usercode. |
+| `/tab <nama>` | Cari data tabungan nasabah |
+| `/otor <kode>` | Daftarkan diri sebagai AO (3 huruf) atau Pimpinan (kode cabang) |
+| `/simulasi` | Simulasi pembayaran kredit |
+| `/help` | Daftar semua perintah |
+| `/auth` | Autentikasi sesi |
 
-## 🚀 Cara Deploy
+### WhatsApp
+| Perintah | Deskripsi |
+|---|---|
+| `.t <nomor rekening>` | Detail tabungan by nomor rekening (12 digit) |
+| `.t <nama>` | Cari tabungan by nama (max 5 hasil) |
+| `.p <spk>` | Cek pelunasan kredit |
+| `.s <ktp>` | Cek SLIK by nomor KTP |
+| `.jb` | Info jatuh bayar |
+| `.<12 digit>` | Hot kolek — cek tagihan langsung |
 
-### 1. Persiapan
+## Tech Stack
 
-- Pastikan Java 21 dan Maven terinstal di sistem Anda.
-- Siapkan database MySql dengan skema yang sesuai.
-- Jika menggunakan PostgreSQL silahkan edit Driver sendiri di pom.xml
+- **Runtime:** Java 21 (Virtual Threads), Spring Boot 3.4.4
+- **Telegram:** TDLight 3.4.4 (TDLib — bukan Bot API)
+- **Database:** MongoDB (Reactive — Spring Data Reactive MongoDB)
+- **Storage:** Cloudflare R2 (S3-compatible, AWS SDK v2)
+- **WhatsApp Gateway:** [go-whatsapp-web-multidevice](https://github.com/aldinokemal2104/go-whatsapp-web-multidevice)
+- **PDF:** Playwright (Chromium headless) + Apache PDFBox
+- **Async:** Project Reactor (WebFlux) — tidak ada `.block()` di production path
 
-### 2. Konfigurasi
-
-- Salin file `application.properties.example` menjadi `application.properties`.
-- Isi konfigurasi berikut:
-
-```properties
-telegram.bot.token=TELEGRAM_BOT_TOKEN
-telegram.bot.owner=TELEGRAM_BOT_OWNER
-spring.datasource.url=DATABASE_URL
-server.port=SERVER_PORT
-spring.datasource.hikari.maximum-pool-size=MAX_POOL
-spring.datasource.hikari.minimum-idle=2
-spring.jpa.hibernate.ddl-auto=update
-spring.servlet.multipart.max-file-size=20MB
-spring.servlet.multipart.max-request-size=20MB
-spring.jpa.properties.hibernate.jdbc.batch_size=BATCH_SIZE
-spring.jpa.properties.hibernate.order_inserts=true
-spring.jpa.properties.hibernate.order_updates=true
-logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
-logging.level.org.hibernate.SQL=DEBUG
-r2.account.id=R2_ACCOUNT_ID
-r2.access.key=R2_ACCESS_ACCOUNT
-r2.secret.key=RE_SECRET_KEY
-r2.endpoint=r2.cloudflarestorage.com
-r2.bucket=R2_BUCKET_NAME
-gemini.key=GEMINI_KEY
+## Arsitektur
 
 ```
+Telegram Update (long-poll/webhook)
+    └── TelegramBot
+        ├── CommandHandler → CommandProcessor (29 handler)
+        └── CallbackHandler → CallbackProcessor
 
-### 3. Build dan Jalankan
+WhatsApp Webhook → WebhookController → Routers
+    ├── TabunganService  (.t)
+    ├── HandlerPelunasan (.p)
+    ├── SlikService      (.s)
+    ├── JatuhBayarService (.jb)
+    └── HandleKolekCommand (.<12digit>)
+```
 
-- Bangun proyek:
+**Authorization:** AOP via `@RequireAuth` — dicek dari `AuthorizedChats` (ConcurrentHashMap, di-load saat startup).
+
+**SLIK name search:** Hasil disimpan di `SlikSessionCache` (TTL 30 menit), navigasi dengan inline keyboard Next/Prev, setiap fasilitas ditampilkan sebagai expandable blockquote.
+
+## Konfigurasi
+
+Semua konfigurasi via environment variable (file `.env`):
+
+```env
+# MongoDB
+SPRING_DATA_MONGODB_URI=mongodb+srv://user:pass@host/db
+
+# Telegram
+TELEGRAM_BOT_TOKEN=your_token
+TELEGRAM_BOT_OWNER=your_chat_id
+TELEGRAM_API_ID=123456
+TELEGRAM_API_HASH=your_api_hash
+
+# Cloudflare R2
+R2_ACCOUNT_ID=your_account_id
+R2_ACCESS_KEY=your_access_key
+R2_SECRET_KEY=your_secret_key
+R2_ENDPOINT=https://xxx.r2.cloudflarestorage.com
+R2_BUCKET=your_bucket
+
+# WhatsApp Gateway
+WHATSAPP_GATEWAY_URL=http://localhost:3000
+WHATSAPP_GATEWAY_USERNAME=admin
+WHATSAPP_GATEWAY_PASSWORD=your_password
+WHATSAPP_DEVICE_ID=6281234567890.0:0@s.whatsapp.net
+ADMIN_WHATSAPP=628123456789
+
+# Server
+SERVER_PORT=8080
+```
+
+## Deploy dengan Docker
+
+### Langkah 1 — Jalankan WhatsApp Gateway dulu
 
 ```bash
+docker compose up -d whatsapp
+```
+
+Buka `http://server:3000`, login, scan QR code. Ambil device ID:
+
+```bash
+curl -u admin:password http://server:3000/app/devices
+```
+
+Salin device ID ke `.env`:
+```env
+WHATSAPP_DEVICE_ID=6281234567890.0:0@s.whatsapp.net
+```
+
+### Langkah 2 — Jalankan aplikasi
+
+```bash
+docker compose up -d app
+```
+
+### Update aplikasi
+
+```bash
+docker compose up -d --build app
+```
+
+## Build Lokal
+
+```bash
+# Build
 mvn clean package
+
+# Run tests
+mvn clean test
+
+# Jalankan
+java -jar target/cek-pelunasan-2.0.0.jar
 ```
 
-- Setup Ngrok untuk Menerima Webhook
+Untuk development lokal, load `.env` terlebih dahulu:
+
 ```bash
-ngrok http 9000
-```
-Sesuaikan dengan port server
-
-- Jalankan aplikasi:
-
-```bash
-java -jar target/cek-pelunasan-0.0.1-SNAPSHOT.jar
+export $(grep -v '^#' .env | xargs) && mvn spring-boot:run
 ```
 
-### 4. Daftarkan Bot di Telegram
+Atau install plugin **EnvFile** di IntelliJ.
 
-- Cari `@BotFather` di Telegram.
-- Gunakan perintah `/newbot` untuk membuat bot baru dan dapatkan token akses.
-- Masukkan token tersebut ke dalam konfigurasi `application.properties`.
+## Lisensi
 
-## 🛠️ Pengembangan
-
-- Struktur proyek mengikuti standar Spring Boot.
-- Gunakan `TelegramBots` library untuk integrasi dengan Telegram API.
-- Database diakses menggunakan Spring Data JPA.
-- Silahkan Pull Request untuk pengembangan BOT ini
-
-## 📄 Lisensi
-
-Proyek ini dilisensikan di bawah MIT License. Lihat file [LICENSE](LICENSE) untuk informasi lebih lanjut.
+MIT License
