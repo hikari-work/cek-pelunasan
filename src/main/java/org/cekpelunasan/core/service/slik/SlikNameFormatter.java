@@ -126,6 +126,9 @@ public class SlikNameFormatter {
         if (isNotBlank(data.idNumber())) {
             mb.append("\n🎯 "); mb.code("/slik " + data.idNumber()); mb.append("\n");
         }
+        if (isNotBlank(data.contentKey())) {
+            mb.append("📥 "); mb.code("/doc " + data.contentKey()); mb.append("\n");
+        }
         mb.italic("📄 Halaman " + (current + 1) + " dari " + total);
 
         return mb.build();
