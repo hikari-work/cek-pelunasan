@@ -52,13 +52,7 @@ public class RegisterUsers extends AbstractCommandHandler {
 			.switchIfEmpty(Mono.fromRunnable(() -> sendMessage(chatId, "User tidak ditemukan", client)))
 			.flatMap(user -> {
 				if (target.length() == 3) {
-					return billService.findAllAccountOfficer()
-						.flatMap(aoSet -> {
-							if (aoSet.contains(target)) {
-								return saveAndNotify(user, AccountOfficerRoles.AO, target, "AO", chatId, client);
-							}
-							return Mono.empty();
-						});
+					return saveAndNotify(user, AccountOfficerRoles.AO, target, "AO", chatId, client);
 				}
 				if (isNumber(target)) {
 					return billService.lisAllBranch()
