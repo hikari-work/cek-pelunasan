@@ -37,7 +37,7 @@ public class AuthorizedChats {
 	}
 
 	public Mono<AccountOfficerRoles> getUserRoles(@NonNull Long chatId) {
-		return userRepository.findById(chatId).map(User::getRoles);
+		return userRepository.findById(chatId).mapNotNull(User::getRoles);
 	}
 
 	@EventListener(ApplicationReadyEvent.class)

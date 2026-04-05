@@ -9,6 +9,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.BytesWrapper;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -61,7 +62,7 @@ public class S3ClientConfiguration{
 		try {
 			GetObjectRequest request = GetObjectRequest.builder().bucket(bucket).key(key).build();
 			return Mono.fromFuture(s3AsyncClient().getObject(request, AsyncResponseTransformer.toBytes()))
-				.map(responseBytes -> responseBytes.asByteArray())
+				.map(BytesWrapper::asByteArray)
 				.onErrorResume(e -> {
 					log.error("Failed to download file from S3: {}", e.getMessage());
 					return Mono.empty();
