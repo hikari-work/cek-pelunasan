@@ -2,6 +2,7 @@ package org.cekpelunasan.core.service.users;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.cekpelunasan.core.entity.AccountOfficerRoles;
 import org.cekpelunasan.core.entity.User;
 import org.cekpelunasan.core.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,7 @@ public class UserService {
 
 	@SuppressWarnings("null")
 	public Mono<Void> insertNewUsers(@NonNull Long chatId) {
-		return userRepository.save(User.builder().chatId(chatId).build()).then();
+		return userRepository.save(User.builder().chatId(chatId).roles(AccountOfficerRoles.AO).build()).then();
 	}
 
 	public Mono<Long> countUsers() {
