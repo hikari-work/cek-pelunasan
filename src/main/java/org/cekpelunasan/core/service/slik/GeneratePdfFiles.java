@@ -2,7 +2,9 @@ package org.cekpelunasan.core.service.slik;
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.impl.TargetClosedError;
 import com.microsoft.playwright.options.Margin;
+import org.cekpelunasan.configuration.PlaywrightBrowserPool;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -34,11 +36,11 @@ public class GeneratePdfFiles {
 	private String logoUrl;
 
 	private final WebClient webClient;
-	private final Browser browser;
+	private final PlaywrightBrowserPool browserPool;
 
-	public GeneratePdfFiles(WebClient whatsappWebClient, Browser playwrightBrowser) {
+	public GeneratePdfFiles(WebClient whatsappWebClient, PlaywrightBrowserPool browserPool) {
 		this.webClient = whatsappWebClient;
-		this.browser = playwrightBrowser;
+		this.browserPool = browserPool;
 	}
 
 	/**
@@ -91,6 +93,8 @@ public class GeneratePdfFiles {
 
 	private Mono<byte[]> renderPdfWithPlaywright(String html) {
 		return Mono.<byte[]>fromCallable(() -> {
+			Browser browser = browserPool.acquire();
+			boolean crashed = false;
 			try (Page page = browser.newPage()) {
 				page.setContent(html);
 				return page.pdf(new Page.PdfOptions()
@@ -101,6 +105,11 @@ public class GeneratePdfFiles {
 						.setBottom("15mm")
 						.setLeft("15mm")
 						.setRight("15mm")));
+			} catch (TargetClosedError e) {
+				crashed = true;
+				throw e;
+			} finally {
+				browserPool.release(crashed ? null : browser);
 			}
 		}).subscribeOn(Schedulers.boundedElastic());
 	}
