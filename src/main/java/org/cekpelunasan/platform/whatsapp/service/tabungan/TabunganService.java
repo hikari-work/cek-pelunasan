@@ -52,7 +52,7 @@ public class TabunganService {
 
 	private Mono<Void> handleByAccountNumber(WhatsAppWebhookDTO command, String tabId) {
 		return savingsService.findById(tabId)
-			.flatMap(saving -> {
+			.doOnNext(saving -> {
 				String message = savingsUtils.getSavings(saving);
 				whatsAppSenderService.sendReactionToMessage(command.buildChatId(), command.getPayload().getId()).subscribe();
 				if (command.getFrom().contains(adminWhatsApp)) {
@@ -60,11 +60,11 @@ public class TabunganService {
 				} else {
 					whatsAppSenderService.sendWhatsAppText(command.buildChatId(), message).subscribe();
 				}
-				return Mono.<Void>empty();
 			})
 			.switchIfEmpty(Mono.fromRunnable(() ->
 				whatsAppSenderService.sendWhatsAppText(command.buildChatId(), "Data tidak ditemukan.").subscribe()
-			));
+			))
+			.then();
 	}
 
 	private Mono<Void> handleByName(WhatsAppWebhookDTO command, String name) {
