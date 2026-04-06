@@ -5,9 +5,15 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
- * Entity representing a paying status.
+ * Penanda apakah sebuah tagihan sudah lunas atau belum.
  * <p>
- * This seems to track whether a specific entity (identified by ID) has paid.
+ * Class ini sederhana tapi penting — dipakai sebagai flag status pelunasan
+ * untuk setiap nomor SPK. Ketika nasabah melunasi tagihannya, sebuah dokumen
+ * {@code Paying} dibuat atau diperbarui dengan {@code paid = true}.
+ * </p>
+ * <p>
+ * ID yang dipakai di sini biasanya adalah nomor SPK dari tagihan terkait,
+ * sehingga mudah dicari secara langsung. Koleksi MongoDB: {@code paying}.
  * </p>
  */
 @Document(collection = "paying")
@@ -16,17 +22,18 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-
 public class Paying {
 
 	/**
-	 * The unique identifier.
+	 * ID dokumen ini — biasanya berisi nomor SPK tagihan yang bersangkutan,
+	 * sehingga pengecekan status lunas bisa dilakukan langsung pakai nomor SPK.
 	 */
 	@Id
 	private String id;
 
 	/**
-	 * Verified payment status.
+	 * Status pelunasan tagihan. Bernilai {@code true} jika tagihan sudah dilunasi,
+	 * {@code false} atau {@code null} jika belum.
 	 */
 	private Boolean paid;
 }

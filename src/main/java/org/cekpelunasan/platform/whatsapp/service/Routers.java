@@ -16,6 +16,19 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Jantung dari alur pemrosesan pesan WhatsApp — menentukan ke service mana setiap pesan diarahkan.
+ * <p>
+ * Setiap pesan yang masuk dari webhook dilempar dulu ke sini. Routers membaca isi pesan
+ * dan memutuskan: apakah ini perintah hot kolek, cek pelunasan, tabungan, jatuh bayar,
+ * SLIK, virtual account, atau shortcut admin? Masing-masing punya aturan pengenalan sendiri
+ * berdasarkan prefix perintah (titik ".") atau slash admin ("/").
+ * </p>
+ * <p>
+ * Semua pemrosesan dijalankan secara asinkron lewat {@link #handle(WhatsAppWebhookDTO)},
+ * jadi webhook bisa langsung direspons tanpa harus menunggu proses selesai.
+ * </p>
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -36,6 +49,17 @@ public class Routers {
 	private static final String ADMIN_SHORTCUT_PREFIX = "/";
 	private static final String HOT_KOLEK_PATTERN = "^" + COMMAND_PREFIX + "\\d{12}(?:\\s\\d{12})*$";
 
+	/**
+	 * Titik masuk utama untuk semua pesan WhatsApp yang diterima dari webhook.
+	 * <p>
+	 * Method ini memfilter pesan yang bukan teks (misalnya gambar atau stiker
+	 * tanpa teks) dan mengabaikannya. Pesan teks yang valid kemudian diteruskan
+	 * ke {@link #processCommand(WhatsAppWebhookDTO)} untuk diidentifikasi.
+	 * </p>
+	 *
+	 * @param webhook data webhook lengkap dari WhatsApp gateway
+	 * @return CompletableFuture yang selesai setelah routing selesai
+	 */
 	@Async
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> handle(WhatsAppWebhookDTO webhook) {
@@ -123,11 +147,26 @@ public class Routers {
 				&& webhook.getCleanSenderId().equals(adminWhatsApp);
 	}
 
+	/**
+	 * Mengecek apakah pesan adalah perintah hot kolek.
+	 * Format yang dikenali: titik diikuti 12 digit angka, bisa beberapa SPK dipisah spasi.
+	 * Contoh: ".010600001234" atau ".010600001234 010600005678".
+	 *
+	 * @param webhook data webhook yang akan dicek
+	 * @return {@code true} kalau pesan cocok dengan pola hot kolek
+	 */
 	public boolean isHotKolekCommand(WhatsAppWebhookDTO webhook) {
 		return isValidTextMessage(webhook)
 				&& webhook.getPayload().getBody().matches(HOT_KOLEK_PATTERN);
 	}
 
+	/**
+	 * Mengecek apakah pesan adalah perintah cek pelunasan.
+	 * Dikenali dari prefix ".p" (titik p).
+	 *
+	 * @param webhook data webhook yang akan dicek
+	 * @return {@code true} kalau pesan dimulai dengan ".p"
+	 */
 	public boolean isPelunasanCommand(WhatsAppWebhookDTO webhook) {
 		return isValidTextMessage(webhook)
 				&& webhook.getPayload().getBody().startsWith(COMMAND_PREFIX + "p");

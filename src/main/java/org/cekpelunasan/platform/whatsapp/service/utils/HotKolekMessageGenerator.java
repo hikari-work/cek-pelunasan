@@ -10,8 +10,29 @@ import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Membuat pesan rekap hot koleksi yang siap dikirim ke grup WhatsApp.
+ * <p>
+ * Class ini mengambil data tagihan dari beberapa lokasi kios dan
+ * menyusunnya menjadi pesan teks yang terformat rapi dengan header bulan/tahun,
+ * nama lokasi, dan daftar nasabah beserta nominal tagihan dalam format singkat (juta/ribu).
+ * Pesan yang dihasilkan sesuai dengan format hot collection yang biasa dipakai tim lapangan.
+ * </p>
+ */
 @Component
 public class HotKolekMessageGenerator {
+
+	/**
+	 * Membuat pesan rekap hot koleksi dari data tagihan semua lokasi.
+	 * <p>
+	 * Lokasi yang tidak punya data sama sekali tidak akan ditampilkan.
+	 * Kategori dalam satu lokasi yang kosong juga dilewati.
+	 * Di akhir pesan selalu ada penutup standar untuk tim lapangan.
+	 * </p>
+	 *
+	 * @param locationBills daftar data tagihan per lokasi kios
+	 * @return string pesan rekap yang sudah diformat dan siap dikirim
+	 */
 	public String generateMessage(List<LocationBills> locationBills) {
 
 		String bulanTahun = getMonthAndYear(LocalDate.now());
@@ -73,6 +94,20 @@ public class HotKolekMessageGenerator {
 		return text.length() <= 20 ? text : text.substring(0, 20);
 	}
 
+	/**
+	 * Memformat angka nominal menjadi teks singkat yang mudah dibaca di layar HP.
+	 * <p>
+	 * Contoh hasil format:
+	 * <ul>
+	 *   <li>1.500.000 → "1.5 Jt"</li>
+	 *   <li>750.000 → "750rb"</li>
+	 *   <li>500 → "500"</li>
+	 * </ul>
+	 * </p>
+	 *
+	 * @param value nominal dalam satuan rupiah
+	 * @return string nominal yang sudah diformat singkat
+	 */
 	public static String formatToShort(long value) {
 		if (value >= 1_000_000) {
 			double jt = value / 1_000_000.0;
@@ -93,23 +128,42 @@ public class HotKolekMessageGenerator {
 		}
 	}
 
+	/**
+	 * Merepresentasikan data tagihan untuk satu lokasi kios.
+	 * Berisi nama lokasi dan daftar kategori tagihan (minimal bayar, angsuran pertama, jatuh tempo).
+	 */
 	@Getter
 	@AllArgsConstructor
 	public static class LocationBills {
 		private final String name;
 		private final List<CategoryBills> categoryBills;
 
+		/**
+		 * Mengecek apakah lokasi ini punya setidaknya satu data tagihan.
+		 * Dipakai untuk menghindari menampilkan header lokasi yang kosong.
+		 *
+		 * @return {@code true} kalau ada minimal satu kategori yang tidak kosong
+		 */
 		public boolean hasAnyData() {
 			return categoryBills.stream().anyMatch(cat -> !cat.isEmpty());
 		}
 	}
 
+	/**
+	 * Merepresentasikan satu kategori tagihan dalam satu lokasi kios.
+	 * Misalnya "Angsuran Pertama" dengan daftar nasabah yang masuk kategori tersebut.
+	 */
 	@Getter
 	@AllArgsConstructor
 	public static class CategoryBills {
 		private final String header;
 		private final List<Bills> bills;
 
+		/**
+		 * Mengecek apakah kategori ini punya tagihan sama sekali.
+		 *
+		 * @return {@code true} kalau daftar tagihan kosong
+		 */
 		public boolean isEmpty() {
 			return bills.isEmpty();
 		}

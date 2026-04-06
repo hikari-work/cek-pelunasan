@@ -8,6 +8,28 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Mengelola perintah shortcut admin yang diawali dengan slash (/).
+ * <p>
+ * Fitur ini memudahkan admin CS untuk membalas pertanyaan umum dengan cepat
+ * tanpa harus mengetik ulang. Cukup ketik perintah seperti "/coba" atau "/tunggu",
+ * dan bot langsung mengedit pesan tersebut menjadi balasan yang sudah terdaftar.
+ * </p>
+ * <p>
+ * Daftar shortcut yang tersedia:
+ * <ul>
+ *   <li>{@code /coba} — ajak pengguna mencoba lagi</li>
+ *   <li>{@code /kasih} — ucapkan terima kasih kembali</li>
+ *   <li>{@code /tunggu} — minta pengguna menunggu</li>
+ *   <li>{@code /relog} — minta pengguna relogin</li>
+ *   <li>{@code /selesai} — minta notifikasi jika sudah selesai</li>
+ *   <li>{@code /enter} — minta enter lagi dan notifikasi jika selesai</li>
+ *   <li>{@code /input} — konfirmasi sudah diinput</li>
+ *   <li>{@code /display} — konfirmasi display sudah dibebaskan</li>
+ *   <li>{@code /terima} — ucapkan terima kasih</li>
+ * </ul>
+ * </p>
+ */
 @Slf4j
 @Component
 public class ShortcutMessages {
@@ -30,6 +52,16 @@ public class ShortcutMessages {
 		);
 	}
 
+	/**
+	 * Memproses perintah shortcut dan mengedit pesan asli dengan balasan yang sesuai.
+	 * <p>
+	 * Kalau shortcut dikenali, pesan admin di-edit otomatis menjadi teks balasan
+	 * yang sudah terdaftar. Kalau tidak dikenali, cukup dicatat ke log sebagai warning.
+	 * </p>
+	 *
+	 * @param message data webhook dari perintah shortcut yang dikirim admin
+	 * @return CompletableFuture yang selesai setelah proses pengiriman dimulai
+	 */
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> sendShortcutMessage(WhatsAppWebhookDTO message) {
 		log.info("Goto ShortCutMessage");

@@ -16,12 +16,26 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/**
+ * Mengubah data SLIK mentah (dari JSON) menjadi pesan Telegram yang
+ * rapi dan mudah dibaca. Class ini menangani dua hal utama:
+ * <ol>
+ *   <li>Parsing JSON SLIK menjadi objek {@link SlikJsonDto}</li>
+ *   <li>Memformat objek tersebut menjadi {@link TdApi.FormattedText} lengkap
+ *       dengan bold, code, italic, dan expandable blockquote untuk setiap
+ *       fasilitas kredit</li>
+ * </ol>
+ *
+ * <p>Karena pesan Telegram punya batas karakter, class ini secara otomatis
+ * memotong daftar fasilitas kredit jika terlalu panjang, dan menambahkan
+ * catatan berapa fasilitas yang tidak ditampilkan.</p>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SlikNameFormatter {
 
-    /** Sisakan untuk footer (/slik id + halaman). */
+    /** Batas karakter konten pesan sebelum footer ditambahkan. */
     private static final int MAX_CONTENT_CHARS = 3800;
 
     private static final DateTimeFormatter DATETIME_IN  = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
@@ -35,6 +49,15 @@ public class SlikNameFormatter {
     // Parse
     // ─────────────────────────────────────────────
 
+    /**
+     * Mengurai byte array JSON menjadi objek {@link SlikJsonDto}. Pertama
+     * dicoba dengan encoding UTF-8. Jika gagal (misalnya file dikirim dengan
+     * encoding lama), dicoba ulang dengan Windows-1252 yang umum digunakan
+     * pada sistem perbankan lokal.
+     *
+     * @param jsonBytes isi file JSON dalam bentuk byte array
+     * @return {@link Mono} berisi objek DTO, atau kosong jika parsing gagal
+     */
     public Mono<SlikJsonDto> parse(byte[] jsonBytes) {
         return Mono.fromCallable(() -> {
                 try {
@@ -54,12 +77,34 @@ public class SlikNameFormatter {
     // Format → TdApi.FormattedText
     // ─────────────────────────────────────────────
 
+    /**
+     * Memformat data satu halaman SLIK menjadi {@link TdApi.FormattedText}
+     * yang siap dikirim via Telegram. Jika data DTO tersedia, ditampilkan
+     * lengkap dengan informasi debitur, ringkasan fasilitas, dan daftar kredit.
+     * Jika tidak ada DTO, ditampilkan pesan ringkas berisi nama file dan nomor KTP.
+     *
+     * @param data    data satu halaman SLIK termasuk DTO dan metadata file
+     * @param current indeks halaman saat ini (dimulai dari 0)
+     * @param total   total halaman yang tersedia dalam sesi
+     * @return pesan terformat siap kirim ke Telegram
+     */
     public TdApi.FormattedText format(SlikSessionCache.SlikPageData data, int current, int total) {
         return data.dto() == null
             ? formatNoData(data, current, total)
             : formatFull(data, current, total);
     }
 
+    /**
+     * Memformat pesan lengkap ketika data DTO SLIK tersedia. Pesan mencakup
+     * header, data debitur, ringkasan fasilitas, dan daftar fasilitas kredit
+     * (dalam expandable blockquote). Fasilitas yang tidak muat karena batasan
+     * karakter akan ditampilkan sebagai catatan ringkas.
+     *
+     * @param data    data halaman SLIK
+     * @param current indeks halaman saat ini
+     * @param total   total halaman
+     * @return pesan terformat lengkap
+     */
     private TdApi.FormattedText formatFull(SlikSessionCache.SlikPageData data, int current, int total) {
         SlikJsonDto dto = data.dto();
         SlikJsonDto.Individual ind = dto.individual();
@@ -72,7 +117,7 @@ public class SlikNameFormatter {
 
         // ── Header ──────────────────────────────
         mb.bold("📊 HASIL SLIK — " + orDash(namaDebitur)); mb.append("\n");
-        mb.append("━━━━━━━━━━━━━━━━━━━━��\n");
+        mb.append("━━━━━━━━━━━━━━━━━━━━━\n");
         if (hdr != null) {
             mb.append("📋 Ref: "); mb.code(orDash(hdr.kodeReferensiPengguna())); mb.append("\n");
             mb.append("📅 Tanggal: " + formatDateTime(hdr.tanggalPermintaan()) + "\n");
@@ -134,6 +179,15 @@ public class SlikNameFormatter {
         return mb.build();
     }
 
+    /**
+     * Membangun teks detail untuk satu fasilitas kredit. Mencakup nama LJK,
+     * cabang, plafon, baki debet, kondisi, kolektibilitas, jenis penggunaan,
+     * jangka waktu, kolektibilitas terburuk 24 bulan, dan hari tunggakan maksimal.
+     *
+     * @param index nomor urut fasilitas (dimulai dari 1)
+     * @param k     data fasilitas kredit
+     * @return string teks detail fasilitas siap ditambahkan ke pesan
+     */
     private String buildFasilitasText(int index, SlikJsonDto.KreditPembiayaan k) {
         StringBuilder sb = new StringBuilder();
         sb.append(index).append(". ").append(orDash(k.getLjkKet())).append("\n");
@@ -152,6 +206,15 @@ public class SlikNameFormatter {
         return sb.toString();
     }
 
+    /**
+     * Memformat pesan singkat ketika data DTO SLIK tidak tersedia untuk satu
+     * file. Tetap menampilkan nama file dan nomor KTP jika bisa diekstrak.
+     *
+     * @param data    data halaman SLIK tanpa DTO
+     * @param current indeks halaman saat ini
+     * @param total   total halaman
+     * @return pesan terformat ringkas
+     */
     private TdApi.FormattedText formatNoData(SlikSessionCache.SlikPageData data, int current, int total) {
         MessageBuilder mb = new MessageBuilder();
         mb.bold("📄 DOKUMEN #" + (current + 1)); mb.append("\n");
@@ -168,6 +231,13 @@ public class SlikNameFormatter {
     // Helpers
     // ─────────────────────────────────────────────
 
+    /**
+     * Mencari nilai kolektibilitas terburuk dari riwayat 24 bulan fasilitas.
+     * Nilai kolektibilitas adalah angka, jadi yang terbesar adalah yang terburuk.
+     *
+     * @param tahunBulan map berisi data historis per bulan (key berformat "tahunBulanNNKol")
+     * @return nilai kolektibilitas terburuk sebagai string, atau null jika tidak ada data
+     */
     private String findWorstKol(Map<String, String> tahunBulan) {
         return tahunBulan.entrySet().stream()
             .filter(e -> e.getKey().endsWith("Kol") && isNotBlank(e.getValue()))
@@ -176,6 +246,12 @@ public class SlikNameFormatter {
             .orElse(null);
     }
 
+    /**
+     * Mencari hari tunggakan terlama dari riwayat 24 bulan fasilitas.
+     *
+     * @param tahunBulan map berisi data historis per bulan (key berformat "tahunBulanNNHt")
+     * @return hari tunggakan terbesar sebagai string, atau null jika tidak ada data
+     */
     private String findMaxHt(Map<String, String> tahunBulan) {
         return tahunBulan.entrySet().stream()
             .filter(e -> e.getKey().endsWith("Ht") && isNotBlank(e.getValue()))
@@ -184,21 +260,49 @@ public class SlikNameFormatter {
             .orElse(null);
     }
 
+    /**
+     * Memformat string tanggal-waktu dari format {@code yyyyMMddHHmmss}
+     * menjadi format tampilan {@code dd/MM/yyyy HH:mm}.
+     *
+     * @param raw string tanggal-waktu mentah dari JSON
+     * @return string tanggal-waktu yang sudah diformat, atau tanda "-" jika tidak valid
+     */
     private String formatDateTime(String raw) {
         if (!isNotBlank(raw) || raw.length() < 14) return orDash(raw);
         try { return LocalDateTime.parse(raw, DATETIME_IN).format(DATETIME_OUT); } catch (Exception e) { return raw; }
     }
 
+    /**
+     * Memformat string tanggal dari format {@code yyyyMMdd} menjadi
+     * format tampilan {@code dd/MM/yyyy}.
+     *
+     * @param raw string tanggal mentah dari JSON (8 karakter pertama digunakan)
+     * @return string tanggal yang sudah diformat, atau tanda "-" jika tidak valid
+     */
     private String formatDate(String raw) {
         if (!isNotBlank(raw) || raw.length() < 8) return orDash(raw);
         try { return LocalDate.parse(raw.substring(0, 8), DATE_IN).format(DATE_OUT); } catch (Exception e) { return raw; }
     }
 
+    /**
+     * Memformat string periode dalam format {@code yyyyMM} menjadi
+     * format tampilan {@code MM/yyyy}.
+     *
+     * @param raw string periode 6 karakter dari JSON
+     * @return string periode yang sudah diformat, atau tanda "-" jika tidak valid
+     */
     private String formatYearMonth(String raw) {
         if (!isNotBlank(raw) || raw.length() < 6) return orDash(raw);
         try { return raw.substring(4, 6) + "/" + raw.substring(0, 4); } catch (Exception e) { return raw; }
     }
 
+    /**
+     * Memformat nilai numerik menjadi string rupiah dengan pemisah ribuan
+     * menggunakan titik (standar Indonesia). Contoh: 1500000 → "Rp1.500.000".
+     *
+     * @param raw string angka yang ingin diformat
+     * @return string rupiah yang sudah diformat, atau "Rp0" jika kosong/null
+     */
     private String formatRupiah(String raw) {
         if (!isNotBlank(raw)) return "Rp0";
         try {
@@ -210,8 +314,13 @@ public class SlikNameFormatter {
         } catch (NumberFormatException e) { return raw; }
     }
 
+    /**
+     * Mengembalikan string asli jika tidak kosong/null, atau tanda "-"
+     * sebagai pengganti jika kosong.
+     */
     private String orDash(String s) { return isNotBlank(s) ? s : "-"; }
 
+    /** Mengecek apakah string tidak null dan tidak kosong (setelah trim). */
     private boolean isNotBlank(String s) { return s != null && !s.isBlank(); }
 
     // ─────────────────────────────────────────────
@@ -220,6 +329,12 @@ public class SlikNameFormatter {
     // Java String.length() sudah mengembalikan jumlah char UTF-16.
     // ─────────────────────────────────────────────
 
+    /**
+     * Builder sederhana untuk membangun {@link TdApi.FormattedText} yang
+     * mengandung teks dengan berbagai entitas (bold, code, italic, blockquote).
+     * Setiap method menambahkan teks dan langsung mendaftarkan entitasnya
+     * dengan offset yang tepat dalam satuan UTF-16 code unit.
+     */
     private static class MessageBuilder {
         private final StringBuilder sb = new StringBuilder();
         private final List<TdApi.TextEntity> entities = new ArrayList<>();

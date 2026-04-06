@@ -10,6 +10,21 @@ import org.cekpelunasan.core.service.simulasi.SimulasiService;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+/**
+ * Handler untuk perintah {@code /minimal} — menghitung jumlah minimal bayar untuk satu kredit.
+ *
+ * <p>Berdasarkan nomor SPK yang diberikan, bot menghitung berapa minimal pembayaran
+ * yang harus dilakukan agar status kredit tetap aman. Fitur ini masih dalam tahap BETA,
+ * sehingga user diminta melaporkan jika ada ketidaksesuaian perhitungan.</p>
+ *
+ * <p>Format penggunaan: {@code /minimal <no_spk>} dengan nomor SPK 12 digit,
+ * misalnya {@code /minimal 123456789012}.</p>
+ *
+ * <p>Jika jumlah minimal bayar adalah 0 atau negatif, artinya angsuran masih aman
+ * sampai akhir bulan dan bot akan memberitahu hal tersebut.</p>
+ *
+ * <p>Bisa diakses oleh admin, AO, dan pimpinan.</p>
+ */
 @Component
 @RequiredArgsConstructor
 public class MinimalHandler extends AbstractCommandHandler {
@@ -26,12 +41,31 @@ public class MinimalHandler extends AbstractCommandHandler {
 		return "";
 	}
 
+	/**
+	 * Memvalidasi peran pengguna sebelum menghitung minimal bayar.
+	 *
+	 * @param update objek update dari Telegram
+	 * @param client koneksi aktif ke Telegram
+	 * @return hasil perhitungan minimal bayar, atau ditolak jika tidak punya izin
+	 */
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
 	public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		return super.process(update, client);
 	}
 
+	/**
+	 * Menghitung dan menampilkan jumlah minimal bayar untuk kredit dengan nomor SPK tertentu.
+	 *
+	 * <p>Nomor SPK divalidasi terlebih dahulu — harus tepat 12 digit angka. Jika tidak sesuai,
+	 * bot memberikan contoh format yang benar. Hasil perhitungan ditampilkan dalam format
+	 * rupiah yang mudah dibaca, beserta peringatan bahwa fitur ini masih BETA.</p>
+	 *
+	 * @param chatId ID chat pengguna yang mengirim perintah
+	 * @param text   teks perintah yang berisi nomor SPK
+	 * @param client koneksi aktif ke Telegram
+	 * @return {@link Mono} yang selesai setelah hasil perhitungan dikirim ke user
+	 */
 	@Override
 	public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		String noSpk = text.replace("/minimal ", "");

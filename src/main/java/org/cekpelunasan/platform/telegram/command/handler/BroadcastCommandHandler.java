@@ -11,6 +11,18 @@ import org.cekpelunasan.core.service.users.UserService;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+/**
+ * Handler untuk perintah {@code /broadcast} — menyebarkan pesan ke semua user terdaftar.
+ *
+ * <p>Cara penggunaannya: balas (reply) pesan yang ingin disebarkan, lalu ketik {@code /broadcast}.
+ * Bot akan mengirimkan salinan pesan tersebut ke seluruh user yang ada di database,
+ * dengan jeda 500ms di antara setiap pengiriman agar tidak terkena rate limit Telegram.</p>
+ *
+ * <p>Pesan yang dikirim tidak menampilkan header "Diteruskan dari" — terlihat seperti
+ * pesan baru yang dikirim langsung oleh bot ke masing-masing user.</p>
+ *
+ * <p>Hanya admin yang dapat menjalankan perintah ini.</p>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -33,6 +45,17 @@ public class BroadcastCommandHandler extends AbstractCommandHandler {
             """;
     }
 
+    /**
+     * Mengambil pesan yang di-reply, lalu menyalinnya ke semua user terdaftar satu per satu.
+     *
+     * <p>Jika perintah dikirim tanpa me-reply pesan apapun, bot akan membalas dengan instruksi
+     * cara penggunaan yang benar. Setelah broadcast selesai, admin mendapat laporan berapa
+     * banyak user yang berhasil menerima pesan.</p>
+     *
+     * @param update objek update lengkap dari Telegram, dibutuhkan untuk mengakses data reply
+     * @param client koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah semua user menerima pesan atau jika terjadi error
+     */
     @Override
     @RequireAuth(roles = AccountOfficerRoles.ADMIN)
     public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {

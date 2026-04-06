@@ -3,10 +3,12 @@ package org.cekpelunasan.core.entity;
 import lombok.*;
 
 /**
- * POJO representing the result of a simulation.
+ * Wadah hasil perhitungan simulasi pelunasan kredit.
  * <p>
- * This class holds the calculated values from a simulation process.
- * Not an entity, but a result holder.
+ * Ini bukan entity yang disimpan ke database, melainkan objek sementara
+ * yang dipakai untuk membawa hasil kalkulasi dari proses simulasi ke lapisan
+ * presentasi. Setelah semua baris {@link Simulasi} dihitung dan diakumulasi,
+ * hasilnya dikemas dalam objek ini sebelum ditampilkan ke AO lewat bot.
  * </p>
  */
 @Builder
@@ -15,16 +17,24 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SimulasiResult {
+
 	/**
-	 * Calculated input P (Principal?).
+	 * Total nominal pokok (Principal) yang harus dimasukkan (dibayar) oleh nasabah
+	 * berdasarkan hasil simulasi, dalam satuan rupiah.
+	 * "masuk" berarti uang yang harus masuk ke rekening untuk melunasi kredit.
 	 */
 	private long masukP;
+
 	/**
-	 * Calculated input I (Interest?).
+	 * Total nominal bunga (Interest) yang harus dimasukkan (dibayar) oleh nasabah
+	 * berdasarkan hasil simulasi, dalam satuan rupiah.
 	 */
 	private long masukI;
+
 	/**
-	 * Maximum date or deadline involved in the simulation.
+	 * Tanggal jatuh tempo terpanjang (paling akhir) dari seluruh baris angsuran
+	 * yang masuk dalam simulasi ini, disimpan dalam format Unix timestamp (milidetik).
+	 * Digunakan untuk menentukan batas akhir periode simulasi.
 	 */
 	private long maxDate;
 

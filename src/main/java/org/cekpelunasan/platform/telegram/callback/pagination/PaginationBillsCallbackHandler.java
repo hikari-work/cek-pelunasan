@@ -15,6 +15,17 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Handler untuk navigasi halaman pada daftar tagihan nasabah kredit per cabang.
+ *
+ * <p>Callback berawalan {@code "paging"} ini menangani perpindahan halaman
+ * pada daftar nasabah kredit yang sudah difilter berdasarkan nama dan cabang.
+ * Setiap halaman menampilkan 5 data tagihan dengan detail nama, nomor SPK,
+ * alamat, dan plafond kredit.
+ *
+ * <p>Format data callback yang diharapkan:
+ * {@code "paging_<query>_<cabang>_<nomor_halaman>"}.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -23,11 +34,25 @@ public class PaginationBillsCallbackHandler extends AbstractCallbackHandler {
     private final BillService billService;
     private final ButtonListForBills buttonListForBills;
 
+    /**
+     * Mengembalikan prefix {@code "paging"} sebagai pengenal handler ini.
+     */
     @Override
     public String getCallBackData() {
         return "paging";
     }
 
+    /**
+     * Memuat halaman tagihan yang diminta dan memperbarui pesan dengan data terbaru.
+     *
+     * <p>Query nama dan kode cabang diambil dari data callback, lalu digunakan
+     * untuk mengambil halaman yang sesuai dari database. Pesan diedit dengan
+     * daftar nasabah yang diformat rapi beserta tombol navigasi.
+     *
+     * @param update event callback dari Telegram
+     * @param client koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah pesan berhasil diperbarui
+     */
     @Override
     public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
         long start = System.currentTimeMillis();
@@ -52,6 +77,18 @@ public class PaginationBillsCallbackHandler extends AbstractCallbackHandler {
             .then();
     }
 
+    /**
+     * Menyusun teks pesan daftar tagihan dengan format yang konsisten dan informatif.
+     *
+     * <p>Setiap entri nasabah menampilkan nama, nomor SPK (dapat di-tap untuk
+     * disalin), alamat, dan plafond kredit dalam format Rupiah. Di bagian
+     * bawah ditampilkan waktu pemrosesan dalam milidetik.
+     *
+     * @param bills     halaman data tagihan dari database
+     * @param page      nomor halaman saat ini (0-based)
+     * @param startTime waktu mulai proses dalam milidetik untuk kalkulasi durasi
+     * @return string pesan berformat Markdown yang siap dikirim ke Telegram
+     */
     private String buildBillsMessage(Page<Bills> bills, int page, long startTime) {
         StringBuilder builder = new StringBuilder(String.format("""
             🏦 *DAFTAR NASABAH KREDIT*

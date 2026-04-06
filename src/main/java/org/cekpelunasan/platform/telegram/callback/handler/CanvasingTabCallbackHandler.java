@@ -16,6 +16,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Handler untuk paginasi hasil canvasing tabungan berdasarkan filter alamat/tab.
+ *
+ * <p>Callback berawalan {@code "canvas"} ini dipicu ketika user menavigasi halaman
+ * pada daftar tabungan yang difilter berdasarkan kata kunci alamat. Data yang
+ * ditampilkan berasal dari {@code SavingsService} dan disajikan per halaman
+ * dengan ukuran 5 data.
+ *
+ * <p>Query alamat bisa mengandung spasi maupun underscore — keduanya di-split
+ * dan digabung menjadi satu daftar kata kunci sebelum diteruskan ke service.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -24,11 +35,26 @@ public class CanvasingTabCallbackHandler extends AbstractCallbackHandler {
     private final PaginationCanvassingByTab paginationCanvassingByTab;
     private final CanvasingUtils canvasingUtils;
 
+    /**
+     * Mengembalikan prefix {@code "canvas"} sebagai pengenal handler ini.
+     */
     @Override
     public String getCallBackData() {
         return "canvas";
     }
 
+    /**
+     * Memproses permintaan paginasi canvasing tabungan berdasarkan kata kunci alamat.
+     *
+     * <p>Query diambil dari bagian kedua data callback, nomor halaman dari bagian ketiga.
+     * Query kemudian dipecah menjadi daftar kata kunci (split spasi dan underscore),
+     * lalu digunakan untuk mencari data tabungan yang cocok. Jika kosong,
+     * user mendapat notifikasi data tidak ditemukan.
+     *
+     * @param update event callback dari Telegram
+     * @param client koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah pesan berhasil diedit
+     */
     @Override
     public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
         log.info("Canvasing Request Process...");

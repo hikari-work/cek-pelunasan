@@ -7,10 +7,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.math.BigDecimal;
 
 /**
- * Entity representing a savings account.
+ * Data rekening tabungan nasabah yang tersimpan di koleksi MongoDB {@code savings}.
  * <p>
- * This stores details about a customer's savings account, including balance and
- * transactions.
+ * Informasi di sini mencakup saldo terkini, saldo minimum, saldo yang diblokir,
+ * dan data profil pemilik rekening. Data ini diperbarui secara berkala dari sistem
+ * core banking dan dipakai oleh bot untuk menampilkan informasi tabungan nasabah
+ * ketika diminta oleh AO.
  * </p>
  */
 @Getter
@@ -20,57 +22,76 @@ import java.math.BigDecimal;
 @Builder
 @Document(collection = "savings")
 public class Savings {
+
 	/**
-	 * The unique identifier for the savings record.
+	 * ID unik dokumen ini di MongoDB, di-generate otomatis.
 	 */
 	@Id
 	private String id;
+
 	/**
-	 * The branch code.
+	 * Kode cabang tempat rekening tabungan ini dibuka, misalnya "1075".
 	 */
 	private String branch;
+
 	/**
-	 * The type of savings account.
+	 * Jenis produk tabungan, misalnya "SIMPEDES", "BRITAMA", atau produk simpanan lainnya.
 	 */
 	private String type;
+
 	/**
-	 * The CIF (Customer Information File) number.
+	 * Nomor CIF (Customer Information File) pemilik rekening ini.
+	 * Satu CIF bisa punya lebih dari satu rekening tabungan.
 	 */
 	private String cif;
+
 	/**
-	 * The savings account ID (tabId).
+	 * Nomor rekening tabungan unik yang dicetak di buku tabungan nasabah.
+	 * Field ini sering dipakai sebagai kunci pencarian di repository.
 	 */
 	private String tabId;
+
 	/**
-	 * The name of the account holder.
+	 * Nama lengkap pemilik rekening tabungan.
 	 */
 	private String name;
+
 	/**
-	 * The address of the account holder.
+	 * Alamat pemilik rekening sesuai data yang tercatat di core banking.
 	 */
 	private String address;
+
 	/**
-	 * The current balance.
+	 * Saldo efektif rekening saat ini dalam rupiah. Ini adalah saldo yang bisa
+	 * ditarik oleh nasabah (sudah dikurangi saldo minimum dan blokir).
 	 */
 	private BigDecimal balance;
+
 	/**
-	 * The transaction amount.
+	 * Nominal transaksi terakhir yang tercatat, dalam rupiah. Bisa berupa
+	 * setoran (positif) atau penarikan (negatif) tergantung konteks.
 	 */
 	private BigDecimal transaction;
+
 	/**
-	 * The account officer assigned.
+	 * Kode Account Officer yang mengelola nasabah pemilik rekening ini.
 	 */
 	private String accountOfficer;
+
 	/**
-	 * The phone number of the account holder.
+	 * Nomor HP pemilik rekening yang terdaftar di data bank.
 	 */
 	private String phone;
+
 	/**
-	 * The minimum balance required.
+	 * Saldo minimum yang harus selalu ada di rekening ini (setoran wajib minimum).
+	 * Nasabah tidak bisa menarik uang sampai di bawah angka ini, dalam rupiah.
 	 */
 	private BigDecimal minimumBalance;
+
 	/**
-	 * The amount blocked in the account.
+	 * Saldo yang sedang diblokir karena suatu alasan (misalnya jaminan kredit,
+	 * atau pemblokiran oleh pejabat berwenang), dalam rupiah.
 	 */
 	private BigDecimal blockingBalance;
 

@@ -12,6 +12,24 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Mengelola semua operasi pengiriman dan pengeditan pesan di Telegram via TDLight.
+ * <p>
+ * Satu class ini menjadi pusat untuk semua kebutuhan komunikasi ke Telegram:
+ * kirim teks biasa, kirim teks dengan tombol inline keyboard, edit pesan yang ada,
+ * hapus pesan, kirim dokumen/file, hingga parsing teks markdown agar tampil rapi di Telegram.
+ * </p>
+ * <p>
+ * Semua method menggunakan {@link SimpleTelegramClient} dari TDLight (bukan Bot API biasa),
+ * sehingga bisa beroperasi sebagai akun Telegram sungguhan, bukan sekadar bot.
+ * Setiap operasi dibungkus try-catch dan timeout 5–10 detik agar tidak menggantung
+ * kalau Telegram lambat merespons.
+ * </p>
+ * <p>
+ * File yang dikirim lewat {@link #sendDocument} disimpan sementara di disk dan dihapus
+ * otomatis 5 menit setelah pengiriman supaya tidak menumpuk di server.
+ * </p>
+ */
 @Slf4j
 @Service
 public class TelegramMessageService {
@@ -23,6 +41,15 @@ public class TelegramMessageService {
             return t;
         });
 
+    /**
+     * Mengirim pesan teks ke sebuah chat Telegram.
+     * Teks diparse sebagai Markdown supaya format bold, italic, dan kode tampil dengan benar.
+     *
+     * @param chatId ID chat tujuan
+     * @param text   isi pesan, mendukung format Markdown
+     * @param client instance TDLight client yang aktif
+     * @return ID pesan yang baru terkirim, atau 0 kalau gagal
+     */
     public long sendText(long chatId, String text, SimpleTelegramClient client) {
         try {
             CompletableFuture<Long> future = new CompletableFuture<>();
@@ -46,6 +73,16 @@ public class TelegramMessageService {
         }
     }
 
+    /**
+     * Mengirim pesan teks beserta tombol-tombol inline keyboard di bawahnya.
+     * Cocok untuk menampilkan menu pilihan atau navigasi halaman kepada pengguna.
+     *
+     * @param chatId   ID chat tujuan
+     * @param text     isi pesan dengan dukungan Markdown
+     * @param keyboard konfigurasi tombol inline keyboard yang akan ditampilkan
+     * @param client   instance TDLight client yang aktif
+     * @return ID pesan yang baru terkirim, atau 0 kalau gagal
+     */
     public long sendTextWithKeyboard(long chatId, String text, TdApi.ReplyMarkupInlineKeyboard keyboard, SimpleTelegramClient client) {
         try {
             CompletableFuture<Long> future = new CompletableFuture<>();
@@ -70,6 +107,15 @@ public class TelegramMessageService {
         }
     }
 
+    /**
+     * Mengedit isi teks dari pesan yang sudah terkirim sebelumnya.
+     * Berguna untuk memperbarui tampilan tanpa mengirim pesan baru (menghindari spam).
+     *
+     * @param chatId    ID chat tempat pesan berada
+     * @param messageId ID pesan yang akan diedit
+     * @param text      isi baru pesan dengan dukungan Markdown
+     * @param client    instance TDLight client yang aktif
+     */
     public void editText(long chatId, long messageId, String text, SimpleTelegramClient client) {
         try {
             TdApi.EditMessageText edit = new TdApi.EditMessageText();
@@ -88,6 +134,16 @@ public class TelegramMessageService {
         }
     }
 
+    /**
+     * Mengedit pesan sekaligus memperbarui tombol inline keyboard-nya.
+     * Dipakai saat navigasi halaman — teks dan tombol prev/next diperbarui bersamaan.
+     *
+     * @param chatId    ID chat tempat pesan berada
+     * @param messageId ID pesan yang akan diedit
+     * @param text      isi baru pesan
+     * @param markup    konfigurasi tombol keyboard yang baru
+     * @param client    instance TDLight client yang aktif
+     */
     public void editMessageWithMarkup(long chatId, long messageId, String text, TdApi.ReplyMarkupInlineKeyboard markup, SimpleTelegramClient client) {
         try {
             TdApi.EditMessageText edit = new TdApi.EditMessageText();
@@ -107,6 +163,13 @@ public class TelegramMessageService {
         }
     }
 
+    /**
+     * Menghapus pesan dari chat Telegram untuk semua orang (revoke).
+     *
+     * @param chatId    ID chat tempat pesan berada
+     * @param messageId ID pesan yang akan dihapus
+     * @param client    instance TDLight client yang aktif
+     */
     public void delete(long chatId, long messageId, SimpleTelegramClient client) {
         try {
             TdApi.DeleteMessages del = new TdApi.DeleteMessages();
@@ -123,6 +186,19 @@ public class TelegramMessageService {
         }
     }
 
+    /**
+     * Mengirim file/dokumen ke chat Telegram.
+     * <p>
+     * File ditulis dulu ke disk sebagai file sementara, dikirim, lalu dihapus otomatis
+     * 5 menit setelah pengiriman. Jeda 5 menit ini diperlukan karena TDLib mungkin
+     * melakukan retry upload setelah callback pertama dipanggil.
+     * </p>
+     *
+     * @param chatId   ID chat tujuan
+     * @param fileName nama file yang akan ditampilkan di Telegram
+     * @param bytes    konten file dalam bentuk array byte
+     * @param client   instance TDLight client yang aktif
+     */
     public void sendDocument(long chatId, String fileName, byte[] bytes, SimpleTelegramClient client) {
         Path tmpFile = null;
         try {
@@ -158,10 +234,30 @@ public class TelegramMessageService {
         }
     }
 
+    /**
+     * Alias dari {@link #sendTextWithKeyboard} dengan urutan parameter yang berbeda.
+     * Tersedia untuk kompatibilitas kode yang sudah ada.
+     *
+     * @param chatId   ID chat tujuan
+     * @param keyboard konfigurasi tombol inline keyboard
+     * @param client   instance TDLight client yang aktif
+     * @param text     isi pesan
+     * @return ID pesan yang terkirim, atau 0 kalau gagal
+     */
     public long sendKeyboard(long chatId, TdApi.ReplyMarkupInlineKeyboard keyboard, SimpleTelegramClient client, String text) {
         return sendTextWithKeyboard(chatId, text, keyboard, client);
     }
 
+    /**
+     * Mengirim pesan dengan tombol keyboard menggunakan {@link TdApi.FormattedText} yang sudah siap.
+     * Dipakai kalau teks sudah diparse Markdown sebelumnya dan tidak perlu diparse ulang.
+     *
+     * @param chatId        ID chat tujuan
+     * @param keyboard      konfigurasi tombol inline keyboard
+     * @param client        instance TDLight client yang aktif
+     * @param formattedText teks yang sudah diformat dengan entity Markdown
+     * @return ID pesan yang terkirim, atau 0 kalau gagal
+     */
     public long sendKeyboardFormatted(long chatId, TdApi.ReplyMarkupInlineKeyboard keyboard, SimpleTelegramClient client, TdApi.FormattedText formattedText) {
         try {
             CompletableFuture<Long> future = new CompletableFuture<>();
@@ -186,6 +282,17 @@ public class TelegramMessageService {
         }
     }
 
+    /**
+     * Mengedit pesan dengan teks terformat dan keyboard baru secara bersamaan.
+     * Versi dari {@link #editMessageWithMarkup} yang menerima {@link TdApi.FormattedText}
+     * langsung tanpa perlu parsing Markdown lagi.
+     *
+     * @param chatId        ID chat tempat pesan berada
+     * @param messageId     ID pesan yang akan diedit
+     * @param formattedText teks baru yang sudah diformat
+     * @param markup        keyboard baru yang akan menggantikan keyboard lama
+     * @param client        instance TDLight client yang aktif
+     */
     public void editMessageWithFormattedMarkup(long chatId, long messageId, TdApi.FormattedText formattedText, TdApi.ReplyMarkupInlineKeyboard markup, SimpleTelegramClient client) {
         try {
             TdApi.EditMessageText edit = new TdApi.EditMessageText();
@@ -205,6 +312,19 @@ public class TelegramMessageService {
         }
     }
 
+    /**
+     * Mengurai teks markdown menjadi {@link TdApi.FormattedText} yang dimengerti Telegram.
+     * <p>
+     * Telegram menggunakan format entity internal (bukan raw Markdown) untuk menampilkan
+     * teks yang diformat. Method ini menggunakan TDLib sendiri untuk melakukan konversi
+     * supaya hasilnya sesuai standar Telegram. Kalau parsing gagal atau timeout,
+     * teks dikembalikan tanpa formatting apapun.
+     * </p>
+     *
+     * @param text   teks dengan format Markdown yang akan diurai
+     * @param client instance TDLight client yang aktif untuk menjalankan parsing
+     * @return {@link TdApi.FormattedText} siap pakai, atau teks biasa tanpa entity kalau gagal
+     */
     public TdApi.FormattedText parseMarkdown(String text, SimpleTelegramClient client) {
         try {
             CompletableFuture<TdApi.FormattedText> future = new CompletableFuture<>();

@@ -9,6 +9,20 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+/**
+ * Representasi isi (payload) dari setiap pesan yang masuk ke webhook WhatsApp.
+ * <p>
+ * Satu class ini merangkum semua jenis pesan yang mungkin diterima: pesan teks biasa,
+ * media (gambar, video, audio, dokumen, stiker), reaksi emoji, tanda terima (ack),
+ * event grup, kehadiran chat, hingga notifikasi panggilan masuk.
+ * Tidak semua field akan terisi sekaligus — tergantung jenis event yang datang.
+ * </p>
+ * <p>
+ * Untuk kemudahan, ada helper method seperti {@link #isGroupChat()},
+ * {@link #getCleanFrom()}, dan {@link #getCleanChatId()} supaya kode di service
+ * tidak perlu repot-repot membersihkan suffix WhatsApp (@s.whatsapp.net, @g.us) sendiri.
+ * </p>
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @NoArgsConstructor
@@ -81,15 +95,33 @@ public class MessagePayloadDTO {
     @JsonProperty("group_jid")
     private String groupJid;
 
+    /**
+     * Mengecek apakah pesan ini berasal dari chat grup.
+     * Cara bacanya sederhana: kalau chat ID-nya berakhiran "@g.us", berarti itu grup.
+     *
+     * @return {@code true} kalau pesan dari grup WhatsApp
+     */
     public boolean isGroupChat() {
         return chatId != null && chatId.contains("@g.us");
     }
 
+    /**
+     * Mengembalikan nomor pengirim tanpa suffix WhatsApp.
+     * Misalnya "6281234567890@s.whatsapp.net" jadi "6281234567890".
+     *
+     * @return nomor pengirim yang sudah bersih, atau {@code null} kalau tidak ada
+     */
     public String getCleanFrom() {
         if (from == null) return null;
         return from.replace("@s.whatsapp.net", "").replace("@g.us", "");
     }
 
+    /**
+     * Mengembalikan chat ID tanpa suffix WhatsApp.
+     * Berguna saat kita hanya butuh angka/identifiernya saja untuk diproses lebih lanjut.
+     *
+     * @return chat ID yang sudah bersih, atau {@code null} kalau tidak ada
+     */
     public String getCleanChatId() {
         if (chatId == null) return null;
         return chatId.replace("@s.whatsapp.net", "").replace("@g.us", "");

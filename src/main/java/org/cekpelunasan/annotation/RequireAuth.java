@@ -5,9 +5,26 @@ import org.cekpelunasan.core.entity.AccountOfficerRoles;
 import java.lang.annotation.*;
 
 /**
- * Annotation to enforce authorization checks on methods.
+ * Anotasi untuk melindungi method handler bot agar hanya bisa diakses oleh pengguna
+ * yang sudah terotorisasi dan memiliki role yang sesuai.
  * <p>
- * Methods annotated with this will be intercepted to verify if the user has the required roles.
+ * Pasang anotasi ini di atas method handler Telegram atau WhatsApp, lalu tentukan
+ * role apa saja yang boleh mengaksesnya. Pengecekan dilakukan secara otomatis oleh
+ * {@code AuthorizationAspect} saat method dipanggil — kode handler tidak perlu
+ * mengurus validasi itu sendiri.
+ * </p>
+ * <p>
+ * Contoh pemakaian:
+ * </p>
+ * <pre>
+ * {@literal @}RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.SUPERVISOR})
+ * public void handleLaporanBulanan(UpdateNewMessage update, SimpleTelegramClient client) {
+ *     // hanya ADMIN dan SUPERVISOR yang sampai ke sini
+ * }
+ * </pre>
+ * <p>
+ * Jika {@code roles} dibiarkan kosong, aspek hanya memastikan pengguna sudah terdaftar
+ * sebagai chat yang diotorisasi, tanpa mempermasalahkan role-nya.
  * </p>
  */
 @Target(ElementType.METHOD)
@@ -16,9 +33,13 @@ import java.lang.annotation.*;
 public @interface RequireAuth {
 
 	/**
-	 * Specifies the required account officer roles for accessing the method.
+	 * Daftar role yang diperbolehkan mengakses method ini.
+	 * <p>
+	 * Pengguna dengan role {@code ADMIN} selalu lolos terlepas dari isi array ini.
+	 * Jika array kosong, cukup menjadi pengguna yang terotorisasi saja.
+	 * </p>
 	 *
-	 * @return An array of {@link AccountOfficerRoles} required to access the method.
+	 * @return array role yang diizinkan, default-nya kosong (semua role terotorisasi boleh akses)
 	 */
 	AccountOfficerRoles[] roles() default {};
 }

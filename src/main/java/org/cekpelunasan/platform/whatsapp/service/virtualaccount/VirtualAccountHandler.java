@@ -8,6 +8,19 @@ import org.cekpelunasan.core.service.savings.SavingsService;
 import org.cekpelunasan.platform.whatsapp.service.sender.WhatsAppSenderService;
 import org.springframework.stereotype.Component;
 
+/**
+ * Menangani perintah cek nomor Virtual Account (VA) untuk pembayaran angsuran.
+ * <p>
+ * Ketika pengguna mengetik ".va [nomor SPK atau nomor rekening]", handler ini mencari
+ * data akun (bisa kredit atau tabungan), lalu menghasilkan nomor VA untuk empat bank:
+ * Mandiri, BRI, Danamon, dan BNI. Nomor VA setiap bank dibuat dengan format yang berbeda
+ * berdasarkan prefix bank dan nomor akun yang ada.
+ * </p>
+ * <p>
+ * Kalau yang ditemukan adalah rekening tabungan (bukan kredit), bot juga mengirim
+ * pesan tambahan bahwa nomor VA tersebut perlu didaftarkan secara manual ke kantor.
+ * </p>
+ */
 @Component
 public class VirtualAccountHandler {
 
@@ -23,6 +36,13 @@ public class VirtualAccountHandler {
 
 	public record Account(String name, String accountNumber, String address) {}
 
+	/**
+	 * Mencari data akun berdasarkan nomor — bisa nomor SPK kredit atau nomor rekening tabungan.
+	 * Kredit dicari duluan, kalau tidak ditemukan baru dicari ke tabungan.
+	 *
+	 * @param accountNumber nomor SPK atau nomor rekening yang akan dicari
+	 * @return objek {@link Bills} atau {@link Savings} sesuai yang ditemukan, atau {@code null}
+	 */
 	public Object findAccount(String accountNumber) {
 		Bills bills = billService.getBillById(accountNumber).block();
 		if (bills != null) {
@@ -31,6 +51,13 @@ public class VirtualAccountHandler {
 		return savingsService.findById(accountNumber).block();
 	}
 
+	/**
+	 * Mengambil detail akun (nama, nomor, alamat) yang dinormalisasi ke dalam record {@link Account}.
+	 * Menangani dua sumber data berbeda: kredit ({@link Bills}) dan tabungan ({@link Savings}).
+	 *
+	 * @param accountNumber nomor SPK atau nomor rekening
+	 * @return detail akun dalam format yang seragam, atau {@code null} kalau tidak ditemukan
+	 */
 	public Account getAccountDetails(String accountNumber) {
 		Object account = findAccount(accountNumber);
 
@@ -51,6 +78,12 @@ public class VirtualAccountHandler {
 		return null;
 	}
 
+	/**
+	 * Membuat pesan berisi informasi akun dan nomor VA dari empat bank sekaligus.
+	 *
+	 * @param accountNumber nomor SPK atau nomor rekening
+	 * @return string pesan yang siap dikirim ke WhatsApp, atau pesan error kalau akun tidak ditemukan
+	 */
 	public String generateVirtualAccountMessage(String accountNumber) {
 		Account account = getAccountDetails(accountNumber);
 

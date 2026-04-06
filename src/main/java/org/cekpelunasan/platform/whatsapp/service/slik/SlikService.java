@@ -10,6 +10,18 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.util.List;
 
+/**
+ * Menangani pencarian dan pengiriman file data SLIK dari penyimpanan cloud (Cloudflare R2).
+ * <p>
+ * Ketika admin mengetik ".s [nama nasabah]", service ini mencari file SLIK yang
+ * namanya mengandung kata kunci tersebut di bucket R2. File yang ditemukan bisa
+ * berupa file teks (.txt) yang perlu dikonversi ke PDF dulu, atau file PDF yang
+ * langsung bisa dikirim.
+ * </p>
+ * <p>
+ * Catatan: Fitur pengiriman PDF dan konversi TXT ke PDF masih dalam pengembangan (TODO).
+ * </p>
+ */
 @Component
 public class SlikService {
 
@@ -22,6 +34,11 @@ public class SlikService {
 		this.s3AsyncClient = s3AsyncClient;
 	}
 
+	/**
+	 * Memproses perintah cek SLIK — mencari file di bucket dan menentukan aksi selanjutnya.
+	 *
+	 * @param webhookDTO data webhook dari perintah SLIK yang masuk
+	 */
 	public void handleSlikService(WhatsAppWebhookDTO webhookDTO) {
 		String text = webhookDTO.getPayload().getBody().substring(".s ".length());
 		String fileName = getMatchingItems(text, getBucketList());
@@ -35,6 +52,12 @@ public class SlikService {
 		}
 	}
 
+	/**
+	 * Mengambil semua nama file yang ada di bucket R2.
+	 * Kalau ada error (jaringan, akses, dll.), method ini mengembalikan list kosong.
+	 *
+	 * @return daftar nama file di bucket, atau list kosong kalau gagal mengambil data
+	 */
 	public List<String> getBucketList() {
 		try {
 			ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucket).build();
@@ -45,6 +68,13 @@ public class SlikService {
 		}
 	}
 
+	/**
+	 * Mencari nama file di daftar yang mengandung kata kunci tertentu (case-insensitive).
+	 *
+	 * @param name  kata kunci pencarian (nama nasabah atau sebagian nama file)
+	 * @param items daftar nama file yang akan dicari
+	 * @return nama file pertama yang cocok, atau {@code null} kalau tidak ada yang sesuai
+	 */
 	public String getMatchingItems(String name, List<String> items) {
 		return items.stream()
 			.filter(item -> item.toLowerCase().contains(name.toLowerCase()))

@@ -27,6 +27,16 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.*;
 
+/**
+ * Mengelola data rekening tabungan nasabah. Class ini merupakan jembatan
+ * antara data tabungan yang diimpor dari CSV dengan berbagai kebutuhan pencarian
+ * di bot: mulai dari mencari nasabah berdasarkan nama, CIF, nomor rekening,
+ * sampai mencari calon nasabah berdasarkan kata kunci alamat.
+ *
+ * <p>Fitur pencarian berdasarkan alamat secara otomatis menyaring nasabah yang
+ * sudah punya tagihan aktif (ada di tabel Bills), sehingga hasilnya lebih
+ * relevan untuk prospekting nasabah baru.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class SavingsService {
@@ -35,10 +45,26 @@ public class SavingsService {
 	private final SavingsRepository savingsRepository;
 	private final ReactiveMongoTemplate mongoTemplate;
 
+	/**
+	 * Menyimpan daftar rekening tabungan ke database secara batch. Berguna
+	 * untuk proses impor yang memecah data CSV menjadi potongan-potongan kecil.
+	 *
+	 * @param savingsList daftar rekening tabungan yang ingin disimpan
+	 * @return {@link Mono} yang selesai ketika semua data berhasil disimpan
+	 */
 	public Mono<Void> batchSavingAccounts(@NonNull List<Savings> savingsList) {
 		return savingsRepository.saveAll(savingsList).then();
 	}
 
+	/**
+	 * Mencari rekening tabungan berdasarkan nama nasabah (tidak case-sensitive)
+	 * dan kode cabang, dengan hasil 5 data per halaman.
+	 *
+	 * @param name   sebagian atau seluruh nama nasabah yang ingin dicari
+	 * @param branch kode cabang tempat rekening terdaftar
+	 * @param page   nomor halaman hasil pencarian (dimulai dari 0)
+	 * @return {@link Mono} berisi halaman data rekening yang sesuai
+	 */
 	public Mono<Page<Savings>> findByNameAndBranch(String name, String branch, int page) {
 		Pageable pageable = PageRequest.of(page, 5);
 		Mono<List<Savings>> content = savingsRepository
@@ -49,10 +75,28 @@ public class SavingsService {
 			.map(t -> new PageImpl<>(t.getT1(), pageable, t.getT2()));
 	}
 
+	/**
+	 * Mencari rekening tabungan berdasarkan nomor CIF (Customer Identification File).
+	 *
+	 * @param cif nomor CIF nasabah yang ingin dicari
+	 * @return {@link Mono} berisi data rekening, atau kosong jika tidak ditemukan
+	 */
 	public Mono<Savings> findByCif(String cif) {
 		return savingsRepository.findByCif(cif);
 	}
 
+	/**
+	 * Membaca file CSV tabungan, menghapus data lama, lalu menyimpan data baru
+	 * secara batch (500 baris sekaligus). Baris header di CSV dilewati secara
+	 * otomatis. Baris dengan jumlah kolom kurang dari 6 juga dilewati karena
+	 * dianggap data tidak lengkap.
+	 *
+	 * <p>Setelah proses selesai, jumlah total data yang tersimpan di database
+	 * akan dicatat ke log untuk keperluan verifikasi.</p>
+	 *
+	 * @param path lokasi file CSV yang berisi data rekening tabungan
+	 * @return {@link Mono} yang selesai ketika seluruh data berhasil diimpor
+	 */
 	public Mono<Void> parseCsvAndSaveIntoDatabase(Path path) {
 		return savingsRepository.deleteAll()
 			.then(Flux.<String[]>create(sink -> {
@@ -90,10 +134,25 @@ public class SavingsService {
 				.then());
 	}
 
+	/**
+	 * Menghapus seluruh data rekening tabungan dari database.
+	 *
+	 * @return {@link Mono} yang selesai ketika penghapusan berhasil
+	 */
 	public Mono<Void> deleteAll() {
 		return savingsRepository.deleteAll();
 	}
 
+	/**
+	 * Mengonversi satu baris CSV menjadi objek {@link Savings}. Kolom yang
+	 * melebihi panjang baris (opsional) diakses dengan aman menggunakan
+	 * metode {@link #get(String[], int)} agar tidak terjadi ArrayIndexOutOfBoundsException.
+	 * Urutan kolom: branch, type, cif, tabId, name, address, balance, transaction,
+	 * accountOfficer, phone, minimumBalance, blockingBalance.
+	 *
+	 * @param line satu baris CSV dalam bentuk array string
+	 * @return objek {@link Savings} yang sudah terisi
+	 */
 	public Savings mapToSavings(String[] line) {
 		return Savings.builder()
 			.branch(line[0])
@@ -111,10 +170,27 @@ public class SavingsService {
 			.build();
 	}
 
+	/**
+	 * Mengambil elemen array string pada indeks tertentu dengan aman.
+	 * Mengembalikan {@code null} jika indeks melebihi panjang array,
+	 * sehingga baris CSV dengan kolom yang kurang tidak menyebabkan error.
+	 *
+	 * @param line  array string yang ingin diakses
+	 * @param index indeks kolom yang ingin diambil
+	 * @return nilai kolom tersebut, atau {@code null} jika indeks di luar batas
+	 */
 	private String get(String[] line, int index) {
 		return index < line.length ? line[index] : null;
 	}
 
+	/**
+	 * Mengurai string menjadi nilai {@link BigDecimal}. String kosong, null,
+	 * atau bukan angka valid akan menghasilkan {@link BigDecimal#ZERO}
+	 * tanpa melempar exception.
+	 *
+	 * @param value string angka yang ingin diurai
+	 * @return nilai BigDecimal-nya, atau BigDecimal.ZERO jika tidak valid
+	 */
 	private BigDecimal parseBigDecimal(String value) {
 		if (value == null || value.isBlank()) return BigDecimal.ZERO;
 		try {
@@ -124,6 +200,14 @@ public class SavingsService {
 		}
 	}
 
+	/**
+	 * Mengambil daftar kode cabang yang memiliki nasabah dengan nama tertentu,
+	 * tanpa duplikat dan sudah diurutkan secara alfabetis. Berguna untuk
+	 * membangun menu pilihan cabang saat pencarian nasabah.
+	 *
+	 * @param name kata kunci nama nasabah sebagai filter
+	 * @return {@link Mono} berisi set kode cabang yang unik dan terurut
+	 */
 	public Mono<Set<String>> listAllBranch(String name) {
 		Criteria criteria = Criteria.where("name").regex(name, "i");
 		Query query = new Query(criteria);
@@ -134,16 +218,42 @@ public class SavingsService {
 			.map(LinkedHashSet::new);
 	}
 
+	/**
+	 * Mencari rekening tabungan berdasarkan nomor rekening (tab ID).
+	 *
+	 * @param id nomor rekening tabungan yang ingin dicari
+	 * @return {@link Mono} berisi data rekening, atau kosong jika tidak ditemukan
+	 */
 	public Mono<Savings> findById(String id) {
 		log.info("Searching for account with ID: {}", id);
 		return savingsRepository.findByTabId(id);
 	}
 
+	/**
+	 * Mencari rekening tabungan berdasarkan nama nasabah, dengan batas jumlah
+	 * hasil yang bisa dikonfigurasi. Berguna untuk fitur pencarian cepat.
+	 *
+	 * @param name  kata kunci nama nasabah yang ingin dicari
+	 * @param limit batas maksimal jumlah hasil yang dikembalikan
+	 * @return {@link Flux} berisi rekening-rekening yang namanya cocok
+	 */
 	public Flux<Savings> findByName(String name, int limit) {
 		log.info("Searching savings by name: {} (limit {})", name, limit);
 		return savingsRepository.findByNameContainingIgnoreCase(name).take(limit);
 	}
 
+	/**
+	 * Mencari rekening tabungan berdasarkan kata kunci alamat, sambil
+	 * mengecualikan nasabah yang sudah punya tagihan aktif di tabel Bills.
+	 * Untuk menghindari duplikasi hasil, hanya satu rekening per CIF yang
+	 * ditampilkan (menggunakan aggregasi group by CIF).
+	 *
+	 * <p>Hasil dikembalikan dengan pagination sesuai {@link Pageable} yang diberikan.</p>
+	 *
+	 * @param addressKeywords daftar kata kunci alamat (semua harus cocok — kondisi AND)
+	 * @param pageable        konfigurasi pagination dan sorting
+	 * @return {@link Mono} berisi halaman data rekening yang sesuai filter
+	 */
 	public Mono<Page<Savings>> findFilteredSavings(List<String> addressKeywords, @NonNull Pageable pageable) {
 		log.info("Starting findFilteredSavings with keywords: {} and page: {}", addressKeywords, pageable);
 
@@ -187,6 +297,15 @@ public class SavingsService {
 		});
 	}
 
+	/**
+	 * Membangun kriteria MongoDB untuk pencarian berbasis kata kunci alamat.
+	 * Setiap kata kunci dijadikan kondisi regex case-insensitive, dan semua
+	 * kondisi digabungkan dengan AND. Jika daftar kata kunci kosong atau null,
+	 * dikembalikan kriteria kosong (tidak ada filter).
+	 *
+	 * @param addressKeywords daftar kata kunci yang ingin dijadikan filter alamat
+	 * @return objek {@link Criteria} yang siap digunakan dalam query MongoDB
+	 */
 	private Criteria buildAddressCriteria(List<String> addressKeywords) {
 		if (addressKeywords == null || addressKeywords.isEmpty()) {
 			return new Criteria();

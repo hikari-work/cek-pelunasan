@@ -24,6 +24,17 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
+/**
+ * Menghitung simulasi pembayaran dan kebutuhan bayar minimal untuk satu
+ * nomor SPK. Class ini adalah otak di balik fitur simulasi pelunasan di bot:
+ * ia menerima jumlah uang yang akan dibayarkan, lalu menghitung berapa yang
+ * masuk ke bunga dan berapa yang masuk ke pokok, sesuai aturan prioritas
+ * pembayaran yang berlaku.
+ *
+ * <p>Aturan prioritas pembayaran: jika keterlambatan terlama tidak melebihi
+ * 90 hari, bunga dibayar lebih dulu baru pokok. Jika sudah lewat 90 hari,
+ * pokok yang dibayar lebih dulu baru bunga.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class SimulasiService {
@@ -35,6 +46,14 @@ public class SimulasiService {
 
     private final SimulasiRepository simulasiRepository;
 
+    /**
+     * Menghitung jumlah tunggakan bunga dan pokok untuk satu nomor SPK.
+     * Hasilnya berupa map dengan dua kunci: "I" untuk jumlah tunggakan bunga
+     * dan "P" untuk jumlah tunggakan pokok.
+     *
+     * @param spk nomor SPK (Surat Perjanjian Kredit) nasabah
+     * @return {@link Mono} berisi map jumlah tunggakan per jenis sequence
+     */
     public Mono<Map<String, Integer>> findTotalKeterlambatan(String spk) {
         return simulasiRepository.findBySpk(spk).collectList()
             .map(bySpk -> {
@@ -49,6 +68,14 @@ public class SimulasiService {
             });
     }
 
+    /**
+     * Mencari hari keterlambatan terlama dari semua record simulasi milik
+     * satu SPK. Nilai ini menentukan apakah nasabah sudah masuk kategori
+     * keterlambatan parah (di atas 90 hari) atau masih dalam batas normal.
+     *
+     * @param spk nomor SPK nasabah
+     * @return {@link Mono} berisi jumlah hari keterlambatan terlama, atau 0 jika tidak ada
+     */
     public Mono<Long> findMaxBayar(String spk) {
         return simulasiRepository.findBySpk(spk).collectList()
             .map(result -> result.stream()
@@ -57,6 +84,20 @@ public class SimulasiService {
                 .orElse(0L));
     }
 
+    /**
+     * Menghitung bagaimana uang yang dibayarkan nasabah akan dialokasikan ke
+     * bunga dan pokok, berdasarkan aturan prioritas pembayaran.
+     *
+     * <p>Jika keterlambatan ≤ 90 hari: bayar bunga dulu, sisa ke pokok.
+     * Jika keterlambatan &gt; 90 hari: bayar pokok dulu, sisa ke bunga.</p>
+     *
+     * <p>Hasilnya juga menyertakan perkiraan batas waktu pembayaran yang aman,
+     * yaitu sisa hari terlama plus sisa hari sampai akhir bulan ini.</p>
+     *
+     * @param spk       nomor SPK nasabah
+     * @param userInput jumlah uang yang akan dibayarkan (dalam rupiah)
+     * @return {@link Mono} berisi hasil simulasi berisi alokasi bunga, pokok, dan batas hari bayar
+     */
     public Mono<SimulasiResult> getSimulasi(String spk, Long userInput) {
         return simulasiRepository.findBySpk(spk).collectList()
             .map(keterlambatan -> {
@@ -102,6 +143,17 @@ public class SimulasiService {
             });
     }
 
+    /**
+     * Memproses pembayaran untuk satu jenis sequence (bunga atau pokok)
+     * dari record yang sudah difilter. Saldo dikurangi satu per satu mulai
+     * dari tunggakan terlama. Jika saldo cukup, tunggakan diselesaikan penuh;
+     * jika tidak cukup, tunggakan dikurangi sebesar saldo yang tersisa.
+     *
+     * @param records       daftar record simulasi yang akan diproses
+     * @param balance       saldo yang tersisa (dimodifikasi langsung)
+     * @param paymentTotal  akumulator total pembayaran untuk sequence ini
+     * @param filter        predikat untuk memilih record yang relevan
+     */
     private void processPayments(List<Simulasi> records, AtomicLong balance,
                                  AtomicLong paymentTotal, Predicate<Simulasi> filter) {
         records.stream().filter(filter).forEach(record -> {
@@ -123,10 +175,24 @@ public class SimulasiService {
         });
     }
 
+    /**
+     * Menghapus seluruh data simulasi dari database. Dipanggil sebelum
+     * impor data CSV baru.
+     *
+     * @return {@link Mono} yang selesai ketika penghapusan berhasil
+     */
     public Mono<Void> deleteAll() {
         return simulasiRepository.deleteAll();
     }
 
+    /**
+     * Membaca file CSV simulasi, menghapus data lama, lalu menyimpan data
+     * baru secara batch (500 baris sekaligus). Proses berjalan di thread
+     * terpisah dengan mekanisme retry otomatis sampai 3 kali.
+     *
+     * @param path lokasi file CSV yang berisi data simulasi
+     * @return {@link Mono} yang selesai ketika seluruh data berhasil diimpor
+     */
     public Mono<Void> parseCsv(Path path) {
         return simulasiRepository.deleteAll()
             .then(Flux.<String[]>create(sink -> {
@@ -151,6 +217,13 @@ public class SimulasiService {
             .doFinally(signal -> System.gc());
     }
 
+    /**
+     * Mengonversi satu baris CSV menjadi objek {@link Simulasi}.
+     * Urutan kolom: spk, tanggal, sequence, tunggakan, denda, keterlambatan.
+     *
+     * @param lines satu baris CSV dalam bentuk array string
+     * @return objek {@link Simulasi} yang sudah terisi
+     */
     private Simulasi mapToSimulasi(String[] lines) {
         return Simulasi.builder()
             .spk(lines[0])
@@ -162,10 +235,31 @@ public class SimulasiService {
             .build();
     }
 
+    /**
+     * Menghitung sisa hari dari hari ini sampai akhir bulan berjalan.
+     * Digunakan untuk menentukan batas waktu bayar yang aman bagi nasabah.
+     *
+     * @return jumlah hari yang tersisa hingga akhir bulan ini
+     */
     private long getDaysToEndOfMonth() {
         return ChronoUnit.DAYS.between(LocalDate.now(), YearMonth.now().atEndOfMonth());
     }
 
+    /**
+     * Menghitung jumlah minimal yang harus dibayar nasabah untuk satu SPK
+     * agar statusnya tidak memburuk. Logika perhitungan bergantung pada
+     * seberapa parah keterlambatannya:
+     * <ul>
+     *   <li>Jika keterlambatan terlama ≤ 90 hari: hitung dari bunga yang
+     *       akan melewati 90 hari jika tidak dibayar sekarang, plus pokok
+     *       yang sudah melewati 90 hari.</li>
+     *   <li>Jika keterlambatan terlama &gt; 90 hari: bayar semua pokok yang
+     *       belum lunas, lalu cek apakah bunga tertua juga perlu dibayar.</li>
+     * </ul>
+     *
+     * @param spk nomor SPK nasabah
+     * @return {@link Mono} berisi jumlah minimal yang harus dibayar (dalam rupiah)
+     */
     public Mono<Long> minimalBayar(String spk) {
         return simulasiRepository.findBySpk(spk).collectList()
             .map(records -> {
@@ -214,6 +308,15 @@ public class SimulasiService {
             });
     }
 
+    /**
+     * Menambahkan sisa hari bulan ini ke keterlambatan setiap record, lalu
+     * menghitung tunggakan bunga yang akan melewati batas 90 hari setelah
+     * penambahan tersebut. Tunggakan yang melewati batas dimasukkan ke total
+     * minimal bayar dan keterlambatannya direset ke 0.
+     *
+     * @param records        daftar record simulasi yang akan diproses
+     * @param minimumPayment akumulator total minimal bayar yang akan diperbarui
+     */
     private void addLateDate(List<Simulasi> records, AtomicLong minimumPayment) {
         records.forEach(sim -> sim.setKeterlambatan(sim.getKeterlambatan() + getDaysToEndOfMonth()));
 

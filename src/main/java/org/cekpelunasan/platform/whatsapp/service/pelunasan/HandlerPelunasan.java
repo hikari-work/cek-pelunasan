@@ -14,6 +14,19 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
+/**
+ * Menangani perintah cek pelunasan kredit yang masuk via WhatsApp.
+ * <p>
+ * Ketika pengguna mengetik ".p [nomor SPK 12 digit]", handler ini memvalidasi format perintah,
+ * mengambil data tagihan dari database, menghitung estimasi pelunasan lewat {@link PelunasanService},
+ * lalu mengirimkan hasilnya sebagai pesan WhatsApp yang terformat rapi.
+ * </p>
+ * <p>
+ * Ada perbedaan perilaku antara admin dan pengguna biasa: pesan untuk admin dikirim
+ * dengan cara edit (update) pesan asli, sementara pengguna biasa mendapat pesan baru.
+ * Bot juga mengirim reaksi emoji ke pesan perintah sebagai tanda pesan sedang diproses.
+ * </p>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -30,6 +43,13 @@ public class HandlerPelunasan {
 	@Value("${admin.whatsapp}")
 	private String adminWhatsApp;
 
+	/**
+	 * Memulai proses cek pelunasan secara asinkron.
+	 * Validasi, kalkulasi, dan pengiriman pesan semuanya berjalan di thread terpisah.
+	 *
+	 * @param command data webhook dari perintah pelunasan yang masuk
+	 * @return CompletableFuture yang selesai setelah proses pelunasan selesai dibalas
+	 */
 	@Async
 	public CompletableFuture<Void> handlePelunasan(WhatsAppWebhookDTO command) {
 		return CompletableFuture.runAsync(() -> processPelunasanCommand(command));

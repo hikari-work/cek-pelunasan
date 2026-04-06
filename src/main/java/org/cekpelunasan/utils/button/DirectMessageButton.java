@@ -9,11 +9,27 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Membuat tombol pemilihan layanan untuk fitur direct message (pesan langsung ke nasabah).
+ * <p>
+ * Ketika admin ingin mengirim pesan langsung ke nasabah, ditampilkan pilihan
+ * jenis layanan yang ingin dicek: Pelunasan atau Tabungan. Class ini menyusun
+ * tombol-tombol tersebut secara dinamis dengan data callback yang membawa konteks nomor nasabah.
+ * </p>
+ */
 @Component
 public class DirectMessageButton {
 
     private static final Logger log = LoggerFactory.getLogger(DirectMessageButton.class);
 
+    /**
+     * Membuat keyboard inline berisi pilihan layanan (Pelunasan dan Tabungan).
+     * Setiap tombol menyimpan data callback "services_[nama layanan]_[query]"
+     * sehingga handler tahu layanan apa yang dipilih dan untuk nomor nasabah mana.
+     *
+     * @param query nomor akun atau konteks pencarian yang akan dibawa ke langkah berikutnya
+     * @return keyboard inline berisi pilihan layanan
+     */
     public TdApi.ReplyMarkupInlineKeyboard selectServices(String query) {
         List<TdApi.InlineKeyboardButton[]> rows = new ArrayList<>();
         List<TdApi.InlineKeyboardButton> currentRow = new ArrayList<>();

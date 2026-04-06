@@ -5,10 +5,15 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
- * Entity class for the bills (tagihan) table.
+ * Representasi satu baris data tagihan nasabah yang tersimpan di koleksi MongoDB {@code tagihan}.
  * <p>
- * This entity is used for bill operations including 'tagihan' (billing) and
- * 'pelunasan' (repayment).
+ * Class ini dipakai untuk dua keperluan utama: menampilkan informasi tagihan yang belum lunas
+ * (termasuk berapa yang harus dibayar bulan ini), dan menghitung angka pelunasan jika nasabah
+ * ingin melunasi kreditnya lebih awal.
+ * </p>
+ * <p>
+ * Data di sini bersumber dari sistem core banking dan diperbarui secara berkala oleh proses
+ * import data. Jangan mengubah field ini secara manual kecuali lewat mekanisme import resmi.
  * </p>
  */
 @Getter
@@ -20,124 +25,160 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Bills {
 
 	/**
-	 * The unique identifier of the customer.
+	 * Nomor identitas unik nasabah di sistem core banking.
 	 */
 	private String customerId;
+
 	/**
-	 * The region (wilayah) of the customer.
+	 * Kode wilayah tempat nasabah ini terdaftar, misalnya "WILAYAH I" atau "JABODETABEK".
 	 */
 	private String wilayah;
+
 	/**
-	 * The branch code.
+	 * Kode cabang yang mengelola tagihan ini, misalnya "1075".
 	 */
 	private String branch;
+
 	/**
-	 * The SPK (Surat Perintah Kerja) number, acting as the primary key.
+	 * Nomor SPK (Surat Perintah Kerja) yang sekaligus menjadi primary key dokumen ini.
+	 * Setiap tagihan punya nomor SPK yang unik.
 	 */
 	@Id
 	private String noSpk;
+
 	/**
-	 * The location of the office handling the bill.
+	 * Nama atau kode lokasi kantor yang menangani tagihan ini.
 	 */
 	private String officeLocation;
+
 	/**
-	 * The name of the product associated with the bill.
+	 * Nama produk kredit yang diambil oleh nasabah, misalnya "KUR Mikro" atau "Kredit Usaha".
 	 */
 	private String product;
+
 	/**
-	 * The name of the customer.
+	 * Nama lengkap nasabah.
 	 */
 	private String name;
+
 	/**
-	 * The address of the customer.
+	 * Alamat nasabah sesuai data yang tercatat di sistem.
 	 */
 	private String address;
+
 	/**
-	 * Payment down status or amount.
+	 * Status atau nominal uang muka yang telah dibayarkan. Nilainya bisa berupa angka
+	 * atau teks status tertentu tergantung format dari core banking.
 	 */
 	private String payDown;
+
 	/**
-	 * Realization status or amount.
+	 * Status atau tanggal realisasi kredit ini. Menunjukkan kapan kredit ini
+	 * benar-benar dicairkan ke nasabah.
 	 */
 	private String realization;
+
 	/**
-	 * The due date of the bill.
+	 * Tanggal jatuh tempo angsuran bulan ini dalam format teks.
 	 */
 	private String dueDate;
+
 	/**
-	 * The collection status of the bill.
+	 * Status kolektibilitas kredit ini, misalnya "1" (lancar), "2" (dalam perhatian khusus),
+	 * hingga "5" (macet). Semakin besar angkanya, semakin bermasalah kreditnya.
 	 */
 	private String collectStatus;
+
 	/**
-	 * The number of days late.
+	 * Jumlah hari keterlambatan pembayaran angsuran, dalam satuan hari.
 	 */
 	private String dayLate;
+
 	/**
-	 * The plafond (credit ceiling) amount.
+	 * Plafond kredit yang disetujui, yaitu batas maksimal pinjaman nasabah ini dalam rupiah.
 	 */
 	private Long plafond;
+
 	/**
-	 * The remaining debit tray amount.
+	 * Sisa pokok pinjaman yang masih harus dilunasi (outstanding pokok), dalam rupiah.
 	 */
 	private Long debitTray;
+
 	/**
-	 * The interest amount.
+	 * Total bunga yang terakumulasi sampai saat ini dan belum dibayar, dalam rupiah.
 	 */
 	private Long interest;
+
 	/**
-	 * The principal amount.
+	 * Jumlah pokok pinjaman yang harus dibayar pada angsuran bulan ini, dalam rupiah.
 	 */
 	private Long principal;
+
 	/**
-	 * The installment amount.
+	 * Total angsuran bulan ini (pokok + bunga), dalam rupiah.
 	 */
 	private Long installment;
+
 	/**
-	 * The last interest amount paid.
+	 * Bunga dari angsuran terakhir yang sudah jatuh tempo tapi belum dibayar, dalam rupiah.
 	 */
 	private Long lastInterest;
+
 	/**
-	 * The last principal amount paid.
+	 * Pokok dari angsuran terakhir yang sudah jatuh tempo tapi belum dibayar, dalam rupiah.
 	 */
 	private Long lastPrincipal;
+
 	/**
-	 * The last installment amount paid.
+	 * Total angsuran terakhir yang sudah jatuh tempo tapi belum dibayar, dalam rupiah.
 	 */
 	private Long lastInstallment;
+
 	/**
-	 * The full payment amount required for settlement.
+	 * Angka total yang harus dibayar jika nasabah ingin melunasi kreditnya sekarang,
+	 * mencakup semua komponen (pokok, bunga, denda), dalam rupiah.
 	 */
 	private Long fullPayment;
+
 	/**
-	 * The minimum interest payment required.
+	 * Minimal bunga yang harus dibayar agar tagihan ini tidak dianggap macet, dalam rupiah.
 	 */
 	private Long minInterest;
+
 	/**
-	 * The minimum principal payment required.
+	 * Minimal pokok yang harus dibayar agar tagihan ini tidak dianggap macet, dalam rupiah.
 	 */
 	private Long minPrincipal;
+
 	/**
-	 * The penalty interest amount.
+	 * Denda bunga akibat keterlambatan pembayaran, dihitung berdasarkan hari telat, dalam rupiah.
 	 */
 	private Long penaltyInterest;
+
 	/**
-	 * The penalty principal amount.
+	 * Denda pokok akibat keterlambatan pembayaran, dalam rupiah.
 	 */
 	private Long penaltyPrincipal;
+
 	/**
-	 * The account officer assigned to this bill.
+	 * Kode atau nama Account Officer yang bertanggung jawab atas tagihan nasabah ini.
 	 */
 	private String accountOfficer;
+
 	/**
-	 * The kios associated with the bill.
+	 * Nama atau kode kios tempat nasabah ini terdaftar, digunakan khusus untuk
+	 * cabang yang punya sistem kios/loket.
 	 */
 	private String kios;
+
 	/**
-	 * Any entrusted funds (titipan).
+	 * Jumlah uang titipan nasabah yang sudah ada di sistem tapi belum diaplikasikan
+	 * ke angsuran, dalam rupiah.
 	 */
 	private Long titipan;
+
 	/**
-	 * The fixed interest amount.
+	 * Bunga tetap (flat interest) yang dikenakan, dalam rupiah.
 	 */
 	private Long fixedInterest;
 }

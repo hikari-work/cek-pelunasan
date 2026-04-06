@@ -9,6 +9,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+/**
+ * Utilitas untuk mengunduh dan memproses file CSV dari URL yang diberikan.
+ * <p>
+ * Dipakai ketika admin mengirim perintah upload data yang disertai URL file CSV.
+ * File diunduh ke folder lokal "files/" di server, lalu path-nya dikembalikan
+ * untuk diproses lebih lanjut (misalnya diimport ke database).
+ * </p>
+ */
 @Slf4j
 public class CsvDownloadUtils {
 
@@ -41,6 +49,12 @@ public class CsvDownloadUtils {
 		return parts.length >= 2 ? parts[1].trim() : null;
 	}
 
+	/**
+	 * Mengekstrak nama file dari URL dengan mengambil bagian setelah slash terakhir.
+	 *
+	 * @param fileUrl URL file yang akan diekstrak nama filenya
+	 * @return nama file, misalnya "data_nasabah.csv"
+	 */
 	public static String extractFileName(String fileUrl) {
 		return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
 	}

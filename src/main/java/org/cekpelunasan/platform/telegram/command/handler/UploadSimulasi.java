@@ -16,6 +16,20 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Handler untuk perintah {@code /uploadsimulasi} — memperbarui data simulasi pembayaran dari file CSV.
+ *
+ * <p>Data simulasi digunakan oleh fitur {@code /simulasi} dan {@code /minimal} untuk menghitung
+ * rincian pembayaran angsuran kredit. Untuk memperbarui datanya, admin cukup kirim perintah
+ * diikuti URL file CSV: {@code /uploadsimulasi https://contoh.com/simulasi.csv}.</p>
+ *
+ * <p>Setelah proses selesai, semua user terdaftar mendapat notifikasi berisi tanggal dan waktu
+ * update berhasil dilakukan (dalam zona waktu WIB, UTC+7). Jika gagal, semua user juga
+ * mendapat pemberitahuan bahwa update tidak berhasil.</p>
+ *
+ * <p>Jeda 100ms di antara notifikasi ke setiap user diterapkan untuk menghindari rate limit Telegram.
+ * Hanya admin yang dapat menjalankan perintah ini.</p>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -36,12 +50,36 @@ public class UploadSimulasi extends AbstractCommandHandler {
 		return "";
 	}
 
+	/**
+	 * Memvalidasi bahwa pengirim adalah admin sebelum memulai proses upload data simulasi.
+	 *
+	 * @param update objek update dari Telegram
+	 * @param client koneksi aktif ke Telegram
+	 * @return hasil proses upload, atau ditolak jika bukan admin
+	 */
 	@Override
 	@RequireAuth(roles = AccountOfficerRoles.ADMIN)
 	public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		return super.process(update, client);
 	}
 
+	/**
+	 * Mengunduh file CSV simulasi dari URL yang disertakan, memprosesnya, lalu memberitahu semua user.
+	 *
+	 * <p>Alur kerjanya:</p>
+	 * <ol>
+	 *   <li>Ekstrak URL dari teks perintah. Jika tidak ada, minta admin mengisi URL.</li>
+	 *   <li>Catat waktu saat ini (WIB) untuk digunakan di pesan notifikasi.</li>
+	 *   <li>Ambil semua user terdaftar.</li>
+	 *   <li>Unduh file CSV dan proses datanya melalui {@link SimulasiService}.</li>
+	 *   <li>Kirim notifikasi hasil (berhasil atau gagal) ke semua user dengan jeda 100ms per user.</li>
+	 * </ol>
+	 *
+	 * @param chatId ID chat admin yang mengirim perintah
+	 * @param text   teks lengkap perintah yang berisi URL file CSV
+	 * @param client koneksi aktif ke Telegram
+	 * @return {@link Mono} yang selesai setelah seluruh proses selesai dan notifikasi terkirim
+	 */
 	@Override
 	public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		String fileUrl = CsvDownloadUtils.extractUrl(text);
@@ -64,6 +102,16 @@ public class UploadSimulasi extends AbstractCommandHandler {
 			.then();
 	}
 
+	/**
+	 * Mengirimkan pesan notifikasi ke semua user dalam daftar, satu per satu dengan jeda 100ms.
+	 *
+	 * <p>Jeda antar pengiriman diterapkan untuk menghindari terkena rate limit dari Telegram.
+	 * Jika thread diinterupsi di tengah proses, flag interupsi dipulihkan kembali agar tidak hilang.</p>
+	 *
+	 * @param users   daftar user yang akan menerima notifikasi
+	 * @param message teks notifikasi yang akan dikirim ke setiap user
+	 * @param client  koneksi aktif ke Telegram
+	 */
 	private void notifyUsers(java.util.List<org.cekpelunasan.core.entity.User> users, String message, SimpleTelegramClient client) {
 		users.forEach(user -> {
 			sendMessage(user.getChatId(), message, client);

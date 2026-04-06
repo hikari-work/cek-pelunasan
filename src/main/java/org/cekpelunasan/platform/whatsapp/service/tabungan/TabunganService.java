@@ -14,6 +14,20 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Menangani perintah cek informasi tabungan nasabah lewat WhatsApp.
+ * <p>
+ * Mendukung dua mode pencarian yang dideteksi otomatis dari input pengguna:
+ * <ul>
+ *   <li><strong>Nomor rekening</strong> (12 digit angka) — langsung menampilkan detail tabungan
+ *       satu nasabah tertentu</li>
+ *   <li><strong>Nama</strong> — mencari nasabah yang namanya mengandung kata kunci tersebut,
+ *       dengan hasil dibatasi maksimal 5 nasabah</li>
+ * </ul>
+ * Format perintah: {@code .t [nomor rekening]} atau {@code .t [nama nasabah]}.
+ * Seperti fitur lain, admin mendapat respons lewat edit pesan, pengguna biasa mendapat pesan baru.
+ * </p>
+ */
 @Slf4j
 @Component
 public class TabunganService {
@@ -34,6 +48,13 @@ public class TabunganService {
 		this.whatsAppSenderService = whatsAppSenderService;
 	}
 
+	/**
+	 * Memproses perintah cek tabungan secara asinkron.
+	 * Mendeteksi mode pencarian (nomor vs nama) dan mendelegasikan ke handler yang sesuai.
+	 *
+	 * @param command data webhook dari perintah tabungan yang masuk
+	 * @return CompletableFuture yang selesai setelah hasil dikirim ke pengguna
+	 */
 	@Async
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> handleTabungan(WhatsAppWebhookDTO command) {
@@ -74,7 +95,7 @@ public class TabunganService {
 			.flatMap(results -> {
 				String message = buildNameSearchMessage(name, results);
 				whatsAppSenderService.sendWhatsAppText(command.buildChatId(), message).subscribe();
-				return Mono.<Void>empty();
+				return Mono.empty();
 			});
 	}
 
@@ -97,6 +118,13 @@ public class TabunganService {
 		return sb.toString();
 	}
 
+	/**
+	 * Memvalidasi apakah pesan adalah perintah cek tabungan yang valid.
+	 * Perintah dianggap valid kalau dimulai dengan ".t " dan ada input setelahnya.
+	 *
+	 * @param command data webhook yang akan divalidasi
+	 * @return {@code true} kalau format perintah valid
+	 */
 	public boolean isValidTabunganCommand(WhatsAppWebhookDTO command) {
 		String body = command.getPayload().getBody();
 		return body.startsWith(".t ") && body.length() > 3;

@@ -14,6 +14,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+/**
+ * Handler untuk perintah {@code /auth} — memberikan akses bot kepada user baru.
+ *
+ * <p>Hanya admin yang bisa menjalankan perintah ini. Caranya dengan mengirim
+ * {@code /auth <chat_id>} di mana {@code chat_id} adalah ID Telegram dari user
+ * yang ingin diberi akses. Setelah berhasil, user tersebut langsung mendapat
+ * notifikasi bahwa akses mereka sudah aktif, dan owner bot juga diberitahu.</p>
+ *
+ * <p>Class ini menyimpan ID yang sudah diotorisasi ke dalam {@link AuthorizedChats}
+ * (cache in-memory) sekaligus menyimpannya secara permanen ke database melalui {@link UserService}.</p>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -36,12 +47,31 @@ public class AuthCommandHandler extends AbstractCommandHandler {
         return "Gunakan command ini untuk memberikan izin kepada user untuk menggunakan bot.";
     }
 
+    /**
+     * Memeriksa bahwa pengirim perintah adalah admin sebelum memproses otorisasi.
+     *
+     * @param update objek update dari Telegram
+     * @param client koneksi aktif ke Telegram
+     * @return hasil proses otorisasi, atau ditolak jika bukan admin
+     */
     @Override
     @RequireAuth(roles = AccountOfficerRoles.ADMIN)
     public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
         return super.process(update, client);
     }
 
+    /**
+     * Memproses permintaan otorisasi dengan menambahkan user ke daftar yang diizinkan.
+     *
+     * <p>Perintah yang valid adalah {@code /auth <chat_id>} dengan {@code chat_id} berupa angka.
+     * Jika format tidak sesuai atau bukan angka, bot akan membalas dengan pesan error yang sesuai.
+     * Jika berhasil, user target mendapat notifikasi otorisasi dan owner bot mendapat konfirmasi.</p>
+     *
+     * @param chatId ID chat admin yang mengirim perintah
+     * @param text   teks lengkap perintah yang dikirim, termasuk {@code chat_id} target
+     * @param client koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah proses otorisasi berhasil atau gagal dengan pesan error
+     */
     @Override
     public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
         String[] parts = text.split(" ");

@@ -7,6 +7,20 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 
+/**
+ * Menghitung estimasi pelunasan kredit berdasarkan data tagihan yang ada.
+ * <p>
+ * Service ini adalah inti dari fitur cek pelunasan. Logikanya membedakan dua jenis kredit:
+ * <ul>
+ *   <li><strong>Flat Murni (LM)</strong> — dua kelas penalty berbeda untuk kredit jangka panjang
+ *       (lebih dari 12 bulan) dan jangka pendek, dengan multiplier yang berkurang seiring waktu</li>
+ *   <li><strong>Anuitas (DG)</strong> — penalty hanya 1x bunga tetap, kecuali kalau jatuh temponya
+ *       bulan yang sama dengan bulan pelunasan (maka penalty 0)</li>
+ * </ul>
+ * Bunga yang dihitung juga mempertimbangkan apakah tanggal realisasi sudah lewat hari ini atau
+ * belum, yang menentukan apakah bunga berjalan ikut ditambahkan atau tidak.
+ * </p>
+ */
 @Slf4j
 @Service
 public class PelunasanService {
@@ -24,6 +38,24 @@ public class PelunasanService {
 
 	private static final String BUNGA = "Bunga";
 
+	/**
+	 * Menghitung semua komponen pelunasan dari data tagihan yang diberikan.
+	 * <p>
+	 * Proses perhitungannya:
+	 * <ol>
+	 *   <li>Validasi input — pastikan data tidak null dan formatnya benar</li>
+	 *   <li>Identifikasi jenis kredit dari 2 karakter terakhir kode produk</li>
+	 *   <li>Hitung multiplier penalty sesuai jenis kredit dan umur pinjaman</li>
+	 *   <li>Hitung denda (tunggakan bunga + tunggakan pokok) dan penalty</li>
+	 *   <li>Hitung bunga yang perlu dibayar dan tentukan tipenya (titipan/bunga/tunggakan)</li>
+	 *   <li>Rakit semua komponen menjadi satu DTO yang siap ditampilkan</li>
+	 * </ol>
+	 * </p>
+	 *
+	 * @param pelunasan data tagihan nasabah yang akan dihitung pelunasannya
+	 * @return DTO berisi semua komponen pelunasan yang sudah dihitung
+	 * @throws IllegalArgumentException kalau data input tidak valid
+	 */
 	public PelunasanDto calculatePelunasn(Bills pelunasan) {
 		validateInput(pelunasan);
 

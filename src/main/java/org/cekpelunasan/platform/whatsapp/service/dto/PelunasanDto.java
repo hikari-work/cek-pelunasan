@@ -5,6 +5,19 @@ import lombok.Data;
 import java.text.NumberFormat;
 import java.util.Locale;
 
+/**
+ * Wadah data hasil perhitungan pelunasan kredit yang siap ditampilkan ke pengguna.
+ * <p>
+ * Class ini menampung semua informasi yang dibutuhkan untuk membuat pesan pelunasan:
+ * data nasabah (nama, SPK, alamat), rincian keuangan (plafond, baki debet, bunga,
+ * penalty, denda), dan tanggal-tanggal penting (realisasi, jatuh tempo, rencana lunas).
+ * </p>
+ * <p>
+ * Dua method utama di sini adalah {@link #getTotalPelunasan()} untuk menghitung
+ * total yang harus dibayar, dan {@link #toWhatsAppMessageClean()} untuk mengubah
+ * data tersebut menjadi pesan yang siap dikirim lewat WhatsApp dengan format yang rapi.
+ * </p>
+ */
 @Data
 public class PelunasanDto {
 
@@ -22,6 +35,15 @@ public class PelunasanDto {
 	private Long denda;
 	private String typeBunga;
 
+	/**
+	 * Menghitung total yang harus dibayar nasabah saat pelunasan.
+	 * <p>
+	 * Rumusnya: baki debet + perhitungan bunga + penalty + denda.
+	 * Setiap komponen yang null dianggap 0 supaya tidak error.
+	 * </p>
+	 *
+	 * @return total pelunasan dalam satuan rupiah
+	 */
 	public Long getTotalPelunasan() {
 		Long baki = this.bakiDebet != null ? this.bakiDebet : 0L;
 		Long bunga = this.perhitunganBunga != null ? this.perhitunganBunga : 0L;
@@ -31,6 +53,16 @@ public class PelunasanDto {
 		return baki + bunga + penalti + dendaVal;
 	}
 
+	/**
+	 * Mengubah data pelunasan menjadi pesan teks yang siap dikirim ke WhatsApp.
+	 * <p>
+	 * Pesan sudah diformat dengan bold, emoji, dan pemisah visual supaya mudah dibaca
+	 * di layar HP. Semua angka diformat dalam format Rupiah Indonesia, dan karakter
+	 * yang bisa merusak formatting WhatsApp (*, _, ~, `) di-escape otomatis.
+	 * </p>
+	 *
+	 * @return string pesan pelunasan yang siap dikirim
+	 */
 	public String toWhatsAppMessageClean() {
 		NumberFormat formatter = NumberFormat.getInstance(Locale.of("id", "ID"));
 

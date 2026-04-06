@@ -9,6 +9,18 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+/**
+ * Lapisan paling bawah untuk komunikasi dengan WhatsApp gateway via HTTP.
+ * <p>
+ * Class ini bertugas satu hal saja: mengirim request POST ke endpoint WhatsApp gateway.
+ * Ada dua jenis request yang ditangani: pengiriman pesan baru (menggunakan {@link BaseMessageRequestDTO})
+ * dan aksi pada pesan yang sudah ada seperti update, hapus, atau reaksi (menggunakan {@link MessageActionDTO}).
+ * </p>
+ * <p>
+ * Kalau request gagal karena error jaringan atau server, hasilnya adalah
+ * {@code Mono.empty()} supaya proses di atasnya tidak crash — error cukup dicatat di log saja.
+ * </p>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -16,6 +28,17 @@ public class WhatsAppSender {
 
     private final WebClient whatsappWebClient;
 
+    /**
+     * Menentukan path endpoint API berdasarkan jenis pesan yang akan dikirim.
+     * <p>
+     * Untuk aksi pada pesan yang sudah ada (REACTION, UPDATE, DELETE),
+     * path yang dikembalikan masih mengandung placeholder {@code {message_id}}
+     * yang harus diganti dengan ID pesan yang sebenarnya sebelum request dikirim.
+     * </p>
+     *
+     * @param messageType jenis pesan atau aksi yang akan dilakukan
+     * @return path URL endpoint yang sesuai
+     */
     public String buildPath(TypeMessage messageType) {
         return switch (messageType) {
             case TEXT -> "/send/message";
@@ -28,6 +51,13 @@ public class WhatsAppSender {
         };
     }
 
+    /**
+     * Mengirim pesan baru ke WhatsApp gateway.
+     *
+     * @param path path endpoint API yang sudah ditentukan lewat {@link #buildPath(TypeMessage)}
+     * @param dto  data pesan yang akan dikirim
+     * @return response dari gateway, atau {@code Mono.empty()} kalau gagal
+     */
     public Mono<GenericResponseDTO> request(String path, BaseMessageRequestDTO dto) {
         return whatsappWebClient.post()
                 .uri(path)
@@ -40,6 +70,17 @@ public class WhatsAppSender {
                 });
     }
 
+    /**
+     * Menjalankan aksi pada pesan yang sudah ada (update, hapus, atau reaksi).
+     * <p>
+     * Placeholder {@code {message_id}} di path akan diganti otomatis dengan
+     * ID pesan dari DTO sebelum request dikirim.
+     * </p>
+     *
+     * @param path path endpoint yang masih mengandung {@code {message_id}}
+     * @param dto  data aksi yang berisi ID pesan dan data tambahan (misal emoji untuk reaksi)
+     * @return response dari gateway, atau {@code Mono.empty()} kalau gagal
+     */
     public Mono<GenericResponseDTO> request(String path, MessageActionDTO dto) {
         String resolvedPath = path.replace("{message_id}", dto.getMessageId());
         return whatsappWebClient.post()

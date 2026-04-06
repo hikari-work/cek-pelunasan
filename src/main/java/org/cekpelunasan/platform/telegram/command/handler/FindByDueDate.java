@@ -17,6 +17,17 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 
+/**
+ * Handler untuk perintah {@code /jb} — menampilkan daftar tagihan yang jatuh tempo hari ini.
+ *
+ * <p>Perintah ini memudahkan AO dan pimpinan untuk melihat semua tagihan yang harus
+ * ditagih pada hari yang sama. Data yang ditampilkan disesuaikan dengan peran pengguna:
+ * AO hanya melihat tagihan miliknya sendiri, sementara pimpinan melihat tagihan
+ * seluruh cabang yang mereka pimpin.</p>
+ *
+ * <p>Hasil ditampilkan dengan paginasi 5 data per halaman. Setiap tagihan menampilkan
+ * nama nasabah, nomor SPK, alamat, tanggal jatuh tempo, jumlah tagihan, dan nama AO.</p>
+ */
 @Component
 @RequiredArgsConstructor
 public class FindByDueDate extends AbstractCommandHandler {
@@ -35,12 +46,34 @@ public class FindByDueDate extends AbstractCommandHandler {
 		return "📅 *Cek tagihan jatuh tempo hari ini*.\nGunakan command ini untuk melihat daftar tagihan Anda yang jatuh tempo hari ini.";
 	}
 
+	/**
+	 * Memvalidasi peran pengguna sebelum mengambil data tagihan jatuh tempo.
+	 *
+	 * @param update objek update dari Telegram
+	 * @param client koneksi aktif ke Telegram
+	 * @return daftar tagihan jatuh tempo, atau ditolak jika tidak punya izin
+	 */
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
 	public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		return super.process(update, client);
 	}
 
+	/**
+	 * Mengambil dan menampilkan daftar tagihan yang jatuh tempo pada tanggal hari ini.
+	 *
+	 * <p>Tagihan yang ditampilkan disesuaikan dengan peran pengguna yang login:</p>
+	 * <ul>
+	 *   <li>AO: hanya tagihan yang menjadi tanggung jawabnya berdasarkan kode AO.</li>
+	 *   <li>Pimpinan: tagihan seluruh cabang yang dipimpinnya beserta detail pay down.</li>
+	 *   <li>Peran lain: tidak menampilkan data apapun.</li>
+	 * </ul>
+	 *
+	 * @param chatId ID chat pengguna yang mengirim perintah
+	 * @param text   teks perintah (tidak digunakan, tanggal selalu hari ini)
+	 * @param client koneksi aktif ke Telegram
+	 * @return {@link Mono} yang selesai setelah daftar tagihan dikirim ke user
+	 */
 	@Override
 	public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		String today = dateUtils.converterDate(LocalDateTime.now());
@@ -69,6 +102,16 @@ public class FindByDueDate extends AbstractCommandHandler {
 			.then();
 	}
 
+	/**
+	 * Membangun blok teks terformat untuk satu entri tagihan.
+	 *
+	 * <p>Format yang dihasilkan menampilkan nama nasabah, nomor SPK (yang bisa di-tap untuk disalin),
+	 * alamat (dipotong jika lebih dari 30 karakter), tanggal jatuh tempo, jumlah tagihan,
+	 * dan nama AO yang bertanggung jawab.</p>
+	 *
+	 * @param bills data satu tagihan yang akan diformat
+	 * @return string terformat siap kirim ke Telegram dengan Markdown
+	 */
 	private String messageBuilder(Bills bills) {
 		return String.format("""
 				👤 *%s*

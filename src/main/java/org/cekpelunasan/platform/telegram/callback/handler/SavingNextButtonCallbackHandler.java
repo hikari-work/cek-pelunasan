@@ -17,6 +17,15 @@ import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
+/**
+ * Handler untuk navigasi halaman berikutnya/sebelumnya pada daftar tabungan nasabah.
+ *
+ * <p>Callback berawalan {@code "tab"} ini dipanggil ketika user menekan tombol
+ * Next atau Prev pada hasil pencarian tabungan yang sudah difilter berdasarkan
+ * nama dan cabang. Setiap halaman menampilkan 5 data tabungan.
+ *
+ * <p>Format data callback yang diharapkan: {@code "tab_<query>_<cabang>_<halaman>"}.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -26,11 +35,25 @@ public class SavingNextButtonCallbackHandler extends AbstractCallbackHandler {
     private final PaginationSavingsButton paginationSavingsButton;
     private final SavingsUtils savingsUtils;
 
+    /**
+     * Mengembalikan prefix {@code "tab"} sebagai pengenal handler ini.
+     */
     @Override
     public String getCallBackData() {
         return "tab";
     }
 
+    /**
+     * Memuat halaman tabungan yang diminta dan memperbarui pesan Telegram.
+     *
+     * <p>Query nama dan kode cabang diambil dari data callback, lalu digunakan
+     * untuk mencari data tabungan di halaman yang sesuai. Pesan lama diedit
+     * dengan data terbaru beserta tombol paginasi.
+     *
+     * @param update event callback dari Telegram
+     * @param client koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah pesan berhasil diperbarui
+     */
     @Override
     public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
         log.info("Generating Saving Data....");
@@ -55,6 +78,14 @@ public class SavingNextButtonCallbackHandler extends AbstractCallbackHandler {
             .then();
     }
 
+    /**
+     * Menyusun teks pesan daftar tabungan dengan informasi halaman dan waktu eksekusi.
+     *
+     * @param savings   halaman data tabungan yang akan ditampilkan
+     * @param page      nomor halaman saat ini (0-based)
+     * @param startTime waktu mulai proses dalam milidetik, digunakan untuk menghitung durasi
+     * @return string pesan yang siap dikirim ke Telegram
+     */
     public String buildMessage(Page<Savings> savings, int page, long startTime) {
         StringBuilder message = new StringBuilder("📊 *INFORMASI TABUNGAN*\n")
             .append("───────────────────\n")
@@ -65,6 +96,14 @@ public class SavingNextButtonCallbackHandler extends AbstractCallbackHandler {
         return message.toString();
     }
 
+    /**
+     * Memformat angka nominal menjadi format Rupiah dengan pemisah ribuan titik.
+     *
+     * <p>Contoh: {@code 1500000} menjadi {@code "Rp1.500.000"}.
+     *
+     * @param amount nominal dalam bentuk Long; jika null mengembalikan {@code "Rp0"}
+     * @return string nominal dalam format Rupiah
+     */
     public String formatRupiah(Long amount) {
         if (amount == null) return "Rp0";
         DecimalFormatSymbols symbols = new DecimalFormatSymbols();

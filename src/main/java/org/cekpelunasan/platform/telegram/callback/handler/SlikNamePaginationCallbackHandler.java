@@ -14,6 +14,16 @@ import reactor.core.publisher.Mono;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * Handler untuk navigasi antar halaman hasil pencarian SLIK berdasarkan nama.
+ *
+ * <p>Callback berawalan {@code "slikn"} ini menangani perpindahan halaman pada
+ * hasil pencarian SLIK (Sistem Layanan Informasi Keuangan) yang sebelumnya
+ * sudah disimpan dalam {@link SlikSessionCache}. Sesi ini bersifat sementara —
+ * jika sudah kedaluwarsa, user diminta mengulang pencarian.
+ *
+ * <p>Format data callback yang diharapkan: {@code "slikn_<nomor_halaman>"}.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -23,11 +33,29 @@ public class SlikNamePaginationCallbackHandler extends AbstractCallbackHandler {
     private final SlikNameFormatter formatter;
     private final SlikNamePaginationButton paginationButton;
 
+    /**
+     * Mengembalikan prefix {@code "slikn"} sebagai pengenal handler ini.
+     */
     @Override
     public String getCallBackData() {
         return "slikn";
     }
 
+    /**
+     * Menampilkan halaman hasil SLIK yang diminta dari cache sesi pengguna.
+     *
+     * <p>Alur prosesnya: parse nomor halaman dari data callback → ambil sesi
+     * yang tersimpan di cache berdasarkan chatId → validasi nomor halaman
+     * masih dalam rentang yang valid → format halaman tersebut menjadi
+     * {@link TdApi.FormattedText} → edit pesan dengan konten dan keyboard baru.
+     *
+     * <p>Jika sesi tidak ditemukan atau sudah habis, user mendapat pesan
+     * instruksi untuk mengulang pencarian dengan perintah {@code /slik}.
+     *
+     * @param update event callback dari Telegram
+     * @param client koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah pesan berhasil diedit
+     */
     @Override
     public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
         return Mono.fromRunnable(() -> {

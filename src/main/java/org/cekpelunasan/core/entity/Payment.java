@@ -5,9 +5,15 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
- * Entity representing a payment transaction.
+ * Data transaksi pembayaran yang dilakukan oleh pengguna bot.
  * <p>
- * This tracks payment amounts and their status for a specific user.
+ * Berbeda dengan {@link Paying} yang hanya menyimpan flag lunas/belum, class ini
+ * menyimpan detail transaksi pembayaran — termasuk berapa nominal yang dibayar
+ * dan oleh siapa. Ini digunakan untuk keperluan pencatatan pembayaran yang lebih
+ * rinci, misalnya ketika AO mengonfirmasi setoran nasabah lewat bot.
+ * </p>
+ * <p>
+ * Koleksi MongoDB yang dipakai adalah {@code payment}.
  * </p>
  */
 @Getter
@@ -19,23 +25,25 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Payment {
 
 	/**
-	 * The unique identifier for the payment.
+	 * ID unik transaksi pembayaran ini, di-generate otomatis oleh MongoDB.
 	 */
 	@Id
 	private String id;
 
 	/**
-	 * The amount of the payment.
+	 * Nominal pembayaran dalam satuan rupiah.
 	 */
 	private Long amount;
 
 	/**
-	 * The user associated with the payment.
+	 * Identitas pengguna bot (biasanya chat ID Telegram atau kode AO) yang
+	 * mencatat transaksi pembayaran ini.
 	 */
 	private String user;
 
 	/**
-	 * Indicates if the payment has been completed.
+	 * Tanda apakah transaksi ini sudah selesai diproses. Bernilai {@code true}
+	 * jika pembayaran sudah dikonfirmasi, {@code false} jika masih pending.
 	 */
 	private boolean isPaid;
 }

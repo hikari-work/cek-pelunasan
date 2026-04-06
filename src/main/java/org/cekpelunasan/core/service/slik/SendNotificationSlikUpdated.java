@@ -20,6 +20,18 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+/**
+ * Memantau bucket S3/R2 secara berkala dan mengirimkan notifikasi Telegram
+ * ke pengguna yang relevan setiap kali ada file SLIK PDF baru yang diunggah.
+ *
+ * <p>Cara kerjanya: setiap menit, class ini menghitung jumlah file di bucket.
+ * Jika jumlahnya berubah dari pengecekan sebelumnya, artinya ada file baru,
+ * dan notifikasi langsung dikirim ke pengguna yang kode penggunanya cocok
+ * dengan prefix nama file tersebut.</p>
+ *
+ * <p>File yang namanya dimulai dengan "KTP_" dikecualikan dari pengecekan
+ * karena bukan merupakan laporan SLIK, melainkan foto KTP pendukung.</p>
+ */
 @Slf4j
 @Component
 public class SendNotificationSlikUpdated {
@@ -47,6 +59,12 @@ public class SendNotificationSlikUpdated {
 		this.telegramBot = telegramBot;
 	}
 
+	/**
+	 * Tugas terjadwal yang berjalan setiap 60 detik. Menghitung total file
+	 * di bucket S3/R2 (termasuk halaman yang dipaginasi), lalu membandingkannya
+	 * dengan jumlah terakhir yang dicatat. Jika jumlahnya sama, tidak ada yang
+	 * dilakukan. Jika berubah, notifikasi dikirim ke pengguna terkait.
+	 */
 	@Scheduled(fixedDelay = 60 * 1000L)
 	public void runTest() {
 		int currentFiles = 0;
@@ -79,6 +97,15 @@ public class SendNotificationSlikUpdated {
 		sendNotificationsForNewPdfs();
 	}
 
+	/**
+	 * Mengambil daftar semua file PDF (bukan KTP) dari bucket, lalu
+	 * mengelompokkannya berdasarkan prefix nama file (bagian sebelum underscore
+	 * pertama). Untuk setiap prefix, dicari pengguna yang kode penggunanya
+	 * cocok, lalu pesan notifikasi dikirim ke chat ID mereka.
+	 *
+	 * <p>Jika TDLight client belum siap (misalnya saat startup), proses ini
+	 * dilewati dan dicatat ke log.</p>
+	 */
 	private void sendNotificationsForNewPdfs() {
 		SimpleTelegramClient client = telegramBot.getClient();
 		if (client == null) {
@@ -114,6 +141,15 @@ public class SendNotificationSlikUpdated {
 			.subscribe();
 	}
 
+	/**
+	 * Membangun teks pesan notifikasi yang akan dikirim ke pengguna.
+	 * Pesan berisi kode pengguna, jumlah file, dan daftar lengkap nama file
+	 * yang tersedia di bucket.
+	 *
+	 * @param prefix kode pengguna (prefix nama file) yang menjadi pemilik laporan
+	 * @param files  daftar nama file PDF yang terkait dengan prefix tersebut
+	 * @return string pesan notifikasi dalam format Markdown Telegram
+	 */
 	private String buildNotificationMessage(String prefix, List<String> files) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("📄 *SLIK Update*\n");

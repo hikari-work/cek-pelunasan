@@ -10,10 +10,32 @@ import reactor.core.scheduler.Schedulers;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Membaca file PDF dan mengekstrak nomor identitas (NIK KTP) dari isinya.
+ * Class ini digunakan dalam proses penanganan dokumen SLIK: setelah pengguna
+ * mengunggah file PDF KTP, nomor 16 digit di dalamnya diekstrak otomatis
+ * agar tidak perlu diketik manual.
+ *
+ * <p>Seluruh proses pembacaan PDF dijalankan di thread terpisah
+ * ({@link Schedulers#boundedElastic()}) karena operasi I/O ini bersifat
+ * blocking dan tidak boleh memblokir event loop reaktif.</p>
+ */
 @Slf4j
 @Component
 public class PDFReader {
 
+	/**
+	 * Mengekstrak nomor identitas 16 digit dari byte array PDF. Proses
+	 * membaca seluruh teks dari PDF menggunakan PDFBox, lalu mencari pola
+	 * angka 16 digit dengan regex. Nomor pertama yang ditemukan yang dikembalikan.
+	 *
+	 * <p>Jika PDF tidak mengandung angka 16 digit, atau terjadi error saat
+	 * membaca PDF, method ini mengembalikan {@link Mono#empty()} agar pemanggil
+	 * bisa menangani kasus tersebut.</p>
+	 *
+	 * @param object byte array yang merupakan isi file PDF
+	 * @return {@link Mono} berisi nomor identitas 16 digit, atau kosong jika tidak ditemukan
+	 */
 	public Mono<String> generateIDNumber(byte[] object) {
 		if (object == null) {
 			log.warn("Received null byte array in generateIDNumber");

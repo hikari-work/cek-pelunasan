@@ -15,6 +15,22 @@ import org.cekpelunasan.utils.SavingsUtils;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+/**
+ * Handler untuk perintah {@code /tab} — mencari data tabungan nasabah berdasarkan nama.
+ *
+ * <p>Perintah ini memungkinkan user mencari tabungan nasabah dengan memasukkan nama.
+ * Format penggunaan: {@code /tab <nama_nasabah>}, misalnya {@code /tab Budi Santoso}.</p>
+ *
+ * <p>Pencarian mempertimbangkan kode cabang user yang login:</p>
+ * <ul>
+ *   <li>Jika user memiliki kode cabang terdaftar: pencarian langsung difilter berdasarkan cabang tersebut.</li>
+ *   <li>Jika user belum punya kode cabang: bot menampilkan semua cabang yang memiliki
+ *       nasabah dengan nama tersebut, lalu user memilih cabang yang diinginkan
+ *       melalui tombol inline.</li>
+ * </ul>
+ *
+ * <p>Hasil ditampilkan dengan paginasi menggunakan tombol inline. Bisa diakses oleh admin, AO, dan pimpinan.</p>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -36,12 +52,37 @@ public class SavingsFindCommandHandler extends AbstractCommandHandler {
 		return "";
 	}
 
+	/**
+	 * Memvalidasi peran pengguna sebelum melakukan pencarian tabungan.
+	 *
+	 * @param update objek update dari Telegram
+	 * @param client koneksi aktif ke Telegram
+	 * @return hasil pencarian tabungan, atau ditolak jika tidak punya izin
+	 */
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
 	public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		return super.process(update, client);
 	}
 
+	/**
+	 * Mencari data tabungan berdasarkan nama nasabah, dengan mempertimbangkan cabang user.
+	 *
+	 * <p>Alur pencarian:</p>
+	 * <ol>
+	 *   <li>Nama diambil dari teks setelah {@code /tab }. Jika kosong, bot meminta user mengisi nama.</li>
+	 *   <li>Dicari kode cabang yang terdaftar untuk user yang login.</li>
+	 *   <li>Jika kode cabang ditemukan: langsung cari tabungan dengan nama dan cabang tersebut,
+	 *       tampilkan hasilnya dengan paginasi.</li>
+	 *   <li>Jika tidak ada kode cabang: tampilkan daftar cabang yang punya nasabah dengan nama itu,
+	 *       biarkan user memilih cabangnya sendiri melalui tombol inline.</li>
+	 * </ol>
+	 *
+	 * @param chatId ID chat pengguna yang mengirim perintah
+	 * @param text   teks lengkap perintah termasuk nama nasabah yang dicari
+	 * @param client koneksi aktif ke Telegram
+	 * @return {@link Mono} yang selesai setelah hasil pencarian dikirim ke user
+	 */
 	@Override
 	public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		String name = text.replace("/tab ", "").trim();

@@ -15,6 +15,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+/**
+ * Handler untuk perintah {@code /pabpr} — menampilkan daftar tagihan yang masih memiliki sisa minimal bayar.
+ *
+ * <p>Perintah ini membantu AO dan pimpinan mengidentifikasi kredit mana saja yang
+ * masih memiliki kewajiban minimal bayar yang belum lunas. Data yang ditampilkan
+ * disesuaikan dengan peran pengguna: AO melihat tagihan miliknya, sedangkan
+ * pimpinan dan admin melihat tagihan berdasarkan kode cabang mereka.</p>
+ *
+ * <p>Hasil ditampilkan dengan paginasi 5 data per halaman menggunakan tombol inline,
+ * beserta catatan pengingat agar pembayaran dilakukan sebelum tanggal jatuh bayar.</p>
+ *
+ * <p>Bisa diakses oleh admin, AO, dan pimpinan.</p>
+ */
 @Component
 @RequiredArgsConstructor
 public class MinimalPayCommand extends AbstractCommandHandler {
@@ -34,12 +47,34 @@ public class MinimalPayCommand extends AbstractCommandHandler {
 		return "Menampilkan daftar tagihan yang masih memiliki minimal bayar tersisa.";
 	}
 
+	/**
+	 * Memvalidasi peran pengguna sebelum mengambil daftar tagihan minimal bayar.
+	 *
+	 * @param update objek update dari Telegram
+	 * @param client koneksi aktif ke Telegram
+	 * @return daftar tagihan minimal bayar, atau ditolak jika tidak punya izin
+	 */
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.AO, AccountOfficerRoles.PIMP, AccountOfficerRoles.ADMIN})
 	public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		return super.process(update, client);
 	}
 
+	/**
+	 * Mengambil dan menampilkan daftar tagihan dengan sisa minimal bayar berdasarkan peran user.
+	 *
+	 * <p>Data yang diambil berbeda tergantung peran:</p>
+	 * <ul>
+	 *   <li>AO: tagihan dengan minimal bayar tersisa yang menjadi tanggung jawabnya.</li>
+	 *   <li>Pimpinan dan Admin: tagihan minimal bayar seluruh cabang berdasarkan kode cabang.</li>
+	 * </ul>
+	 * <p>Jika tidak ada tagihan yang ditemukan, bot memberitahu user bahwa semua tagihan sudah bersih.</p>
+	 *
+	 * @param chatId ID chat pengguna yang mengirim perintah
+	 * @param text   teks perintah (tidak digunakan)
+	 * @param client koneksi aktif ke Telegram
+	 * @return {@link Mono} yang selesai setelah daftar tagihan dikirim ke user
+	 */
 	@Override
 	public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		return userService.findUserByChatId(chatId)

@@ -19,6 +19,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+/**
+ * Mengirimkan pengingat jatuh bayar harian kepada Account Officer lewat WhatsApp.
+ * <p>
+ * Service ini membaca semua tagihan dari cabang Kaligondang (kode 1075) dan menyaring
+ * nasabah yang tanggal bayarnya jatuh hari ini. Hasilnya dikelompokkan per AO, lalu
+ * dikirimkan satu per satu sebagai pesan WhatsApp.
+ * </p>
+ * <p>
+ * Pesan pertama dikirim dengan cara update (edit) pesan yang memicu perintah,
+ * sementara pesan AO berikutnya dikirim sebagai pesan baru dengan jeda 1 detik
+ * di antara setiap pengiriman untuk menghindari rate limit dari gateway.
+ * Setiap pesan juga menyertakan nomor HP nasabah yang diambil dari data tabungan.
+ * </p>
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -32,6 +46,16 @@ public class JatuhBayarService {
 	private final SavingsService savingsService;
 	private final WhatsAppSenderService whatsAppSenderService;
 
+	/**
+	 * Memulai proses pengiriman pengingat jatuh bayar secara asinkron.
+	 * <p>
+	 * Mengambil daftar tagihan yang jatuh hari ini, mengelompokkannya per AO,
+	 * lalu mengirimkan pesan ke setiap AO secara berurutan dengan jeda 1 detik.
+	 * </p>
+	 *
+	 * @param command data webhook dari perintah yang memicu pengiriman reminder
+	 * @return CompletableFuture yang selesai setelah semua pesan terkirim
+	 */
 	@Async
 	@SuppressWarnings("UnusedReturnValue")
 	public CompletableFuture<Void> handle(WhatsAppWebhookDTO command) {
@@ -70,6 +94,16 @@ public class JatuhBayarService {
 			});
 	}
 
+	/**
+	 * Mengambil semua tagihan hari ini dan mengelompokkannya per Account Officer.
+	 * <p>
+	 * Membaca semua tagihan dari cabang 1075 (Kaligondang), kemudian menyaring
+	 * yang tanggal bayarnya sama dengan hari ini (berdasarkan tanggal dalam bulan).
+	 * Hasilnya adalah Map dengan nama AO sebagai key dan daftar tagihannya sebagai value.
+	 * </p>
+	 *
+	 * @return peta tagihan hari ini yang sudah dikelompokkan per nama AO
+	 */
 	public Map<String, List<Bills>> getBills() {
 		LocalDate today = LocalDate.now();
 		String dayOfMonth = String.valueOf(today.getDayOfMonth());
@@ -80,6 +114,18 @@ public class JatuhBayarService {
 			.collect(Collectors.groupingBy(Bills::getAccountOfficer));
 	}
 
+	/**
+	 * Memformat daftar tagihan menjadi pesan teks yang siap dikirim ke WhatsApp.
+	 * <p>
+	 * Pesan mencakup header berisi tanggal dan nama AO, diikuti daftar nasabah
+	 * beserta nomor SPK, jumlah angsuran (atau tunggakan jika ada), dan nomor HP
+	 * yang diambil langsung dari data tabungan secara real-time.
+	 * </p>
+	 *
+	 * @param bills daftar tagihan yang akan diformat
+	 * @param ao    nama Account Officer pemilik tagihan ini
+	 * @return string pesan yang sudah diformat dan siap dikirim, atau string kosong jika daftar kosong
+	 */
 	public String formatJatuhBayar(List<Bills> bills, String ao) {
 		if (bills == null || bills.isEmpty()) {
 			return "";

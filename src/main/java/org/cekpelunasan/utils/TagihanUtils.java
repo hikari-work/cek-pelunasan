@@ -11,6 +11,18 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+/**
+ * Memformat data tagihan kredit menjadi teks detail atau kompak untuk ditampilkan di bot.
+ * <p>
+ * Menyediakan dua level detail:
+ * <ul>
+ *   <li>{@link #detailBills} — tampilan lengkap dengan data keterlambatan, kolektibilitas,
+ *       dan rincian angsuran. Cocok untuk cek tagihan mendalam oleh AO.</li>
+ *   <li>{@link #billsCompact} — tampilan ringkas dengan informasi utama saja.
+ *       Cocok untuk daftar atau preview cepat.</li>
+ * </ul>
+ * </p>
+ */
 @Component
 @RequiredArgsConstructor
 public class TagihanUtils {
@@ -18,7 +30,18 @@ public class TagihanUtils {
 	private final RupiahFormatUtils rupiahFormatUtils;
 	private final SimulasiService simulasiService;
 
-
+	/**
+	 * Memformat detail lengkap tagihan kredit satu nasabah.
+	 * <p>
+	 * Mengambil data keterlambatan dan maksimal hari bayar dari {@link SimulasiService}
+	 * secara real-time, sehingga informasi yang ditampilkan selalu terkini.
+	 * Total tagihan dihitung berdasarkan tanggal realisasi: kalau realisasi hari ini,
+	 * pakai full payment; kalau sudah lewat, pakai tunggakan; kalau belum, pakai angsuran rutin.
+	 * </p>
+	 *
+	 * @param bill data tagihan kredit nasabah
+	 * @return string detail tagihan lengkap yang siap dikirim
+	 */
 	public String detailBills(Bills bill) {
 		Map<String, Integer> totalKeterlambatan = simulasiService.findTotalKeterlambatan(bill.getNoSpk()).block();
 		Long maxBayar = simulasiService.findMaxBayar(bill.getNoSpk()).block();
@@ -82,6 +105,14 @@ public class TagihanUtils {
 	}
 
 
+	/**
+	 * Memformat tagihan dalam tampilan ringkas untuk preview atau daftar.
+	 * Hanya menampilkan informasi paling penting: nama, ID SPK, alamat, jatuh tempo,
+	 * total tagihan, nama AO, dan timestamp pembuatan pesan (WIB).
+	 *
+	 * @param bills data tagihan kredit nasabah
+	 * @return string tagihan ringkas yang siap dikirim
+	 */
 	public String billsCompact(Bills bills) {
 		return String.format("""
             🏦 *INFORMASI NASABAH*

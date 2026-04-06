@@ -15,25 +15,27 @@ import org.springframework.context.annotation.Configuration;
 import java.nio.file.Path;
 
 /**
- * Konfigurasi TDLight client.
+ * Menyiapkan semua yang dibutuhkan TDLight agar bot Telegram bisa terhubung ke API Telegram.
  * <p>
- * Menginisialisasi {@link SimpleTelegramClientFactory} dan {@link TDLibSettings}
- * yang akan digunakan oleh TelegramBot untuk membangun client via builder pattern.
+ * TDLight adalah library berbasis TDLib (library resmi Telegram), dan sebelum bisa dipakai
+ * kita perlu memuat native library-nya, mengatur log, lalu memberi tahu TDLib di mana
+ * menyimpan data sesi dan file yang diunduh.
  * </p>
- *
- * <p>Flow pembuatan client (Phase 2):</p>
+ * <p>
+ * Bean yang dihasilkan class ini ({@link TDLibSettings} dan {@link SimpleTelegramClientFactory})
+ * dipakai oleh komponen bot untuk membangun koneksi ke Telegram via builder pattern:
+ * </p>
  * <pre>
- *   factory.builder(settings)          → SimpleTelegramClientBuilder
- *   builder.addUpdateHandler(...)      → register handlers
- *   builder.build(AuthenticationSupplier.bot(token)) → SimpleTelegramClient
+ *   factory.builder(settings)
+ *     .addUpdateHandler(...)
+ *     .build(AuthenticationSupplier.bot(token))
  * </pre>
  *
- * <p>Env vars yang dibutuhkan:</p>
+ * <p>Environment variable yang wajib diisi:</p>
  * <ul>
  *   <li>{@code TELEGRAM_API_ID} — integer dari my.telegram.org</li>
  *   <li>{@code TELEGRAM_API_HASH} — string dari my.telegram.org</li>
- *   <li>{@code TELEGRAM_BOT_TOKEN} — bot token dari @BotFather</li>
- *   <li>{@code TELEGRAM_SESSION_PATH} — path folder session TDLib (default: ./tdlight-session)</li>
+ *   <li>{@code TELEGRAM_SESSION_PATH} — folder penyimpanan sesi TDLib (default: {@code ./tdlight-session})</li>
  * </ul>
  */
 @Configuration
@@ -50,6 +52,25 @@ public class TDLightConfiguration {
     @Value("${telegram.session.path:./tdlight-session}")
     private String sessionPath;
 
+    /**
+     * Memuat native library TDLight, mengatur log, lalu membangun objek {@link TDLibSettings}
+     * yang berisi API token dan path folder sesi.
+     * <p>
+     * Method ini hanya dijalankan sekali saat aplikasi start. Jika native library gagal dimuat
+     * (misalnya file .so/.dll tidak ada), exception akan langsung dilempar dan aplikasi tidak
+     * akan bisa berjalan.
+     * </p>
+     * <p>
+     * Dua sub-folder akan dipakai di dalam {@code sessionPath}:
+     * <ul>
+     *   <li>{@code /data} — menyimpan data sesi dan database TDLib</li>
+     *   <li>{@code /downloads} — menyimpan file yang diunduh melalui Telegram</li>
+     * </ul>
+     * </p>
+     *
+     * @return {@link TDLibSettings} yang siap dipakai untuk membangun Telegram client
+     * @throws Exception jika inisialisasi native library TDLight gagal
+     */
     @Bean
     public TDLibSettings tdLibSettings() throws Exception {
         log.info("Initializing TDLight natives...");
@@ -68,6 +89,16 @@ public class TDLightConfiguration {
         return settings;
     }
 
+    /**
+     * Membuat {@link SimpleTelegramClientFactory} yang nantinya dipakai untuk membangun
+     * instance Telegram client dengan pengaturan dan handler masing-masing.
+     * <p>
+     * Factory ini stateless — komponen lain tinggal inject dan panggil {@code builder()}
+     * setiap kali perlu membuat client baru.
+     * </p>
+     *
+     * @return factory untuk membangun Telegram client
+     */
     @Bean
     public SimpleTelegramClientFactory simpleTelegramClientFactory() {
         return new SimpleTelegramClientFactory();

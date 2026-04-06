@@ -5,9 +5,13 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
- * Entity representing the credit history of a customer.
+ * Rekam jejak pengecekan SLIK (Sistem Layanan Informasi Keuangan) untuk setiap nasabah.
  * <p>
- * This stores historical data related to credit applications or checks.
+ * Setiap kali AO melakukan pengecekan kredit nasabah lewat bot, hasilnya dicatat ke sini.
+ * Data ini berguna untuk audit — siapa saja yang sudah dicek, kapan, dan bagaimana hasilnya.
+ * </p>
+ * <p>
+ * Koleksi MongoDB yang dipakai adalah {@code credit_history}.
  * </p>
  */
 @Getter
@@ -19,43 +23,46 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class CreditHistory {
 
 	/**
-	 * The unique identifier for the credit history record.
+	 * ID unik untuk setiap record riwayat pengecekan ini, di-generate otomatis oleh MongoDB.
 	 */
 	@Id
 	private String id;
 
 	/**
-	 * The date of the credit history record (timestamp).
+	 * Waktu saat pengecekan dilakukan, disimpan dalam format Unix timestamp (milidetik).
+	 * Gunakan {@code new Date(date)} untuk mengonversinya ke format tanggal yang bisa dibaca.
 	 */
 	private Long date;
 
 	/**
-	 * The credit ID associated with the record.
+	 * Nomor ID kredit yang dicek — biasanya berupa nomor CIF atau nomor rekening
+	 * yang dimasukkan oleh AO.
 	 */
 	private String creditId;
 
 	/**
-	 * The customer ID associated with the credit history.
+	 * Nomor identitas nasabah yang dicek riwayat kreditnya.
 	 */
 	private String customerId;
 
 	/**
-	 * The name of the customer.
+	 * Nama lengkap nasabah sesuai data yang dikembalikan dari hasil pengecekan SLIK.
 	 */
 	private String name;
 
 	/**
-	 * The status of the credit history (e.g., approved, rejected).
+	 * Hasil status pengecekan, misalnya "CLEAR", "BLACKLIST", atau status lain
+	 * sesuai ketentuan OJK.
 	 */
 	private String status;
 
 	/**
-	 * The address of the customer.
+	 * Alamat nasabah sesuai data SLIK.
 	 */
 	private String address;
 
 	/**
-	 * The phone number of the customer.
+	 * Nomor telepon nasabah yang terdaftar di data SLIK.
 	 */
 	private String phone;
 

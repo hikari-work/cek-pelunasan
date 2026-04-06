@@ -17,6 +17,18 @@ import reactor.core.publisher.Mono;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
+/**
+ * Handler untuk callback paginasi tagihan berdasarkan nama atau kode AO/cabang.
+ *
+ * <p>Dipanggil ketika user menekan tombol Next/Prev pada daftar tagihan jatuh tempo
+ * yang dicari berdasarkan nama. Callback data yang ditangani berawalan {@code "pagebills"}.
+ *
+ * <p>Logika pemilihan query berbeda tergantung panjang kode yang dikirim:
+ * <ul>
+ *   <li>3 karakter — dianggap kode AO, mencari tagihan berdasarkan account officer</li>
+ *   <li>4 karakter — dianggap kode cabang, mencari tagihan berdasarkan cabang dan jatuh tempo</li>
+ * </ul>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -35,11 +47,25 @@ public class BillsByNameCalculatorCallbackHandler extends AbstractCallbackHandle
     private final PaginationBillsByNameCallbackHandler paginationBillsByNameCallbackHandler;
     private final TagihanUtils tagihanUtils;
 
+    /**
+     * Mengembalikan prefix {@code "pagebills"} sebagai pengenal handler ini.
+     */
     @Override
     public String getCallBackData() {
         return CALLBACK_DATA;
     }
 
+    /**
+     * Memproses permintaan paginasi tagihan berdasarkan kode AO atau cabang.
+     *
+     * <p>Alur prosesnya: parse data callback → validasi panjang query →
+     * ambil halaman tagihan dari database → bangun teks pesan → edit pesan
+     * yang sudah ada dengan konten baru dan tombol navigasi.
+     *
+     * @param update event callback dari Telegram
+     * @param client koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah pesan berhasil diedit
+     */
     @Override
     public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
         String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
@@ -66,6 +92,12 @@ public class BillsByNameCalculatorCallbackHandler extends AbstractCallbackHandle
             .then();
     }
 
+    /**
+     * Memecah string data callback menjadi objek {@link CallbackData} yang terstruktur.
+     *
+     * @param data string mentah dari payload callback, misalnya {@code "pagebills_AO1_0"}
+     * @return objek berisi query dan nomor halaman
+     */
     private CallbackData parseCallbackData(String data) {
         String[] parts = data.split(CALLBACK_DELIMITER);
         return CallbackData.builder()
@@ -74,11 +106,26 @@ public class BillsByNameCalculatorCallbackHandler extends AbstractCallbackHandle
             .build();
     }
 
+    /**
+     * Memvalidasi apakah panjang query sesuai dengan ketentuan (3 atau 4 karakter).
+     *
+     * @param query kode AO atau kode cabang yang akan dicari
+     * @return {@code true} jika panjang query valid
+     */
     private boolean isValidQuery(String query) {
         int length = query.length();
         return length == QUERY_MIN_LENGTH || length == QUERY_MAX_LENGTH;
     }
 
+    /**
+     * Mengambil halaman tagihan dari database sesuai jenis query.
+     *
+     * <p>Query 3 karakter → cari berdasarkan AO. Query 4 karakter → cari
+     * berdasarkan kombinasi cabang dan status jatuh tempo hari ini.
+     *
+     * @param callbackData data yang sudah diparsing, berisi query dan nomor halaman
+     * @return {@link Mono} berisi halaman hasil tagihan
+     */
     private Mono<Page<Bills>> fetchBillsPageMono(CallbackData callbackData) {
         String query = callbackData.query();
         LocalDateTime today = LocalDateTime.now();
@@ -91,12 +138,25 @@ public class BillsByNameCalculatorCallbackHandler extends AbstractCallbackHandle
         }
     }
 
+    /**
+     * Menyusun teks pesan yang menampilkan daftar tagihan secara ringkas.
+     *
+     * @param billsPage halaman data tagihan dari database
+     * @return string pesan yang siap dikirim ke Telegram
+     */
     private String buildBillsMessage(Page<Bills> billsPage) {
         StringBuilder sb = new StringBuilder(HEADER_MESSAGE);
         billsPage.forEach(bills -> sb.append(tagihanUtils.billsCompact(bills)));
         return sb.toString();
     }
 
+    /**
+     * Membangun tombol paginasi inline keyboard berdasarkan status halaman saat ini.
+     *
+     * @param billsPage   halaman data tagihan, digunakan untuk cek ada/tidaknya halaman berikutnya
+     * @param callbackData berisi query dan halaman saat ini untuk membentuk data callback tombol
+     * @return objek inline keyboard dengan tombol Prev/Next yang sesuai
+     */
     private TdApi.ReplyMarkupInlineKeyboard buildPaginationMarkup(Page<Bills> billsPage, CallbackData callbackData) {
         return paginationBillsByNameCallbackHandler.dynamicButtonName(
             billsPage,

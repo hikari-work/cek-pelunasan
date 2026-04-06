@@ -14,6 +14,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Penjaga gerbang akses bot — class ini menyimpan daftar chat ID yang boleh
+ * menggunakan bot. Bayangkan seperti daftar tamu di acara: kalau nama kamu
+ * tidak ada di sini, kamu tidak bisa masuk.
+ *
+ * <p>Daftar ini disimpan di memori (in-memory) menggunakan {@link ConcurrentHashMap}
+ * supaya aman diakses dari banyak thread sekaligus. Saat aplikasi pertama kali
+ * nyala, daftar ini langsung diisi dari database agar tidak perlu login ulang.</p>
+ */
 @Component
 public class AuthorizedChats {
 
@@ -24,22 +33,55 @@ public class AuthorizedChats {
 		this.userRepository = userRepository;
 	}
 
+	/**
+	 * Mengecek apakah chat ID tertentu sudah terdaftar sebagai pengguna yang
+	 * diizinkan mengakses bot.
+	 *
+	 * @param chatId ID unik chat Telegram yang ingin dicek
+	 * @return {@code true} kalau chat ID ada di daftar, {@code false} kalau belum
+	 */
 	public boolean isAuthorized(Long chatId) {
 		return authorizedChats.contains(chatId);
 	}
 
+	/**
+	 * Menambahkan chat ID baru ke daftar yang diizinkan. Biasanya dipanggil
+	 * setelah admin mendaftarkan pengguna baru.
+	 *
+	 * @param chatId ID chat Telegram yang ingin ditambahkan
+	 */
 	public void addAuthorizedChat(Long chatId) {
 		authorizedChats.add(chatId);
 	}
 
+	/**
+	 * Menghapus chat ID dari daftar yang diizinkan, efektif mencabut akses
+	 * pengguna tersebut tanpa perlu restart aplikasi.
+	 *
+	 * @param chatId ID chat Telegram yang ingin dicabut aksesnya
+	 */
 	public void deleteUser(Long chatId) {
 		authorizedChats.remove(chatId);
 	}
 
+	/**
+	 * Mengambil peran (role) dari pengguna berdasarkan chat ID-nya. Berguna
+	 * saat bot perlu memutuskan apakah pengguna boleh menjalankan perintah
+	 * tertentu yang hanya boleh dilakukan oleh peran tertentu.
+	 *
+	 * @param chatId ID chat Telegram yang ingin dicari perannya
+	 * @return {@link Mono} berisi peran pengguna, atau kosong kalau pengguna
+	 *         tidak ditemukan atau belum punya peran
+	 */
 	public Mono<AccountOfficerRoles> getUserRoles(@NonNull Long chatId) {
 		return userRepository.findById(chatId).mapNotNull(User::getRoles);
 	}
 
+	/**
+	 * Memuat semua pengguna dari database ke dalam memori saat aplikasi selesai
+	 * startup. Ini dilakukan sekali saja agar pengguna yang sudah terdaftar
+	 * sebelumnya tidak perlu didaftarkan ulang setiap kali server restart.
+	 */
 	@EventListener(ApplicationReadyEvent.class)
 	public void preRun() {
 		List<User> all = userRepository.findAll().collectList().block();

@@ -26,6 +26,16 @@ import java.io.FileReader;
 import java.nio.file.Path;
 import java.util.List;
 
+/**
+ * Mengelola data riwayat kredit nasabah yang sudah tidak aktif. Class ini
+ * membantu tim lapangan menemukan calon nasabah potensial berdasarkan alamat,
+ * sambil memastikan nasabah yang sudah punya kredit aktif tidak muncul kembali
+ * di hasil pencarian.
+ *
+ * <p>Data riwayat kredit biasanya berasal dari laporan historis yang diimpor
+ * via CSV. Proses impor menghapus data lama terlebih dahulu sebelum data baru
+ * disimpan, jadi pastikan file CSV yang diunggah sudah lengkap.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class CreditHistoryService {
@@ -34,6 +44,18 @@ public class CreditHistoryService {
 	private final CreditHistoryRepository creditHistoryRepository;
 	private final ReactiveMongoTemplate mongoTemplate;
 
+	/**
+	 * Mencari riwayat kredit berdasarkan kata kunci alamat. Hasil pencarian
+	 * hanya menampilkan nasabah yang kreditnya sudah tidak aktif — nasabah
+	 * dengan status aktif ("A") dikecualikan dari hasil agar tidak ada dobel data.
+	 *
+	 * <p>Semua kata kunci digabungkan dengan kondisi AND, artinya semua kata
+	 * harus muncul di field alamat. Pencarian 5 data per halaman.</p>
+	 *
+	 * @param keywords daftar kata kunci alamat yang ingin dicari
+	 * @param page     nomor halaman hasil pencarian (dimulai dari 0)
+	 * @return {@link Mono} berisi halaman riwayat kredit yang sesuai filter
+	 */
 	public Mono<Page<CreditHistory>> searchAddressByKeywords(List<String> keywords, int page) {
 		log.info("Searching for address with keywords: {}", keywords);
 
@@ -71,10 +93,26 @@ public class CreditHistoryService {
 		});
 	}
 
+	/**
+	 * Menyimpan daftar riwayat kredit ke database sekaligus. Biasanya dipanggil
+	 * dari proses impor CSV yang sudah memecah data menjadi batch-batch kecil.
+	 *
+	 * @param creditHistories daftar riwayat kredit yang ingin disimpan
+	 * @return {@link Mono} yang selesai ketika semua data berhasil disimpan
+	 */
 	public Mono<Void> saveAll(@NonNull List<CreditHistory> creditHistories) {
 		return creditHistoryRepository.saveAll(creditHistories).then();
 	}
 
+	/**
+	 * Membaca file CSV riwayat kredit, menghapus seluruh data lama di database,
+	 * lalu menyimpan data baru secara batch (500 baris sekaligus). Proses
+	 * berjalan di thread terpisah dan akan mencoba ulang sampai 3 kali jika
+	 * terjadi kegagalan saat menyimpan.
+	 *
+	 * @param path lokasi file CSV yang berisi data riwayat kredit
+	 * @return {@link Mono} yang selesai ketika seluruh data berhasil diimpor
+	 */
 	public Mono<Void> parseCsvAndSaveIt(Path path) {
 		return creditHistoryRepository.deleteAll()
 			.then(Flux.<String[]>create(sink -> {
@@ -100,6 +138,13 @@ public class CreditHistoryService {
 			.doOnSuccess(v -> log.info("Credit history selesai disimpan."));
 	}
 
+	/**
+	 * Mengonversi satu baris CSV menjadi objek {@link CreditHistory}.
+	 * Urutan kolom: tanggal, creditId, customerId, nama, status, alamat, telepon.
+	 *
+	 * @param line satu baris CSV dalam bentuk array string
+	 * @return objek {@link CreditHistory} yang sudah terisi
+	 */
 	public CreditHistory mapToCreditHistory(String[] line) {
 		return CreditHistory.builder()
 			.date(Long.parseLong(line[0]))
@@ -112,6 +157,12 @@ public class CreditHistoryService {
 			.build();
 	}
 
+	/**
+	 * Menghitung total data riwayat kredit yang tersimpan di database.
+	 * Berguna untuk validasi setelah proses impor CSV selesai.
+	 *
+	 * @return {@link Mono} berisi jumlah total record riwayat kredit
+	 */
 	public Mono<Long> countCreditHistory() {
 		return creditHistoryRepository.count();
 	}

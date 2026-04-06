@@ -9,25 +9,32 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 /**
- * Configuration class for asynchronous processing.
+ * Mengatur cara aplikasi menjalankan tugas secara asynchronous (tidak blocking).
  * <p>
- * This class enables Spring's asynchronous method execution capability.
- * It configures a virtual thread-based executor to handle tasks efficiently, especially for I/O-bound operations.
+ * Karena hampir semua pekerjaan di sini adalah I/O-bound (panggil API, baca database, dll.),
+ * kita pakai <em>virtual threads</em> dari Java 21 — bukan thread biasa. Virtual thread jauh
+ * lebih ringan: satu aplikasi bisa punya jutaan virtual thread tanpa kehabisan memori,
+ * karena JVM yang mengelola penjadualan-nya secara internal.
+ * </p>
+ * <p>
+ * Setiap method yang diberi anotasi {@code @Async} di seluruh aplikasi ini akan berjalan
+ * menggunakan executor yang dikonfigurasi di sini.
  * </p>
  */
 @Configuration
 @EnableAsync
 public class AsyncConfiguration implements AsyncConfigurer {
 
-	/*
-	This project mostly do I/O bound tasks, so using virtual threads is more efficient.
-	Using virtual threads allows the application to handle a large number of concurrent tasks
-	with minimal resource consumption, as virtual threads are lightweight and managed by the JVM.
-	 */
+
 	/**
-	 * Configures the executor to be used for asynchronous methods.
+	 * Menentukan executor yang dipakai saat menjalankan method {@code @Async}.
+	 * <p>
+	 * Setiap task yang masuk akan mendapat virtual thread-nya sendiri — dibuat on-demand
+	 * dan langsung dibuang setelah selesai. Tidak perlu pusing soal ukuran thread pool
+	 * karena JVM yang atur segalanya.
+	 * </p>
 	 *
-	 * @return An {@link Executor} that uses virtual threads for each task.
+	 * @return executor berbasis virtual thread, satu thread per task
 	 */
 	@Override
 	public Executor getAsyncExecutor() {

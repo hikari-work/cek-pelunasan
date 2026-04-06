@@ -15,6 +15,19 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Handler untuk menampilkan daftar tagihan dengan minimal bayar yang tersisa.
+ *
+ * <p>Callback berawalan {@code "minimal"} ini menangani navigasi halaman pada
+ * fitur minimal bayar. Data yang ditampilkan berbeda tergantung peran pengguna:
+ * <ul>
+ *   <li>AO — hanya melihat tagihan milik dirinya sendiri</li>
+ *   <li>PIMP/ADMIN — melihat tagihan seluruh AO di bawah cabangnya</li>
+ * </ul>
+ *
+ * <p>Identitas pengguna diambil berdasarkan {@code chatId} Telegram, sehingga
+ * tidak perlu input manual dari user.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -25,11 +38,25 @@ public class MinimalPayCallbackHandler extends AbstractCallbackHandler {
     private final UserService userService;
     private final MinimalPayUtils minimalPayUtils;
 
+    /**
+     * Mengembalikan prefix {@code "minimal"} sebagai pengenal handler ini.
+     */
     @Override
     public String getCallBackData() {
         return "minimal";
     }
 
+    /**
+     * Memproses paginasi daftar tagihan minimal bayar sesuai peran pengguna.
+     *
+     * <p>Alur: identifikasi pengguna dari chatId → tentukan query yang sesuai
+     * berdasarkan role (AO vs PIMP/ADMIN) → ambil data dari database →
+     * tampilkan pesan dengan tombol navigasi halaman.
+     *
+     * @param update event callback dari Telegram
+     * @param client koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah pesan berhasil diedit
+     */
     @Override
     public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
         long chatId = update.chatId;

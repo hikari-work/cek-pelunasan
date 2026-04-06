@@ -13,6 +13,20 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Handler untuk mengambil data KTP dari S3 dan menghasilkan dokumen PDF SLIK.
+ *
+ * <p>Callback berawalan {@code "slik"} ini menangani permintaan generate PDF
+ * laporan SLIK. Alurnya: cari file KTP di S3 berdasarkan ID nasabah → generate
+ * PDF dari konten file tersebut → kirim PDF sebagai dokumen ke chat user.
+ *
+ * <p>Selama proses berlangsung, pesan loading ditampilkan dan diperbarui sesuai
+ * status terkini, sehingga user tahu prosesnya sedang berjalan.
+ *
+ * <p>Format data callback yang diharapkan:
+ * {@code "slik_<customer_id>_<is_active_facility>"}, di mana
+ * {@code is_active_facility} bernilai {@code 1} untuk fasilitas aktif.
+ */
 @Slf4j
 @RequiredArgsConstructor
 @Component
@@ -38,11 +52,32 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
     private final S3ClientConfiguration s3Connector;
     private final GeneratePdfFiles generatePdfFiles;
 
+    /**
+     * Mengembalikan prefix {@code "slik"} sebagai pengenal handler ini.
+     */
     @Override
     public String getCallBackData() {
         return CALLBACK_PATTERN;
     }
 
+    /**
+     * Memproses permintaan generate PDF SLIK dari data KTP yang tersimpan di S3.
+     *
+     * <p>Alur lengkapnya:
+     * <ol>
+     *   <li>Validasi format data callback</li>
+     *   <li>Hapus pesan trigger (tombol yang ditekan user)</li>
+     *   <li>Kirim pesan loading sebagai placeholder</li>
+     *   <li>Ambil file KTP dari S3 berdasarkan ID nasabah</li>
+     *   <li>Periksa ukuran file tidak melebihi batas maksimum</li>
+     *   <li>Generate PDF dari konten file KTP</li>
+     *   <li>Kirim PDF sebagai dokumen ke chat user</li>
+     * </ol>
+     *
+     * @param update event callback dari Telegram
+     * @param client koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah PDF berhasil dikirim atau error ditangani
+     */
     @Override
     public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
         String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
@@ -99,14 +134,36 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
             .then();
     }
 
+    /**
+     * Memvalidasi bahwa array data callback memiliki jumlah bagian yang cukup.
+     *
+     * @param data hasil split dari string data callback
+     * @return {@code true} jika jumlah bagian minimal sesuai kebutuhan
+     */
     private boolean isValidCallbackFormat(String[] data) {
         return data != null && data.length >= CALLBACK_DATA_MIN_PARTS;
     }
 
+    /**
+     * Membangun nama file KTP di S3 dari ID nasabah.
+     *
+     * <p>Contoh: ID {@code "1234567890"} menjadi {@code "KTP_1234567890.txt"}.
+     *
+     * @param ktpId ID nasabah / nomor KTP
+     * @return nama file lengkap termasuk prefix dan ekstensi
+     */
     private String buildFileName(String ktpId) {
         return KTP_PREFIX + ktpId + KTP_EXTENSION;
     }
 
+    /**
+     * Membangun nama file PDF yang akan dikirim ke user.
+     *
+     * <p>Contoh: ID {@code "1234567890"} menjadi {@code "1234567890.pdf"}.
+     *
+     * @param ktpId ID nasabah / nomor KTP
+     * @return nama file PDF tanpa path
+     */
     private String buildPdfFileName(String ktpId) {
         return ktpId + ".pdf";
     }

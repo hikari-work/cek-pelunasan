@@ -9,9 +9,30 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Membuat keyboard inline untuk menampilkan daftar nasabah dengan navigasi halaman (pagination).
+ * <p>
+ * Ketika hasil pencarian tagihan memiliki banyak nasabah, class ini menyusun tombol-tombol
+ * berisi nama nasabah (2 per baris) beserta tombol navigasi Prev/Next di bagian atas.
+ * Setiap tombol nasabah menyimpan data callback yang berisi nomor SPK untuk membuka detail.
+ * </p>
+ */
 @Component
 public class ButtonListForBills {
 
+    /**
+     * Membuat keyboard inline lengkap dengan navigasi halaman dan tombol nama nasabah.
+     * <p>
+     * Baris pertama berisi tombol navigasi (Prev, info halaman, Next).
+     * Baris-baris berikutnya berisi nama nasabah, dua per baris.
+     * </p>
+     *
+     * @param names       halaman data tagihan yang akan ditampilkan
+     * @param currentPage nomor halaman saat ini (0-indexed)
+     * @param query       kata kunci pencarian yang dipakai, disimpan di data callback
+     * @param branch      kode cabang yang dicari, disimpan di data callback
+     * @return keyboard inline yang siap dipasang ke pesan Telegram
+     */
     public TdApi.ReplyMarkupInlineKeyboard dynamicButtonName(Page<Bills> names, int currentPage, String query, String branch) {
         List<TdApi.InlineKeyboardButton[]> rows = new ArrayList<>();
 

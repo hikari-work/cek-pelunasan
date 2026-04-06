@@ -14,6 +14,16 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Handler untuk menampilkan pilihan cabang sesuai layanan yang dipilih user.
+ *
+ * <p>Callback berawalan {@code "services"} ini menjadi jembatan antara hasil
+ * pencarian nama nasabah dan pemilihan cabang. Berdasarkan jenis layanan yang
+ * dipilih ({@code "Pelunasan"} atau {@code "Tabungan"}), handler mengambil
+ * daftar cabang yang tersedia dan menampilkannya sebagai tombol pilihan.
+ *
+ * <p>Format data callback yang diharapkan: {@code "services_<jenis_layanan>_<nama_nasabah>"}.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -24,11 +34,26 @@ public class ServicesCallbackHandler extends AbstractCallbackHandler {
     private final ButtonListForSelectBranch buttonListForSelectBranch;
     private final SelectSavingsBranch selectSavingsBranch;
 
+    /**
+     * Mengembalikan prefix {@code "services"} sebagai pengenal handler ini.
+     */
     @Override
     public String getCallBackData() {
         return "services";
     }
 
+    /**
+     * Menentukan jenis layanan dari data callback dan mengarahkan ke handler yang sesuai.
+     *
+     * <p>Validasi format callback dilakukan lebih dulu. Jika layanan adalah
+     * {@code "Pelunasan"}, daftar cabang diambil dari data tagihan. Jika
+     * {@code "Tabungan"}, daftar cabang diambil dari data tabungan berdasarkan
+     * query nama nasabah. Layanan yang tidak dikenali mendapat pesan error.
+     *
+     * @param update event callback dari Telegram
+     * @param client koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah pesan berhasil diedit dengan pilihan cabang
+     */
     @Override
     public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
         String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
@@ -55,6 +80,18 @@ public class ServicesCallbackHandler extends AbstractCallbackHandler {
         };
     }
 
+    /**
+     * Menampilkan daftar pilihan cabang untuk layanan pelunasan kredit.
+     *
+     * <p>Mengambil semua cabang yang memiliki data tagihan aktif, lalu
+     * menampilkannya sebagai tombol inline untuk dipilih user.
+     *
+     * @param chatId    ID chat tujuan
+     * @param messageId ID pesan yang akan diedit
+     * @param query     nama nasabah yang dicari
+     * @param client    koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah pesan berhasil diedit
+     */
     private Mono<Void> handlePelunasan(long chatId, long messageId, String query, SimpleTelegramClient client) {
         return billService.lisAllBranch()
             .flatMap(branches -> Mono.fromRunnable(() -> {
@@ -70,6 +107,18 @@ public class ServicesCallbackHandler extends AbstractCallbackHandler {
             .then();
     }
 
+    /**
+     * Menampilkan daftar pilihan cabang untuk layanan tabungan.
+     *
+     * <p>Mengambil cabang-cabang yang memiliki rekening tabungan atas nama
+     * nasabah yang dicari, lalu menampilkannya sebagai tombol pilihan.
+     *
+     * @param chatId    ID chat tujuan
+     * @param messageId ID pesan yang akan diedit
+     * @param query     nama nasabah yang dicari
+     * @param client    koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah pesan berhasil diedit
+     */
     private Mono<Void> handleTabungan(long chatId, long messageId, String query, SimpleTelegramClient client) {
         return savingsService.listAllBranch(query)
             .flatMap(branches -> Mono.fromRunnable(() -> {

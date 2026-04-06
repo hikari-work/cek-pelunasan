@@ -18,6 +18,25 @@ import software.amazon.awssdk.services.s3.model.*;
 
 import java.net.URI;
 
+/**
+ * Mengelola koneksi ke Cloudflare R2 sebagai tempat penyimpanan file.
+ * <p>
+ * Cloudflare R2 kompatibel dengan protokol S3, jadi kita pakai AWS SDK for Java
+ * tapi arahkan endpoint-nya ke R2 milik Cloudflare — bukan ke AWS sungguhan.
+ * Class ini menyediakan bean {@link S3AsyncClient} yang bisa di-inject ke mana saja,
+ * plus dua method utilitas untuk mengambil file dan mendaftar objek berdasarkan prefix.
+ * </p>
+ * <p>
+ * Konfigurasi yang dibutuhkan di {@code application.properties} atau environment variable:
+ * <ul>
+ *   <li>{@code r2.access.key} — access key R2</li>
+ *   <li>{@code r2.secret.key} — secret key R2</li>
+ *   <li>{@code r2.account.id} — account ID Cloudflare</li>
+ *   <li>{@code r2.endpoint} — endpoint R2 (bisa URL lengkap atau suffix saja)</li>
+ *   <li>{@code r2.bucket} — nama bucket yang dipakai</li>
+ * </ul>
+ * </p>
+ */
 @Configuration
 public class S3ClientConfiguration{
 
@@ -38,6 +57,16 @@ public class S3ClientConfiguration{
 	@Value("${r2.bucket}")
 	private String bucket;
 
+	/**
+	 * Membuat dan mendaftarkan {@link S3AsyncClient} yang sudah dikonfigurasi untuk Cloudflare R2.
+	 * <p>
+	 * Path-style access diaktifkan karena R2 tidak mendukung virtual-hosted-style seperti AWS S3.
+	 * Region dikunci ke {@code US_EAST_1} karena itu yang diharapkan SDK meski R2 tidak peduli
+	 * dengan nilai region-nya.
+	 * </p>
+	 *
+	 * @return client S3 async yang siap dipakai untuk operasi baca/tulis ke R2
+	 */
 	@Bean
 	public S3AsyncClient s3AsyncClient() {
 		String endpointUrl = endpoint.startsWith("http") ? endpoint : buildEndpointUrl();
@@ -50,14 +79,39 @@ public class S3ClientConfiguration{
 			.build();
 	}
 
+	/**
+	 * Merakit URL endpoint R2 lengkap dari account ID dan suffix endpoint yang dikonfigurasi.
+	 * <p>
+	 * Dipanggil hanya jika nilai {@code r2.endpoint} belum dimulai dengan "http".
+	 * Contoh hasil: {@code https://abc123.r2.cloudflarestorage.com}
+	 * </p>
+	 *
+	 * @return URL endpoint lengkap dengan protokol HTTPS
+	 */
 	private String buildEndpointUrl() {
 		return "https://" + accountId + "." + endpoint;
 	}
 
+	/**
+	 * Membuat provider kredensial statis dari access key dan secret key yang sudah dikonfigurasi.
+	 *
+	 * @return {@link StaticCredentialsProvider} berisi kredensial R2
+	 */
 	private StaticCredentialsProvider createCredentialsProvider() {
 		return StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey));
 	}
 
+	/**
+	 * Mengunduh satu file dari R2 berdasarkan key-nya dan mengembalikan isinya sebagai array byte.
+	 * <p>
+	 * Operasi ini non-blocking — hasilnya dibungkus dalam {@link Mono} sehingga bisa
+	 * dirantai dengan operasi reaktif lainnya. Jika file tidak ditemukan atau terjadi error,
+	 * method ini mengembalikan {@code Mono.empty()} dan mencatat error ke log.
+	 * </p>
+	 *
+	 * @param key path/nama file di dalam bucket, misalnya {@code "dokumen/ktp_nasabah.pdf"}
+	 * @return {@link Mono} berisi byte array isi file, atau kosong jika gagal
+	 */
 	public Mono<byte[]> getFile(String key) {
 		try {
 			GetObjectRequest request = GetObjectRequest.builder().bucket(bucket).key(key).build();
@@ -73,6 +127,21 @@ public class S3ClientConfiguration{
 		}
 	}
 
+	/**
+	 * Mendaftar semua key (nama file) di bucket yang diawali dengan prefix tertentu.
+	 * <p>
+	 * R2 mendukung pagination untuk listing besar — method ini secara otomatis
+	 * mengikuti token paginasi sampai semua hasil terkumpul, lalu memancarkan
+	 * setiap key satu per satu lewat {@link Flux}.
+	 * </p>
+	 * <p>
+	 * Contoh penggunaan: cari semua file milik nasabah dengan nomor rekening tertentu
+	 * menggunakan prefix {@code "nasabah/001234/"}.
+	 * </p>
+	 *
+	 * @param prefix awalan path yang digunakan untuk menyaring objek, bisa berupa folder virtual
+	 * @return {@link Flux} yang memancarkan key setiap objek yang cocok, atau kosong jika error
+	 */
 	public Flux<String> listObjectFoundByName(String prefix) {
 		try {
 			ListObjectsV2Request initialRequest = ListObjectsV2Request.builder()

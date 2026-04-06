@@ -15,6 +15,19 @@ import reactor.core.publisher.Mono;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Handler untuk perintah {@code /canvasing} — mencari nasabah lama yang sudah tidak aktif kredit.
+ *
+ * <p>Perintah ini berguna untuk kegiatan canvasing lapangan: mencari mantan nasabah
+ * yang pernah punya kredit tapi sekarang sudah tidak aktif, berdasarkan kata kunci alamat.
+ * Misalnya: {@code /canvasing Jl. Merdeka} akan menampilkan semua nasabah yang pernah
+ * tercatat di alamat tersebut.</p>
+ *
+ * <p>Hasil ditampilkan dengan paginasi menggunakan tombol inline, sehingga user bisa
+ * menelusuri halaman berikutnya tanpa harus kirim perintah ulang.</p>
+ *
+ * <p>Perintah ini bisa digunakan oleh admin, AO, maupun pimpinan.</p>
+ */
 @Component
 @RequiredArgsConstructor
 public class CanvasingCommandHandler extends AbstractCommandHandler {
@@ -33,12 +46,31 @@ public class CanvasingCommandHandler extends AbstractCommandHandler {
 		return "Mengembalikan List Nasabah yang pernah Kredit Namun tidak ambil lagi";
 	}
 
+	/**
+	 * Memvalidasi peran pengguna sebelum memproses pencarian canvasing.
+	 *
+	 * @param update objek update dari Telegram
+	 * @param client koneksi aktif ke Telegram
+	 * @return hasil pencarian canvasing, atau ditolak jika tidak punya izin
+	 */
 	@Override
 	@RequireAuth(roles = {AccountOfficerRoles.ADMIN, AccountOfficerRoles.AO, AccountOfficerRoles.PIMP})
 	public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
 		return super.process(update, client);
 	}
 
+	/**
+	 * Mencari nasabah lama berdasarkan kata kunci alamat yang diberikan.
+	 *
+	 * <p>Teks setelah {@code /canvasing } diambil sebagai kata kunci alamat, lalu dipecah
+	 * per kata untuk pencarian multi-kata kunci. Hasil halaman pertama langsung ditampilkan
+	 * beserta tombol navigasi ke halaman berikutnya.</p>
+	 *
+	 * @param chatId  ID chat pengguna yang mengirim perintah
+	 * @param text    teks lengkap perintah termasuk kata kunci alamat
+	 * @param client  koneksi aktif ke Telegram
+	 * @return {@link Mono} yang selesai setelah hasil pencarian dikirim ke user
+	 */
 	@Override
 	public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
 		String address = text.length() > 11 ? text.substring(11).trim() : "";

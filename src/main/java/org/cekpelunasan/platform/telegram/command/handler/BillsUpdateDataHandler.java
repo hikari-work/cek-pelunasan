@@ -17,6 +17,18 @@ import reactor.core.publisher.Mono;
 
 import java.nio.file.Path;
 
+/**
+ * Handler untuk perintah {@code /uploadtagihan} — memperbarui data tagihan harian dari file CSV.
+ *
+ * <p>Admin cukup mengirim perintah diikuti URL file CSV yang sudah disiapkan, misalnya:
+ * {@code /uploadtagihan https://contoh.com/tagihan.csv}. Bot akan mengunduh file tersebut,
+ * memparsing isinya, dan menyimpan seluruh data ke database.</p>
+ *
+ * <p>Setelah proses selesai (berhasil atau gagal), bot menerbitkan sebuah {@link DatabaseUpdateEvent}
+ * agar komponen lain yang perlu tahu tentang perubahan data tagihan bisa bereaksi secara otomatis.</p>
+ *
+ * <p>Hanya admin yang dapat menjalankan perintah ini.</p>
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -28,6 +40,13 @@ public class BillsUpdateDataHandler extends AbstractCommandHandler {
     private final BillService billService;
     private final ApplicationEventPublisher publisher;
 
+    /**
+     * Memeriksa bahwa pengirim adalah admin sebelum melanjutkan proses upload.
+     *
+     * @param update objek update dari Telegram
+     * @param client koneksi aktif ke Telegram
+     * @return hasil proses upload, atau ditolak jika bukan admin
+     */
     @Override
     @RequireAuth(roles = AccountOfficerRoles.ADMIN)
     public Mono<Void> process(TdApi.UpdateNewMessage update, SimpleTelegramClient client) {
@@ -44,6 +63,23 @@ public class BillsUpdateDataHandler extends AbstractCommandHandler {
         return "Gunakan Command ini untuk upload data tagihan harian.";
     }
 
+    /**
+     * Mengunduh file CSV dari URL yang disertakan, lalu memparsing dan menyimpannya ke database.
+     *
+     * <p>Alur kerjanya:</p>
+     * <ol>
+     *   <li>Ekstrak URL dari teks perintah. Jika tidak ada URL, proses dihentikan.</li>
+     *   <li>Kirim notifikasi ke admin bahwa proses sedang berjalan.</li>
+     *   <li>Unduh file CSV secara asynchronous.</li>
+     *   <li>Parse dan simpan data ke database melalui {@link BillService}.</li>
+     *   <li>Terbitkan {@link DatabaseUpdateEvent} untuk memberitahu komponen lain bahwa data sudah diperbarui.</li>
+     * </ol>
+     *
+     * @param chatId ID chat admin yang mengirim perintah
+     * @param text   teks perintah lengkap yang berisi URL file CSV
+     * @param client koneksi aktif ke Telegram
+     * @return {@link Mono} yang selesai setelah data berhasil disimpan atau error ditangani
+     */
     @Override
     public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
         String fileUrl = CsvDownloadUtils.extractUrl(text);

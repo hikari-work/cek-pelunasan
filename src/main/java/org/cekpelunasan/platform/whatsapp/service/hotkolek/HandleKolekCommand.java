@@ -16,6 +16,24 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * Menangani perintah hot koleksi yang dikirim via WhatsApp.
+ * <p>
+ * Ketika AO (Account Officer) mengetik nomor SPK (12 digit), bot membaca
+ * perintah itu sebagai tanda bahwa tagihan tersebut sudah dibayar hari ini.
+ * Bot kemudian menyimpan data pembayaran ke database, lalu langsung mengirim
+ * rekap daftar hot koleksi terbaru ke chat yang sama — baik personal maupun grup.
+ * </p>
+ * <p>
+ * Format perintah yang dikenali: ".010600001234" atau bisa beberapa SPK sekaligus
+ * dipisah spasi, contoh: ".010600001234 010600005678".
+ * Bot juga mengirim reaksi emoji ke pesan asli sebagai tanda pesan sudah diproses.
+ * </p>
+ * <p>
+ * Rekap yang dibuat mencakup tiga kios: Kaligondang, Kalikajar, dan Kejobong,
+ * masing-masing dengan kategori minimal bayar, angsuran pertama, dan jatuh tempo.
+ * </p>
+ */
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -36,6 +54,16 @@ public class HandleKolekCommand {
 	);
 	private final HotKolekMessageGenerator hotKolekMessageGenerator;
 
+	/**
+	 * Memproses perintah hot kolek dari pesan WhatsApp yang masuk.
+	 * <p>
+	 * Alurnya: validasi format perintah → kirim reaksi emoji ke pesan asli →
+	 * ekstrak nomor SPK → simpan tagihan yang sudah dibayar → ambil data rekap
+	 * terbaru dari semua kios → kirim rekap ke chat.
+	 * </p>
+	 *
+	 * @param command data webhook dari pesan WhatsApp yang berisi perintah hot kolek
+	 */
 	public void handleKolekCommand(WhatsAppWebhookDTO command) {
 		String messageText = command.getPayload().getBody();
 		if (!isValidHotKolekCommand(messageText)) {

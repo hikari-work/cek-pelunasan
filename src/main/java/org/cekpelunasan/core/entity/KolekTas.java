@@ -5,10 +5,14 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
- * Entity representing 'Kolek Tas' (Collection Task/Bag).
+ * Data nasabah yang masuk dalam daftar Kolek Tas (Koleksi Tas/Kunjungan).
  * <p>
- * This entity likely represents a collection of tasks or accounts assigned for
- * collection.
+ * Kolek Tas adalah daftar nasabah bermasalah yang perlu dikunjungi atau
+ * dihubungi oleh Account Officer untuk penagihan. Data ini diupload secara
+ * berkala oleh admin dan menjadi panduan kerja harian AO di lapangan.
+ * </p>
+ * <p>
+ * Koleksi MongoDB yang dipakai adalah {@code kolek_tas}.
  * </p>
  */
 @Getter
@@ -20,49 +24,62 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class KolekTas {
 
 	/**
-	 * The unique identifier for the record.
+	 * ID unik dokumen ini di MongoDB, di-generate otomatis.
 	 */
 	@Id
 	private String id;
 
 	/**
-	 * The group (kelompok) the record belongs to.
+	 * Nama atau kode kelompok nasabah. AO biasanya mengelola nasabah dalam
+	 * beberapa kelompok binaan.
 	 */
 	private String kelompok;
+
 	/**
-	 * The office (kantor) associated with the record.
+	 * Kode atau nama kantor cabang yang menaungi nasabah ini.
 	 */
 	private String kantor;
+
 	/**
-	 * The account number (rekening).
+	 * Nomor rekening simpanan atau pinjaman nasabah di sistem core banking.
 	 */
 	private String rekening;
+
 	/**
-	 * The name associated with the record.
+	 * Nama lengkap nasabah.
 	 */
 	private String nama;
+
 	/**
-	 * The address associated with the record.
+	 * Alamat lengkap nasabah, berguna bagi AO untuk keperluan kunjungan lapangan.
 	 */
 	private String alamat;
+
 	/**
-	 * The phone number.
+	 * Nomor HP nasabah yang bisa dihubungi untuk penagihan atau konfirmasi.
 	 */
 	private String noHp;
+
 	/**
-	 * The collection status/level (kolek).
+	 * Level kolektibilitas nasabah ini (1 s/d 5). Semakin tinggi angkanya,
+	 * semakin prioritas nasabah ini untuk dikunjungi.
 	 */
 	private String kolek;
+
 	/**
-	 * The nominal amount involved.
+	 * Nominal tunggakan atau angsuran yang bermasalah, dalam format teks
+	 * (bisa sudah diformat dengan pemisah ribuan).
 	 */
 	private String nominal;
+
 	/**
-	 * The account officer assigned.
+	 * Kode Account Officer yang bertanggung jawab atas nasabah ini.
 	 */
 	private String accountOfficer;
+
 	/**
-	 * The CIF (Customer Information File) number.
+	 * Nomor CIF (Customer Information File) nasabah — identitas unik nasabah
+	 * di seluruh produk yang ada di bank.
 	 */
 	private String cif;
 }
