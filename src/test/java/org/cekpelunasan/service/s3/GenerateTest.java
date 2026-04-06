@@ -1,9 +1,8 @@
 package org.cekpelunasan.service.s3;
 
 import lombok.extern.slf4j.Slf4j;
-import org.cekpelunasan.service.slik.GeneratePdfFiles;
+import org.cekpelunasan.core.service.slik.GeneratePdfFiles;
 import org.cekpelunasan.configuration.S3ClientConfiguration;
-import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,24 +22,20 @@ public class GenerateTest {
 
 	@Test
 	void generate() {
-		byte[] file = S3configuration.getFile("KTP_3175040206810003.txt");
-		String s = generatePdfFiles.generateHtmlContent(file, true);
-		Document document = generatePdfFiles.parsingHtmlContentAndManipulatePages(s);
-		Assertions.assertNotNull(document);
-		System.out.println(document.html());
+		byte[] file = S3configuration.getFile("KTP_3175040206810003.txt").block();
+		Assertions.assertNotNull(file);
+		byte[] pdf = generatePdfFiles.generatePdf(file, true).block();
+		Assertions.assertNotNull(pdf);
 	}
 
 	@Test
 	void generateByte() {
 		long start = System.currentTimeMillis();
-		byte[] file = S3configuration.getFile("KTP_3175040206810003.txt");
+		byte[] file = S3configuration.getFile("KTP_3175040206810003.txt").block();
 		log.info("Get Object In {} ms", System.currentTimeMillis() - start);
-		String s = generatePdfFiles.generateHtmlContent(file, true);
-		log.info("Generate HTML In {} ms", System.currentTimeMillis() - start);
-		Document document = generatePdfFiles.parsingHtmlContentAndManipulatePages(s);
-		log.info("Parsing HTML In {} ms", System.currentTimeMillis() - start);
-		log.info(document.html());
-		byte[] bytes = generatePdfFiles.generatePdfBytes(document);
+		Assertions.assertNotNull(file);
+
+		byte[] bytes = generatePdfFiles.generatePdf(file, true).block();
 		log.info("Generate PDF In {} ms", System.currentTimeMillis() - start);
 		Assertions.assertNotNull(bytes);
 		try (FileOutputStream outputStream = new FileOutputStream("KTP_3175040206810003.pdf")) {
@@ -48,7 +43,6 @@ public class GenerateTest {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 		log.info("Time is {} ms", System.currentTimeMillis() - start);
 	}
 }

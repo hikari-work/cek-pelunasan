@@ -1,46 +1,47 @@
 package org.cekpelunasan.utils.button;
 
+import it.tdlight.jni.TdApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class DirectMessageButton {
 
-	private static final Logger log = LoggerFactory.getLogger(DirectMessageButton.class);
+    private static final Logger log = LoggerFactory.getLogger(DirectMessageButton.class);
 
-	public InlineKeyboardMarkup selectServices(String query) {
-		List<InlineKeyboardRow> rows = new ArrayList<>();
-		InlineKeyboardRow inlineKeyboardButtons = new InlineKeyboardRow();
-		List<String> services = List.of("Pelunasan", "Tabungan");
+    public TdApi.ReplyMarkupInlineKeyboard selectServices(String query) {
+        List<TdApi.InlineKeyboardButton[]> rows = new ArrayList<>();
+        List<TdApi.InlineKeyboardButton> currentRow = new ArrayList<>();
+        List<String> services = List.of("Pelunasan", "Tabungan");
 
-		for (String service : services) {
-			log.info("Adding button: services_{}_{}", service, query);
-			InlineKeyboardButton button = InlineKeyboardButton.builder()
-				.text(service)
-				.callbackData("services_" + service + "_" + query)
-				.build();
-			inlineKeyboardButtons.add(button);
+        for (String service : services) {
+            log.info("Adding button: services_{}_{}", service, query);
+            currentRow.add(tdButton(service, "services_" + service + "_" + query));
 
-			if (inlineKeyboardButtons.size() == 2) {
-				rows.add(inlineKeyboardButtons);
-				inlineKeyboardButtons = new InlineKeyboardRow();
-			}
-		}
+            if (currentRow.size() == 2) {
+                rows.add(currentRow.toArray(new TdApi.InlineKeyboardButton[0]));
+                currentRow = new ArrayList<>();
+            }
+        }
 
-		// Add the remaining buttons if any
-		if (!inlineKeyboardButtons.isEmpty()) {
-			rows.add(inlineKeyboardButtons);
-		}
+        if (!currentRow.isEmpty()) {
+            rows.add(currentRow.toArray(new TdApi.InlineKeyboardButton[0]));
+        }
 
-		return InlineKeyboardMarkup.builder()
-			.keyboard(rows)
-			.build();
-	}
+        return new TdApi.ReplyMarkupInlineKeyboard(rows.toArray(new TdApi.InlineKeyboardButton[0][]));
+    }
+
+    private static TdApi.InlineKeyboardButton tdButton(String text, String data) {
+        TdApi.InlineKeyboardButton btn = new TdApi.InlineKeyboardButton();
+        btn.text = text;
+        TdApi.InlineKeyboardButtonTypeCallback type = new TdApi.InlineKeyboardButtonTypeCallback();
+        type.data = data.getBytes(StandardCharsets.UTF_8);
+        btn.type = type;
+        return btn;
+    }
 }

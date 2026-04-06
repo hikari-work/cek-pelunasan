@@ -2,8 +2,8 @@ package org.cekpelunasan.utils;
 
 
 import lombok.RequiredArgsConstructor;
-import org.cekpelunasan.entity.Bills;
-import org.cekpelunasan.service.simulasi.SimulasiService;
+import org.cekpelunasan.core.entity.Bills;
+import org.cekpelunasan.core.service.simulasi.SimulasiService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -20,8 +20,8 @@ public class TagihanUtils {
 
 
 	public String detailBills(Bills bill) {
-		Map<String, Integer> totalKeterlambatan = simulasiService.findTotalKeterlambatan(bill.getNoSpk());
-		Long maxBayar = simulasiService.findMaxBayar(bill.getNoSpk());
+		Map<String, Integer> totalKeterlambatan = simulasiService.findTotalKeterlambatan(bill.getNoSpk()).block();
+		Long maxBayar = simulasiService.findMaxBayar(bill.getNoSpk()).block();
 		return String.format("""
             📄 *Detail Kredit*
 

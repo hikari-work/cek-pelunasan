@@ -1,34 +1,26 @@
 package org.cekpelunasan.utils.button;
 
+import it.tdlight.jni.TdApi;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class SlikButtonConfirmation {
 
-	public InlineKeyboardMarkup sendSlikCommand(String query) {
-		List<InlineKeyboardRow> rows = new ArrayList<>();
-		InlineKeyboardRow inlineKeyboardButtons = new InlineKeyboardRow();
+    public TdApi.ReplyMarkupInlineKeyboard sendSlikCommand(String query) {
+        TdApi.InlineKeyboardButton aktifButton = tdButton("Kirim Data Fasilitas Aktif", "slik_" + query + "_1");
+        TdApi.InlineKeyboardButton allButton = tdButton("Kirim Semua Data", "slik_" + query + "_0");
+        TdApi.InlineKeyboardButton[][] rows = {{aktifButton, allButton}};
+        return new TdApi.ReplyMarkupInlineKeyboard(rows);
+    }
 
-		InlineKeyboardButton aktifButton = InlineKeyboardButton.builder()
-			.text("Kirim Data Fasilitas Aktif")
-			.callbackData("slik_" + query + "_1")
-			.build();
-		InlineKeyboardButton allButton = InlineKeyboardButton.builder()
-			.text("Kirim Semua Data")
-			.callbackData("slik_" + query +"_0")
-			.build();
-
-		inlineKeyboardButtons.add(aktifButton);
-		inlineKeyboardButtons.add(allButton);
-		rows.add(inlineKeyboardButtons);
-		return InlineKeyboardMarkup.builder()
-			.keyboard(rows)
-			.build();
-	}
+    private static TdApi.InlineKeyboardButton tdButton(String text, String data) {
+        TdApi.InlineKeyboardButton btn = new TdApi.InlineKeyboardButton();
+        btn.text = text;
+        TdApi.InlineKeyboardButtonTypeCallback type = new TdApi.InlineKeyboardButtonTypeCallback();
+        type.data = data.getBytes(StandardCharsets.UTF_8);
+        btn.type = type;
+        return btn;
+    }
 }

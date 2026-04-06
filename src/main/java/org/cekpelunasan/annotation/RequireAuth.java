@@ -1,6 +1,6 @@
 package org.cekpelunasan.annotation;
 
-import org.cekpelunasan.entity.AccountOfficerRoles;
+import org.cekpelunasan.core.entity.AccountOfficerRoles;
 
 import java.lang.annotation.*;
 
