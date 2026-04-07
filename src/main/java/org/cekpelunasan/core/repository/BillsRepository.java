@@ -246,4 +246,22 @@ public interface BillsRepository extends ReactiveMongoRepository<Bills, String> 
      * @return stream tagihan yang SPK-nya tidak ada dalam daftar tersebut
      */
     Flux<Bills> findByBranchAndNoSpkNotIn(String branch, Iterable<String> noSpkList);
+
+    /**
+     * Mencari tagihan berdasarkan nama nasabah lintas semua cabang (tidak ada filter cabang),
+     * dengan paginasi. Dipakai untuk fitur pencarian Mini App yang lintas cabang.
+     *
+     * @param name     kata kunci nama nasabah (parsial, tidak peka huruf besar/kecil)
+     * @param pageable konfigurasi halaman dan ukuran data
+     * @return stream tagihan yang nama nasabahnya cocok dengan kata kunci
+     */
+    Flux<Bills> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    /**
+     * Menghitung jumlah tagihan yang nama nasabahnya cocok dengan kata kunci lintas semua cabang.
+     *
+     * @param name kata kunci nama nasabah
+     * @return jumlah dokumen yang cocok
+     */
+    Mono<Long> countByNameContainingIgnoreCase(String name);
 }

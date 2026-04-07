@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cek Pelunasan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Figtree:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+
+  <!-- SCREEN: LOADING -->
+  <div id="screen-loading" class="screen active">
+    <div class="loading-box">
+      <div class="loading-bars">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p class="loading-text">Memverifikasi akses...</p>
+    </div>
+  </div>
+
+  <!-- SCREEN: HOME -->
+  <div id="screen-home" class="screen">
+    <header class="home-header">
+      <div class="home-header-stripe"></div>
+      <div class="home-header-inner">
+        <div class="app-eyebrow">BANK SURYAYUDHA</div>
+        <h1 class="app-title">CEK<br/>PELUNASAN</h1>
+        <p class="app-subtitle">Pilih layanan</p>
+      </div>
+    </header>
+    <div class="service-grid">
+      <button class="service-card tagihan" onclick="App.openService('tagihan')">
+        <div class="service-card-accent"></div>
+        <div class="service-card-body">
+          <div class="service-card-left">
+            <span class="service-label">TAGIHAN</span>
+            <span class="service-desc">Data tagihan & angsuran nasabah</span>
+          </div>
+          <span class="service-arrow">→</span>
+        </div>
+      </button>
+      <button class="service-card pelunasan" onclick="App.openService('pelunasan')">
+        <div class="service-card-accent"></div>
+        <div class="service-card-body">
+          <div class="service-card-left">
+            <span class="service-label">PELUNASAN</span>
+            <span class="service-desc">Hitung total pelunasan kredit</span>
+          </div>
+          <span class="service-arrow">→</span>
+        </div>
+      </button>
+      <button class="service-card tabungan" onclick="App.openService('tabungan')">
+        <div class="service-card-accent"></div>
+        <div class="service-card-body">
+          <div class="service-card-left">
+            <span class="service-label">TABUNGAN</span>
+            <span class="service-desc">Rekening & saldo tabungan nasabah</span>
+          </div>
+          <span class="service-arrow">→</span>
+        </div>
+      </button>
+    </div>
+    <div class="home-footer">Ketuk layanan untuk mulai pencarian</div>
+  </div>
+
+  <!-- SCREEN: SEARCH -->
+  <div id="screen-search" class="screen">
+    <div class="search-header" id="search-header">
+      <div class="search-service-bar" id="search-service-bar"></div>
+      <div class="search-header-inner">
+        <h2 class="search-title" id="search-title">TAGIHAN</h2>
+        <div class="search-field-wrap">
+          <span class="search-icon">⌕</span>
+          <input
+            type="text"
+            id="search-input"
+            class="search-input"
+            placeholder="Nama atau nomor..."
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+          />
+          <button class="search-clear hidden" id="search-clear">✕</button>
+        </div>
+        <p class="search-hint" id="search-hint">Ketik nama <b>atau</b> nomor SPK</p>
+      </div>
+    </div>
+
+    <div id="search-state-idle" class="state-box">
+      <div class="state-icon-wrap">
+        <span class="state-icon">⌕</span>
+      </div>
+      <p class="state-label">Mulai ketik untuk mencari</p>
+      <p class="state-sub">Minimal 2 karakter</p>
+    </div>
+
+    <div id="search-state-loading" class="state-box hidden">
+      <div class="loading-bars small">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p class="state-label">Mencari data...</p>
+    </div>
+
+    <div id="search-state-empty" class="state-box hidden">
+      <div class="state-icon-wrap">
+        <span class="state-icon">∅</span>
+      </div>
+      <p class="state-label">Tidak ditemukan</p>
+      <p class="state-sub">Coba kata kunci lain</p>
+    </div>
+
+    <div id="search-results" class="results-list hidden"></div>
+  </div>
+
+  <!-- SCREEN: DETAIL -->
+  <div id="screen-detail" class="screen">
+    <div id="detail-loading" class="state-box">
+      <div class="loading-bars">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p class="state-label">Memuat detail...</p>
+    </div>
+    <div id="detail-content" class="detail-content hidden"></div>
+  </div>
+
+  <!-- ERROR TOAST -->
+  <div id="error-toast" class="error-toast hidden">
+    <span class="error-toast-icon">!</span>
+    <span id="error-toast-msg"></span>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/search.js"></script>
+  <script src="/js/tagihan.js"></script>
+  <script src="/js/pelunasan.js"></script>
+  <script src="/js/tabungan.js"></script>
+</body>
+</html>
