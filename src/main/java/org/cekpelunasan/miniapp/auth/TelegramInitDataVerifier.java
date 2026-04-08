@@ -91,9 +91,10 @@ public class TelegramInitDataVerifier {
                     .orElse("");
 
             // Hitung secret key dan expected hash
+            // secret_key = HMAC_SHA256(key="WebAppData", message=botToken)
             Mac mac = Mac.getInstance(HMAC_SHA256);
-            mac.init(new SecretKeySpec(botToken.getBytes(StandardCharsets.UTF_8), HMAC_SHA256));
-            byte[] secretKey = mac.doFinal("WebAppData".getBytes(StandardCharsets.UTF_8));
+            mac.init(new SecretKeySpec("WebAppData".getBytes(StandardCharsets.UTF_8), HMAC_SHA256));
+            byte[] secretKey = mac.doFinal(botToken.getBytes(StandardCharsets.UTF_8));
 
             mac.init(new SecretKeySpec(secretKey, HMAC_SHA256));
             byte[] expectedHashBytes = mac.doFinal(dataCheckString.getBytes(StandardCharsets.UTF_8));
