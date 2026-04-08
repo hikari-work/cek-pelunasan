@@ -16,6 +16,8 @@
   --c-pelunasan: #4B3FFF;
   --c-tabungan:  #00BB4D;
 
+  --c-canvas:    #FF8C00;
+
   --c-kol1: #00BB4D;
   --c-kol2: #F5A623;
   --c-kol3: #E67E22;
@@ -242,6 +244,7 @@ html, body {
 .service-card.tagihan   .service-card-accent { background: var(--c-tagihan); }
 .service-card.pelunasan .service-card-accent { background: var(--c-pelunasan); }
 .service-card.tabungan  .service-card-accent { background: var(--c-tabungan); }
+.service-card.canvas    .service-card-accent { background: var(--c-canvas); }
 
 .service-card-body {
   display: flex;
@@ -326,6 +329,7 @@ html, body {
 .search-title.is-tagihan   { color: var(--c-tagihan); }
 .search-title.is-pelunasan { color: var(--c-pelunasan); }
 .search-title.is-tabungan  { color: var(--c-tabungan); }
+.search-title.is-canvas    { color: var(--c-canvas); }
 
 .search-field-wrap {
   position: relative;
@@ -549,6 +553,14 @@ html, body {
   font-family: var(--font-mono);
 }
 
+.result-address {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+  font-family: var(--font-body);
+  line-height: 1.4;
+}
+
 .result-amount-row {
   display: flex;
   align-items: baseline;
@@ -604,6 +616,7 @@ html, body {
 .detail-hero.is-tagihan   .detail-hero-accent { background: var(--c-tagihan); }
 .detail-hero.is-pelunasan .detail-hero-accent { background: var(--c-pelunasan); }
 .detail-hero.is-tabungan  .detail-hero-accent { background: var(--c-tabungan); }
+.detail-hero.is-canvas    .detail-hero-accent { background: var(--c-canvas); }
 
 .detail-hero-body {
   padding: 16px 18px 18px;

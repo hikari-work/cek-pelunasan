@@ -117,9 +117,10 @@ const App = (() => {
       .then(data => {
         loadingEl.classList.add('hidden');
         contentEl.classList.remove('hidden');
-        if (service === 'tagihan')    Tagihan.renderDetail(data, contentEl);
+        if (service === 'tagihan')        Tagihan.renderDetail(data, contentEl);
         else if (service === 'pelunasan') Pelunasan.renderDetail(data, contentEl);
         else if (service === 'tabungan')  Tabungan.renderDetail(data, contentEl);
+        else if (service === 'canvas')    Canvas.renderDetail(data, contentEl);
       })
       .catch(err => {
         loadingEl.classList.add('hidden');

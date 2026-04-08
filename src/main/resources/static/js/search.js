@@ -23,6 +23,7 @@ const Search = (() => {
     tagihan:   { label: 'TAGIHAN',   hint: 'Nama nasabah <b>atau</b> nomor SPK', cls: 'is-tagihan',   color: 'var(--c-tagihan)' },
     pelunasan: { label: 'PELUNASAN', hint: 'Nama nasabah <b>atau</b> nomor SPK', cls: 'is-pelunasan',  color: 'var(--c-pelunasan)' },
     tabungan:  { label: 'TABUNGAN',  hint: 'Nama nasabah <b>atau</b> nomor rekening', cls: 'is-tabungan', color: 'var(--c-tabungan)' },
+    canvas:    { label: 'CANVASING', hint: 'Kata kunci <b>alamat</b> nasabah', cls: 'is-canvas', color: 'var(--c-canvas)' },
   };
 
   function reset(service) {
@@ -89,6 +90,7 @@ const Search = (() => {
       let card;
       if (currentService === 'tabungan')       card = Tabungan.buildCard(item);
       else if (currentService === 'pelunasan')  card = Pelunasan.buildCard(item);
+      else if (currentService === 'canvas')     card = Canvas.buildCard(item);
       else                                       card = Tagihan.buildCard(item);
       resultsList.appendChild(card);
     });
