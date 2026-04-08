@@ -382,6 +382,45 @@ html, body {
 .search-hint b { color: var(--ink); }
 
 /* =====================================================
+   FILTER BAR
+   ===================================================== */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px;
+  border-bottom: var(--bd-2);
+  background: var(--bg);
+}
+
+.filter-chip {
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: var(--bd-2);
+  box-shadow: var(--sh-xs);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.07s, box-shadow 0.07s;
+}
+
+.filter-chip.active {
+  background: var(--c-tabungan);
+  color: #fff;
+  border-color: var(--c-tabungan);
+  box-shadow: none;
+}
+
+.filter-chip:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* =====================================================
    STATE BOXES
    ===================================================== */
 .state-box {

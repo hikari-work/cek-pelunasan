@@ -239,6 +239,9 @@ public class SavingsService {
 	 */
 	public Flux<Savings> findByName(String name, int limit) {
 		log.info("Searching savings by name: {} (limit {})", name, limit);
+		if (limit <= 0) {
+			return savingsRepository.findByNameContainingIgnoreCase(name);
+		}
 		return savingsRepository.findByNameContainingIgnoreCase(name).take(limit);
 	}
 

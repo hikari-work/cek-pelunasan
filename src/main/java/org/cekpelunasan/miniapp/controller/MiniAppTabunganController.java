@@ -45,7 +45,7 @@ public class MiniAppTabunganController {
                     .map(ResponseEntity::ok);
         }
 
-        return savingsService.findByName(query, 20)
+        return savingsService.findByName(query, 0)
                 .map(this::toSummary)
                 .collectList()
                 .map(ResponseEntity::ok);

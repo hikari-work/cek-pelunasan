@@ -5,12 +5,15 @@
 const Search = (() => {
   let debounceTimer = null;
   let currentService = null;
+  let allItems = [];
+  let activeBranch = null;
 
   const input      = document.getElementById('search-input');
   const clearBtn   = document.getElementById('search-clear');
   const titleEl    = document.getElementById('search-title');
   const hintEl     = document.getElementById('search-hint');
   const serviceBar = document.getElementById('search-service-bar');
+  const filterBar    = document.getElementById('filter-bar');
   const stateIdle    = document.getElementById('search-state-idle');
   const stateLoading = document.getElementById('search-state-loading');
   const stateEmpty   = document.getElementById('search-state-empty');
@@ -43,6 +46,7 @@ const Search = (() => {
     stateLoading.classList.add('hidden');
     stateEmpty.classList.add('hidden');
     resultsList.classList.add('hidden');
+    hideFilterBar();
   }
 
   function setStateLoading() {
@@ -50,6 +54,7 @@ const Search = (() => {
     stateLoading.classList.remove('hidden');
     stateEmpty.classList.add('hidden');
     resultsList.classList.add('hidden');
+    hideFilterBar();
   }
 
   function setStateEmpty() {
@@ -57,6 +62,7 @@ const Search = (() => {
     stateLoading.classList.add('hidden');
     stateEmpty.classList.remove('hidden');
     resultsList.classList.add('hidden');
+    hideFilterBar();
   }
 
   function setStateResults(items) {
@@ -65,6 +71,19 @@ const Search = (() => {
     stateEmpty.classList.add('hidden');
     resultsList.classList.remove('hidden');
 
+    allItems = items;
+    activeBranch = null;
+
+    if (currentService === 'tabungan') {
+      renderFilterBar(items);
+    } else {
+      hideFilterBar();
+    }
+
+    renderCards(items);
+  }
+
+  function renderCards(items) {
     resultsList.innerHTML = '';
     items.forEach(item => {
       let card;
@@ -73,6 +92,45 @@ const Search = (() => {
       else                                       card = Tagihan.buildCard(item);
       resultsList.appendChild(card);
     });
+  }
+
+  function renderFilterBar(items) {
+    const branches = [...new Set(items.map(i => i.branch).filter(Boolean))].sort();
+    if (branches.length <= 1) { hideFilterBar(); return; }
+
+    filterBar.innerHTML = '';
+
+    const allChip = document.createElement('button');
+    allChip.className = 'filter-chip active';
+    allChip.textContent = 'SEMUA';
+    allChip.addEventListener('click', () => applyFilter(null));
+    filterBar.appendChild(allChip);
+
+    branches.forEach(branch => {
+      const chip = document.createElement('button');
+      chip.className = 'filter-chip';
+      chip.textContent = branch;
+      chip.dataset.branch = branch;
+      chip.addEventListener('click', () => applyFilter(branch));
+      filterBar.appendChild(chip);
+    });
+
+    filterBar.classList.remove('hidden');
+  }
+
+  function hideFilterBar() {
+    filterBar.classList.add('hidden');
+    filterBar.innerHTML = '';
+  }
+
+  function applyFilter(branch) {
+    activeBranch = branch;
+    filterBar.querySelectorAll('.filter-chip').forEach(chip => {
+      const chipBranch = chip.dataset.branch || null;
+      chip.classList.toggle('active', chipBranch === branch);
+    });
+    const filtered = branch ? allItems.filter(i => i.branch === branch) : allItems;
+    renderCards(filtered);
   }
 
   function doSearch(query) {
