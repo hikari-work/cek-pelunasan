@@ -64,22 +64,14 @@ const Tagihan = (() => {
         </div>
       </div>
 
-      ${(data.penaltyInterest > 0 || data.penaltyPrincipal > 0 || data.lastInstallment > 0) ? `
+      ${(data.penaltyInterest > 0 || data.penaltyPrincipal > 0) ? `
       <div class="detail-section">
         <div class="detail-section-title">Tunggakan & Denda</div>
         <div class="detail-rows">
-          ${row('Angsuran Terakhir', formatRupiah(data.lastInstallment), 'mono')}
-          ${row('Bunga Terakhir', formatRupiah(data.lastInterest), 'mono')}
-          ${row('Pokok Terakhir', formatRupiah(data.lastPrincipal), 'mono')}
           ${data.penaltyInterest > 0 ? row('Denda Bunga', formatRupiah(data.penaltyInterest), 'mono alert') : ''}
           ${data.penaltyPrincipal > 0 ? row('Denda Pokok', formatRupiah(data.penaltyPrincipal), 'mono alert') : ''}
         </div>
       </div>` : ''}
-
-      <div class="detail-total-card">
-        <span class="detail-total-label">TOTAL PELUNASAN</span>
-        <span class="detail-total-value">${formatRupiah(data.fullPayment)}</span>
-      </div>
 
       <div class="detail-section">
         <div class="detail-section-title">Pembayaran Minimum</div>
