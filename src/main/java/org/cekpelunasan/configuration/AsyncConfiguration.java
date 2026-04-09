@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
  */
 @Configuration
 @EnableAsync
+@org.springframework.scheduling.annotation.EnableScheduling
 public class AsyncConfiguration implements AsyncConfigurer {
 
 

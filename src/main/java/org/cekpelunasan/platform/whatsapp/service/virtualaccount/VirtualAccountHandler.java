@@ -44,11 +44,15 @@ public class VirtualAccountHandler {
 	 * @return objek {@link Bills} atau {@link Savings} sesuai yang ditemukan, atau {@code null}
 	 */
 	public Object findAccount(String accountNumber) {
-		Bills bills = billService.getBillById(accountNumber).block();
+		Bills bills = billService.getBillById(accountNumber)
+				.subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+				.block();
 		if (bills != null) {
 			return bills;
 		}
-		return savingsService.findById(accountNumber).block();
+		return savingsService.findById(accountNumber)
+				.subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+				.block();
 	}
 
 	/**

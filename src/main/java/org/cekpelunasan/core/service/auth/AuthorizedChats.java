@@ -4,13 +4,14 @@ import lombok.NonNull;
 import org.cekpelunasan.core.entity.AccountOfficerRoles;
 import org.cekpelunasan.core.entity.User;
 import org.cekpelunasan.core.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class AuthorizedChats {
+
+	private static final Logger log = LoggerFactory.getLogger(AuthorizedChats.class);
 
 	private final UserRepository userRepository;
 	Set<Long> authorizedChats = ConcurrentHashMap.newKeySet();
@@ -42,6 +45,10 @@ public class AuthorizedChats {
 	 */
 	public boolean isAuthorized(Long chatId) {
 		return authorizedChats.contains(chatId);
+	}
+
+	public int size() {
+		return authorizedChats.size();
 	}
 
 	/**
@@ -84,11 +91,11 @@ public class AuthorizedChats {
 	 */
 	@EventListener(ApplicationReadyEvent.class)
 	public void preRun() {
-		List<User> all = userRepository.findAll().collectList().block();
-		if (all != null) {
-			for (User user : all) {
-				authorizedChats.add(user.getChatId());
-			}
-		}
+		userRepository.findAll()
+				.map(User::getChatId)
+				.doOnNext(authorizedChats::add)
+				.doOnComplete(() -> log.info("[AuthorizedChats] Loaded {} authorized chats", authorizedChats.size()))
+				.doOnError(e -> log.error("[AuthorizedChats] Gagal memuat authorized chats", e))
+				.subscribe();
 	}
 }

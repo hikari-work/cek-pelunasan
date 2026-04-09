@@ -228,6 +228,25 @@ public class BillService {
 	}
 
 	/**
+	 * Mencari tagihan berdasarkan nama nasabah lintas semua cabang (tanpa filter cabang),
+	 * dengan pagination. Dipakai oleh Mini App untuk pencarian cross-branch.
+	 *
+	 * @param name nama nasabah yang ingin dicari (parsial, tidak case-sensitive)
+	 * @param page nomor halaman (dimulai dari 0)
+	 * @param size jumlah data per halaman
+	 * @return {@link Mono} berisi halaman hasil pencarian
+	 */
+	public Mono<Page<Bills>> findByName(String name, int page, int size) {
+		PageRequest pageRequest = PageRequest.of(page, size);
+		Mono<List<Bills>> content = billsRepository
+			.findByNameContainingIgnoreCase(name, pageRequest).collectList();
+		Mono<Long> total = billsRepository
+			.countByNameContainingIgnoreCase(name).defaultIfEmpty(0L);
+		return Mono.zip(content, total)
+			.map(t -> new PageImpl<>(t.getT1(), pageRequest, t.getT2()));
+	}
+
+	/**
 	 * Menghapus seluruh data tagihan dari database. Biasanya dipanggil sebelum
 	 * impor ulang data CSV yang baru.
 	 *

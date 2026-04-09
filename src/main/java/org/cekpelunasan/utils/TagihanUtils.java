@@ -43,8 +43,12 @@ public class TagihanUtils {
 	 * @return string detail tagihan lengkap yang siap dikirim
 	 */
 	public String detailBills(Bills bill) {
-		Map<String, Integer> totalKeterlambatan = simulasiService.findTotalKeterlambatan(bill.getNoSpk()).block();
-		Long maxBayar = simulasiService.findMaxBayar(bill.getNoSpk()).block();
+		Map<String, Integer> totalKeterlambatan = simulasiService.findTotalKeterlambatan(bill.getNoSpk())
+				.subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+				.block();
+		Long maxBayar = simulasiService.findMaxBayar(bill.getNoSpk())
+				.subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+				.block();
 		return String.format("""
             📄 *Detail Kredit*
 
