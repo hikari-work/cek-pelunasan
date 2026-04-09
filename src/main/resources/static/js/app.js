@@ -121,6 +121,7 @@ const App = (() => {
         else if (service === 'pelunasan') Pelunasan.renderDetail(data, contentEl);
         else if (service === 'tabungan')  Tabungan.renderDetail(data, contentEl);
         else if (service === 'canvas')    Canvas.renderDetail(data, contentEl);
+        else if (service === 'kolektas')  Kolektas.renderDetail(data, contentEl);
       })
       .catch(err => {
         loadingEl.classList.add('hidden');

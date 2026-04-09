@@ -34,6 +34,15 @@ public interface KolekTasRepository extends ReactiveMongoRepository<KolekTas, St
     Flux<KolekTas> findByKelompokIgnoreCase(String kelompok, Pageable pageable);
 
     /**
+     * Mengambil seluruh nasabah dalam suatu kelompok binaan tanpa paginasi.
+     * Dipakai oleh Mini App yang menampilkan semua anggota kelompok sekaligus.
+     *
+     * @param kelompok nama kelompok binaan yang dicari
+     * @return stream semua nasabah dalam kelompok tersebut
+     */
+    Flux<KolekTas> findByKelompokIgnoreCase(String kelompok);
+
+    /**
      * Menghitung total nasabah dalam suatu kelompok binaan.
      * Dipakai untuk menghitung berapa halaman yang diperlukan dalam paginasi.
      *
