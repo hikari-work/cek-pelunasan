@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -84,11 +83,8 @@ public class AuthorizedChats {
 	 */
 	@EventListener(ApplicationReadyEvent.class)
 	public void preRun() {
-		List<User> all = userRepository.findAll().collectList().block();
-		if (all != null) {
-			for (User user : all) {
-				authorizedChats.add(user.getChatId());
-			}
-		}
+		userRepository.findAll()
+				.map(User::getChatId)
+				.subscribe(authorizedChats::add);
 	}
 }
