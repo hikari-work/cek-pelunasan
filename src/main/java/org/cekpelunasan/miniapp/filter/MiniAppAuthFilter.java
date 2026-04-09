@@ -2,6 +2,7 @@ package org.cekpelunasan.miniapp.filter;
 
 import org.cekpelunasan.miniapp.auth.MiniAppSession;
 import org.cekpelunasan.miniapp.auth.MiniAppSessionStore;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,6 +21,7 @@ import java.util.Optional;
  * Jika token tidak ada atau kedaluwarsa, langsung mengembalikan 401.
  */
 @Component
+@Order(10)
 public class MiniAppAuthFilter implements WebFilter {
 
     private static final String SESSION_ATTR = "miniAppSession";

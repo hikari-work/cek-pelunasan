@@ -18,7 +18,8 @@ public class MiniAppCorsConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOriginPattern("https://*.telegram.org");
         config.addAllowedOriginPattern("https://*.telegram-apps.com");
-        config.addAllowedOriginPattern("http://*");
+        config.addAllowedOriginPattern("http://localhost:*");
+        config.addAllowedOriginPattern("http://127.0.0.1:*");
         config.addAllowedMethod("*");
         config.addAllowedHeader("*");
         config.setAllowCredentials(false);
