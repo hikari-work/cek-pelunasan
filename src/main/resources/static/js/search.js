@@ -6,7 +6,8 @@ const Search = (() => {
   let debounceTimer = null;
   let currentService = null;
   let allItems = [];
-  let activeBranch = null;
+  let activeFilter = null;
+  let filterKey = null;
 
   const input      = document.getElementById('search-input');
   const clearBtn   = document.getElementById('search-clear');
@@ -74,11 +75,16 @@ const Search = (() => {
     resultsList.classList.remove('hidden');
 
     allItems = items;
-    activeBranch = null;
+    activeFilter = null;
 
     if (currentService === 'tabungan') {
+      filterKey = 'branch';
+      renderFilterBar(items);
+    } else if (currentService === 'kolektas') {
+      filterKey = 'accountOfficer';
       renderFilterBar(items);
     } else {
+      filterKey = null;
       hideFilterBar();
     }
 
@@ -99,8 +105,8 @@ const Search = (() => {
   }
 
   function renderFilterBar(items) {
-    const branches = [...new Set(items.map(i => i.branch).filter(Boolean))].sort();
-    if (branches.length <= 1) { hideFilterBar(); return; }
+    const values = [...new Set(items.map(i => i[filterKey]).filter(Boolean))].sort();
+    if (values.length <= 1) { hideFilterBar(); return; }
 
     filterBar.innerHTML = '';
 
@@ -110,12 +116,12 @@ const Search = (() => {
     allChip.addEventListener('click', () => applyFilter(null));
     filterBar.appendChild(allChip);
 
-    branches.forEach(branch => {
+    values.forEach(val => {
       const chip = document.createElement('button');
       chip.className = 'filter-chip';
-      chip.textContent = branch;
-      chip.dataset.branch = branch;
-      chip.addEventListener('click', () => applyFilter(branch));
+      chip.textContent = val;
+      chip.dataset.filterVal = val;
+      chip.addEventListener('click', () => applyFilter(val));
       filterBar.appendChild(chip);
     });
 
@@ -127,13 +133,13 @@ const Search = (() => {
     filterBar.innerHTML = '';
   }
 
-  function applyFilter(branch) {
-    activeBranch = branch;
+  function applyFilter(val) {
+    activeFilter = val;
     filterBar.querySelectorAll('.filter-chip').forEach(chip => {
-      const chipBranch = chip.dataset.branch || null;
-      chip.classList.toggle('active', chipBranch === branch);
+      const chipVal = chip.dataset.filterVal || null;
+      chip.classList.toggle('active', chipVal === val);
     });
-    const filtered = branch ? allItems.filter(i => i.branch === branch) : allItems;
+    const filtered = val ? allItems.filter(i => i[filterKey] === val) : allItems;
     renderCards(filtered);
   }
 
