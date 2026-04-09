@@ -24,10 +24,10 @@ import java.util.Optional;
 @Order(10)
 public class MiniAppAuthFilter implements WebFilter {
 
-    private static final String SESSION_ATTR = "miniAppSession";
-    private static final String TOKEN_HEADER = "X-Mini-Token";
+    private static final String SESSION_ATTR     = "miniAppSession";
+    private static final String TOKEN_HEADER     = "X-Mini-Token";
     private static final String MINI_PATH_PREFIX = "/api/mini/";
-    private static final String AUTH_PATH = "/api/mini/auth";
+    private static final String AUTH_PATH        = "/api/mini/auth";
 
     private final MiniAppSessionStore sessionStore;
 

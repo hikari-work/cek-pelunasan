@@ -8,7 +8,7 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 /**
  * Konfigurasi CORS untuk endpoint Mini App. Mengizinkan request dari domain Telegram
- * dan semua origin HTTP (untuk keperluan development/testing).
+ * dan localhost untuk keperluan development.
  */
 @Configuration
 public class MiniAppCorsConfig {
