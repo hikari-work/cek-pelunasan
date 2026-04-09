@@ -11,6 +11,7 @@ import org.cekpelunasan.platform.whatsapp.service.sender.WhatsAppSenderService;
 import org.cekpelunasan.utils.RupiahFormatUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -108,7 +109,9 @@ public class JatuhBayarService {
 		LocalDate today = LocalDate.now();
 		String dayOfMonth = String.valueOf(today.getDayOfMonth());
 
-		return billService.findAllBillsByBranch(BRANCH_CODE).block()
+		return billService.findAllBillsByBranch(BRANCH_CODE)
+				.subscribeOn(Schedulers.boundedElastic())
+				.block()
 			.stream()
 			.filter(bill -> bill.getPayDown().equals(dayOfMonth))
 			.collect(Collectors.groupingBy(Bills::getAccountOfficer));
@@ -150,7 +153,9 @@ public class JatuhBayarService {
 			}
 
 			try {
-				Savings savings = savingsService.findByCif(bill.getCustomerId()).block();
+				Savings savings = savingsService.findByCif(bill.getCustomerId())
+						.subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+						.block();
 				if (savings != null && savings.getPhone() != null && !savings.getPhone().isEmpty()) {
 					builder.append("   📱 No HP: ").append(savings.getPhone()).append("\n");
 				} else {

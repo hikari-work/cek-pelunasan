@@ -113,7 +113,9 @@ public class HandlerPelunasan {
 	private Bills fetchBillData(String spkNumber) {
 		try {
 			log.info("Fetching bill data for SPK: {}", spkNumber);
-			return billService.getBillById(spkNumber).block();
+			return billService.getBillById(spkNumber)
+					.subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+					.block();
 		} catch (Exception e) {
 			log.error("Error fetching bill data for SPK {}: {}", spkNumber, e.getMessage(), e);
 			return null;

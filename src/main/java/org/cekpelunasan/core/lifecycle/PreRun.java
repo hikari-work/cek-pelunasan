@@ -66,6 +66,9 @@ public class PreRun {
 				.userCode("ADMIN")
 				.roles(AccountOfficerRoles.ADMIN)
 				.build();
-		userRepository.save(user).block();
+		userRepository.save(user)
+				.doOnSuccess(u -> log.info("Owner {} saved as ADMIN", botOwner))
+				.doOnError(e -> log.error("Gagal menyimpan owner", e))
+				.subscribe();
 	}
 }

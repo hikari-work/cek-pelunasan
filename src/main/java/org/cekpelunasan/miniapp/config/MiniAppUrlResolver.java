@@ -65,6 +65,7 @@ public class MiniAppUrlResolver {
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(5))
+                    .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
                     .block();
         } catch (Exception e) {
             log.debug("Gagal fetch IP dari {}: {}", url, e.getMessage());

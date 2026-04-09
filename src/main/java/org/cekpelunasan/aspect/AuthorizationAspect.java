@@ -84,7 +84,9 @@ public class AuthorizationAspect {
             telegramMessageService.sendText(chatId, "Anda tidak memiliki akses ke bot ini", client);
             return Mono.empty();
         }
-        AccountOfficerRoles roles = authorizedChats.getUserRoles(chatId).block();
+        AccountOfficerRoles roles = authorizedChats.getUserRoles(chatId)
+                .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+                .block();
         if (roles == AccountOfficerRoles.ADMIN) {
             return joinPoint.proceed();
         }
