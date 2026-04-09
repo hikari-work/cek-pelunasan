@@ -4,15 +4,6 @@
 
 const Kolektas = (() => {
 
-  const KOLEK_LABEL = { '1': 'KOL 1', '2': 'KOL 2', '3': 'KOL 3', '4': 'KOL 4', '5': 'KOL 5' };
-  const KOLEK_CLASS = { '1': 'kol1', '2': 'kol2', '3': 'kol3', '4': 'kol4', '5': 'kol5' };
-
-  function kolekBadge(kolek) {
-    const label = KOLEK_LABEL[kolek] || `KOL ${kolek}`;
-    const cls   = KOLEK_CLASS[kolek] || 'kol1';
-    return `<span class="kolek-badge ${cls}">${escHtml(label)}</span>`;
-  }
-
   function buildCard(item) {
     const div = document.createElement('div');
     div.className = 'result-card';
@@ -20,7 +11,6 @@ const Kolektas = (() => {
       <div class="result-card-inner">
         <div class="result-card-header">
           <span class="result-name">${escHtml(item.nama || '-')}</span>
-          ${kolekBadge(item.kolek)}
         </div>
         <div class="result-meta">
           <span class="result-meta-item">${escHtml(item.rekening || '-')}</span>
@@ -46,7 +36,6 @@ const Kolektas = (() => {
           <div class="detail-hero-meta">
             <span class="detail-hero-meta-item">${escHtml(data.rekening || '-')}</span>
             <span class="detail-hero-meta-item">${escHtml(data.kelompok || '-')}</span>
-            ${kolekBadge(data.kolek)}
           </div>
         </div>
       </div>
@@ -73,7 +62,6 @@ const Kolektas = (() => {
           ${row('Kelompok', data.kelompok || '-')}
           ${row('Kantor', data.kantor || '-')}
           ${data.accountOfficer ? row('Account Officer', data.accountOfficer) : ''}
-          ${row('Kolektibilitas', data.kolek ? `KOL ${data.kolek}` : '-')}
         </div>
       </div>
     `;
