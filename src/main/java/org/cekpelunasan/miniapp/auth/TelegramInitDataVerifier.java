@@ -35,7 +35,7 @@ public class TelegramInitDataVerifier {
 
     private static final Logger log = LoggerFactory.getLogger(TelegramInitDataVerifier.class);
     private static final String HMAC_SHA256 = "HmacSHA256";
-    private static final long MAX_AGE_SECONDS = 300L;
+    private static final long MAX_AGE_SECONDS = 86400L; // 24 jam
 
     @Value("${telegram.bot.token}")
     private String botToken;
