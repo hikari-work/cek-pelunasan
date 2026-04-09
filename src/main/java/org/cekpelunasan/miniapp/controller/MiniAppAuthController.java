@@ -48,23 +48,23 @@ public class MiniAppAuthController {
         log.info("[MiniApp Auth] initData valid — chatId={}, name={}", chatId, result.firstName());
         log.info("[MiniApp Auth] authorizedChats size={}, isAuthorized={}", authorizedChats.size(), authorizedChats.isAuthorized(chatId));
 
-        if (!authorizedChats.isAuthorized(chatId)) {
-            log.warn("[MiniApp Auth] chatId={} tidak ada di authorizedChats", chatId);
-            return Mono.just(ResponseEntity.status(403).<MiniAppAuthResponse>build());
-        }
-
         return userService.findUserByChatId(chatId)
+                .doOnNext(user -> {
+                    // Pastikan selalu masuk cache meski belum ter-load saat startup
+                    if (!authorizedChats.isAuthorized(chatId)) {
+                        log.info("[MiniApp Auth] chatId={} tidak ada di cache, ditemukan di DB — tambahkan ke cache", chatId);
+                        authorizedChats.addAuthorizedChat(chatId);
+                    }
+                })
                 .map(user -> {
                     MiniAppSession session = sessionStore.create(chatId, user.getRoles());
                     UserInfoDTO userInfo = new UserInfoDTO(chatId, result.firstName(), user.getRoles());
                     log.info("[MiniApp Auth] Login berhasil — chatId={}", chatId);
                     return ResponseEntity.ok(new MiniAppAuthResponse(session.token(), userInfo));
                 })
-                .defaultIfEmpty(ResponseEntity.status(403).<MiniAppAuthResponse>build())
-                .doOnNext(res -> {
-                    if (res.getStatusCode().value() == 403) {
-                        log.warn("[MiniApp Auth] chatId={} ada di authorizedChats tapi tidak ada di UserRepository", chatId);
-                    }
-                });
+                .switchIfEmpty(Mono.fromCallable(() -> {
+                    log.warn("[MiniApp Auth] chatId={} tidak ada di UserRepository", chatId);
+                    return ResponseEntity.status(403).<MiniAppAuthResponse>build();
+                }));
     }
 }
