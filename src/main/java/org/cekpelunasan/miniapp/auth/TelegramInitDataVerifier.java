@@ -66,6 +66,9 @@ public class TelegramInitDataVerifier {
                 }
             }
 
+            log.info("initData decoded keys: {}", params.keySet());
+            log.info("initData raw (first 200): {}", initData.substring(0, Math.min(200, initData.length())));
+
             String receivedHash = params.remove("hash");
             if (receivedHash == null) {
                 log.warn("initData tidak mengandung field hash");
