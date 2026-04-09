@@ -8,17 +8,25 @@ const Auth = (() => {
   function start() {
     const tg = window.Telegram?.WebApp;
 
+    console.log('[Auth] tg exists:', !!tg);
+    console.log('[Auth] tg.initData length:', tg?.initData?.length ?? 'N/A');
+    console.log('[Auth] tg.initData (first 100):', tg?.initData?.substring(0, 100));
+
     // Mode dev: jika tidak ada Telegram WebApp (misalnya buka di browser biasa)
     if (!tg || !tg.initData) {
+      console.warn('[Auth] Tidak ada initData, reject');
       return Promise.reject(new Error('Hanya bisa diakses melalui Telegram'));
     }
 
     const cachedToken = sessionStorage.getItem('miniapp_token');
+    console.log('[Auth] cachedToken exists:', !!cachedToken);
+
     if (cachedToken) {
       // Verifikasi token masih valid dengan ping sederhana
       return fetch('/api/mini/tagihan/search?q=__ping__&page=0', {
         headers: { 'X-Mini-Token': cachedToken }
       }).then(res => {
+        console.log('[Auth] ping status:', res.status);
         if (res.status === 401) {
           sessionStorage.removeItem('miniapp_token');
           return doAuth(tg.initData);
