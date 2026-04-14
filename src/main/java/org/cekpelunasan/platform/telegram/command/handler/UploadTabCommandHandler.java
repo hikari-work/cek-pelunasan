@@ -10,6 +10,7 @@ import org.cekpelunasan.core.event.DatabaseUpdateEvent;
 import org.cekpelunasan.core.event.EventType;
 import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.core.service.savings.SavingsService;
+import org.cekpelunasan.platform.telegram.service.UploadProgressService;
 import org.cekpelunasan.utils.CsvDownloadUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,7 @@ public class UploadTabCommandHandler extends AbstractCommandHandler {
 
 	private final ApplicationEventPublisher publisher;
 	private final SavingsService savingsService;
+	private final UploadProgressService progressService;
 
 	@Override
 	public String getCommand() {
@@ -47,9 +49,13 @@ public class UploadTabCommandHandler extends AbstractCommandHandler {
 		if (fileUrl == null) {
 			return Mono.fromRunnable(() -> sendMessage(chatId, ERROR_FORMAT, client));
 		}
-		sendMessage(chatId, "⏳ Sedang memproses file CSV...", client);
 		return Mono.fromCallable(() -> CsvDownloadUtils.downloadCsv(fileUrl))
-			.flatMap(filePath -> savingsService.parseCsvAndSaveIntoDatabase(filePath))
+			.flatMap(filePath -> {
+				long total = progressService.countLines(filePath);
+				long[] msgIdRef = {progressService.sendProgressMessage(chatId, "Data Tabungan", total, client)};
+				return savingsService.parseCsvAndSaveIntoDatabase(filePath, total,
+					done -> progressService.updateProgress(chatId, msgIdRef[0], "Data Tabungan", done, total, client));
+			})
 			.doOnSuccess(v -> {
 				publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.SAVING, true));
 				sendMessage(chatId, "✅ Data tabungan berhasil diperbarui", client);

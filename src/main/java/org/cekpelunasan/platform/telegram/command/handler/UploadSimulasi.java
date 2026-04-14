@@ -9,6 +9,7 @@ import org.cekpelunasan.core.entity.AccountOfficerRoles;
 import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.core.service.simulasi.SimulasiService;
 import org.cekpelunasan.core.service.users.UserService;
+import org.cekpelunasan.platform.telegram.service.UploadProgressService;
 import org.cekpelunasan.utils.CsvDownloadUtils;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -40,6 +41,7 @@ public class UploadSimulasi extends AbstractCommandHandler {
 
 	private final UserService userService;
 	private final SimulasiService simulasiService;
+	private final UploadProgressService progressService;
 
 	@Override
 	public String getCommand() {
@@ -92,7 +94,12 @@ public class UploadSimulasi extends AbstractCommandHandler {
 		return userService.findAllUsers()
 			.collectList()
 			.flatMap(users -> Mono.fromCallable(() -> CsvDownloadUtils.downloadCsv(fileUrl))
-				.flatMap(filePath -> simulasiService.parseCsv(filePath))
+				.flatMap(filePath -> {
+					long total = progressService.countLines(filePath);
+					long[] msgIdRef = {progressService.sendProgressMessage(chatId, "Data Simulasi", total, client)};
+					return simulasiService.parseCsv(filePath, total,
+						done -> progressService.updateProgress(chatId, msgIdRef[0], "Data Simulasi", done, total, client));
+				})
 				.doOnSuccess(v -> notifyUsers(users, String.format("✅ *Update berhasil: Data Simulasi diperbarui pada %s*", currentDateTime), client))
 				.onErrorResume(e -> {
 					log.error("Gagal memproses file dari URL: {}", fileUrl, e);

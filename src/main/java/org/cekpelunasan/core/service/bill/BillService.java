@@ -207,6 +207,26 @@ public class BillService {
 	 * @return {@link Mono} yang selesai ketika seluruh data berhasil disimpan
 	 */
 	public Mono<Void> parseCsvAndSaveIntoDatabase(Path path) {
+		return parseCsvAndSaveIntoDatabase(path, 0L, null);
+	}
+
+	/**
+	 * Versi dengan progress callback. {@code onProgress} dipanggil setiap kali
+	 * satu batch berhasil disimpan, dengan argumen = jumlah baris yang sudah diproses.
+	 * Callback hanya dipanggil maksimal ~20 kali (setiap 5% progres) untuk menghindari
+	 * spam edit pesan ke Telegram.
+	 *
+	 * @param path       lokasi file CSV yang ingin diimpor
+	 * @param total      total baris data (tanpa header), dipakai untuk throttle
+	 * @param onProgress callback yang menerima jumlah baris yang sudah diproses;
+	 *                   boleh {@code null} jika tidak diperlukan
+	 * @return {@link Mono} yang selesai ketika seluruh data berhasil disimpan
+	 */
+	public Mono<Void> parseCsvAndSaveIntoDatabase(Path path, long total, java.util.function.LongConsumer onProgress) {
+		long updateInterval = Math.max(500L, total / 20);
+		java.util.concurrent.atomic.AtomicLong processed = new java.util.concurrent.atomic.AtomicLong(0);
+		java.util.concurrent.atomic.AtomicLong lastStep = new java.util.concurrent.atomic.AtomicLong(-1);
+
 		return billsRepository.deleteAll()
 			.then(Flux.<String[]>create(sink -> {
 					try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
@@ -223,9 +243,19 @@ public class BillService {
 				.subscribeOn(Schedulers.boundedElastic())
 				.map(this::mapToBill)
 				.buffer(500)
-				.flatMap(batch -> billsRepository.saveAll(batch).then()
-					.retryWhen(Retry.backoff(3, Duration.ofSeconds(1))),
-					Runtime.getRuntime().availableProcessors())
+				.flatMap(batch -> {
+					int batchSize = batch.size();
+					return billsRepository.saveAll(batch).then()
+						.retryWhen(Retry.backoff(3, Duration.ofSeconds(1)))
+						.doOnSuccess(v -> {
+							if (onProgress == null) return;
+							long done = processed.addAndGet(batchSize);
+							long step = done / updateInterval;
+							if (step > lastStep.getAndSet(step) || done >= total) {
+								onProgress.accept(done);
+							}
+						});
+				}, Runtime.getRuntime().availableProcessors())
 				.then())
 			.doFinally(signal -> System.gc())
 			.then(dataUpdateLogService.saveUpdateTimestamp("TAGIHAN"));

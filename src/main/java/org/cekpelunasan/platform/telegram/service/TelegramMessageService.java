@@ -313,6 +313,64 @@ public class TelegramMessageService {
     }
 
     /**
+     * Mengirim pesan teks dan memverifikasi bahwa messageId yang dikembalikan
+     * benar-benar dapat diakses di server Telegram.
+     * <p>
+     * TDLib kadang mengembalikan ID sementara (local ID) dari {@link #sendText} yang
+     * belum tentu sama dengan ID final di server. Method ini mencoba shift dari
+     * {@code 0} hingga {@code +20} lalu {@code -1} hingga {@code -20} untuk menemukan
+     * ID yang valid — ID valid pertama yang ditemukan dikembalikan sehingga operasi
+     * {@link #editText} berikutnya selalu berhasil.
+     * </p>
+     *
+     * @param chatId ID chat tujuan
+     * @param text   isi pesan dengan dukungan Markdown
+     * @param client instance TDLight client yang aktif
+     * @return messageId yang terverifikasi, atau ID asal jika semua shift gagal
+     */
+    public long sendTextVerified(long chatId, String text, SimpleTelegramClient client) {
+        long messageId = sendText(chatId, text, client);
+        if (messageId <= 0L) return 0L;
+        // Coba shift 0..+20 dulu, lalu -1..-20
+        for (int shift = 0; shift <= 20; shift++) {
+            if (canGetMessage(chatId, messageId + shift, client)) {
+                if (shift > 0) {
+                    log.debug("Message ID terverifikasi dengan shift +{}: {} → {}", shift, messageId, messageId + shift);
+                }
+                return messageId + shift;
+            }
+            if (shift > 0 && canGetMessage(chatId, messageId - shift, client)) {
+                log.debug("Message ID terverifikasi dengan shift -{}: {} → {}", shift, messageId, messageId - shift);
+                return messageId - shift;
+            }
+        }
+        log.warn("Tidak bisa memverifikasi message ID {} di chat {} setelah 20 shift", messageId, chatId);
+        return messageId;
+    }
+
+    /**
+     * Memeriksa apakah sebuah pesan dapat diambil dari server Telegram.
+     * Digunakan untuk verifikasi messageId oleh {@link #sendTextVerified}.
+     *
+     * @param chatId    ID chat tempat pesan berada
+     * @param messageId ID pesan yang akan dicek
+     * @param client    instance TDLight client yang aktif
+     * @return {@code true} jika pesan berhasil diambil tanpa error, {@code false} sebaliknya
+     */
+    private boolean canGetMessage(long chatId, long messageId, SimpleTelegramClient client) {
+        try {
+            CompletableFuture<Boolean> future = new CompletableFuture<>();
+            TdApi.GetMessage req = new TdApi.GetMessage();
+            req.chatId = chatId;
+            req.messageId = messageId;
+            client.send(req, result -> future.complete(!result.isError()));
+            return Boolean.TRUE.equals(future.get(3, TimeUnit.SECONDS));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * Mengurai teks markdown menjadi {@link TdApi.FormattedText} yang dimengerti Telegram.
      * <p>
      * Telegram menggunakan format entity internal (bukan raw Markdown) untuk menampilkan
