@@ -139,7 +139,6 @@ public class GeneratePdfFiles {
 	private Mono<byte[]> renderPdfWithPlaywright(String html) {
 		return Mono.<byte[]>fromCallable(() -> {
 			Browser browser = browserPool.acquire();
-			boolean crashed = false;
 			try (Page page = browser.newPage()) {
 				page.setContent(html);
 				return page.pdf(new Page.PdfOptions()
@@ -151,10 +150,13 @@ public class GeneratePdfFiles {
 						.setLeft("15mm")
 						.setRight("15mm")));
 			} catch (TargetClosedError e) {
-				crashed = true;
+				logger.error("Browser crash saat render PDF (TargetClosedError)", e);
 				throw e;
 			} finally {
-				browserPool.release(crashed ? null : browser);
+				// Selalu kembalikan browser ke pool — release() akan cek isConnected():
+				// - masih tersambung → masuk antrian kembali
+				// - terputus/crash   → Playwright-nya ditutup dan diganti yang baru
+				browserPool.release(browser);
 			}
 		}).subscribeOn(Schedulers.boundedElastic());
 	}

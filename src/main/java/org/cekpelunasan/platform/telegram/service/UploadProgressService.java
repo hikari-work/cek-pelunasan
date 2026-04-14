@@ -32,7 +32,7 @@ import java.nio.file.Path;
 @RequiredArgsConstructor
 public class UploadProgressService {
 
-    private static final int BAR_WIDTH = 10;
+    private static final int BAR_WIDTH = 12;
 
     private final TelegramMessageService telegramMessageService;
 
@@ -97,12 +97,12 @@ public class UploadProgressService {
     /**
      * Membangun teks progress bar.
      * <p>
-     * Contoh output (50%):
+     * Contoh output (25%):
      * <pre>
-     * ⬆️ Mengimpor Data Tabungan...
-     *
-     * 75.000 |||||..... 150.000
-     * 50%
+     * Updating
+     * [■■■□□□□□□□□□] 25%
+     * Processed: 4321
+     * Size: 17293
      * </pre>
      * </p>
      */
@@ -110,10 +110,10 @@ public class UploadProgressService {
         int percent = (total > 0) ? (int) Math.min(100, processed * 100 / total) : 0;
         int filled = percent * BAR_WIDTH / 100;
         int empty = BAR_WIDTH - filled;
-        String bar = "|".repeat(filled) + ".".repeat(empty);
+        String bar = "[" + "■".repeat(filled) + "□".repeat(empty) + "]";
         return String.format(
-            "⬆️ Mengimpor %s...\n\n%,d %s %,d\n%d%%",
-            label, processed, bar, total, percent
+            "Updating\n%s %d%%\nProcessed: %d\nSize: %d",
+            bar, percent, processed, total
         );
     }
 }
