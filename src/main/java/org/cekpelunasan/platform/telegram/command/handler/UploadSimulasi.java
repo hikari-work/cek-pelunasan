@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -86,8 +87,7 @@ public class UploadSimulasi extends AbstractCommandHandler {
 		if (fileUrl == null) {
 			return Mono.fromRunnable(() -> sendMessage(chatId, "Url Nya Diisi Bang", client));
 		}
-		String currentDateTime = LocalDateTime.now()
-			.plusHours(7)
+		String currentDateTime = LocalDateTime.now(ZoneOffset.ofHours(7))
 			.format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm:ss"));
 		return userService.findAllUsers()
 			.collectList()

@@ -4,6 +4,7 @@ import com.opencsv.CSVReader;
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.core.entity.Bills;
 import org.cekpelunasan.core.entity.Savings;
+import org.cekpelunasan.core.service.log.DataUpdateLogService;
 import org.cekpelunasan.core.repository.SavingsRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ public class SavingsService {
 	private static final Logger log = LoggerFactory.getLogger(SavingsService.class);
 	private final SavingsRepository savingsRepository;
 	private final ReactiveMongoTemplate mongoTemplate;
+	private final DataUpdateLogService dataUpdateLogService;
 
 	/**
 	 * Menyimpan daftar rekening tabungan ke database secara batch. Berguna
@@ -131,7 +133,8 @@ public class SavingsService {
 			.doFinally(signal -> System.gc())
 			.then(savingsRepository.count()
 				.doOnNext(total -> log.info("Total savings tersimpan di DB: {}", total))
-				.then());
+				.then())
+			.then(dataUpdateLogService.saveUpdateTimestamp("SAVING"));
 	}
 
 	/**

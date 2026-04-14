@@ -5,6 +5,7 @@ import it.tdlight.jni.TdApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.core.entity.Savings;
+import org.cekpelunasan.core.service.log.DataUpdateLogService;
 import org.cekpelunasan.platform.telegram.callback.AbstractCallbackHandler;
 import org.cekpelunasan.platform.telegram.callback.pagination.PaginationSavingsButton;
 import org.cekpelunasan.core.service.savings.SavingsService;
@@ -34,6 +35,7 @@ public class SavingNextButtonCallbackHandler extends AbstractCallbackHandler {
     private final SavingsService savingsService;
     private final PaginationSavingsButton paginationSavingsButton;
     private final SavingsUtils savingsUtils;
+    private final DataUpdateLogService dataUpdateLogService;
 
     /**
      * Mengembalikan prefix {@code "tab"} sebagai pengenal handler ini.
@@ -93,6 +95,7 @@ public class SavingNextButtonCallbackHandler extends AbstractCallbackHandler {
 
         savings.forEach(saving -> message.append(savingsUtils.getSavings(saving)));
         message.append("⏱️ _Eksekusi dalam ").append(System.currentTimeMillis() - startTime).append("ms_");
+        message.append(dataUpdateLogService.telegramWarning("SAVING"));
         return message.toString();
     }
 

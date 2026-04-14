@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -106,7 +107,7 @@ public class JatuhBayarService {
 	 * @return peta tagihan hari ini yang sudah dikelompokkan per nama AO
 	 */
 	public Map<String, List<Bills>> getBills() {
-		LocalDate today = LocalDate.now();
+		LocalDate today = LocalDate.now(ZoneOffset.ofHours(7));
 		String dayOfMonth = String.valueOf(today.getDayOfMonth());
 
 		return billService.findAllBillsByBranch(BRANCH_CODE)
@@ -134,7 +135,7 @@ public class JatuhBayarService {
 			return "";
 		}
 
-		LocalDate today = LocalDate.now();
+		LocalDate today = LocalDate.now(ZoneOffset.ofHours(7));
 		StringBuilder builder = new StringBuilder();
 		builder.append("🔔 *REMINDER JATUH BAYAR*\n");
 		builder.append("📅 Tanggal: ").append(today).append("\n");

@@ -17,6 +17,8 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 
+import org.cekpelunasan.core.service.log.DataUpdateLogService;
+
 import java.time.Duration;
 
 import java.io.FileReader;
@@ -42,6 +44,7 @@ public class BillService {
 	private static final Logger log = LoggerFactory.getLogger(BillService.class);
 	private final BillsRepository billsRepository;
 	private final ReactiveMongoTemplate mongoTemplate;
+	private final DataUpdateLogService dataUpdateLogService;
 
 	/**
 	 * Mengambil daftar semua kode cabang yang ada di database, tanpa duplikat.
@@ -224,7 +227,8 @@ public class BillService {
 					.retryWhen(Retry.backoff(3, Duration.ofSeconds(1))),
 					Runtime.getRuntime().availableProcessors())
 				.then())
-			.doFinally(signal -> System.gc());
+			.doFinally(signal -> System.gc())
+			.then(dataUpdateLogService.saveUpdateTimestamp("TAGIHAN"));
 	}
 
 	/**

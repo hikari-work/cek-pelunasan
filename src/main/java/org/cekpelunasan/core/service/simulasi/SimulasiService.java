@@ -19,6 +19,7 @@ import java.io.FileReader;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -242,7 +243,7 @@ public class SimulasiService {
      * @return jumlah hari yang tersisa hingga akhir bulan ini
      */
     private long getDaysToEndOfMonth() {
-        return ChronoUnit.DAYS.between(LocalDate.now(), YearMonth.now().atEndOfMonth());
+        return ChronoUnit.DAYS.between(LocalDate.now(ZoneOffset.ofHours(7)), YearMonth.now(ZoneOffset.ofHours(7)).atEndOfMonth());
     }
 
     /**

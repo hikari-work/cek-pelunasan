@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 /**
  * Handler untuk callback paginasi tagihan berdasarkan nama atau kode AO/cabang.
@@ -128,7 +129,7 @@ public class BillsByNameCalculatorCallbackHandler extends AbstractCallbackHandle
      */
     private Mono<Page<Bills>> fetchBillsPageMono(CallbackData callbackData) {
         String query = callbackData.query();
-        LocalDateTime today = LocalDateTime.now();
+        LocalDateTime today = LocalDateTime.now(ZoneOffset.ofHours(7));
         String convertedDate = dateUtils.converterDate(today);
 
         if (query.length() == QUERY_MIN_LENGTH) {

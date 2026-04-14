@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.whatsapp.dto.webhook.WhatsAppWebhookDTO;
 import org.cekpelunasan.core.entity.Bills;
 import org.cekpelunasan.core.service.bill.BillService;
+import org.cekpelunasan.core.service.log.DataUpdateLogService;
 import org.cekpelunasan.platform.whatsapp.service.sender.WhatsAppSenderService;
 import org.cekpelunasan.platform.whatsapp.service.dto.PelunasanDto;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +40,7 @@ public class HandlerPelunasan {
 	private final BillService billService;
 	private final PelunasanService pelunasanService;
 	private final WhatsAppSenderService whatsAppSenderService;
+	private final DataUpdateLogService dataUpdateLogService;
 
 	@Value("${admin.whatsapp}")
 	private String adminWhatsApp;
@@ -167,7 +169,7 @@ public class HandlerPelunasan {
 	}
 	private String generatePelunasanMessage(PelunasanDto pelunasanDto) {
 		try {
-			return pelunasanDto.toWhatsAppMessageClean();
+			return pelunasanDto.toWhatsAppMessageClean() + dataUpdateLogService.whatsAppWarning("TAGIHAN");
 		} catch (Exception e) {
 			log.error("Error generating pelunasan message: {}", e.getMessage(), e);
 			return "Error generating message. Please contact admin.";
