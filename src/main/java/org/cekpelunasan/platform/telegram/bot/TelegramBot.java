@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.telegram.callback.CallbackHandler;
 import org.cekpelunasan.platform.telegram.command.CommandHandler;
+import org.cekpelunasan.platform.telegram.service.MessageIdResolver;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -34,6 +35,7 @@ public class TelegramBot implements ApplicationListener<ApplicationReadyEvent> {
     private final TDLibSettings settings;
     private final CommandHandler commandHandler;
     private final CallbackHandler callbackHandler;
+    private final MessageIdResolver messageIdResolver;
 
     @Value("${telegram.bot.token}")
     private String botToken;
@@ -58,6 +60,8 @@ public class TelegramBot implements ApplicationListener<ApplicationReadyEvent> {
             builder.addUpdateHandler(TdApi.UpdateNewCallbackQuery.class, this::onCallbackQuery);
             builder.addUpdateHandler(TdApi.UpdateAuthorizationState.class, update ->
                 log.info("TDLight auth state: {}", update.authorizationState.getClass().getSimpleName()));
+            builder.addUpdateHandler(TdApi.UpdateMessageSendSucceeded.class, update ->
+                messageIdResolver.resolve(update.oldMessageId, update.message.id));
             client = builder.build(AuthenticationSupplier.bot(botToken));
             log.info("TDLight client started.");
         } catch (Exception e) {
