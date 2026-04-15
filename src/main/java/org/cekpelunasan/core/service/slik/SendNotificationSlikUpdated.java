@@ -12,22 +12,18 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
-import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
  * Memantau bucket S3/R2 secara berkala dan mengirimkan notifikasi Telegram
  * ke pengguna yang relevan setiap kali ada file SLIK PDF baru yang diunggah.
  *
- * <p>Cara kerjanya: setiap menit, class ini menghitung jumlah file di bucket.
- * Jika jumlahnya berubah dari pengecekan sebelumnya, artinya ada file baru,
- * dan notifikasi langsung dikirim ke pengguna yang kode penggunanya cocok
- * dengan prefix nama file tersebut.</p>
+ * <p>State notifikasi disimpan secara persisten sebagai tag S3 ({@code notified=true})
+ * pada masing-masing objek di bucket. Dengan cara ini, meski aplikasi di-restart,
+ * file yang sudah pernah dinotifikasi tidak akan dikirimkan ulang.</p>
  *
  * <p>File yang namanya dimulai dengan "KTP_" dikecualikan dari pengecekan
  * karena bukan merupakan laporan SLIK, melainkan foto KTP pendukung.</p>
@@ -38,7 +34,6 @@ public class SendNotificationSlikUpdated {
 
 	@Value("${r2.bucket}")
 	private String bucket;
-	private volatile int lastCount = 1;
 
 	private final S3AsyncClient s3AsyncClient;
 	private final S3ClientConfiguration s3ClientConfiguration;
@@ -60,53 +55,14 @@ public class SendNotificationSlikUpdated {
 	}
 
 	/**
-	 * Tugas terjadwal yang berjalan setiap 60 detik. Menghitung total file
-	 * di bucket S3/R2 (termasuk halaman yang dipaginasi), lalu membandingkannya
-	 * dengan jumlah terakhir yang dicatat. Jika jumlahnya sama, tidak ada yang
-	 * dilakukan. Jika berubah, notifikasi dikirim ke pengguna terkait.
+	 * Tugas terjadwal yang berjalan setiap 60 detik. Mengambil semua file PDF
+	 * di bucket (kecuali KTP_), lalu menyaring hanya yang belum memiliki tag
+	 * {@code notified=true}. Jika ada file baru, notifikasi dikirim ke pengguna
+	 * yang kode penggunanya cocok dengan prefix nama file, kemudian file tersebut
+	 * di-tag agar tidak dikirimkan ulang pada pengecekan berikutnya.
 	 */
 	@Scheduled(fixedDelay = 60 * 1000L)
 	public void runTest() {
-		int currentFiles = 0;
-		String continuationToken = null;
-		do {
-			ListObjectsV2Request.Builder requestBuilder = ListObjectsV2Request.builder()
-				.bucket(bucket);
-			if (continuationToken != null) {
-				requestBuilder.continuationToken(continuationToken);
-			}
-			try {
-				ListObjectsV2Response response = CompletableFuture
-					.supplyAsync(() -> s3AsyncClient.listObjectsV2(requestBuilder.build()))
-					.get()
-					.get();
-				currentFiles += response.contents().size();
-				continuationToken = response.isTruncated() ? response.nextContinuationToken() : null;
-			} catch (Exception e) {
-				log.error("Error listing S3 objects: {}", e.getMessage());
-				return;
-			}
-		} while (continuationToken != null);
-
-		if (currentFiles == lastCount) {
-			log.info("PDF Count {}, Skipped", lastCount);
-			return;
-		}
-		lastCount = currentFiles;
-		log.info("PDF Count changed to {}, sending notifications", currentFiles);
-		sendNotificationsForNewPdfs();
-	}
-
-	/**
-	 * Mengambil daftar semua file PDF (bukan KTP) dari bucket, lalu
-	 * mengelompokkannya berdasarkan prefix nama file (bagian sebelum underscore
-	 * pertama). Untuk setiap prefix, dicari pengguna yang kode penggunanya
-	 * cocok, lalu pesan notifikasi dikirim ke chat ID mereka.
-	 *
-	 * <p>Jika TDLight client belum siap (misalnya saat startup), proses ini
-	 * dilewati dan dicatat ke log.</p>
-	 */
-	private void sendNotificationsForNewPdfs() {
 		SimpleTelegramClient client = telegramBot.getClient();
 		if (client == null) {
 			log.warn("TDLight client not ready, skipping SLIK notification");
@@ -115,30 +71,58 @@ public class SendNotificationSlikUpdated {
 
 		s3ClientConfiguration.listObjectFoundByName("")
 			.filter(key -> key.endsWith(".pdf") && !key.startsWith("KTP_"))
+			.filterWhen(key -> s3ClientConfiguration.isAlreadyNotified(key).map(notified -> !notified))
 			.collectList()
-			.doOnNext(pdfList -> {
-				if (pdfList.isEmpty()) {
-					log.info("No PDF files found");
+			.doOnNext(newFiles -> {
+				if (newFiles.isEmpty()) {
+					log.info("Tidak ada file SLIK baru, semua sudah dinotifikasi");
 					return;
 				}
-				Map<String, List<String>> byPrefix = pdfList.stream()
-					.collect(Collectors.groupingBy(key -> {
-						int idx = key.indexOf('_');
-						return idx > 0 ? key.substring(0, idx) : key;
-					}));
-
-				byPrefix.forEach((prefix, files) ->
-					userService.findAllUsers()
-						.filter(user -> prefix.equalsIgnoreCase(user.getUserCode()))
-						.doOnNext(user -> {
-							String message = buildNotificationMessage(prefix, files);
-							telegramMessageService.sendText(user.getChatId(), message, client);
-							log.info("Sent SLIK notification to user {} (code={})", user.getChatId(), prefix);
-						})
-						.subscribe()
-				);
+				log.info("Ditemukan {} file SLIK baru, mengirim notifikasi...", newFiles.size());
+				sendNotifications(newFiles, client);
+				tagAsNotified(newFiles);
 			})
 			.subscribe();
+	}
+
+	/**
+	 * Mengelompokkan file berdasarkan prefix (kode AO) lalu mengirimkan notifikasi
+	 * ke pengguna yang kode penggunanya cocok.
+	 *
+	 * @param newFiles daftar key file PDF yang belum pernah dinotifikasi
+	 * @param client   TDLight client yang aktif
+	 */
+	private void sendNotifications(List<String> newFiles, SimpleTelegramClient client) {
+		Map<String, List<String>> byPrefix = newFiles.stream()
+			.collect(Collectors.groupingBy(key -> {
+				int idx = key.indexOf('_');
+				return idx > 0 ? key.substring(0, idx) : key;
+			}));
+
+		byPrefix.forEach((prefix, files) ->
+			userService.findAllUsers()
+				.filter(user -> prefix.equalsIgnoreCase(user.getUserCode()))
+				.doOnNext(user -> {
+					String message = buildNotificationMessage(prefix, files);
+					telegramMessageService.sendText(user.getChatId(), message, client);
+					log.info("Notifikasi SLIK terkirim ke user {} (kode={})", user.getChatId(), prefix);
+				})
+				.subscribe()
+		);
+	}
+
+	/**
+	 * Menandai setiap file dalam daftar dengan tag {@code notified=true} di S3/R2
+	 * agar tidak diproses ulang pada siklus berikutnya maupun setelah restart.
+	 *
+	 * @param keys daftar key file yang baru saja dinotifikasi
+	 */
+	private void tagAsNotified(List<String> keys) {
+		keys.forEach(key ->
+			s3ClientConfiguration.tagObjectAsNotified(key)
+				.doOnSuccess(v -> log.debug("Tagged as notified: {}", key))
+				.subscribe()
+		);
 	}
 
 	/**
