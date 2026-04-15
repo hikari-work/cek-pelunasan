@@ -55,11 +55,11 @@ public class BillsCalculatorCallbackHandler extends AbstractCallbackHandler {
         String[] parts = callbackData.split("_", 5);
         log.info("Bill ID: {}", parts[1]);
         return billService.getBillById(parts[1])
-            .switchIfEmpty(Mono.fromRunnable(() -> {
+            .switchIfEmpty(runBlocking(() -> {
                 log.info("Bill ID Not Found");
                 sendMessage(update.chatId, "❌ *Data tidak ditemukan*", client);
             }))
-            .flatMap(bills -> Mono.fromRunnable(() -> {
+            .flatMap(bills -> runBlocking(() -> {
                 log.info("Sending Bills Message");
                 editMessageWithMarkup(update.chatId, update.messageId, tagihanUtils.detailBills(bills), client,
                     new BackKeyboardButtonForBillsUtils().backButton(callbackData));

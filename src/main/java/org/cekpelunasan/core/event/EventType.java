@@ -27,7 +27,13 @@ public enum EventType {
 	 * Pembaruan data tagihan kredit nasabah dari koleksi {@code tagihan}.
 	 * Teks yang ditampilkan di notifikasi: "Tagihan".
 	 */
-	TAGIHAN("Tagihan");
+	TAGIHAN("Tagihan"),
+
+	/**
+	 * Pembaruan data detail pembayaran angsuran dari koleksi {@code payment_details}.
+	 * Teks yang ditampilkan di notifikasi: "Payment Details".
+	 */
+	PAYMENT_DETAILS("Payment Details");
 
 	/**
 	 * Label yang mudah dibaca manusia untuk jenis event ini.

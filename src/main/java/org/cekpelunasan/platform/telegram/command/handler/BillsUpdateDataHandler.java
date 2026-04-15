@@ -10,6 +10,7 @@ import org.cekpelunasan.core.event.DatabaseUpdateEvent;
 import org.cekpelunasan.core.event.EventType;
 import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.core.service.bill.BillService;
+import org.cekpelunasan.platform.telegram.service.UploadProgressService;
 import org.cekpelunasan.utils.CsvDownloadUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -39,6 +40,7 @@ public class BillsUpdateDataHandler extends AbstractCommandHandler {
 
     private final BillService billService;
     private final ApplicationEventPublisher publisher;
+    private final UploadProgressService progressService;
 
     /**
      * Memeriksa bahwa pengirim adalah admin sebelum melanjutkan proses upload.
@@ -87,14 +89,21 @@ public class BillsUpdateDataHandler extends AbstractCommandHandler {
             log.warn("Invalid format from chat {}", chatId);
             return Mono.empty();
         }
-        sendMessage(chatId, PROCESSING_MESSAGE, client);
         log.info("Command: /uploadtagihan Executed with file: {}", CsvDownloadUtils.extractFileName(fileUrl));
         return Mono.fromCallable(() -> CsvDownloadUtils.downloadCsv(fileUrl))
-            .flatMap(filePath -> billService.parseCsvAndSaveIntoDatabase(filePath))
-            .doOnSuccess(v -> publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.TAGIHAN, true)))
+            .flatMap(filePath -> {
+                long total = progressService.countLines(filePath);
+                long[] msgIdRef = {progressService.sendProgressMessage(chatId, "Data Tagihan", total, client)};
+                return billService.parseCsvAndSaveIntoDatabase(filePath, total,
+                    done -> progressService.updateProgress(chatId, msgIdRef[0], "Data Tagihan", done, total, client));
+            })
+            .doOnSuccess(v -> {
+                publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.TAGIHAN, true));
+                sendMessage(chatId, "✅ Data tagihan berhasil diperbarui", client);
+            })
             .onErrorResume(e -> {
                 log.error("Error processing CSV file: {}", fileUrl, e);
-                sendMessage(chatId, ERROR_DOWNLOAD, client);
+                sendMessage(chatId, ERROR_DOWNLOAD + ": " + e.getMessage(), client);
                 publisher.publishEvent(new DatabaseUpdateEvent(this, EventType.TAGIHAN, false));
                 return Mono.empty();
             });

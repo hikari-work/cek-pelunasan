@@ -12,6 +12,7 @@ import lombok.NonNull;
 import reactor.core.publisher.Mono;
 
 import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +43,7 @@ public class HotKolekService {
 	 * @return string bulan saat ini, contoh: "2025-06"
 	 */
 	private String getMonth() {
-		YearMonth month = YearMonth.now();
+		YearMonth month = YearMonth.now(ZoneOffset.ofHours(7));
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
 		return formatter.format(month);
 	}
@@ -54,7 +55,7 @@ public class HotKolekService {
 	 * @return string bulan lalu, contoh: "2025-05"
 	 */
 	private String getLastMonth() {
-		YearMonth month = YearMonth.now().minusMonths(1);
+		YearMonth month = YearMonth.now(ZoneOffset.ofHours(7)).minusMonths(1);
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
 		return formatter.format(month);
 	}

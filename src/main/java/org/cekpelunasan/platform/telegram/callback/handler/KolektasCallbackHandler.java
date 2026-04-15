@@ -62,15 +62,15 @@ public class KolektasCallbackHandler extends AbstractCallbackHandler {
 
         if (data.isEmpty()) {
             log.info("Kolektas Parsing Text Is Not Successfull....");
-            return Mono.fromRunnable(() -> sendMessage(chatId, "Data Tidak Boleh Kosong", client));
+            return runBlocking(() -> sendMessage(chatId, "Data Tidak Boleh Kosong", client));
         }
         if (isValidKelompok(data)) {
             log.info("Group Is Not Valid");
-            return Mono.fromRunnable(() -> sendMessage(chatId, "Data Tidak Valid", client));
+            return runBlocking(() -> sendMessage(chatId, "Data Tidak Valid", client));
         }
 
         return kolekTasService.findKolekByKelompok(data, page + 1, 5)
-            .flatMap(kolek -> Mono.fromRunnable(() -> {
+            .flatMap(kolek -> runBlocking(() -> {
                 StringBuilder stringBuilder = new StringBuilder();
                 log.info("Sending Kolek Tas For Group {}", data);
                 kolek.forEach(k -> stringBuilder.append(kolekTasUtils.buildKolekTas(k)));

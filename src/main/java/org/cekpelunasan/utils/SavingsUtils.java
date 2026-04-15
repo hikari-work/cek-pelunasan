@@ -2,6 +2,7 @@ package org.cekpelunasan.utils;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.core.entity.Savings;
+import org.cekpelunasan.core.service.log.DataUpdateLogService;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
 public class SavingsUtils {
 
 	private final RupiahFormatUtils rupiahFormatUtils;
+	private final DataUpdateLogService dataUpdateLogService;
 
 	/**
 	 * Memformat detail tabungan satu nasabah menjadi teks yang siap dikirim.
@@ -64,6 +66,7 @@ public class SavingsUtils {
 			.append("Halaman ").append(page + 1).append(" dari ").append(savings.getTotalPages()).append("\n\n");
 		savings.forEach(saving -> message.append(getSavings(saving)));
 		message.append("⏱️ Waktu: ").append(System.currentTimeMillis() - startTime).append("ms");
+		message.append(dataUpdateLogService.telegramWarning("SAVING"));
 		return message.toString();
 	}
 }

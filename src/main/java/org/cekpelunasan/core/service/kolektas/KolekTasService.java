@@ -89,6 +89,23 @@ public class KolekTasService {
 	 * @return {@link Mono} yang selesai ketika seluruh data berhasil diimpor
 	 */
 	public Mono<Void> parseCsvAndSave(Path path) {
+		return parseCsvAndSave(path, 0L, null);
+	}
+
+	/**
+	 * Versi dengan progress callback. Callback dipanggil setiap ~5% progres
+	 * (maks 20 kali) dengan argumen = jumlah baris yang sudah diproses.
+	 *
+	 * @param path       lokasi file CSV yang berisi data koleksi tas
+	 * @param total      total baris data (tanpa header)
+	 * @param onProgress callback jumlah baris terproses; boleh {@code null}
+	 * @return {@link Mono} yang selesai ketika seluruh data berhasil diimpor
+	 */
+	public Mono<Void> parseCsvAndSave(Path path, long total, java.util.function.LongConsumer onProgress) {
+		long updateInterval = Math.max(500L, total / 20);
+		java.util.concurrent.atomic.AtomicLong processed = new java.util.concurrent.atomic.AtomicLong(0);
+		java.util.concurrent.atomic.AtomicLong lastStep = new java.util.concurrent.atomic.AtomicLong(-1);
+
 		return kolekTasRepository.deleteAll()
 			.then(Flux.<String[]>create(sink -> {
 					try (CSVReader reader = new CSVReader(new FileReader(path.toFile()))) {
@@ -106,9 +123,19 @@ public class KolekTasService {
 				.subscribeOn(Schedulers.boundedElastic())
 				.map(this::mapToKolekTas)
 				.buffer(500)
-				.flatMap(batch -> saveAll(batch)
-					.retryWhen(Retry.backoff(3, Duration.ofSeconds(1))),
-					Runtime.getRuntime().availableProcessors())
+				.flatMap(batch -> {
+					int batchSize = batch.size();
+					return saveAll(batch)
+						.retryWhen(Retry.backoff(3, Duration.ofSeconds(1)))
+						.doOnSuccess(v -> {
+							if (onProgress == null) return;
+							long done = processed.addAndGet(batchSize);
+							long step = done / updateInterval;
+							if (step > lastStep.getAndSet(step) || done >= total) {
+								onProgress.accept(done);
+							}
+						});
+				}, Runtime.getRuntime().availableProcessors())
 				.then())
 			.doFinally(signal -> System.gc());
 	}

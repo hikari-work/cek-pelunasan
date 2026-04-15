@@ -7,6 +7,9 @@ const App = (() => {
   let currentService = null;
   let screenHistory = [];
 
+  const THEME_KEY = 'miniapp_theme';
+  const ICONS = { light: '☀', dark: '☾' };
+
   const screens = {
     loading: document.getElementById('screen-loading'),
     home:    document.getElementById('screen-home'),
@@ -16,7 +19,28 @@ const App = (() => {
 
   const tg = window.Telegram?.WebApp;
 
+  function initTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = saved || (prefersDark ? 'dark' : 'light');
+    applyTheme(theme);
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.textContent = theme === 'dark' ? ICONS.light : ICONS.dark;
+    localStorage.setItem(THEME_KEY, theme);
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    applyTheme(current === 'dark' ? 'light' : 'dark');
+  }
+
   function init() {
+    initTheme();
+
     if (tg) {
       tg.ready();
       tg.expand();
@@ -146,7 +170,7 @@ const App = (() => {
     return currentService;
   }
 
-  return { init, showScreen, openService, openDetail, showError, goBack, getToken, getCurrentService };
+  return { init, showScreen, openService, openDetail, showError, goBack, getToken, getCurrentService, toggleTheme };
 })();
 
 // Start

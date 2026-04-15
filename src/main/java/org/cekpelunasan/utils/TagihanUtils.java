@@ -3,11 +3,13 @@ package org.cekpelunasan.utils;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.core.entity.Bills;
+import org.cekpelunasan.core.service.log.DataUpdateLogService;
 import org.cekpelunasan.core.service.simulasi.SimulasiService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
@@ -29,6 +31,7 @@ public class TagihanUtils {
 
 	private final RupiahFormatUtils rupiahFormatUtils;
 	private final SimulasiService simulasiService;
+	private final DataUpdateLogService dataUpdateLogService;
 
 	/**
 	 * Memformat detail lengkap tagihan kredit satu nasabah.
@@ -105,7 +108,7 @@ public class TagihanUtils {
 			rupiahFormatUtils.formatRupiah(bill.getMinPrincipal()),
 			rupiahFormatUtils.formatRupiah(bill.getMinInterest()),
 			bill.getAccountOfficer()
-		);
+		) + dataUpdateLogService.telegramWarning("TAGIHAN");
 	}
 
 
@@ -143,14 +146,14 @@ public class TagihanUtils {
 			bills.getPayDown(),
 			String.format("Rp%,d,-", bills.getFullPayment()),
 			bills.getAccountOfficer(),
-			LocalDateTime.now().plusHours(7).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
-		);
+			LocalDateTime.now(ZoneOffset.ofHours(7)).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))
+		) + dataUpdateLogService.telegramWarning("TAGIHAN");
 	}
 	private Long calculateTotalPayment(Bills bills) {
 		String realization = bills.getRealization(); // "31-12-2025"
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 		LocalDate realizationDate = LocalDate.parse(realization, formatter);
-		LocalDate today = LocalDate.now();
+		LocalDate today = LocalDate.now(ZoneOffset.ofHours(7));
 		if (realizationDate.isEqual(today)) {
 			return bills.getFullPayment();
 		} else if (realizationDate.isBefore(today)) {

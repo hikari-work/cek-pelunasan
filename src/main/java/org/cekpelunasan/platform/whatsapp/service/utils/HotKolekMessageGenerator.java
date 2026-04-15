@@ -6,6 +6,7 @@ import org.cekpelunasan.core.entity.Bills;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.format.TextStyle;
 import java.util.List;
 import java.util.Locale;
@@ -35,7 +36,7 @@ public class HotKolekMessageGenerator {
 	 */
 	public String generateMessage(List<LocationBills> locationBills) {
 
-		String bulanTahun = getMonthAndYear(LocalDate.now());
+		String bulanTahun = getMonthAndYear(LocalDate.now(ZoneOffset.ofHours(7)));
 		StringBuilder builder = new StringBuilder(String.format("""
 				*HOT COLLECTION BULAN %s*
 				*TAGIHAN YG PENGARUH NPL*

@@ -5,6 +5,8 @@ import it.tdlight.jni.TdApi;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.telegram.service.TelegramMessageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * Kelas induk untuk semua handler callback Telegram.
@@ -29,6 +31,23 @@ public abstract class AbstractCallbackHandler implements CallbackProcessor {
      */
     protected void sendMessage(long chatId, String text, SimpleTelegramClient client) {
         telegramMessageService.sendText(chatId, text, client);
+    }
+
+    /**
+     * Membungkus operasi blocking TDLight dalam {@code Mono<Void>} yang berjalan di thread
+     * {@link Schedulers#boundedElastic()} — bukan di Netty event loop.
+     *
+     * <p>Setiap pemanggilan {@code sendMessage} atau {@code editMessageWithMarkup} di dalam
+     * handler menggunakan {@code parseMarkdown()} yang memblokir thread sampai 5 detik.
+     * Menjalankan operasi ini di Netty event loop menyebabkan I/O stall dan pesan tidak terkirim.
+     * Gunakan method ini sebagai pengganti {@code Mono.fromRunnable()} di semua handler.</p>
+     *
+     * @param action operasi blocking yang akan dijalankan di bounded elastic thread pool
+     * @return {@link Mono} yang selesai setelah action selesai dieksekusi
+     */
+    protected Mono<Void> runBlocking(Runnable action) {
+        return Mono.<Void>fromRunnable(action)
+            .subscribeOn(Schedulers.boundedElastic());
     }
 
     /**

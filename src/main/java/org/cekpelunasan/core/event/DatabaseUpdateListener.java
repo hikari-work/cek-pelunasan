@@ -99,7 +99,7 @@ public class DatabaseUpdateListener {
      * @return teks pesan yang siap dikirim ke Telegram
      */
     private String buildEventMessage(DatabaseUpdateEvent event) {
-        String timestamp = java.time.LocalDateTime.now()
+        String timestamp = java.time.LocalDateTime.now(java.time.ZoneOffset.ofHours(7))
             .format(java.time.format.DateTimeFormatter.ofPattern("dd MMMM yyyy HH:mm:ss",
                 Locale.forLanguageTag("id-ID")));
         String emoji = event.isSuccess() ? "✅" : "❌";

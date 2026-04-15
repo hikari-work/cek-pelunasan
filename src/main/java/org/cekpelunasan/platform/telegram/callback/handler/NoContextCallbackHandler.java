@@ -44,7 +44,7 @@ public class NoContextCallbackHandler extends AbstractCallbackHandler {
      */
     @Override
     public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
-        return Mono.fromRunnable(() -> {
+        return runBlocking(() -> {
             log.info("Someone Makes Mistakes...");
             TdApi.AnswerCallbackQuery answer = new TdApi.AnswerCallbackQuery();
             answer.callbackQueryId = update.id;

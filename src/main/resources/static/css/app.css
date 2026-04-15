@@ -778,9 +778,10 @@ html, body {
 
 /* =====================================================
    DARK MODE OVERRIDES
+   System preference (kecuali di-override manual ke light)
    ===================================================== */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg:       #161616;
     --surface:  #222222;
     --ink:      #F5F0E8;
@@ -789,6 +790,56 @@ html, body {
     --shadow-col: #F5F0E8;
     --primary:  #CCAA00;
   }
+}
+
+/* Manual override: dark */
+[data-theme="dark"] {
+  --bg:       #161616;
+  --surface:  #222222;
+  --ink:      #F5F0E8;
+  --ink-soft: #999999;
+  --border-col: #F5F0E8;
+  --shadow-col: #F5F0E8;
+  --primary:  #CCAA00;
+}
+
+/* Manual override: light */
+[data-theme="light"] {
+  --bg:         #F5F0E8;
+  --surface:    #FFFFFF;
+  --ink:        #111111;
+  --ink-soft:   #555555;
+  --border-col: #111111;
+  --shadow-col: #111111;
+  --primary:    #FFCC00;
+}
+
+/* =====================================================
+   THEME TOGGLE BUTTON
+   ===================================================== */
+.theme-toggle {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  background: var(--surface);
+  border: var(--bd);
+  box-shadow: var(--sh-xs);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  z-index: 10;
+  transition: box-shadow 0.08s, transform 0.08s;
+  user-select: none;
+}
+.theme-toggle:active {
+  box-shadow: none;
+  transform: translate(2px, 2px);
 }
 
 /* =====================================================

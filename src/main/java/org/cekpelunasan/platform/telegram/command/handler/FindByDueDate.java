@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 /**
  * Handler untuk perintah {@code /jb} — menampilkan daftar tagihan yang jatuh tempo hari ini.
@@ -76,7 +77,7 @@ public class FindByDueDate extends AbstractCommandHandler {
 	 */
 	@Override
 	public Mono<Void> process(long chatId, String text, SimpleTelegramClient client) {
-		String today = dateUtils.converterDate(LocalDateTime.now());
+		String today = dateUtils.converterDate(LocalDateTime.now(ZoneOffset.ofHours(7)));
 		return userService.findUserByChatId(chatId)
 			.switchIfEmpty(Mono.fromRunnable(() -> sendMessage(chatId, "❌ *User tidak ditemukan*", client)))
 			.flatMap(user -> {

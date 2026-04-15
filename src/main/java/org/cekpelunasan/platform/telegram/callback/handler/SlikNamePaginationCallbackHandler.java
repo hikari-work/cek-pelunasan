@@ -58,7 +58,7 @@ public class SlikNamePaginationCallbackHandler extends AbstractCallbackHandler {
      */
     @Override
     public Mono<Void> process(TdApi.UpdateNewCallbackQuery update, SimpleTelegramClient client) {
-        return Mono.fromRunnable(() -> {
+        return runBlocking(() -> {
             String callbackData = new String(((TdApi.CallbackQueryPayloadData) update.payload).data, StandardCharsets.UTF_8);
             String[] parts = callbackData.split("_");
 

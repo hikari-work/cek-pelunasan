@@ -6,6 +6,7 @@ import org.cekpelunasan.platform.whatsapp.service.dto.PelunasanDto;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 
 /**
  * Menghitung estimasi pelunasan kredit berdasarkan data tagihan yang ada.
@@ -158,7 +159,7 @@ public class PelunasanService {
 		int totalMonthsPeriod = calculateMonthsBetween(realizationDate, dueDate);
 		int monthsLeft = totalMonthsPeriod - monthsPassed;
 
-		if (isSameMonthAndYear(dueDate, LocalDate.now())) {
+		if (isSameMonthAndYear(dueDate, LocalDate.now(ZoneOffset.ofHours(7)))) {
 			return 0;
 		}
 
@@ -187,7 +188,7 @@ public class PelunasanService {
 	private int calculateAnuitasPenaltyMultiplier(Bills pelunasan) {
 		LocalDate dueDate = parseDate(pelunasan.getDueDate());
 
-		boolean isSameMonthAndYear = isSameMonthAndYear(LocalDate.now(), dueDate);
+		boolean isSameMonthAndYear = isSameMonthAndYear(LocalDate.now(ZoneOffset.ofHours(7)), dueDate);
 		return isSameMonthAndYear ? 0 : 1;
 	}
 
@@ -214,7 +215,7 @@ public class PelunasanService {
 	}
 
 	private LocalDate getCurrentDate() {
-		return LocalDate.now();
+		return LocalDate.now(ZoneOffset.ofHours(7));
 	}
 
 	private boolean isAfterCurrentDay(LocalDate date) {

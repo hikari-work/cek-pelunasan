@@ -3,6 +3,7 @@ package org.cekpelunasan.platform.whatsapp.service.tabungan;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.whatsapp.dto.webhook.WhatsAppWebhookDTO;
 import org.cekpelunasan.core.entity.Savings;
+import org.cekpelunasan.core.service.log.DataUpdateLogService;
 import org.cekpelunasan.core.service.savings.SavingsService;
 import org.cekpelunasan.platform.whatsapp.service.sender.WhatsAppSenderService;
 import org.cekpelunasan.utils.SavingsUtils;
@@ -38,14 +39,16 @@ public class TabunganService {
 	private final SavingsUtils savingsUtils;
 	private final WhatsAppSenderService whatsAppSenderService;
 	private final SavingsService savingsService;
+	private final DataUpdateLogService dataUpdateLogService;
 
 	@Value("${admin.whatsapp}")
 	private String adminWhatsApp;
 
-	public TabunganService(SavingsService savingsService, SavingsUtils savingsUtils, WhatsAppSenderService whatsAppSenderService) {
+	public TabunganService(SavingsService savingsService, SavingsUtils savingsUtils, WhatsAppSenderService whatsAppSenderService, DataUpdateLogService dataUpdateLogService) {
 		this.savingsService = savingsService;
 		this.savingsUtils = savingsUtils;
 		this.whatsAppSenderService = whatsAppSenderService;
+		this.dataUpdateLogService = dataUpdateLogService;
 	}
 
 	/**
@@ -77,7 +80,7 @@ public class TabunganService {
 				whatsAppSenderService.sendWhatsAppText(command.buildChatId(), "Data tidak ditemukan.").subscribe()
 			))
 			.doOnNext(saving -> {
-				String message = savingsUtils.getSavings(saving);
+				String message = savingsUtils.getSavings(saving) + dataUpdateLogService.whatsAppWarning("SAVING");
 				whatsAppSenderService.sendReactionToMessage(command.buildChatId(), command.getPayload().getId()).subscribe();
 				if (command.getFrom().contains(adminWhatsApp)) {
 					whatsAppSenderService.updateMessage(command.buildChatId(), command.getPayload().getId(), message).subscribe();
@@ -115,6 +118,7 @@ public class TabunganService {
 			sb.append("_Hasil dibatasi ").append(MAX_NAME_RESULTS).append(" nasabah._\n");
 		}
 		sb.append("\n💡 Gunakan `.t {nomor rekening}` untuk detail lengkap.");
+		sb.append(dataUpdateLogService.whatsAppWarning("SAVING"));
 		return sb.toString();
 	}
 

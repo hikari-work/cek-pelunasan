@@ -85,7 +85,7 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
 
         if (!isValidCallbackFormat(data)) {
             log.warn("Invalid callback format received: {}", callbackData);
-            return Mono.fromRunnable(() -> telegramMessageService.sendText(update.chatId, INVALID_CALLBACK_MESSAGE, client));
+            return runBlocking(() -> telegramMessageService.sendText(update.chatId, INVALID_CALLBACK_MESSAGE, client));
         }
 
         String customerId = data[CUSTOMER_ID_INDEX];
@@ -104,23 +104,23 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
         }
 
         return s3Connector.getFile(buildFileName(customerId))
-            .switchIfEmpty(Mono.fromRunnable(() -> {
+            .switchIfEmpty(runBlocking(() -> {
                 log.warn("KTP file not found - ID: {}", customerId);
                 telegramMessageService.editText(chatId, notificationId, String.format(FILE_NOT_FOUND_MESSAGE, customerId), client);
             }))
             .flatMap(fileContent -> {
                 if (fileContent.length > maxFileSize) {
                     log.warn("File size exceeds maximum - KTP ID: {}, Size: {}", customerId, fileContent.length);
-                    return Mono.fromRunnable(() ->
+                    return runBlocking(() ->
                         telegramMessageService.editText(chatId, notificationId, "❌ File terlalu besar untuk diproses", client));
                 }
                 log.debug("Generating PDF for KTP - ID: {}", customerId);
                 return generatePdfFiles.generatePdf(fileContent, isActiveFacility)
-                    .switchIfEmpty(Mono.fromRunnable(() -> {
+                    .switchIfEmpty(runBlocking(() -> {
                         log.warn("Failed to generate PDF - KTP ID: {}", customerId);
                         telegramMessageService.editText(chatId, notificationId, String.format(FILE_NOT_FOUND_MESSAGE, customerId), client);
                     }))
-                    .flatMap(pdfBytes -> Mono.fromRunnable(() -> {
+                    .flatMap(pdfBytes -> runBlocking(() -> {
                         telegramMessageService.editText(chatId, notificationId, String.format(FILE_FOUND_MESSAGE, customerId), client);
                         telegramMessageService.delete(chatId, notificationId, client);
                         telegramMessageService.sendDocument(chatId, buildPdfFileName(customerId), pdfBytes, client);
@@ -129,7 +129,7 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
             })
             .onErrorResume(e -> {
                 log.error("Unexpected error processing SLIK callback", e);
-                return Mono.fromRunnable(() -> telegramMessageService.sendText(chatId, ERROR_MESSAGE, client));
+                return runBlocking(() -> telegramMessageService.sendText(chatId, ERROR_MESSAGE, client));
             })
             .then();
     }

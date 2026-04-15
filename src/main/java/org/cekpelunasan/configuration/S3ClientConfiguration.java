@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.*;
 
 import java.net.URI;
+import java.util.List;
 
 /**
  * Mengelola koneksi ke Cloudflare R2 sebagai tempat penyimpanan file.
@@ -125,6 +126,60 @@ public class S3ClientConfiguration{
 			log.error("S3 getFile setup error for key {}: {}", key, e.getMessage());
 			return Mono.empty();
 		}
+	}
+
+	/**
+	 * Memeriksa apakah objek S3 sudah pernah dinotifikasi, dengan mengecek tag {@code notified=true}.
+	 *
+	 * @param key path/nama file di dalam bucket
+	 * @return {@link Mono} berisi {@code true} jika sudah dinotifikasi, {@code false} jika belum atau error
+	 */
+	public Mono<Boolean> isAlreadyNotified(String key) {
+		GetObjectTaggingRequest request = GetObjectTaggingRequest.builder()
+			.bucket(bucket)
+			.key(key)
+			.build();
+		return Mono.fromFuture(s3AsyncClient().getObjectTagging(request))
+			.map(response -> response.tagSet().stream()
+				.anyMatch(tag -> "notified".equals(tag.key()) && "true".equals(tag.value())))
+			.onErrorResume(e -> {
+				log.warn("Gagal membaca tag untuk {}: {}", key, e.getMessage());
+				return Mono.just(false);
+			});
+	}
+
+	/**
+	 * Menandai objek S3 dengan tag {@code notified=true} sebagai tanda sudah dinotifikasi.
+	 * <p>
+	 * Tag ini bersifat persisten di R2 sehingga tetap ada meski aplikasi restart.
+	 * Jika objek sudah memiliki tag lain, tag tersebut akan dipertahankan.
+	 * </p>
+	 *
+	 * @param key path/nama file di dalam bucket yang akan di-tag
+	 * @return {@link Mono} yang selesai setelah tag berhasil disimpan, atau empty jika error
+	 */
+	public Mono<Void> tagObjectAsNotified(String key) {
+		GetObjectTaggingRequest getRequest = GetObjectTaggingRequest.builder()
+			.bucket(bucket)
+			.key(key)
+			.build();
+		return Mono.fromFuture(s3AsyncClient().getObjectTagging(getRequest))
+			.flatMap(existing -> {
+				List<Tag> tags = new java.util.ArrayList<>(existing.tagSet());
+				tags.removeIf(t -> "notified".equals(t.key()));
+				tags.add(Tag.builder().key("notified").value("true").build());
+				PutObjectTaggingRequest putRequest = PutObjectTaggingRequest.builder()
+					.bucket(bucket)
+					.key(key)
+					.tagging(Tagging.builder().tagSet(tags).build())
+					.build();
+				return Mono.fromFuture(s3AsyncClient().putObjectTagging(putRequest));
+			})
+			.then()
+			.onErrorResume(e -> {
+				log.error("Gagal meng-tag objek {} sebagai notified: {}", key, e.getMessage());
+				return Mono.empty();
+			});
 	}
 
 	/**

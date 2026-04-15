@@ -2,6 +2,7 @@ package org.cekpelunasan.platform.telegram.service;
 
 import it.tdlight.client.SimpleTelegramClient;
 import it.tdlight.jni.TdApi;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Mengelola semua operasi pengiriman dan pengeditan pesan di Telegram via TDLight.
@@ -32,7 +34,10 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class TelegramMessageService {
+
+    private final MessageIdResolver messageIdResolver;
 
     private static final ScheduledExecutorService FILE_CLEANUP =
         Executors.newSingleThreadScheduledExecutor(r -> {
@@ -309,6 +314,67 @@ public class TelegramMessageService {
             });
         } catch (Exception e) {
             log.error("Failed to edit formatted message {} in chat {}", messageId, chatId, e);
+        }
+    }
+
+    /**
+     * Mengirim pesan teks dan menunggu hingga server Telegram mengonfirmasi ID final-nya.
+     * <p>
+     * TDLib mengembalikan <em>local temporary ID</em> dari callback {@code SendMessage}
+     * (contoh: 1048577). ID asli yang bisa dipakai untuk {@link #editText} baru tersedia
+     * setelah event {@code UpdateMessageSendSucceeded} diterima — event ini ditangkap oleh
+     * {@link org.cekpelunasan.platform.telegram.bot.TelegramBot} dan diselesaikan lewat
+     * {@link MessageIdResolver#resolve}.
+     * </p>
+     * <p>
+     * Jika server tidak merespons dalam 10 detik, method ini fallback ke local ID dan
+     * mencatat peringatan. Edit pesan berikutnya kemungkinan gagal jika local ID berbeda
+     * dari server ID, tapi ini hanya terjadi jika koneksi sangat lambat.
+     * </p>
+     *
+     * @param chatId ID chat tujuan
+     * @param text   isi pesan dengan dukungan Markdown
+     * @param client instance TDLight client yang aktif
+     * @return server message ID yang valid, atau local ID sebagai fallback
+     */
+    public long sendTextVerified(long chatId, String text, SimpleTelegramClient client) {
+        try {
+            CompletableFuture<Long> localIdFuture = new CompletableFuture<>();
+
+            TdApi.SendMessage msg = new TdApi.SendMessage();
+            msg.chatId = chatId;
+            TdApi.InputMessageText content = new TdApi.InputMessageText();
+            content.text = parseMarkdown(text, client);
+            msg.inputMessageContent = content;
+
+            client.send(msg, result -> {
+                if (result.isError()) {
+                    log.error("Failed to send text to {}: {}", chatId, result.getError().message);
+                    localIdFuture.complete(0L);
+                } else {
+                    long localId = result.get().id;
+                    // Daftarkan SEBELUM menyelesaikan localIdFuture agar tidak ada race condition
+                    messageIdResolver.register(localId);
+                    localIdFuture.complete(localId);
+                }
+            });
+
+            long localId = localIdFuture.get(10, TimeUnit.SECONDS);
+            if (localId <= 0L) return 0L;
+
+            // Tunggu UpdateMessageSendSucceeded menyediakan server ID
+            try {
+                CompletableFuture<Long> serverIdFuture = messageIdResolver.getFuture(localId);
+                return serverIdFuture.get(10, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                log.warn("Timeout menunggu server ID untuk local message {} di chat {}, fallback ke local ID",
+                    localId, chatId);
+                messageIdResolver.cancel(localId);
+                return localId;
+            }
+        } catch (Exception e) {
+            log.error("Failed to send verified text to {}", chatId, e);
+            return 0L;
         }
     }
 
