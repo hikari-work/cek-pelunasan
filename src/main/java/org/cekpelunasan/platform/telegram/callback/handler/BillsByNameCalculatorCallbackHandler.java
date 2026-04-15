@@ -76,11 +76,11 @@ public class BillsByNameCalculatorCallbackHandler extends AbstractCallbackHandle
         CallbackData parsedData = parseCallbackData(callbackData);
 
         if (!isValidQuery(parsedData.query())) {
-            return Mono.fromRunnable(() -> sendMessage(chatId, ERROR_MESSAGE, client));
+            return runBlocking(() -> sendMessage(chatId, ERROR_MESSAGE, client));
         }
 
         return fetchBillsPageMono(parsedData)
-            .flatMap(billsPage -> Mono.fromRunnable(() -> {
+            .flatMap(billsPage -> runBlocking(() -> {
                 log.info("Finding Bills By: {}", parsedData.query());
                 String messageText = buildBillsMessage(billsPage);
                 TdApi.ReplyMarkupInlineKeyboard markup = buildPaginationMarkup(billsPage, parsedData);

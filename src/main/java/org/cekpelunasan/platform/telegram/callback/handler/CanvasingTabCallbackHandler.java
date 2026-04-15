@@ -68,7 +68,7 @@ public class CanvasingTabCallbackHandler extends AbstractCallbackHandler {
             .toList();
 
         return savingsService.findFilteredSavings(address, PageRequest.of(page, 5))
-            .flatMap(savings -> Mono.fromRunnable(() -> {
+            .flatMap(savings -> runBlocking(() -> {
                 if (savings.isEmpty()) {
                     sendMessage(update.chatId, "❌ *Data tidak ditemukan*", client);
                     return;

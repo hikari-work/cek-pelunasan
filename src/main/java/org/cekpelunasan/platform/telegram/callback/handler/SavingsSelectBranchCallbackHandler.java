@@ -64,7 +64,7 @@ public class SavingsSelectBranchCallbackHandler extends AbstractCallbackHandler 
         long messageId = update.messageId;
 
         return savingsService.findByNameAndBranch(query, branchName, 0)
-            .flatMap(savings -> Mono.fromRunnable(() -> {
+            .flatMap(savings -> runBlocking(() -> {
                 if (savings.isEmpty()) {
                     log.info("Branch Tab is Not Found...");
                     sendMessage(chatId, "❌ *Data tidak ditemukan*", client);

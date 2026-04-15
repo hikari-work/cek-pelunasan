@@ -57,7 +57,7 @@ public class SelectBranchCallbackHandler extends AbstractCallbackHandler {
         String[] parts = callbackData.split("_", 3);
         if (parts.length < 3) {
             log.error("Callback data Not Valid");
-            return Mono.fromRunnable(() -> sendMessage(update.chatId, "❌ *Data callback tidak valid*", client));
+            return runBlocking(() -> sendMessage(update.chatId, "❌ *Data callback tidak valid*", client));
         }
 
         String branch = parts[1];
@@ -65,7 +65,7 @@ public class SelectBranchCallbackHandler extends AbstractCallbackHandler {
         long chatId = update.chatId;
 
         return billService.findByNameAndBranch(name, branch, 0, 5)
-            .flatMap(billsPage -> Mono.fromRunnable(() -> {
+            .flatMap(billsPage -> runBlocking(() -> {
                 if (billsPage.isEmpty()) {
                     log.info("Bills Is Empty....");
                     sendMessage(update.chatId, "❌ *Data tidak ditemukan*", client);

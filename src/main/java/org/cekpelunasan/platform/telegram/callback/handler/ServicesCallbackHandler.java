@@ -60,7 +60,7 @@ public class ServicesCallbackHandler extends AbstractCallbackHandler {
         String[] parts = callbackData.split("_", 3);
         if (parts.length < 3) {
             log.error("Callback data not valid: {}", callbackData);
-            return Mono.fromRunnable(() -> sendMessage(update.chatId, "❌ *Data callback tidak valid*", client));
+            return runBlocking(() -> sendMessage(update.chatId, "❌ *Data callback tidak valid*", client));
         }
 
         String service = parts[1];
@@ -75,7 +75,7 @@ public class ServicesCallbackHandler extends AbstractCallbackHandler {
             case "Tabungan" -> handleTabungan(chatId, messageId, query, client);
             default -> {
                 log.warn("Unknown service: {}", service);
-                yield Mono.fromRunnable(() -> sendMessage(chatId, "❌ *Layanan tidak dikenali*", client));
+                yield runBlocking(() -> sendMessage(chatId, "❌ *Layanan tidak dikenali*", client));
             }
         };
     }
@@ -94,7 +94,7 @@ public class ServicesCallbackHandler extends AbstractCallbackHandler {
      */
     private Mono<Void> handlePelunasan(long chatId, long messageId, String query, SimpleTelegramClient client) {
         return billService.lisAllBranch()
-            .flatMap(branches -> Mono.fromRunnable(() -> {
+            .flatMap(branches -> runBlocking(() -> {
                 if (branches.isEmpty()) {
                     sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
                     return;
@@ -121,7 +121,7 @@ public class ServicesCallbackHandler extends AbstractCallbackHandler {
      */
     private Mono<Void> handleTabungan(long chatId, long messageId, String query, SimpleTelegramClient client) {
         return savingsService.listAllBranch(query)
-            .flatMap(branches -> Mono.fromRunnable(() -> {
+            .flatMap(branches -> runBlocking(() -> {
                 if (branches.isEmpty()) {
                     sendMessage(chatId, "❌ *Data tidak ditemukan*", client);
                     return;

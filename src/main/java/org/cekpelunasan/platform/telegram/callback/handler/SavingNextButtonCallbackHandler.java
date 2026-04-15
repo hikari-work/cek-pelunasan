@@ -68,7 +68,7 @@ public class SavingNextButtonCallbackHandler extends AbstractCallbackHandler {
         long messageId = update.messageId;
 
         return savingsService.findByNameAndBranch(query, branch, page)
-            .flatMap(savings -> Mono.fromRunnable(() -> {
+            .flatMap(savings -> runBlocking(() -> {
                 if (savings.isEmpty()) {
                     log.info("Saving data Updated...");
                     sendMessage(chatId, "❌ *Data tidak ditemukan*", client);

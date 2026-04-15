@@ -66,7 +66,7 @@ public class MinimalPayCallbackHandler extends AbstractCallbackHandler {
         log.info("Bills Callback Received...");
 
         return userService.findUserByChatId(chatId)
-            .switchIfEmpty(Mono.fromRunnable(() -> {
+            .switchIfEmpty(runBlocking(() -> {
                 log.info("User ID {} not Valid", chatId);
                 sendMessage(chatId, "❌ *User tidak ditemukan*", client);
             }))
@@ -80,7 +80,7 @@ public class MinimalPayCallbackHandler extends AbstractCallbackHandler {
                         case AO -> billService.findMinimalPaymentByAccountOfficer(userCode, page, 5);
                         case PIMP, ADMIN -> billService.findMinimalPaymentByBranch(userCode, page, 5);
                     };
-                return billsMono.flatMap(bills -> Mono.fromRunnable(() -> {
+                return billsMono.flatMap(bills -> runBlocking(() -> {
                     if (bills.isEmpty()) {
                         log.info("Minimal Pay Is Empty....");
                         sendMessage(chatId, "❌ *Tidak ada tagihan dengan minimal bayar tersisa.*", client);
