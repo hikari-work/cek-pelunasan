@@ -1,18 +1,20 @@
 package org.cekpelunasan.core.service.slik;
 
 import it.tdlight.client.SimpleTelegramClient;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.configuration.S3ClientConfiguration;
+import org.cekpelunasan.core.entity.SlikNotifiedFile;
+import org.cekpelunasan.core.repository.SlikNotifiedFileRepository;
 import org.cekpelunasan.core.service.users.UserService;
 import org.cekpelunasan.platform.telegram.bot.TelegramBot;
 import org.cekpelunasan.platform.telegram.service.TelegramMessageService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,8 +23,8 @@ import java.util.stream.Collectors;
  * Memantau bucket S3/R2 secara berkala dan mengirimkan notifikasi Telegram
  * ke pengguna yang relevan setiap kali ada file SLIK PDF baru yang diunggah.
  *
- * <p>State notifikasi disimpan secara persisten sebagai tag S3 ({@code notified=true})
- * pada masing-masing objek di bucket. Dengan cara ini, meski aplikasi di-restart,
+ * <p>State notifikasi disimpan secara persisten di koleksi MongoDB
+ * {@code slik_notified_files}. Dengan cara ini, meski aplikasi di-restart,
  * file yang sudah pernah dinotifikasi tidak akan dikirimkan ulang.</p>
  *
  * <p>File yang namanya dimulai dengan "KTP_" dikecualikan dari pengecekan
@@ -32,34 +34,34 @@ import java.util.stream.Collectors;
 @Component
 public class SendNotificationSlikUpdated {
 
-	@Value("${r2.bucket}")
-	private String bucket;
-
 	private final S3AsyncClient s3AsyncClient;
 	private final S3ClientConfiguration s3ClientConfiguration;
 	private final UserService userService;
 	private final TelegramMessageService telegramMessageService;
 	private final TelegramBot telegramBot;
+	private final SlikNotifiedFileRepository notifiedFileRepository;
 
 	public SendNotificationSlikUpdated(
 			S3AsyncClient s3AsyncClient,
 			S3ClientConfiguration s3ClientConfiguration,
 			UserService userService,
 			TelegramMessageService telegramMessageService,
+			SlikNotifiedFileRepository notifiedFileRepository,
 			@Lazy TelegramBot telegramBot) {
 		this.s3AsyncClient = s3AsyncClient;
 		this.s3ClientConfiguration = s3ClientConfiguration;
 		this.userService = userService;
 		this.telegramMessageService = telegramMessageService;
+		this.notifiedFileRepository = notifiedFileRepository;
 		this.telegramBot = telegramBot;
 	}
 
 	/**
 	 * Tugas terjadwal yang berjalan setiap 60 detik. Mengambil semua file PDF
-	 * di bucket (kecuali KTP_), lalu menyaring hanya yang belum memiliki tag
-	 * {@code notified=true}. Jika ada file baru, notifikasi dikirim ke pengguna
-	 * yang kode penggunanya cocok dengan prefix nama file, kemudian file tersebut
-	 * di-tag agar tidak dikirimkan ulang pada pengecekan berikutnya.
+	 * di bucket (kecuali KTP_), lalu menyaring hanya yang belum tersimpan di
+	 * koleksi MongoDB {@code slik_notified_files}. Jika ada file baru, notifikasi
+	 * dikirim ke pengguna yang kode penggunanya cocok dengan prefix nama file,
+	 * kemudian file tersebut dicatat agar tidak dikirimkan ulang.
 	 */
 	@Scheduled(fixedDelay = 60 * 1000L)
 	public void runTest() {
@@ -71,7 +73,7 @@ public class SendNotificationSlikUpdated {
 
 		s3ClientConfiguration.listObjectFoundByName("")
 			.filter(key -> key.endsWith(".pdf") && !key.startsWith("KTP_"))
-			.filterWhen(key -> s3ClientConfiguration.isAlreadyNotified(key).map(notified -> !notified))
+			.filterWhen(key -> notifiedFileRepository.existsByFileKey(key).map(exists -> !exists))
 			.collectList()
 			.doOnNext(newFiles -> {
 				if (newFiles.isEmpty()) {
@@ -80,7 +82,7 @@ public class SendNotificationSlikUpdated {
 				}
 				log.info("Ditemukan {} file SLIK baru, mengirim notifikasi...", newFiles.size());
 				sendNotifications(newFiles, client);
-				tagAsNotified(newFiles);
+				markAsNotified(newFiles);
 			})
 			.subscribe();
 	}
@@ -112,23 +114,27 @@ public class SendNotificationSlikUpdated {
 	}
 
 	/**
-	 * Menandai setiap file dalam daftar dengan tag {@code notified=true} di S3/R2
+	 * Menyimpan setiap file ke koleksi MongoDB {@code slik_notified_files}
 	 * agar tidak diproses ulang pada siklus berikutnya maupun setelah restart.
 	 *
 	 * @param keys daftar key file yang baru saja dinotifikasi
 	 */
-	private void tagAsNotified(List<String> keys) {
+	private void markAsNotified(List<String> keys) {
+		LocalDateTime now = LocalDateTime.now(ZoneOffset.ofHours(7));
 		keys.forEach(key ->
-			s3ClientConfiguration.tagObjectAsNotified(key)
-				.doOnSuccess(v -> log.debug("Tagged as notified: {}", key))
-				.subscribe()
+			notifiedFileRepository.save(
+				SlikNotifiedFile.builder()
+					.fileKey(key)
+					.notifiedAt(now)
+					.build()
+			)
+			.doOnSuccess(saved -> log.debug("Marked as notified: {}", key))
+			.subscribe()
 		);
 	}
 
 	/**
 	 * Membangun teks pesan notifikasi yang akan dikirim ke pengguna.
-	 * Pesan berisi kode pengguna, jumlah file, dan daftar lengkap nama file
-	 * yang tersedia di bucket.
 	 *
 	 * @param prefix kode pengguna (prefix nama file) yang menjadi pemilik laporan
 	 * @param files  daftar nama file PDF yang terkait dengan prefix tersebut
