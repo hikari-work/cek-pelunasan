@@ -45,8 +45,8 @@ public abstract class AbstractCallbackHandler implements CallbackProcessor {
      * @param action operasi blocking yang akan dijalankan di bounded elastic thread pool
      * @return {@link Mono} yang selesai setelah action selesai dieksekusi
      */
-    protected Mono<Void> runBlocking(Runnable action) {
-        return Mono.<Void>fromRunnable(action)
+    protected <T> Mono<T> runBlocking(Runnable action) {
+        return Mono.<T>fromRunnable(action)
             .subscribeOn(Schedulers.boundedElastic());
     }
 
