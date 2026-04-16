@@ -1,9 +1,10 @@
 package org.cekpelunasan.configuration;
 
 import com.microsoft.playwright.BrowserType;
-import com.microsoft.playwright.Playwright;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 /**
  * Menyediakan konfigurasi dasar untuk Playwright yang dipakai saat melakukan web scraping.
@@ -33,6 +34,13 @@ public class PlaywrightConfiguration {
 	 */
 	@Bean
 	public BrowserType.LaunchOptions playwrightLaunchOptions() {
-		return new BrowserType.LaunchOptions().setHeadless(true);
+		return new BrowserType.LaunchOptions()
+			.setHeadless(true)
+			.setArgs(List.of(
+				"--no-sandbox",
+				"--disable-dev-shm-usage",
+				"--disable-gpu",
+				"--disable-software-rasterizer"
+			));
 	}
 }
