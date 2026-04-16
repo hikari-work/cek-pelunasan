@@ -192,7 +192,6 @@ public class SlikCommand extends AbstractCommandHandler {
 			.filter(key -> !key.startsWith("KTP_") && key.toLowerCase().contains(queryLower))
 			.take(maxResults)
 			.flatMap(this::extractPageData, 10)
-			.filter(p -> p.idNumber() != null || p.dto() != null)
 			.collectList()
 			.flatMap(pages -> {
 				if (pages.isEmpty()) {

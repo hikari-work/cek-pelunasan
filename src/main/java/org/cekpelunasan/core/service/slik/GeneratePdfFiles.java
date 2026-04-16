@@ -1,9 +1,9 @@
 package org.cekpelunasan.core.service.slik;
 
-import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.impl.TargetClosedError;
 import com.microsoft.playwright.options.Margin;
+import com.microsoft.playwright.options.WaitUntilState;
 import org.cekpelunasan.configuration.PlaywrightBrowserPool;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -130,35 +130,35 @@ public class GeneratePdfFiles {
 	/**
 	 * Merender HTML menjadi file PDF menggunakan browser Chromium dari pool.
 	 * PDF dihasilkan dalam format A4 landscape dengan margin 15mm di semua sisi.
-	 * Jika terjadi {@link TargetClosedError} (browser crash), browser tidak
-	 * dikembalikan ke pool agar pool tidak tercemar dengan instance yang rusak.
+	 *
+	 * <p>Seluruh operasi Playwright berjalan di thread khusus milik slot browser
+	 * (via {@link PlaywrightBrowserPool#withBrowser}), sehingga thread-safety
+	 * Playwright terpenuhi. Jika browser crash, pool otomatis mereinisialisasi
+	 * slot saat pemakaian berikutnya.</p>
 	 *
 	 * @param html string HTML yang ingin dirender
 	 * @return {@link Mono} berisi byte array PDF yang sudah dirender
 	 */
 	private Mono<byte[]> renderPdfWithPlaywright(String html) {
-		return Mono.<byte[]>fromCallable(() -> {
-			Browser browser = browserPool.acquire();
-			try (Page page = browser.newPage()) {
-				page.setContent(html);
-				return page.pdf(new Page.PdfOptions()
-					.setFormat("A4")
-					.setLandscape(true)
-					.setMargin(new Margin()
-						.setTop("15mm")
-						.setBottom("15mm")
-						.setLeft("15mm")
-						.setRight("15mm")));
-			} catch (TargetClosedError e) {
-				logger.error("Browser crash saat render PDF (TargetClosedError)", e);
-				throw e;
-			} finally {
-				// Selalu kembalikan browser ke pool — release() akan cek isConnected():
-				// - masih tersambung → masuk antrian kembali
-				// - terputus/crash   → Playwright-nya ditutup dan diganti yang baru
-				browserPool.release(browser);
-			}
-		}).subscribeOn(Schedulers.boundedElastic());
+		return Mono.<byte[]>fromCallable(() ->
+			browserPool.withBrowser(browser -> {
+				try (Page page = browser.newPage()) {
+					page.setContent(html, new Page.SetContentOptions()
+						.setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
+						.setTimeout(60_000));
+					return page.pdf(new Page.PdfOptions()
+						.setFormat("A4")
+						.setLandscape(true)
+						.setMargin(new Margin()
+							.setTop("15mm")
+							.setBottom("15mm")
+							.setLeft("15mm")
+							.setRight("15mm")));
+				}
+			})
+		)
+		.doOnError(TargetClosedError.class, e -> logger.error("Browser crash saat render PDF (TargetClosedError)", e))
+		.subscribeOn(Schedulers.boundedElastic());
 	}
 
 	/**
