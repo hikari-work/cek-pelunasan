@@ -217,14 +217,35 @@ public class SlikNameFormatter {
      */
     private TdApi.FormattedText formatNoData(SlikSessionCache.SlikPageData data, int current, int total) {
         MessageBuilder mb = new MessageBuilder();
-        mb.bold("📄 DOKUMEN #" + (current + 1)); mb.append("\n");
+        mb.bold("📊 HASIL SLIK — " + extractDisplayName(data.contentKey())); mb.append("\n");
         mb.append("━━━━━━━━━━━━━━━━━━━━━\n");
-        mb.append("📂 File: "); mb.code(data.contentKey()); mb.append("\n");
         mb.append("🪪 No KTP: ");
         if (isNotBlank(data.idNumber())) mb.code(data.idNumber()); else mb.italic("Tidak ditemukan");
-        mb.append("\n"); mb.italic("Data SLIK tidak tersedia\n");
-        mb.append("\n"); mb.italic("📄 Halaman " + (current + 1) + " dari " + total);
+        mb.append("\n\n");
+        mb.italic("_(Data identitas tidak tersedia)_\n");
+        if (isNotBlank(data.idNumber())) {
+            mb.append("\n🎯 "); mb.code("/slik " + data.idNumber()); mb.append("\n");
+        }
+        mb.append("📥 "); mb.code("/doc " + data.contentKey()); mb.append("\n");
+        mb.italic("📄 Halaman " + (current + 1) + " dari " + total);
         return mb.build();
+    }
+
+    /**
+     * Mengekstrak nama tampilan dari nama file konten S3.
+     * Menghapus ekstensi file dan prefix kode AO (bagian sebelum underscore pertama).
+     */
+    private String extractDisplayName(String contentKey) {
+        if (!isNotBlank(contentKey)) return "-";
+        // Hapus ekstensi
+        int dotIdx = contentKey.lastIndexOf('.');
+        String name = dotIdx > 0 ? contentKey.substring(0, dotIdx) : contentKey;
+        // Hapus prefix AO (sebelum underscore pertama)
+        int underscoreIdx = name.indexOf('_');
+        if (underscoreIdx >= 0 && underscoreIdx < name.length() - 1) {
+            name = name.substring(underscoreIdx + 1);
+        }
+        return name;
     }
 
     // ─────────────────────────────────────────────
