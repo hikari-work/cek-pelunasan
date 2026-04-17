@@ -18,7 +18,9 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.retry.Retry;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -157,7 +159,11 @@ public class GeneratePdfFiles {
 				}
 			})
 		)
-		.doOnError(TargetClosedError.class, e -> logger.error("Browser crash saat render PDF (TargetClosedError)", e))
+		.retryWhen(Retry.backoff(2, Duration.ofMillis(500))
+			.filter(e -> e instanceof TargetClosedError
+				|| e.getCause() instanceof TargetClosedError)
+			.doBeforeRetry(rs -> logger.warn("Retry render PDF karena browser crash, attempt #{}", rs.totalRetries() + 1)))
+		.doOnError(e -> logger.error("Gagal render PDF setelah retry: {}", e.getMessage()))
 		.subscribeOn(Schedulers.boundedElastic());
 	}
 
