@@ -13,7 +13,10 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.OptionalInt;
 import java.util.*;
 
 /**
@@ -192,16 +195,18 @@ public class SlikNameFormatter {
         StringBuilder sb = new StringBuilder();
         sb.append(index).append(". ").append(orDash(k.getLjkKet())).append("\n");
         if (isNotBlank(k.getCabangKet())) sb.append("Cabang    : ").append(k.getCabangKet()).append("\n");
-        sb.append("Plafon    : ").append(formatRupiah(k.getPlafonAwal())).append(" | Baki: ").append(formatRupiah(k.getBakiDebet())).append("\n");
+        sb.append("Plafon    : ").append(formatRupiah(k.getPlafonAwal())).append(" | Bakidebet: ").append(formatRupiah(k.getBakiDebet())).append("\n");
         sb.append("Kondisi   : ").append(orDash(k.getKondisiKet())).append(" | Kol: ").append(orDash(k.getKualitasKet())).append("\n");
         if (isNotBlank(k.getJenisPenggunaanKet())) sb.append("Penggunaan: ").append(k.getJenisPenggunaanKet()).append("\n");
         if (isNotBlank(k.getTanggalAkadAwal()) || isNotBlank(k.getTanggalJatuhTempo())) {
             sb.append("Jangka    : ").append(formatDate(k.getTanggalAkadAwal()))
               .append(" → ").append(formatDate(k.getTanggalJatuhTempo())).append("\n");
         }
-        String worstKol = findWorstKol(k.getTahunBulan());
-        String maxHt    = findMaxHt(k.getTahunBulan());
-        if (isNotBlank(worstKol)) sb.append("Kol Terburuk 24bln: ").append(worstKol).append("\n");
+        String worstKol  = findWorstKol(k.getTahunBulan());
+        String maxHt     = findMaxHt(k.getTahunBulan());
+        String kolPeriod = findKolPeriodLabel(k.getTahunBulan());
+        String kolLabel  = kolPeriod != null ? "Kol Terburuk s.d. " + kolPeriod : "Kol Terburuk";
+        if (isNotBlank(worstKol)) sb.append(kolLabel).append(": ").append(worstKol).append("\n");
         if (isNotBlank(maxHt) && !"0".equals(maxHt)) sb.append("Max Hari Tunggakan: ").append(maxHt).append(" hari\n");
         return sb.toString();
     }
@@ -279,6 +284,32 @@ public class SlikNameFormatter {
             .map(Map.Entry::getValue)
             .max(Comparator.comparingInt(s -> { try { return Integer.parseInt(s.trim()); } catch (Exception ex) { return 0; } }))
             .orElse(null);
+    }
+
+    /**
+     * Mencari periode paling akhir (NN terbesar) dari riwayat tahunBulan dan
+     * mengembalikannya sebagai label bulan-tahun (mis. "Mar 2026").
+     * Key {@code tahunBulanNN} berisi nilai periode {@code yyyyMM}.
+     */
+    private String findKolPeriodLabel(Map<String, String> tahunBulan) {
+        OptionalInt maxNN = tahunBulan.keySet().stream()
+            .filter(k -> k.endsWith("Kol") && k.startsWith("tahunBulan") && isNotBlank(tahunBulan.get(k)))
+            .mapToInt(k -> {
+                try {
+                    return Integer.parseInt(k.substring("tahunBulan".length(), k.length() - "Kol".length()));
+                } catch (Exception e) { return 0; }
+            })
+            .filter(n -> n > 0)
+            .max();
+        if (maxNN.isEmpty()) return null;
+        String period = tahunBulan.get(String.format("tahunBulan%02d", maxNN.getAsInt()));
+        if (isNotBlank(period) && period.length() >= 6) {
+            try {
+                YearMonth ym = YearMonth.parse(period.substring(0, 6), DateTimeFormatter.ofPattern("yyyyMM"));
+                return ym.format(DateTimeFormatter.ofPattern("MMM yyyy", new Locale("id", "ID")));
+            } catch (Exception ignored) {}
+        }
+        return null;
     }
 
     /**
