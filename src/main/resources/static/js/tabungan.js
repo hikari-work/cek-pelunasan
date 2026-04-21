@@ -28,6 +28,7 @@ const Tabungan = (() => {
   }
 
   function renderDetail(data, container) {
+    const saldoEfektif = (data.balance || 0) - (data.minimumBalance || 0) - (data.blockingBalance || 0);
     container.innerHTML = `
       <div class="detail-hero is-tabungan">
         <div class="detail-hero-accent"></div>
@@ -43,7 +44,7 @@ const Tabungan = (() => {
 
       <div class="detail-total-card">
         <span class="detail-total-label">SALDO EFEKTIF</span>
-        <span class="detail-total-value">${formatRupiah(data.balance)}</span>
+        <span class="detail-total-value">${formatRupiah(saldoEfektif)}</span>
       </div>
 
       <div class="detail-section">
@@ -60,8 +61,9 @@ const Tabungan = (() => {
       <div class="detail-section">
         <div class="detail-section-title">Rincian Saldo</div>
         <div class="detail-rows">
-          ${row('Saldo Efektif', formatRupiah(data.balance), 'good')}
+          ${row('Saldo Buku', formatRupiah(data.balance), 'mono')}
           ${row('Saldo Minimum', formatRupiah(data.minimumBalance), 'mono')}
+          ${row('Saldo Efektif', formatRupiah(saldoEfektif), 'good')}
           ${row('Saldo Diblokir', formatRupiah(data.blockingBalance), 'mono')}
           ${row('Transaksi Terakhir', formatRupiah(data.transaction), 'mono')}
         </div>

@@ -3,6 +3,7 @@ package org.cekpelunasan.configuration;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.impl.TargetClosedError;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -177,7 +178,13 @@ public class PlaywrightBrowserPool {
 						log.warn("Browser slot {} terputus, memperbarui...", id);
 						reinit(options);
 					}
-					return operation.execute(browser);
+					try {
+						return operation.execute(browser);
+					} catch (TargetClosedError tce) {
+						log.warn("Browser slot {} crash saat operasi, reinit segera", id);
+						reinit(options);
+						throw tce;
+					}
 				}).get(OPERATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 			} catch (ExecutionException e) {
 				Throwable cause = e.getCause();
