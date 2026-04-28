@@ -50,6 +50,12 @@ public class PlaywrightBrowserPool {
 	/** Batas waktu untuk satu operasi Playwright (safety net), dalam detik. */
 	private static final int OPERATION_TIMEOUT_SECONDS = 90;
 
+	/** Jumlah percobaan inisialisasi browser saat startup sebelum menyerah pada slot tersebut. */
+	private static final int INIT_MAX_ATTEMPTS = 3;
+
+	/** Jeda antar percobaan inisialisasi, dalam milidetik. */
+	private static final long INIT_RETRY_DELAY_MS = 1500;
+
 	private final BrowserType.LaunchOptions launchOptions;
 	private final BlockingQueue<BrowserSlot> pool = new ArrayBlockingQueue<>(POOL_SIZE);
 	private final List<BrowserSlot> allSlots = new ArrayList<>();
@@ -145,7 +151,7 @@ public class PlaywrightBrowserPool {
 				return t;
 			});
 			// Playwright dan Browser harus dibuat di thread yang sama yang akan memakainya
-			executor.submit(() -> init(options)).get(30, TimeUnit.SECONDS);
+			executor.submit(() -> initWithRetry(options)).get(120, TimeUnit.SECONDS);
 		}
 
 		int id() {
@@ -159,11 +165,51 @@ public class PlaywrightBrowserPool {
 			log.debug("Browser slot {} diinisialisasi", id);
 		}
 
+		/**
+		 * Inisialisasi dengan retry. Chromium kadang gagal launch dengan
+		 * {@link TargetClosedError} (target page/context closed) saat startup
+		 * karena tab pertama langsung mati sebelum siap. Coba ulang beberapa kali
+		 * sebelum menyerah.
+		 */
+		private void initWithRetry(BrowserType.LaunchOptions options) {
+			Exception last = null;
+			for (int attempt = 1; attempt <= INIT_MAX_ATTEMPTS; attempt++) {
+				try {
+					init(options);
+					if (attempt > 1) {
+						log.info("Browser slot {} berhasil diinisialisasi pada percobaan ke-{}", id, attempt);
+					}
+					return;
+				} catch (Exception e) {
+					last = e;
+					// bersihkan parsial state agar tidak bocor
+					try { if (browser != null) browser.close(); } catch (Exception ignored) {}
+					try { if (playwright != null) playwright.close(); } catch (Exception ignored) {}
+					browser = null;
+					playwright = null;
+					log.warn("Init browser slot {} gagal (percobaan {}/{}): {}",
+						id, attempt, INIT_MAX_ATTEMPTS, e.toString());
+					if (attempt < INIT_MAX_ATTEMPTS) {
+						try {
+							Thread.sleep(INIT_RETRY_DELAY_MS);
+						} catch (InterruptedException ie) {
+							Thread.currentThread().interrupt();
+							throw new RuntimeException(ie);
+						}
+					}
+				}
+			}
+			throw new RuntimeException(
+				"Gagal inisialisasi browser slot " + id + " setelah " + INIT_MAX_ATTEMPTS + " percobaan", last);
+		}
+
 		/** Menutup pasangan lama dan membuat yang baru, di thread saat ini. */
 		private void reinit(BrowserType.LaunchOptions options) {
-			try { browser.close(); } catch (Exception ignored) {}
-			try { playwright.close(); } catch (Exception ignored) {}
-			init(options);
+			try { if (browser != null) browser.close(); } catch (Exception ignored) {}
+			try { if (playwright != null) playwright.close(); } catch (Exception ignored) {}
+			browser = null;
+			playwright = null;
+			initWithRetry(options);
 			log.info("Browser slot {} direinisialisasi setelah disconnect/crash", id);
 		}
 
@@ -197,8 +243,8 @@ public class PlaywrightBrowserPool {
 		void close() {
 			try {
 				executor.submit(() -> {
-					try { browser.close(); } catch (Exception ignored) {}
-					try { playwright.close(); } catch (Exception ignored) {}
+					try { if (browser != null) browser.close(); } catch (Exception ignored) {}
+					try { if (playwright != null) playwright.close(); } catch (Exception ignored) {}
 				}).get(10, TimeUnit.SECONDS);
 			} catch (Exception ignored) {
 			} finally {

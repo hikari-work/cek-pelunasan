@@ -1,5 +1,6 @@
 package org.cekpelunasan.core.service.slik;
 
+import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.impl.TargetClosedError;
 import com.microsoft.playwright.options.Margin;
@@ -144,7 +145,10 @@ public class GeneratePdfFiles {
 	private Mono<byte[]> renderPdfWithPlaywright(String html) {
 		return Mono.<byte[]>fromCallable(() ->
 			browserPool.withBrowser(browser -> {
-				try (Page page = browser.newPage()) {
+				// BrowserContext eksplisit agar pasti ditutup; jika hanya `browser.newPage()`,
+				// context implisit tidak pernah dilepas dan menumpuk hingga browser crash.
+				try (BrowserContext context = browser.newContext();
+					 Page page = context.newPage()) {
 					page.setContent(html, new Page.SetContentOptions()
 						.setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
 						.setTimeout(60_000));
