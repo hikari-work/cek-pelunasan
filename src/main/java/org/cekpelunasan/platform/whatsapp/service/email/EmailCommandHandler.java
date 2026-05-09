@@ -12,7 +12,8 @@ import org.springframework.stereotype.Component;
  * Menangani lifecycle sesi email WhatsApp:
  * <ul>
  *   <li>{@code .email} — membuka sesi baru dan mulai mengumpulkan media</li>
- *   <li>Media masuk saat sesi aktif — ditambahkan ke antrian</li>
+ *   <li>{@code .email} sebagai reply ke pesan media — langsung kirim tanpa buka sesi</li>
+ *   <li>Media masuk saat sesi aktif — ditambahkan ke antrian (termasuk media group/album)</li>
  *   <li>{@code .done} — menutup sesi dan langsung mengirim email</li>
  *   <li>TTL 60 detik habis — email dikirim otomatis oleh {@link EmailSessionCache}</li>
  * </ul>
@@ -32,7 +33,12 @@ public class EmailCommandHandler {
     private String defaultRecipient;
 
     /**
-     * Membuka sesi email baru. Jika sudah ada sesi aktif, sesi lama direset.
+     * Titik masuk utama untuk command .email.
+     * <p>
+     * Jika pesan merupakan reply ke pesan lain (ada replied_to_id), maka media dari
+     * pesan yang di-reply akan langsung diunduh via gateway dan dikirim ke email tanpa
+     * membuka sesi. Jika bukan reply, sesi baru dibuka untuk mengumpulkan media.
+     * </p>
      * Format: ".email" → pakai recipient default dari config
      *         ".email user@example.com" → kirim ke email tersebut
      */
@@ -41,6 +47,7 @@ public class EmailCommandHandler {
         String chatId = webhook.buildChatId();
         String fromName = webhook.getPayload().getFromName();
         String body = webhook.getPayload().getBody().trim();
+        String repliedToId = webhook.getPayload().getRepliedToId();
 
         String recipient = resolveRecipient(body);
         if (recipient == null) {
@@ -50,6 +57,13 @@ public class EmailCommandHandler {
             return;
         }
 
+        // Reply flow: langsung kirim media dari pesan yang di-reply
+        if (repliedToId != null && !repliedToId.isBlank()) {
+            handleReplyForward(webhook, phone, chatId, fromName, recipient, repliedToId);
+            return;
+        }
+
+        // Normal flow: buka sesi
         EmailSession session = new EmailSession(chatId, phone, fromName != null ? fromName : phone, recipient);
         sessionCache.put(session, emailForwardService::send);
 
@@ -60,6 +74,31 @@ public class EmailCommandHandler {
         ).subscribe();
 
         log.info("Email session started for {} → {}", phone, recipient);
+    }
+
+    /**
+     * Mengunduh media dari pesan yang di-reply via gateway API, lalu langsung mengirim email.
+     * Tidak membuka sesi — prosesnya sekali jalan tanpa interaksi tambahan dari user.
+     */
+    private void handleReplyForward(WhatsAppWebhookDTO webhook, String phone, String chatId,
+                                    String fromName, String recipient, String repliedToId) {
+        log.info("Reply-forward: downloading messageId={} for {}", repliedToId, phone);
+
+        whatsAppSenderService.sendWhatsAppText(chatId, "⏳ Sedang memproses media...").subscribe();
+
+        EmailSession.CollectedMedia media = emailForwardService.downloadByMessageId(repliedToId, phone);
+        if (media == null) {
+            whatsAppSenderService.sendWhatsAppText(chatId,
+                "❌ Media tidak ditemukan atau gagal diunduh. Pastikan pesan yang di-reply mengandung media."
+            ).subscribe();
+            return;
+        }
+
+        EmailSession session = new EmailSession(chatId, phone, fromName != null ? fromName : phone, recipient);
+        session.addMedia(media);
+
+        log.info("Reply-forward: sending 1 media directly to {} for {}", recipient, phone);
+        emailForwardService.send(session);
     }
 
     private String resolveRecipient(String body) {

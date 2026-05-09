@@ -1,7 +1,9 @@
 package org.cekpelunasan.platform.whatsapp.service.email;
 
+import jakarta.activation.DataSource;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.cekpelunasan.platform.whatsapp.dto.webhook.GatewayDownloadResponseDTO;
 import org.cekpelunasan.platform.whatsapp.service.sender.WhatsAppSenderService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -10,7 +12,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import jakarta.activation.DataSource;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -99,6 +100,46 @@ public class EmailForwardService {
             }
         }
         return result;
+    }
+
+    /**
+     * Memanggil gateway API untuk men-trigger download media dari pesan tertentu by ID,
+     * lalu mengembalikan CollectedMedia yang siap dipakai dalam sesi email.
+     * Endpoint: GET /message/{messageId}/download?phone={senderPhone}
+     *
+     * @param messageId   ID pesan WhatsApp yang medianya ingin didownload
+     * @param senderPhone nomor HP pengirim (clean, tanpa suffix @s.whatsapp.net)
+     * @return CollectedMedia jika berhasil, atau {@code null} jika gagal
+     */
+    public EmailSession.CollectedMedia downloadByMessageId(String messageId, String senderPhone) {
+        try {
+            GatewayDownloadResponseDTO response = whatsappWebClient.get()
+                .uri("/message/{id}/download?phone={phone}", messageId, senderPhone)
+                .retrieve()
+                .bodyToMono(GatewayDownloadResponseDTO.class)
+                .block();
+
+            if (response == null || response.getFilePath() == null) {
+                log.warn("Gateway download returned empty response for messageId={}", messageId);
+                return null;
+            }
+
+            String filename = response.getFilename() != null && !response.getFilename().isBlank()
+                ? response.getFilename()
+                : extractFilenameFromPath(response.getFilePath());
+
+            log.info("Gateway downloaded messageId={} → path={}", messageId, response.getFilePath());
+            return new EmailSession.CollectedMedia(response.getFilePath(), filename,
+                response.getMediaType() != null ? response.getMediaType() : "document", null);
+        } catch (Exception e) {
+            log.error("Failed to download messageId={} from gateway: {}", messageId, e.getMessage());
+            return null;
+        }
+    }
+
+    private String extractFilenameFromPath(String path) {
+        if (path == null) return "attachment";
+        return path.contains("/") ? path.substring(path.lastIndexOf('/') + 1) : path;
     }
 
     private byte[] downloadMedia(String url) {
