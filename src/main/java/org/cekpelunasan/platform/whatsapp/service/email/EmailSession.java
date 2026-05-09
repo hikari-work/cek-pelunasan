@@ -12,17 +12,20 @@ public class EmailSession {
     private final String chatId;
     private final String senderPhone;
     private final String fromName;
+    private final String recipient;
     private final List<CollectedMedia> mediaList = new ArrayList<>();
 
-    public EmailSession(String chatId, String senderPhone, String fromName) {
+    public EmailSession(String chatId, String senderPhone, String fromName, String recipient) {
         this.chatId = chatId;
         this.senderPhone = senderPhone;
         this.fromName = fromName;
+        this.recipient = recipient;
     }
 
     public String getChatId() { return chatId; }
     public String getSenderPhone() { return senderPhone; }
     public String getFromName() { return fromName; }
+    public String getRecipient() { return recipient; }
     public List<CollectedMedia> getMediaList() { return mediaList; }
 
     public void addMedia(CollectedMedia media) {
