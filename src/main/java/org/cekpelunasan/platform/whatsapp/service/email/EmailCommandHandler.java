@@ -86,10 +86,6 @@ public class EmailCommandHandler {
         String filename = resolveFilename(media, mediaType, session.getMediaList().size() + 1);
         session.addMedia(new EmailSession.CollectedMedia(downloadUrl, filename, mediaType, media.getCaption()));
 
-        whatsAppSenderService.sendWhatsAppText(session.getChatId(),
-            "📎 Media diterima (" + session.getMediaList().size() + "): " + filename
-        ).subscribe();
-
         log.info("Collected {} media for session {}: {}", mediaType, phone, filename);
     }
 
