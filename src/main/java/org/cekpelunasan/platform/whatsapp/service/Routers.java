@@ -169,7 +169,7 @@ public class Routers {
 
 	private boolean isValidSlikCommand(WhatsAppWebhookDTO webhook) {
 		return isValidTextMessage(webhook)
-				&& webhook.getPayload().getBody().startsWith(COMMAND_PREFIX + "s");
+				&& webhook.getPayload().getBody().startsWith(COMMAND_PREFIX + "slik");
 	}
 
 	private boolean isAdminShortcut(WhatsAppWebhookDTO webhook) {

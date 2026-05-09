@@ -71,6 +71,24 @@ public class WhatsAppSenderService {
 	}
 
 	/**
+	 * Mengirim file/dokumen ke nomor WhatsApp yang dituju.
+	 *
+	 * @param phone     nomor tujuan dalam format yang diterima gateway
+	 * @param fileBytes isi file sebagai byte array
+	 * @param fileName  nama file yang akan ditampilkan di WhatsApp
+	 * @param caption   teks keterangan yang menyertai file
+	 * @return Mono berisi response dari gateway
+	 */
+	public Mono<GenericResponseDTO> sendWhatsAppFile(String phone, byte[] fileBytes, String fileName, String caption) {
+		SendFileMessageDTO dto = new SendFileMessageDTO();
+		dto.setPhone(phone);
+		dto.setFileBytes(fileBytes);
+		dto.setFileName(fileName);
+		dto.setCaption(caption);
+		return sender.request(sender.buildPath(TypeMessage.FILE), dto);
+	}
+
+	/**
 	 * Mengirim reaksi emoji acak ke sebuah pesan sebagai tanda pesan sudah diproses.
 	 * <p>
 	 * Emoji dipilih secara acak dari daftar: 👌, ✍, 🙏, 👍, 🤝, 👊.
