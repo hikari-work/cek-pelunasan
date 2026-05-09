@@ -36,7 +36,8 @@ build/
 files/Nominatif%20Baru.csv
 
 # Claude Code internal files
-.claude/
+.claude/*
+!.claude/skills
 CLAUDE.md
 PLAN.md
 unhandled-callbacks.md
