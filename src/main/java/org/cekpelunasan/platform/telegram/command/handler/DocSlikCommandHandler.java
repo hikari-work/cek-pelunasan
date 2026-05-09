@@ -5,6 +5,7 @@ import it.tdlight.jni.TdApi;
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.annotation.RequireAuth;
 import org.cekpelunasan.core.entity.AccountOfficerRoles;
+import org.cekpelunasan.core.service.slik.MonthFolderProvider;
 import org.cekpelunasan.platform.telegram.command.AbstractCommandHandler;
 import org.cekpelunasan.configuration.S3ClientConfiguration;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,7 @@ import reactor.core.publisher.Mono;
 public class DocSlikCommandHandler extends AbstractCommandHandler {
 
 	private final S3ClientConfiguration s3Connector;
+	private final MonthFolderProvider monthFolderProvider;
 
 	@Override
 	public String getCommand() {
@@ -69,7 +71,13 @@ public class DocSlikCommandHandler extends AbstractCommandHandler {
 		if (name.isEmpty() || name.equals("/doc")) {
 			return Mono.fromRunnable(() -> sendMessage(chatId, "Nama Harus Diisi", client));
 		}
-		return s3Connector.getFile(name)
+		Mono<byte[]> fileBytes = name.contains("/")
+			? s3Connector.getFile(name)
+			: s3Connector.getFile(monthFolderProvider.pdfPath(name))
+				.switchIfEmpty(s3Connector.getFile(monthFolderProvider.txtPath(name)))
+				.switchIfEmpty(s3Connector.getFile(monthFolderProvider.idebPath(name)));
+
+		return fileBytes
 			.switchIfEmpty(Mono.fromRunnable(() -> sendMessage(chatId, "File tidak ditemukan", client)))
 			.flatMap(file -> Mono.fromRunnable(() -> sendDocument(chatId, name, file, client)))
 			.then();
