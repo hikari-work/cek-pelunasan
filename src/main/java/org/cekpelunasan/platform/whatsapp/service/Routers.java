@@ -80,7 +80,7 @@ public class Routers {
 		// Perintah teks (.email / .done) selalu diproses lebih dulu,
 		// bahkan jika pesan juga mengandung media
 		String body = webhook.getPayload().getBody();
-		if (body != null && (EMAIL_START_COMMAND.equals(body) || EMAIL_DONE_COMMAND.equals(body))) {
+		if (body != null && (body.equals(EMAIL_START_COMMAND) || body.startsWith(EMAIL_START_COMMAND + " ") || EMAIL_DONE_COMMAND.equals(body))) {
 			processCommand(webhook);
 			return CompletableFuture.completedFuture(null);
 		}
@@ -115,7 +115,7 @@ public class Routers {
 		}
 		log.info("Is Command");
 
-		if (EMAIL_START_COMMAND.equals(messageText)) {
+		if (messageText.equals(EMAIL_START_COMMAND) || messageText.startsWith(EMAIL_START_COMMAND + " ")) {
 			emailCommandHandler.handleStart(webhook);
 			return;
 		}

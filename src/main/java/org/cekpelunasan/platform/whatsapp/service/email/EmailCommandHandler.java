@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.whatsapp.dto.webhook.MediaPayloadDTO;
 import org.cekpelunasan.platform.whatsapp.dto.webhook.WhatsAppWebhookDTO;
 import org.cekpelunasan.platform.whatsapp.service.sender.WhatsAppSenderService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -21,27 +22,57 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class EmailCommandHandler {
 
+    private static final String EMAIL_REGEX = "^[\\w._%+\\-]+@[\\w.\\-]+\\.[a-zA-Z]{2,}$";
+
     private final EmailSessionCache sessionCache;
     private final EmailForwardService emailForwardService;
     private final WhatsAppSenderService whatsAppSenderService;
 
+    @Value("${email.forward.recipient}")
+    private String defaultRecipient;
+
     /**
      * Membuka sesi email baru. Jika sudah ada sesi aktif, sesi lama direset.
+     * Format: ".email" → pakai recipient default dari config
+     *         ".email user@example.com" → kirim ke email tersebut
      */
     public void handleStart(WhatsAppWebhookDTO webhook) {
         String phone = webhook.getCleanSenderId();
         String chatId = webhook.buildChatId();
         String fromName = webhook.getPayload().getFromName();
+        String body = webhook.getPayload().getBody().trim();
 
-        EmailSession session = new EmailSession(chatId, phone, fromName != null ? fromName : phone);
+        String recipient = resolveRecipient(body);
+        if (recipient == null) {
+            whatsAppSenderService.sendWhatsAppText(chatId,
+                "❌ Format email tidak valid. Gunakan: *.email* atau *.email user@example.com*"
+            ).subscribe();
+            return;
+        }
+
+        EmailSession session = new EmailSession(chatId, phone, fromName != null ? fromName : phone, recipient);
         sessionCache.put(session, emailForwardService::send);
 
         whatsAppSenderService.sendWhatsAppText(chatId,
-            "📧 Sesi email dibuka. Kirimkan foto, video, atau dokumen yang ingin diteruskan.\n" +
+            "📧 Sesi email dibuka. Tujuan: " + recipient + "\n" +
+            "Kirimkan foto, video, atau dokumen yang ingin diteruskan.\n" +
             "Ketik *.done* jika sudah selesai, atau tunggu 60 detik untuk dikirim otomatis."
         ).subscribe();
 
-        log.info("Email session started for {}", phone);
+        log.info("Email session started for {} → {}", phone, recipient);
+    }
+
+    private String resolveRecipient(String body) {
+        String[] parts = body.split("\\s+", 2);
+        if (parts.length == 1) {
+            // ".email" saja → pakai default
+            return defaultRecipient;
+        }
+        String customEmail = parts[1].trim();
+        if (customEmail.matches(EMAIL_REGEX)) {
+            return customEmail;
+        }
+        return null;
     }
 
     /**
@@ -85,10 +116,6 @@ public class EmailCommandHandler {
 
         String filename = resolveFilename(media, mediaType, session.getMediaList().size() + 1);
         session.addMedia(new EmailSession.CollectedMedia(downloadUrl, filename, mediaType, media.getCaption()));
-
-        whatsAppSenderService.sendWhatsAppText(session.getChatId(),
-            "📎 Media diterima (" + session.getMediaList().size() + "): " + filename
-        ).subscribe();
 
         log.info("Collected {} media for session {}: {}", mediaType, phone, filename);
     }

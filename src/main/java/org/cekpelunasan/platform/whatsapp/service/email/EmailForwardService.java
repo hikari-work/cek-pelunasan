@@ -38,9 +38,6 @@ public class EmailForwardService {
     private final WebClient whatsappWebClient;
     private final WhatsAppSenderService whatsAppSenderService;
 
-    @Value("${email.forward.recipient}")
-    private String recipient;
-
     @Value("${email.forward.from}")
     private String from;
 
@@ -79,7 +76,7 @@ public class EmailForwardService {
             sendEmail(session, attachments);
             String info = String.format(
                 "✅ Email berhasil dikirim ke %s\n📎 %d dari %d file terkirim.",
-                recipient, attachments.size(), session.getMediaList().size()
+                session.getRecipient(), attachments.size(), session.getMediaList().size()
             );
             notifyUser(session, info);
             log.info("Email forwarded for {} — {}/{} attachments",
@@ -122,7 +119,7 @@ public class EmailForwardService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
         helper.setFrom(from);
-        helper.setTo(recipient);
+        helper.setTo(session.getRecipient());
         helper.setSubject(buildSubject(session));
         helper.setText(buildBody(session), false);
 
