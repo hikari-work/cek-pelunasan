@@ -2,6 +2,8 @@ package org.cekpelunasan.platform.whatsapp.service.sender;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.platform.whatsapp.dto.send.*;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -80,12 +82,13 @@ public class WhatsAppSenderService {
 	 * @return Mono berisi response dari gateway
 	 */
 	public Mono<GenericResponseDTO> sendWhatsAppFile(String phone, byte[] fileBytes, String fileName, String caption) {
-		SendFileMessageDTO dto = new SendFileMessageDTO();
-		dto.setPhone(phone);
-		dto.setFileBytes(fileBytes);
-		dto.setFileName(fileName);
-		dto.setCaption(caption);
-		return sender.request(sender.buildPath(TypeMessage.FILE), dto);
+		MultipartBodyBuilder builder = new MultipartBodyBuilder();
+		builder.part("phone", phone);
+		builder.part("caption", caption);
+		builder.part("file", fileBytes)
+				.filename(fileName)
+				.contentType(MediaType.APPLICATION_OCTET_STREAM);
+		return sender.requestMultipart(sender.buildPath(TypeMessage.FILE), builder.build());
 	}
 
 	/**

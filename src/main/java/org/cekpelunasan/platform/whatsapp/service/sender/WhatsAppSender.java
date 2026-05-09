@@ -5,7 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.whatsapp.dto.send.BaseMessageRequestDTO;
 import org.cekpelunasan.platform.whatsapp.dto.send.GenericResponseDTO;
 import org.cekpelunasan.platform.whatsapp.dto.send.MessageActionDTO;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -66,6 +69,26 @@ public class WhatsAppSender {
                 .bodyToMono(GenericResponseDTO.class)
                 .onErrorResume(e -> {
                     log.error("Error sending WhatsApp request to {}: {}", path, e.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    /**
+     * Mengirim request multipart/form-data ke endpoint WhatsApp gateway.
+     * Dipakai untuk pengiriman file/dokumen yang membutuhkan binary upload.
+     *
+     * @param path          path endpoint (misal "/send/file")
+     * @param multipartBody body multipart yang sudah dibangun dengan {@link MultipartBodyBuilder}
+     * @return response dari gateway, atau {@code Mono.empty()} kalau gagal
+     */
+    public Mono<GenericResponseDTO> requestMultipart(String path, MultiValueMap<String, ?> multipartBody) {
+        return whatsappWebClient.post()
+                .uri(path)
+                .body(BodyInserters.fromMultipartData(multipartBody))
+                .retrieve()
+                .bodyToMono(GenericResponseDTO.class)
+                .onErrorResume(e -> {
+                    log.error("Error sending WhatsApp multipart request to {}: {}", path, e.getMessage());
                     return Mono.empty();
                 });
     }
