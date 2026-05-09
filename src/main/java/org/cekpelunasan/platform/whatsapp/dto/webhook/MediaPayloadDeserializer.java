@@ -45,6 +45,7 @@ public class MediaPayloadDeserializer extends StdDeserializer<MediaPayloadDTO> {
         if (node.has("path")) dto.setPath(node.get("path").asText());
         if (node.has("url")) dto.setUrl(node.get("url").asText());
         if (node.has("caption")) dto.setCaption(node.get("caption").asText());
+        if (node.has("filename")) dto.setFilename(node.get("filename").asText());
         return dto;
     }
 }

@@ -24,4 +24,6 @@ public class MediaPayloadDTO {
     private String url;
     /** Teks keterangan yang dikirim bersamaan dengan media, bisa null kalau tidak ada. */
     private String caption;
+    /** Nama file asli dari pengirim, biasanya ada pada dokumen (misal "report.pdf"). */
+    private String filename;
 }

@@ -3,6 +3,8 @@ package org.cekpelunasan.platform.whatsapp.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.whatsapp.dto.webhook.WhatsAppWebhookDTO;
+import org.cekpelunasan.platform.whatsapp.service.email.EmailCommandHandler;
+import org.cekpelunasan.platform.whatsapp.service.email.EmailSessionCache;
 import org.cekpelunasan.platform.whatsapp.service.hotkolek.HandleKolekCommand;
 import org.cekpelunasan.platform.whatsapp.service.jatuhbayar.JatuhBayarService;
 import org.cekpelunasan.platform.whatsapp.service.pelunasan.HandlerPelunasan;
@@ -41,6 +43,8 @@ public class Routers {
 	private final HandleKolekCommand handleKolekCommand;
 	private final SlikService slikService;
 	private final VirtualAccountHandler virtualAccountHandler;
+	private final EmailCommandHandler emailCommandHandler;
+	private final EmailSessionCache emailSessionCache;
 
 	@Value("${admin.whatsapp}")
 	private String adminWhatsApp;
@@ -48,6 +52,8 @@ public class Routers {
 	private static final String COMMAND_PREFIX = ".";
 	private static final String ADMIN_SHORTCUT_PREFIX = "/";
 	private static final String HOT_KOLEK_PATTERN = "^" + COMMAND_PREFIX + "\\d{12}(?:\\s\\d{12})*$";
+	private static final String EMAIL_START_COMMAND = ".email";
+	private static final String EMAIL_DONE_COMMAND = ".done";
 
 	/**
 	 * Titik masuk utama untuk semua pesan WhatsApp yang diterima dari webhook.
@@ -67,10 +73,29 @@ public class Routers {
 				webhook.getPayload() != null ? webhook.getPayload().getId() : null,
 				webhook.getFrom());
 
+		if (webhook.getPayload() == null || !"message".equals(webhook.getEvent())) {
+			return CompletableFuture.completedFuture(null);
+		}
+
+		// Perintah teks (.email / .done) selalu diproses lebih dulu,
+		// bahkan jika pesan juga mengandung media
+		String body = webhook.getPayload().getBody();
+		if (body != null && (EMAIL_START_COMMAND.equals(body) || EMAIL_DONE_COMMAND.equals(body))) {
+			processCommand(webhook);
+			return CompletableFuture.completedFuture(null);
+		}
+
+		// Jika user punya sesi aktif dan pesan mengandung media → kumpulkan media
+		if (hasActiveEmailSession(webhook) && webhook.getMedia() != null) {
+			emailCommandHandler.collectMedia(webhook);
+			return CompletableFuture.completedFuture(null);
+		}
+
 		if (!isValidTextMessage(webhook)) {
 			log.debug("Skipping non-text or invalid webhook event={}", webhook.getEvent());
 			return CompletableFuture.completedFuture(null);
 		}
+
 		processCommand(webhook);
 		return CompletableFuture.completedFuture(null);
 	}
@@ -89,6 +114,16 @@ public class Routers {
 			return;
 		}
 		log.info("Is Command");
+
+		if (EMAIL_START_COMMAND.equals(messageText)) {
+			emailCommandHandler.handleStart(webhook);
+			return;
+		}
+
+		if (EMAIL_DONE_COMMAND.equals(messageText)) {
+			emailCommandHandler.handleDone(webhook);
+			return;
+		}
 
 		routeCommand(webhook, messageText);
 	}
@@ -115,6 +150,11 @@ public class Routers {
 		} else {
 			log.debug("Unknown command: {}", text);
 		}
+	}
+
+	private boolean hasActiveEmailSession(WhatsAppWebhookDTO webhook) {
+		return webhook.getCleanSenderId() != null
+				&& emailSessionCache.get(webhook.getCleanSenderId()) != null;
 	}
 
 	private boolean isVirtualAccount(WhatsAppWebhookDTO webhookDTO) {
