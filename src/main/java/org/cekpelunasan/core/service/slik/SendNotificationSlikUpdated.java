@@ -3,6 +3,7 @@ package org.cekpelunasan.core.service.slik;
 import it.tdlight.client.SimpleTelegramClient;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.configuration.S3ClientConfiguration;
+import org.cekpelunasan.core.service.slik.MonthFolderProvider;
 import org.cekpelunasan.core.entity.SlikNotifiedFile;
 import org.cekpelunasan.core.repository.SlikNotifiedFileRepository;
 import org.cekpelunasan.core.service.users.UserService;
@@ -40,6 +41,7 @@ public class SendNotificationSlikUpdated {
 	private final TelegramMessageService telegramMessageService;
 	private final TelegramBot telegramBot;
 	private final SlikNotifiedFileRepository notifiedFileRepository;
+	private final MonthFolderProvider monthFolderProvider;
 
 	public SendNotificationSlikUpdated(
 			S3AsyncClient s3AsyncClient,
@@ -47,12 +49,14 @@ public class SendNotificationSlikUpdated {
 			UserService userService,
 			TelegramMessageService telegramMessageService,
 			SlikNotifiedFileRepository notifiedFileRepository,
+			MonthFolderProvider monthFolderProvider,
 			@Lazy TelegramBot telegramBot) {
 		this.s3AsyncClient = s3AsyncClient;
 		this.s3ClientConfiguration = s3ClientConfiguration;
 		this.userService = userService;
 		this.telegramMessageService = telegramMessageService;
 		this.notifiedFileRepository = notifiedFileRepository;
+		this.monthFolderProvider = monthFolderProvider;
 		this.telegramBot = telegramBot;
 	}
 
@@ -71,8 +75,9 @@ public class SendNotificationSlikUpdated {
 			return;
 		}
 
-		s3ClientConfiguration.listObjectFoundByName("")
-			.filter(key -> key.endsWith(".pdf") && !key.startsWith("KTP_"))
+		String pdfPrefix = monthFolderProvider.currentFolder() + "/pdf/";
+		s3ClientConfiguration.listObjectFoundByName(pdfPrefix)
+			.filter(key -> key.endsWith(".pdf"))
 			.filterWhen(key -> notifiedFileRepository.existsByFileKey(key).map(exists -> !exists))
 			.collectList()
 			.doOnNext(newFiles -> {

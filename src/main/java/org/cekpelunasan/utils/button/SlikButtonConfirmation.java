@@ -30,6 +30,21 @@ public class SlikButtonConfirmation {
         return new TdApi.ReplyMarkupInlineKeyboard(rows);
     }
 
+    /**
+     * Membuat keyboard konfirmasi dengan bulan/tahun yang disematkan dalam callback.
+     * Data callback format: "slik_[yyyymm]_[ktpId]_1" untuk aktif, "slik_[yyyymm]_[ktpId]_0" untuk semua data.
+     *
+     * @param ktpId  nomor KTP 16 digit nasabah
+     * @param yyyymm bulan yang dipilih dalam format 6 digit, mis. "202605"
+     * @return keyboard inline dengan dua tombol pilihan
+     */
+    public TdApi.ReplyMarkupInlineKeyboard sendSlikCommandWithMonth(String ktpId, String yyyymm) {
+        TdApi.InlineKeyboardButton aktifButton = tdButton("Kirim Data Fasilitas Aktif", "slik_" + yyyymm + "_" + ktpId + "_1");
+        TdApi.InlineKeyboardButton allButton = tdButton("Kirim Semua Data", "slik_" + yyyymm + "_" + ktpId + "_0");
+        TdApi.InlineKeyboardButton[][] rows = {{aktifButton, allButton}};
+        return new TdApi.ReplyMarkupInlineKeyboard(rows);
+    }
+
     private static TdApi.InlineKeyboardButton tdButton(String text, String data) {
         TdApi.InlineKeyboardButton btn = new TdApi.InlineKeyboardButton();
         btn.text = text;

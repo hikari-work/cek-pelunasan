@@ -24,7 +24,8 @@ import java.nio.charset.StandardCharsets;
  * status terkini, sehingga user tahu prosesnya sedang berjalan.
  *
  * <p>Format data callback yang diharapkan:
- * {@code "slik_<customer_id>_<is_active_facility>"}, di mana
+ * {@code "slik_<yyyymm>_<customer_id>_<is_active_facility>"}, di mana
+ * {@code yyyymm} adalah bulan yang dipilih (mis. {@code 202605}) dan
  * {@code is_active_facility} bernilai {@code 1} untuk fasilitas aktif.
  */
 @Slf4j
@@ -35,9 +36,10 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
     private static final String KTP_PREFIX = "KTP_";
     private static final String KTP_EXTENSION = ".txt";
     private static final String CALLBACK_PATTERN = "slik";
-    private static final int CALLBACK_DATA_MIN_PARTS = 3;
-    private static final int CUSTOMER_ID_INDEX = 1;
-    private static final int IDENTIFIER_INDEX = 2;
+    private static final int CALLBACK_DATA_MIN_PARTS = 4;
+    private static final int MONTH_INDEX = 1;
+    private static final int CUSTOMER_ID_INDEX = 2;
+    private static final int IDENTIFIER_INDEX = 3;
     private static final int ACTIVE_FACILITY_VALUE = 1;
 
     private static final String LOADING_MESSAGE = "⏳ Mengambil Data KTP...";
@@ -88,6 +90,7 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
             return runBlocking(() -> telegramMessageService.sendText(update.chatId, INVALID_CALLBACK_MESSAGE, client));
         }
 
+        String yyyymm = data[MONTH_INDEX];
         String customerId = data[CUSTOMER_ID_INDEX];
         Boolean isActiveFacility = data[IDENTIFIER_INDEX].equals(String.valueOf(ACTIVE_FACILITY_VALUE));
         long chatId = update.chatId;
@@ -103,7 +106,7 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
             return Mono.empty();
         }
 
-        return s3Connector.getFile(buildFileName(customerId))
+        return s3Connector.getFile(buildFileName(yyyymm, customerId))
             .switchIfEmpty(runBlocking(() -> {
                 log.warn("KTP file not found - ID: {}", customerId);
                 telegramMessageService.editText(chatId, notificationId, String.format(FILE_NOT_FOUND_MESSAGE, customerId), client);
@@ -145,15 +148,18 @@ public class SlikSenderHandler extends AbstractCallbackHandler {
     }
 
     /**
-     * Membangun nama file KTP di S3 dari ID nasabah.
+     * Membangun path file KTP di S3 dari bulan yang dipilih dan ID nasabah.
      *
-     * <p>Contoh: ID {@code "1234567890"} menjadi {@code "KTP_1234567890.txt"}.
+     * <p>Contoh: yyyymm {@code "202605"}, ID {@code "1234567890"}
+     * → {@code "2026_05/txt/KTP_1234567890.txt"}.
      *
-     * @param ktpId ID nasabah / nomor KTP
-     * @return nama file lengkap termasuk prefix dan ekstensi
+     * @param yyyymm bulan 6-digit tanpa underscore, mis. "202605"
+     * @param ktpId  ID nasabah / nomor KTP
+     * @return path S3 lengkap file KTP
      */
-    private String buildFileName(String ktpId) {
-        return KTP_PREFIX + ktpId + KTP_EXTENSION;
+    private String buildFileName(String yyyymm, String ktpId) {
+        String folder = yyyymm.substring(0, 4) + "_" + yyyymm.substring(4);
+        return folder + "/txt/" + KTP_PREFIX + ktpId + KTP_EXTENSION;
     }
 
     /**

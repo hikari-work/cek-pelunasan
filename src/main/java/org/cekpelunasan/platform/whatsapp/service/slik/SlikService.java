@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.configuration.S3ClientConfiguration;
 import org.cekpelunasan.core.service.slik.GeneratePdfFiles;
+import org.cekpelunasan.core.service.slik.MonthFolderProvider;
 import org.cekpelunasan.core.service.slik.PDFReader;
 import org.cekpelunasan.platform.whatsapp.dto.webhook.WhatsAppWebhookDTO;
 import org.cekpelunasan.platform.whatsapp.service.sender.WhatsAppSenderService;
@@ -44,6 +45,7 @@ public class SlikService {
     private final GeneratePdfFiles generatePdfFiles;
     private final PDFReader pdfReader;
     private final WhatsAppSenderService senderService;
+    private final MonthFolderProvider monthFolderProvider;
 
     /**
      * Entry point untuk perintah {@code .slik {nama}}.
@@ -79,7 +81,7 @@ public class SlikService {
 
         s3Client.getFile(fileName)
             .flatMap(pdfBytes ->
-                buildGeneratedPdfs(pdfBytes)
+                buildGeneratedPdfs(pdfBytes, fileName)
                     .flatMap(pdfs ->
                         senderService.sendWhatsAppFile(chatId, pdfBytes,
                                 "SLIK_Asli_" + displayName + ".pdf", "📄 1/3 — SLIK Asli")
@@ -110,10 +112,16 @@ public class SlikService {
      * Mengekstrak nomor KTP dari PDF, fetch file TXT-nya, lalu generate 2 PDF secara paralel.
      * Setiap step yang mengembalikan empty dikonversi ke error agar fallback di caller terpicu.
      */
-    private Mono<reactor.util.function.Tuple2<byte[], byte[]>> buildGeneratedPdfs(byte[] pdfBytes) {
+    private Mono<reactor.util.function.Tuple2<byte[], byte[]>> buildGeneratedPdfs(byte[] pdfBytes, String pdfKey) {
         return pdfReader.generateIDNumber(pdfBytes)
             .switchIfEmpty(Mono.error(new IllegalStateException("Nomor KTP tidak ditemukan di PDF")))
-            .flatMap(ktp -> s3Client.getFile("KTP_" + ktp + ".txt"))
+            .flatMap(ktp -> {
+                // Derive folder dari PDF key: "2026_05/pdf/SMG_budi.pdf" → "2026_05/txt/KTP_....txt"
+                String folderMonth = pdfKey.contains("/pdf/")
+                    ? pdfKey.substring(0, pdfKey.indexOf("/pdf/"))
+                    : monthFolderProvider.currentFolder();
+                return s3Client.getFile(folderMonth + "/txt/KTP_" + ktp + ".txt");
+            })
             .switchIfEmpty(Mono.error(new IllegalStateException("File metadata KTP tidak ditemukan di S3")))
             .flatMap(txt -> Mono.zip(
                 generatePdfFiles.generatePdf(txt, true)
@@ -152,7 +160,8 @@ public class SlikService {
      */
     public List<String> getBucketList() {
         try {
-            ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucket).build();
+            String pdfPrefix = monthFolderProvider.currentFolder() + "/pdf/";
+            ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucket).prefix(pdfPrefix).build();
             ListObjectsV2Response response = s3AsyncClient.listObjectsV2(request).get();
             return response.contents().stream().map(S3Object::key).toList();
         } catch (Exception e) {

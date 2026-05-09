@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.BytesWrapper;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -142,6 +143,33 @@ public class S3ClientConfiguration{
 	 * @param prefix awalan path yang digunakan untuk menyaring objek, bisa berupa folder virtual
 	 * @return {@link Flux} yang memancarkan key setiap objek yang cocok, atau kosong jika error
 	 */
+	/**
+	 * Mengunggah file ke R2 berdasarkan key dan content-type yang diberikan.
+	 *
+	 * @param key         path tujuan di dalam bucket, misal {@code "2026_05/pdf/SMG_budi.pdf"}
+	 * @param content     byte array isi file
+	 * @param contentType MIME type, misal {@code "application/pdf"}
+	 * @return {@link Mono} kosong setelah upload selesai, atau kosong jika gagal
+	 */
+	public Mono<Void> putObject(String key, byte[] content, String contentType) {
+		try {
+			PutObjectRequest request = PutObjectRequest.builder()
+				.bucket(bucket)
+				.key(key)
+				.contentType(contentType)
+				.build();
+			return Mono.fromFuture(s3AsyncClient().putObject(request, AsyncRequestBody.fromBytes(content)))
+				.then()
+				.onErrorResume(e -> {
+					log.error("Failed to upload to S3 key={}: {}", key, e.getMessage());
+					return Mono.empty();
+				});
+		} catch (Exception e) {
+			log.error("S3 putObject setup error for key {}: {}", key, e.getMessage());
+			return Mono.empty();
+		}
+	}
+
 	public Flux<String> listObjectFoundByName(String prefix) {
 		try {
 			ListObjectsV2Request initialRequest = ListObjectsV2Request.builder()

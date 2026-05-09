@@ -29,6 +29,7 @@ public class SlikSessionCache {
     private static final long TTL_MS = 30 * 60 * 1000L;
 
     private final ConcurrentHashMap<Long, CachedSession> sessions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, PendingQuery> pendingQueries = new ConcurrentHashMap<>();
 
     /**
      * Data satu halaman dalam sesi SLIK: nama file di S3, nomor KTP yang
@@ -42,6 +43,12 @@ public class SlikSessionCache {
      * yang perlu ditampilkan, dan kata kunci pencarian yang digunakan.
      */
     public record SlikSession(List<SlikPageData> pages, String query) {}
+
+    /**
+     * Query yang menunggu pemilihan bulan oleh user.
+     * {@code type} berisi {@code "name"} atau {@code "ktp"}.
+     */
+    public record PendingQuery(String query, String type) {}
 
     /** Wrapper internal yang menyimpan sesi beserta waktu kadaluarsanya. */
     private record CachedSession(SlikSession session, long expiresAt) {}
@@ -74,6 +81,16 @@ public class SlikSessionCache {
             return null;
         }
         return cached.session();
+    }
+
+    /** Menyimpan pending query sambil menunggu user pilih bulan. */
+    public void putPending(long chatId, PendingQuery pending) {
+        pendingQueries.put(chatId, pending);
+    }
+
+    /** Mengambil pending query dan langsung menghapusnya dari cache. */
+    public PendingQuery takePending(long chatId) {
+        return pendingQueries.remove(chatId);
     }
 
     /**

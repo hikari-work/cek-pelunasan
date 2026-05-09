@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.platform.telegram.callback.CallbackHandler;
 import org.cekpelunasan.platform.telegram.command.CommandHandler;
+import org.cekpelunasan.platform.telegram.command.handler.SlikDocumentUploadHandler;
 import org.cekpelunasan.platform.telegram.service.MessageIdResolver;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,7 @@ public class TelegramBot implements ApplicationListener<ApplicationReadyEvent> {
     private final CommandHandler commandHandler;
     private final CallbackHandler callbackHandler;
     private final MessageIdResolver messageIdResolver;
+    private final SlikDocumentUploadHandler slikDocumentUploadHandler;
 
     @Value("${telegram.bot.token}")
     private String botToken;
@@ -80,6 +82,8 @@ public class TelegramBot implements ApplicationListener<ApplicationReadyEvent> {
     private void onMessage(TdApi.UpdateNewMessage update) {
         if (update.message.content instanceof TdApi.MessageText) {
             commandHandler.handle(update, client);
+        } else if (update.message.content instanceof TdApi.MessageDocument) {
+            slikDocumentUploadHandler.handle(update, client);
         }
     }
 

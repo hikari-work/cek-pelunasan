@@ -242,9 +242,12 @@ public class SlikNameFormatter {
      */
     private String extractDisplayName(String contentKey) {
         if (!isNotBlank(contentKey)) return "-";
+        // Ambil hanya filename dari full S3 path (setelah slash terakhir)
+        int lastSlash = contentKey.lastIndexOf('/');
+        String filename = lastSlash >= 0 ? contentKey.substring(lastSlash + 1) : contentKey;
         // Hapus ekstensi
-        int dotIdx = contentKey.lastIndexOf('.');
-        String name = dotIdx > 0 ? contentKey.substring(0, dotIdx) : contentKey;
+        int dotIdx = filename.lastIndexOf('.');
+        String name = dotIdx > 0 ? filename.substring(0, dotIdx) : filename;
         // Hapus prefix AO (sebelum underscore pertama)
         int underscoreIdx = name.indexOf('_');
         if (underscoreIdx >= 0 && underscoreIdx < name.length() - 1) {
