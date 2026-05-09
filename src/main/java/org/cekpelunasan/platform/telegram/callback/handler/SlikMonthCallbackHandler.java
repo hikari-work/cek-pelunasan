@@ -94,7 +94,12 @@ public class SlikMonthCallbackHandler extends AbstractCallbackHandler {
         String queryLower = pending.query().toLowerCase();
         log.info("SLIK month selected — chatId={} yyyymm={} type=name query={}", chatId, yyyymm, pending.query());
 
+        // switchIfEmpty HARUS sebelum flatMap — Mono<Void> tidak pernah emit item
+        // sehingga switchIfEmpty setelah flatMap akan selalu terpicu meski user ditemukan.
         return userService.findUserByChatId(chatId)
+            .switchIfEmpty(Mono.<org.cekpelunasan.core.entity.User>fromRunnable(() ->
+                telegramMessageService.sendText(chatId, MSG_UNKNOWN_USER, client))
+                .subscribeOn(Schedulers.boundedElastic()))
             .flatMap(user -> {
                 boolean isAdmin = user.getRoles() == AccountOfficerRoles.ADMIN
                     || user.getRoles() == AccountOfficerRoles.PIMP;
@@ -121,9 +126,7 @@ public class SlikMonthCallbackHandler extends AbstractCallbackHandler {
                             .subscribeOn(Schedulers.boundedElastic());
                     });
             })
-            .switchIfEmpty(Mono.<Void>fromRunnable(() ->
-                telegramMessageService.sendText(chatId, MSG_UNKNOWN_USER, client))
-                .subscribeOn(Schedulers.boundedElastic()));
+            .then();
     }
 
     /**
