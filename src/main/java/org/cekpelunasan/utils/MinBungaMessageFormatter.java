@@ -76,18 +76,10 @@ public class MinBungaMessageFormatter {
 
     private String buildSectionHeader(LocalDate today, LocalDate date, int daysDiff, int maxDayLateForSection, String identifier, int count) {
         LocalDate batas90Hari = today.plusDays(90 - maxDayLateForSection);
-        return String.format(
-            "========================\n" +
-            "*Tagihan : %s* (+%d hari)\n" +
-            "Minimal bayar Maksimal di : %s\n" +
-            "ID : %s  |  Jumlah : %d tagihan\n" +
-            "========================\n\n",
-            date.format(DATE_FORMAT),
-            daysDiff,
-            batas90Hari.format(DATE_WITH_DAY),
-            identifier,
-            count
-        );
+        return "*Tagihan: " + date.format(DATE_FORMAT) + "* (+" + daysDiff + " hari)\n" +
+            "Minimal bayar Maksimal di: " + batas90Hari.format(DATE_WITH_DAY) + "\n" +
+            "ID: " + identifier + " | Jumlah: " + count + " tagihan\n" +
+            "─────────────────────\n\n";
     }
 
     private String buildBillEntry(Bills bill, LocalDate today) {
@@ -95,35 +87,18 @@ public class MinBungaMessageFormatter {
         LocalDate maksBayar = today.plusDays(Math.max(0, 90 - dayLate));
         long jikaNotPay = nullSafe(bill.getLastPrincipal()) + nullSafe(bill.getPrincipal()) + nullSafe(bill.getMinInterest());
 
-        return String.format(
-            "*%s*\n" +
-            "Alamat        : %s\n" +
-            "AO            : %s\n" +
-            "\n" +
-            "Plafond       : %s\n" +
-            "Baki Debet    : %s\n" +
-            "\n" +
-            "Tgg. Pokok    : %s\n" +
-            "Tgg. Bunga    : %s\n" +
-            "\n" +
-            "Min. Pokok    : %s\n" +
-            "Min. Bunga    : %s\n" +
-            "\n" +
-            "Maks. Bayar   : %s\n" +
-            "Jika Tdk Bayar: %s\n" +
-            "------------------------\n\n",
-            bill.getName(),
-            bill.getAddress(),
-            bill.getAccountOfficer(),
-            rupiahFormatUtils.formatRupiah(nullSafe(bill.getPlafond())),
-            rupiahFormatUtils.formatRupiah(nullSafe(bill.getDebitTray())),
-            rupiahFormatUtils.formatRupiah(nullSafe(bill.getLastPrincipal())),
-            rupiahFormatUtils.formatRupiah(nullSafe(bill.getLastInterest())),
-            rupiahFormatUtils.formatRupiah(nullSafe(bill.getMinPrincipal())),
-            rupiahFormatUtils.formatRupiah(nullSafe(bill.getMinInterest())),
-            maksBayar.format(DATE_WITH_DAY),
-            rupiahFormatUtils.formatRupiah(jikaNotPay)
-        );
+        return "*" + bill.getName() + "*\n" +
+            "Alamat: " + bill.getAddress() + "\n" +
+            "AO: " + bill.getAccountOfficer() + "\n\n" +
+            "Plafond: " + rupiahFormatUtils.formatRupiah(nullSafe(bill.getPlafond())) + "\n" +
+            "Baki Debet: " + rupiahFormatUtils.formatRupiah(nullSafe(bill.getDebitTray())) + "\n" +
+            "Tgg. Pokok: " + rupiahFormatUtils.formatRupiah(nullSafe(bill.getLastPrincipal())) + "\n" +
+            "Tgg. Bunga: " + rupiahFormatUtils.formatRupiah(nullSafe(bill.getLastInterest())) + "\n" +
+            "Min. Pokok: " + rupiahFormatUtils.formatRupiah(nullSafe(bill.getMinPrincipal())) + "\n" +
+            "Min. Bunga: " + rupiahFormatUtils.formatRupiah(nullSafe(bill.getMinInterest())) + "\n\n" +
+            "Maks. Bayar: " + maksBayar.format(DATE_WITH_DAY) + "\n" +
+            "Jika Tdk Bayar: " + rupiahFormatUtils.formatRupiah(jikaNotPay) + "\n" +
+            "─────────────────────\n\n";
     }
 
     private int parseDayLate(String dayLate) {
