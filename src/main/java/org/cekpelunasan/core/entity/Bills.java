@@ -4,6 +4,8 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigInteger;
+
 /**
  * Representasi satu baris data tagihan nasabah yang tersimpan di koleksi MongoDB {@code tagihan}.
  * <p>
@@ -181,4 +183,19 @@ public class Bills {
 	 * Bunga tetap (flat interest) yang dikenakan, dalam rupiah.
 	 */
 	private Long fixedInterest;
+
+	/**
+	 * Indikator jenis CKPN: "C" untuk Collective, "I" untuk Individual.
+	 */
+	private String ckpnType;
+
+	/**
+	 * Nominal cadangan kerugian penurunan nilai (CKPN) dalam rupiah.
+	 */
+	private BigInteger ckpnNominal;
+
+	/**
+	 * Nomor rekening yang digunakan untuk autodebet angsuran nasabah.
+	 */
+	private String rekeningAutobedet;
 }

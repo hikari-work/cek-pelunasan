@@ -60,7 +60,8 @@ public class MiniAppTagihanController {
     private TagihanSummaryDTO toSummary(Bills b) {
         return new TagihanSummaryDTO(
                 b.getNoSpk(), b.getName(), b.getBranch(), b.getProduct(),
-                b.getCollectStatus(), b.getDayLate(), b.getInstallment(), b.getFullPayment()
+                b.getCollectStatus(), b.getDayLate(), b.getInstallment(), b.getFullPayment(),
+                b.getCkpnType(), b.getCkpnNominal(), b.getRekeningAutobedet()
         );
     }
 }

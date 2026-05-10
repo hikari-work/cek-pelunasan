@@ -82,11 +82,21 @@ const Tagihan = (() => {
         </div>
       </div>
 
+      ${(data.ckpnType || data.ckpnNominal > 0) ? `
+      <div class="detail-section">
+        <div class="detail-section-title">CKPN</div>
+        <div class="detail-rows">
+          ${data.ckpnType ? row('Jenis CKPN', data.ckpnType === 'C' ? 'Collective' : data.ckpnType === 'I' ? 'Individual' : data.ckpnType) : ''}
+          ${row('Nominal CKPN', formatRupiah(data.ckpnNominal), 'mono')}
+        </div>
+      </div>` : ''}
+
       <div class="detail-section">
         <div class="detail-section-title">Account Officer</div>
         <div class="detail-rows">
           ${row('AO', data.accountOfficer || '-')}
           ${data.kios ? row('Kios', data.kios) : ''}
+          ${data.rekeningAutobedet ? row('Rek. Autobedet', data.rekeningAutobedet) : ''}
           ${data.address ? row('Alamat', data.address) : ''}
         </div>
       </div>

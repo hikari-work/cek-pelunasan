@@ -330,6 +330,9 @@ public class BillService {
 			.kios(line[28])
 			.titipan(parseLong(line[29]))
 			.fixedInterest(parseLong(line[30]))
+			.ckpnType(line.length > 31 ? line[31] : "")
+			.ckpnNominal(line.length > 32 ? new java.math.BigInteger(line[32].trim().isEmpty() ? "0" : line[32].trim()) : java.math.BigInteger.ZERO)
+			.rekeningAutobedet(line.length > 33 ? line[33] : "")
 			.build();
 	}
 
