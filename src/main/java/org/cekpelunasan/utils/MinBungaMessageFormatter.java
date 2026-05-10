@@ -21,7 +21,9 @@ public class MinBungaMessageFormatter {
     private final RupiahFormatUtils rupiahFormatUtils;
 
     private static final ZoneId WIB = ZoneId.of("Asia/Jakarta");
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("id", "ID"));
+    private static final Locale ID = new Locale("id", "ID");
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("d MMMM yyyy", ID);
+    private static final DateTimeFormatter DATE_WITH_DAY = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", ID);
     private static final int MAX_MSG_CHARS = 3800;
 
     public List<String> format(List<Bills> allBills, List<String> selectedDatesStr, String identifier) {
@@ -66,24 +68,23 @@ public class MinBungaMessageFormatter {
         }
 
         if (messages.isEmpty()) {
-            messages.add("✅ *Tidak ada tagihan yang memenuhi kriteria.*\n_Semua nasabah masih aman dalam batas DayLate 90 hari._");
+            messages.add("*Tidak ada tagihan yang memenuhi kriteria.*\n_Semua nasabah masih aman dalam batas DayLate 90 hari._");
         }
 
         return messages;
     }
 
     private String buildSectionHeader(LocalDate today, LocalDate date, int daysDiff, int maxDayLateForSection, String identifier, int count) {
-        // Tanggal ketika nasabah dengan DayLate tertinggi di section ini akan menyentuh 90 hari
         LocalDate batas90Hari = today.plusDays(90 - maxDayLateForSection);
         return String.format(
-            "━━━━━━━━━━━━━━━━━━━━━━━\n" +
-            "📅 *Tagihan untuk: %s* (+%d hari)\n" +
-            "⏰ DayLate 90 di: *%s*\n" +
-            "🏢 ID: %s | Jumlah: *%d tagihan*\n" +
-            "━━━━━━━━━━━━━━━━━━━━━━━\n\n",
+            "========================\n" +
+            "*Tagihan : %s* (+%d hari)\n" +
+            "Minimal bayar Maksimal di : %s\n" +
+            "ID : %s  |  Jumlah : %d tagihan\n" +
+            "========================\n\n",
             date.format(DATE_FORMAT),
             daysDiff,
-            batas90Hari.format(DATE_FORMAT),
+            batas90Hari.format(DATE_WITH_DAY),
             identifier,
             count
         );
@@ -95,18 +96,22 @@ public class MinBungaMessageFormatter {
         long jikaNotPay = nullSafe(bill.getLastPrincipal()) + nullSafe(bill.getPrincipal()) + nullSafe(bill.getMinInterest());
 
         return String.format(
-            "🔷 *%s*\n" +
-            "📍 Alamat: %s\n" +
-            "👤 AO: %s\n" +
-            "💰 Plafond         : %s\n" +
-            "💳 Baki Debet      : %s\n" +
-            "📊 Tgg. Pokok      : %s\n" +
-            "💸 Tgg. Bunga      : %s\n" +
-            "✅ Min. Pokok      : %s\n" +
-            "✅ Min. Bunga      : %s\n" +
-            "📅 Maks. Bayar     : %s\n" +
-            "⚠️ Jika Tdk Bayar : %s\n" +
-            "─────────────────────\n\n",
+            "*%s*\n" +
+            "Alamat        : %s\n" +
+            "AO            : %s\n" +
+            "\n" +
+            "Plafond       : %s\n" +
+            "Baki Debet    : %s\n" +
+            "\n" +
+            "Tgg. Pokok    : %s\n" +
+            "Tgg. Bunga    : %s\n" +
+            "\n" +
+            "Min. Pokok    : %s\n" +
+            "Min. Bunga    : %s\n" +
+            "\n" +
+            "Maks. Bayar   : %s\n" +
+            "Jika Tdk Bayar: %s\n" +
+            "------------------------\n\n",
             bill.getName(),
             bill.getAddress(),
             bill.getAccountOfficer(),
@@ -116,7 +121,7 @@ public class MinBungaMessageFormatter {
             rupiahFormatUtils.formatRupiah(nullSafe(bill.getLastInterest())),
             rupiahFormatUtils.formatRupiah(nullSafe(bill.getMinPrincipal())),
             rupiahFormatUtils.formatRupiah(nullSafe(bill.getMinInterest())),
-            maksBayar.format(DATE_FORMAT),
+            maksBayar.format(DATE_WITH_DAY),
             rupiahFormatUtils.formatRupiah(jikaNotPay)
         );
     }
