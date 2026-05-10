@@ -111,6 +111,7 @@ public class GeneratePdfFiles {
 			Document document = Jsoup.parse(htmlContent);
 			removeScriptTag(document);
 			removeCommentNodes(document);
+			moveBodyStylesToHead(document);
 			insertingImages(document);
 			removePrintButtons(document);
 			fixSignatureGrid(document);
@@ -129,12 +130,13 @@ public class GeneratePdfFiles {
 	 */
 	private Mono<byte[]> renderPdfWithOpenHtml(Document doc) {
 		return Mono.fromCallable(() -> {
-			// Inject page size + border fallback; border !important untuk menangani
-			// kasus stylesheet PHP tidak ter-load saat PDF dirender secara lokal.
+			// Inject page size + border fallback untuk tabel konten (bukan header slik-header).
+			// Tidak pakai !important agar PHP stylesheet bisa override jika ter-load via baseUri.
 			doc.head().appendElement("style").text("""
 				@page { size: A4 landscape; margin: 15mm; }
-				table { border-collapse: collapse !important; }
-				td, th { border: 1px solid #333 !important; padding: 3px 6px; }
+				table:not(.slik-header) { border-collapse: collapse; }
+				table:not(.slik-header) td, table:not(.slik-header) th { border: 1px solid #555; padding: 2px 5px; }
+				.slik-header, .slik-header td, .slik-header th { border: none !important; }
 				""");
 
 			// OpenHTMLtoPDF butuh XHTML (well-formed XML): set output ke XML syntax
@@ -185,6 +187,15 @@ public class GeneratePdfFiles {
 	}
 
 	/**
+	 * Memindahkan tag {@code <style>} yang ada di {@code <body>} ke {@code <head>}.
+	 * PHP kadang menempatkan blok style di body; browser mengabaikan posisinya,
+	 * tapi OpenHTMLtoPDF (XML mode) merender isi style di body sebagai teks literal.
+	 */
+	private void moveBodyStylesToHead(Document doc) {
+		doc.body().select("style").forEach(style -> doc.head().appendChild(style));
+	}
+
+	/**
 	 * Mengatur ulang header dokumen HTML agar logo perusahaan tampil di
 	 * pojok kanan atas dan judul laporan di sebelah kiri, menggunakan
 	 * tabel HTML dua kolom yang lebih stabil untuk rendering PDF
@@ -202,6 +213,7 @@ public class GeneratePdfFiles {
 		image.attr("style", "width: 160px;");
 
 		Element headerTable = new Element("table");
+		headerTable.attr("class", "slik-header");
 		headerTable.attr("style", "width: 100%; border: none; margin-bottom: 20px; border-collapse: collapse;");
 
 		Element row = new Element("tr");
