@@ -110,6 +110,7 @@ public class GeneratePdfFiles {
 		return Mono.fromCallable(() -> {
 			Document document = Jsoup.parse(htmlContent);
 			removeScriptTag(document);
+			removeCommentNodes(document);
 			insertingImages(document);
 			removePrintButtons(document);
 			fixSignatureGrid(document);
@@ -128,8 +129,13 @@ public class GeneratePdfFiles {
 	 */
 	private Mono<byte[]> renderPdfWithOpenHtml(Document doc) {
 		return Mono.fromCallable(() -> {
-			doc.head().appendElement("style")
-				.text("@page { size: A4 landscape; margin: 15mm; }");
+			// Inject page size + border fallback; border !important untuk menangani
+			// kasus stylesheet PHP tidak ter-load saat PDF dirender secara lokal.
+			doc.head().appendElement("style").text("""
+				@page { size: A4 landscape; margin: 15mm; }
+				table { border-collapse: collapse !important; }
+				td, th { border: 1px solid #333 !important; padding: 3px 6px; }
+				""");
 
 			// OpenHTMLtoPDF butuh XHTML (well-formed XML): set output ke XML syntax
 			// agar Jsoup menghasilkan tag self-closing (<br/>, <img/>) dan menutup semua tag.
@@ -138,10 +144,13 @@ public class GeneratePdfFiles {
 				.charset(java.nio.charset.StandardCharsets.UTF_8)
 				.escapeMode(org.jsoup.nodes.Entities.EscapeMode.xhtml);
 
+			// baseUri = direktori PHP agar URL relatif (stylesheet, gambar) bisa di-resolve.
+			String baseUri = pdfEndpointUrl.substring(0, pdfEndpointUrl.lastIndexOf('/') + 1);
+
 			try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 				PdfRendererBuilder builder = new PdfRendererBuilder();
 				builder.useFastMode();
-				builder.withHtmlContent(doc.outerHtml(), null);
+				builder.withHtmlContent(doc.outerHtml(), baseUri);
 				builder.toStream(baos);
 				builder.run();
 				return baos.toByteArray();
@@ -160,6 +169,19 @@ public class GeneratePdfFiles {
 	 */
 	private void removeScriptTag(Document doc) {
 		doc.getElementsByTag("script").remove();
+	}
+
+	/**
+	 * Menghapus semua comment node HTML ({@code <!-- -->}) dari dokumen.
+	 * OpenHTMLtoPDF memproses HTML sebagai XML; comment yang tidak ter-escape
+	 * dengan benar bisa muncul sebagai teks literal di PDF.
+	 */
+	private void removeCommentNodes(Document doc) {
+		List<org.jsoup.nodes.Node> comments = new ArrayList<>();
+		doc.traverse((node, depth) -> {
+			if (node instanceof org.jsoup.nodes.Comment) comments.add(node);
+		});
+		comments.forEach(org.jsoup.nodes.Node::remove);
 	}
 
 	/**
