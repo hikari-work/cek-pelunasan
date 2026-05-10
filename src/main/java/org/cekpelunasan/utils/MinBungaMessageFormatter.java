@@ -40,7 +40,7 @@ public class MinBungaMessageFormatter {
             int maxDayLateForSection = 90 - daysDiff;
 
             List<Bills> forThisDate = allBills.stream()
-                .filter(b -> parseDayLate(b.getDayLate()) + daysDiff <= 90)
+                .filter(b -> parseDayLate(b.getDayLate()) + daysDiff >= 90)
                 .filter(b -> !alreadyShown.contains(b.getNoSpk()))
                 .toList();
 
