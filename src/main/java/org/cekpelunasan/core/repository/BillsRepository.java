@@ -264,4 +264,28 @@ public interface BillsRepository extends ReactiveMongoRepository<Bills, String> 
      * @return jumlah dokumen yang cocok
      */
     Mono<Long> countByNameContainingIgnoreCase(String name);
+
+    /**
+     * Mengambil tagihan di suatu cabang yang mempunyai minimal bunga lebih dari nol
+     * dan DayLate (dalam hari) kurang dari {@code maxDayLate}.
+     * Dipakai untuk fitur tagihan minimal bunga (/minbunga) dengan filter cabang.
+     *
+     * @param branch     kode cabang
+     * @param maxDayLate batas atas DayLate yang masih diizinkan (eksklusif)
+     * @return stream tagihan yang memenuhi kriteria
+     */
+    @Query("{ 'branch': ?0, 'minInterest': { '$gt': 0 }, '$expr': { '$lt': [{ '$toInt': { '$ifNull': ['$dayLate', '0'] } }, ?1] } }")
+    Flux<Bills> findByBranchAndMinInterestAndDayLateLessThan(String branch, int maxDayLate);
+
+    /**
+     * Mengambil tagihan milik AO tertentu yang mempunyai minimal bunga lebih dari nol
+     * dan DayLate (dalam hari) kurang dari {@code maxDayLate}.
+     * Dipakai untuk fitur tagihan minimal bunga (/minbunga) dengan filter AO.
+     *
+     * @param accountOfficer kode AO
+     * @param maxDayLate     batas atas DayLate yang masih diizinkan (eksklusif)
+     * @return stream tagihan yang memenuhi kriteria
+     */
+    @Query("{ 'accountOfficer': ?0, 'minInterest': { '$gt': 0 }, '$expr': { '$lt': [{ '$toInt': { '$ifNull': ['$dayLate', '0'] } }, ?1] } }")
+    Flux<Bills> findByAccountOfficerAndMinInterestAndDayLateLessThan(String accountOfficer, int maxDayLate);
 }

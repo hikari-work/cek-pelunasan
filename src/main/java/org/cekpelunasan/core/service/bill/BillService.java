@@ -291,6 +291,32 @@ public class BillService {
 	}
 
 	/**
+	 * Mengambil semua tagihan di suatu cabang yang punya minimal bunga > 0 dan DayLate < 120.
+	 * Dipakai oleh fitur /minbunga untuk PIMP/ADMIN yang memilih cabang.
+	 *
+	 * @param branch kode cabang yang ingin dicari
+	 * @return {@link Mono} berisi list tagihan yang memenuhi kriteria
+	 */
+	public Mono<List<Bills>> findMinimalBungaByBranch(String branch) {
+		return billsRepository
+			.findByBranchAndMinInterestAndDayLateLessThan(branch, 120)
+			.collectList();
+	}
+
+	/**
+	 * Mengambil semua tagihan milik AO tertentu yang punya minimal bunga > 0 dan DayLate < 120.
+	 * Dipakai oleh fitur /minbunga untuk AO yang melihat tagihan milik sendiri.
+	 *
+	 * @param accountOfficer kode AO yang ingin dicari tagihannya
+	 * @return {@link Mono} berisi list tagihan yang memenuhi kriteria
+	 */
+	public Mono<List<Bills>> findMinimalBungaByAccountOfficer(String accountOfficer) {
+		return billsRepository
+			.findByAccountOfficerAndMinInterestAndDayLateLessThan(accountOfficer, 120)
+			.collectList();
+	}
+
+	/**
 	 * Mengonversi satu baris CSV (array string) menjadi objek {@link Bills}.
 	 * Urutan kolom di sini harus persis sama dengan format file CSV yang diterima.
 	 * Nilai numerik yang kosong atau tidak valid otomatis diisi dengan 0.
