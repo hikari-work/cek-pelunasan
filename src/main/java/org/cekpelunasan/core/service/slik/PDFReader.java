@@ -1,6 +1,7 @@
 package org.cekpelunasan.core.service.slik;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Component;
@@ -42,14 +43,13 @@ public class PDFReader {
 			return Mono.empty();
 		}
 		return Mono.fromCallable(() -> {
-			PDDocument document = PDDocument.load(object);
-			PDFTextStripper stripper = new PDFTextStripper();
-			String text = stripper.getText(document);
-			document.close();
-
-			Pattern pattern = Pattern.compile("\\d{16}\\b");
-			Matcher matcher = pattern.matcher(text);
-			return matcher.find() ? matcher.group() : null;
+			try (PDDocument document = Loader.loadPDF(object)) {
+				PDFTextStripper stripper = new PDFTextStripper();
+				String text = stripper.getText(document);
+				Pattern pattern = Pattern.compile("\\d{16}\\b");
+				Matcher matcher = pattern.matcher(text);
+				return matcher.find() ? matcher.group() : null;
+			}
 		}).subscribeOn(Schedulers.boundedElastic())
 		.onErrorResume(e -> {
 			log.error("Error in generateIDNumber: {}", e.getMessage(), e);

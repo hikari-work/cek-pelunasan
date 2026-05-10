@@ -1,11 +1,6 @@
 package org.cekpelunasan.core.service.slik;
 
-import com.microsoft.playwright.BrowserContext;
-import com.microsoft.playwright.Page;
-import com.microsoft.playwright.impl.TargetClosedError;
-import com.microsoft.playwright.options.Margin;
-import com.microsoft.playwright.options.WaitUntilState;
-import org.cekpelunasan.configuration.PlaywrightBrowserPool;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -19,9 +14,8 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.util.retry.Retry;
 
-import java.time.Duration;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -32,12 +26,8 @@ import java.util.Objects;
  * <ol>
  *   <li>Mengirim data mentah SLIK ke endpoint PHP yang menghasilkan HTML laporan</li>
  *   <li>Memanipulasi HTML tersebut: hapus script, pasang logo, rapikan tabel tanda tangan</li>
- *   <li>Render HTML menjadi PDF menggunakan Playwright (Chromium headless)</li>
+ *   <li>Render HTML menjadi PDF menggunakan OpenHTMLtoPDF (pure Java, tanpa browser)</li>
  * </ol>
- *
- * <p>Playwright diambil dari pool browser ({@link PlaywrightBrowserPool}) untuk
- * menghindari crash yang terjadi jika satu instance browser dipakai bersama-sama.
- * Jika browser crash saat rendering, instance tersebut tidak dikembalikan ke pool.</p>
  */
 @Component
 public class GeneratePdfFiles {
@@ -52,11 +42,9 @@ public class GeneratePdfFiles {
 	private String logoUrl;
 
 	private final WebClient webClient;
-	private final PlaywrightBrowserPool browserPool;
 
-	public GeneratePdfFiles(WebClient whatsappWebClient, PlaywrightBrowserPool browserPool) {
+	public GeneratePdfFiles(WebClient whatsappWebClient) {
 		this.webClient = whatsappWebClient;
-		this.browserPool = browserPool;
 	}
 
 	/**
@@ -75,8 +63,7 @@ public class GeneratePdfFiles {
 		}
 		return fetchHtmlFromEndpoint(pdfBytes, fasilitasAktif)
 			.flatMap(this::parseAndManipulateHtml)
-			.map(Document::outerHtml)
-			.flatMap(this::renderPdfWithPlaywright);
+			.flatMap(this::renderPdfWithOpenHtml);
 	}
 
 	/**
@@ -131,43 +118,30 @@ public class GeneratePdfFiles {
 	}
 
 	/**
-	 * Merender HTML menjadi file PDF menggunakan browser Chromium dari pool.
-	 * PDF dihasilkan dalam format A4 landscape dengan margin 15mm di semua sisi.
+	 * Merender dokumen Jsoup menjadi file PDF menggunakan OpenHTMLtoPDF.
+	 * Ukuran halaman A4 landscape dengan margin 15mm diinjeksikan lewat CSS
+	 * {@code @page} sebelum rendering. Seluruh operasi berjalan di thread
+	 * {@code boundedElastic} karena OpenHTMLtoPDF bersifat blocking.
 	 *
-	 * <p>Seluruh operasi Playwright berjalan di thread khusus milik slot browser
-	 * (via {@link PlaywrightBrowserPool#withBrowser}), sehingga thread-safety
-	 * Playwright terpenuhi. Jika browser crash, pool otomatis mereinisialisasi
-	 * slot saat pemakaian berikutnya.</p>
-	 *
-	 * @param html string HTML yang ingin dirender
+	 * @param doc dokumen Jsoup yang sudah dimanipulasi
 	 * @return {@link Mono} berisi byte array PDF yang sudah dirender
 	 */
-	private Mono<byte[]> renderPdfWithPlaywright(String html) {
-		return Mono.<byte[]>fromCallable(() ->
-			browserPool.withBrowser(browser -> {
-				// BrowserContext eksplisit agar pasti ditutup; jika hanya `browser.newPage()`,
-				// context implisit tidak pernah dilepas dan menumpuk hingga browser crash.
-				try (BrowserContext context = browser.newContext();
-					 Page page = context.newPage()) {
-					page.setContent(html, new Page.SetContentOptions()
-						.setWaitUntil(WaitUntilState.DOMCONTENTLOADED)
-						.setTimeout(60_000));
-					return page.pdf(new Page.PdfOptions()
-						.setFormat("A4")
-						.setLandscape(true)
-						.setMargin(new Margin()
-							.setTop("15mm")
-							.setBottom("15mm")
-							.setLeft("15mm")
-							.setRight("15mm")));
-				}
-			})
-		)
-		.retryWhen(Retry.backoff(2, Duration.ofMillis(500))
-			.filter(e -> e instanceof TargetClosedError
-				|| e.getCause() instanceof TargetClosedError)
-			.doBeforeRetry(rs -> logger.warn("Retry render PDF karena browser crash, attempt #{}", rs.totalRetries() + 1)))
-		.doOnError(e -> logger.error("Gagal render PDF setelah retry: {}", e.getMessage()))
+	private Mono<byte[]> renderPdfWithOpenHtml(Document doc) {
+		return Mono.fromCallable(() -> {
+			doc.head().appendElement("style")
+				.text("@page { size: A4 landscape; margin: 15mm; }");
+
+			try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+				PdfRendererBuilder builder = new PdfRendererBuilder();
+				builder.useFastMode();
+				builder.withHtmlContent(doc.outerHtml(), null);
+				builder.toStream(baos);
+				builder.run();
+				return baos.toByteArray();
+			}
+		})
+		.doOnError(e -> logger.error("Gagal render PDF: {}", e.getMessage()))
+		.onErrorResume(e -> Mono.empty())
 		.subscribeOn(Schedulers.boundedElastic());
 	}
 
@@ -239,7 +213,7 @@ public class GeneratePdfFiles {
 
 	/**
 	 * Mengonversi layout CSS Grid pada area tanda tangan menjadi tabel HTML
-	 * biasa. CSS Grid tidak dirender dengan baik oleh Chromium dalam mode PDF,
+	 * biasa. CSS Grid tidak dirender dengan baik oleh renderer PDF berbasis Java,
 	 * sehingga perlu diganti dengan tabel dua baris: baris pertama berisi
 	 * label kolom (bold biru), baris kedua berisi ruang tanda tangan (kosong).
 	 *
