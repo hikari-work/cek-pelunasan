@@ -131,6 +131,13 @@ public class GeneratePdfFiles {
 			doc.head().appendElement("style")
 				.text("@page { size: A4 landscape; margin: 15mm; }");
 
+			// OpenHTMLtoPDF butuh XHTML (well-formed XML): set output ke XML syntax
+			// agar Jsoup menghasilkan tag self-closing (<br/>, <img/>) dan menutup semua tag.
+			doc.outputSettings()
+				.syntax(Document.OutputSettings.Syntax.xml)
+				.charset(java.nio.charset.StandardCharsets.UTF_8)
+				.escapeMode(org.jsoup.nodes.Entities.EscapeMode.xhtml);
+
 			try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 				PdfRendererBuilder builder = new PdfRendererBuilder();
 				builder.useFastMode();
