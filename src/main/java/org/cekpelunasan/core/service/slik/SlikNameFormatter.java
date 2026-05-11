@@ -175,7 +175,7 @@ public class SlikNameFormatter {
             mb.append("\n🎯 "); mb.code("/slik " + data.idNumber()); mb.append("\n");
         }
         if (isNotBlank(data.contentKey())) {
-            mb.append("📥 "); mb.code("/doc " + data.contentKey()); mb.append("\n");
+            mb.append("📥 "); mb.code("/doc " + extractFileName(data.contentKey())); mb.append("\n");
         }
         mb.italic("📄 Halaman " + (current + 1) + " dari " + total);
 
@@ -231,9 +231,15 @@ public class SlikNameFormatter {
         if (isNotBlank(data.idNumber())) {
             mb.append("\n🎯 "); mb.code("/slik " + data.idNumber()); mb.append("\n");
         }
-        mb.append("📥 "); mb.code("/doc " + data.contentKey()); mb.append("\n");
+        mb.append("📥 "); mb.code("/doc " + extractFileName(data.contentKey())); mb.append("\n");
         mb.italic("📄 Halaman " + (current + 1) + " dari " + total);
         return mb.build();
+    }
+
+    private String extractFileName(String contentKey) {
+        if (!isNotBlank(contentKey)) return "-";
+        int lastSlash = contentKey.lastIndexOf('/');
+        return lastSlash >= 0 ? contentKey.substring(lastSlash + 1) : contentKey;
     }
 
     /**
