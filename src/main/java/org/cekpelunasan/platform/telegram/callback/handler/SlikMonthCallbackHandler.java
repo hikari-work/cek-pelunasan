@@ -79,6 +79,22 @@ public class SlikMonthCallbackHandler extends AbstractCallbackHandler {
 
         telegramMessageService.delete(chatId, update.messageId, client);
 
+        if ("doc".equals(pending.type())) {
+            String docFolder = yyyymm.substring(0, 4) + "_" + yyyymm.substring(4);
+            String fileName  = pending.query();
+            log.info("DOC month selected — chatId={} yyyymm={} file={}", chatId, yyyymm, fileName);
+            return s3Connector.getFile(docFolder + "/pdf/" + fileName)
+                .switchIfEmpty(s3Connector.getFile(docFolder + "/txt/" + fileName))
+                .switchIfEmpty(s3Connector.getFile(docFolder + "/ideb/" + fileName))
+                .switchIfEmpty(Mono.<byte[]>fromRunnable(() ->
+                    telegramMessageService.sendText(chatId, "❌ File tidak ditemukan", client))
+                    .subscribeOn(Schedulers.boundedElastic()))
+                .flatMap(file -> Mono.<Void>fromRunnable(() ->
+                    telegramMessageService.sendDocument(chatId, fileName, file, client))
+                    .subscribeOn(Schedulers.boundedElastic()))
+                .then();
+        }
+
         if ("ktp".equals(pending.type())) {
             log.info("SLIK month selected — chatId={} yyyymm={} type=ktp query={}", chatId, yyyymm, pending.query());
             return Mono.<Void>fromRunnable(() ->

@@ -207,7 +207,8 @@ public class TelegramMessageService {
     public void sendDocument(long chatId, String fileName, byte[] bytes, SimpleTelegramClient client) {
         Path tmpFile = null;
         try {
-            tmpFile = Files.createTempFile("tdlight_", "_" + fileName);
+            String safeName = fileName.replaceAll("[\\\\/]+", "_");
+            tmpFile = Files.createTempFile("tdlight_", "_" + safeName);
             Files.write(tmpFile, bytes);
 
             TdApi.InputFileLocal inputFile = new TdApi.InputFileLocal();
