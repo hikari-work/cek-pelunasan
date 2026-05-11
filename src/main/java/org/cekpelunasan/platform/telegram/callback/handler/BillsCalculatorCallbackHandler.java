@@ -59,11 +59,12 @@ public class BillsCalculatorCallbackHandler extends AbstractCallbackHandler {
                 log.info("Bill ID Not Found");
                 sendMessage(update.chatId, "❌ *Data tidak ditemukan*", client);
             }))
-            .flatMap(bills -> runBlocking(() -> {
-                log.info("Sending Bills Message");
-                editMessageWithMarkup(update.chatId, update.messageId, tagihanUtils.detailBills(bills), client,
-                    new BackKeyboardButtonForBillsUtils().backButton(callbackData));
-            }))
+            .flatMap(bills -> tagihanUtils.detailBills(bills)
+                .flatMap(detail -> runBlocking(() -> {
+                    log.info("Sending Bills Message");
+                    editMessageWithMarkup(update.chatId, update.messageId, detail, client,
+                        new BackKeyboardButtonForBillsUtils().backButton(callbackData));
+                })))
             .then();
     }
 }

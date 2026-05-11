@@ -49,7 +49,7 @@ public class SimulasiAngsuranCommand extends AbstractCommandHandler {
 
         String spk = parts[1].trim();
 
-        return billService.findById(spk)
+        return billService.getBillById(spk)
             .switchIfEmpty(Mono.fromRunnable(() ->
                 sendMessage(chatId, "❌ *SPK tidak ditemukan:* `" + spk + "`", client)
             ))
