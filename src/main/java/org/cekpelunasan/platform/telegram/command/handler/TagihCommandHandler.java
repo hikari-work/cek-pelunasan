@@ -79,8 +79,8 @@ public class TagihCommandHandler extends AbstractCommandHandler {
 		long start = System.currentTimeMillis();
 		return billService.getBillById(parts[1])
 			.switchIfEmpty(Mono.fromRunnable(() -> sendMessage(chatId, "❌ *Data tidak ditemukan*", client)))
-			.flatMap(bills -> Mono.fromRunnable(() ->
-				sendMessage(chatId, tagihanUtils.detailBills(bills) + "\nEksekusi dalam " + (System.currentTimeMillis() - start) + " ms", client)))
+			.flatMap(bills -> tagihanUtils.detailBills(bills)
+				.doOnNext(msg -> sendMessage(chatId, msg + "\nEksekusi dalam " + (System.currentTimeMillis() - start) + " ms", client)))
 			.onErrorResume(e -> {
 				log.error("Error", e);
 				return Mono.empty();
