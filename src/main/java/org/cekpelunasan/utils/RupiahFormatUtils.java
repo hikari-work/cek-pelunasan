@@ -2,6 +2,8 @@ package org.cekpelunasan.utils;
 
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
@@ -26,6 +28,11 @@ public class RupiahFormatUtils {
 	 * @param amount nominal dalam satuan Rupiah (bukan sen), boleh {@code null}
 	 * @return string berformat Rupiah, misalnya {@code "Rp2.500.000"}
 	 */
+	public String formatRupiah(BigDecimal amount) {
+		if (amount == null) return "Rp0";
+		return formatRupiah(amount.setScale(0, RoundingMode.HALF_UP).longValue());
+	}
+
 	public String formatRupiah(Long amount) {
 		if (amount == null) return "Rp0";
 		DecimalFormatSymbols symbols = new DecimalFormatSymbols();

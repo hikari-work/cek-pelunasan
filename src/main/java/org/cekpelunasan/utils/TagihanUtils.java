@@ -6,6 +6,7 @@ import org.cekpelunasan.core.entity.Bills;
 import org.cekpelunasan.core.service.log.DataUpdateLogService;
 import org.cekpelunasan.core.service.simulasi.SimulasiService;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -45,14 +46,14 @@ public class TagihanUtils {
 	 * @param bill data tagihan kredit nasabah
 	 * @return string detail tagihan lengkap yang siap dikirim
 	 */
-	public String detailBills(Bills bill) {
-		Map<String, Integer> totalKeterlambatan = simulasiService.findTotalKeterlambatan(bill.getNoSpk())
-				.subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
-				.block();
-		Long maxBayar = simulasiService.findMaxBayar(bill.getNoSpk())
-				.subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
-				.block();
-		return String.format("""
+	public Mono<String> detailBills(Bills bill) {
+		return Mono.zip(
+			simulasiService.findTotalKeterlambatan(bill.getNoSpk()),
+			simulasiService.findMaxBayar(bill.getNoSpk())
+		).map(tuple -> {
+			Map<String, Integer> totalKeterlambatan = tuple.getT1();
+			Long maxBayar = tuple.getT2();
+			return String.format("""
             📄 *Detail Kredit*
 
             👤 *Nasabah*
@@ -108,7 +109,8 @@ public class TagihanUtils {
 			rupiahFormatUtils.formatRupiah(bill.getMinPrincipal()),
 			rupiahFormatUtils.formatRupiah(bill.getMinInterest()),
 			bill.getAccountOfficer()
-		) + dataUpdateLogService.telegramWarning("TAGIHAN");
+			) + dataUpdateLogService.telegramWarning("TAGIHAN");
+		});
 	}
 
 
