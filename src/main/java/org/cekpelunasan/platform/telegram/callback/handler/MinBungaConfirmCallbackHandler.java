@@ -6,13 +6,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.core.entity.MinBungaSession;
 import org.cekpelunasan.core.service.bill.BillService;
+import org.cekpelunasan.core.service.minbunga.BillsForDate;
+import org.cekpelunasan.core.service.minbunga.MinBungaBillCalculatorService;
 import org.cekpelunasan.core.service.minbunga.MinBungaSessionService;
 import org.cekpelunasan.platform.telegram.callback.AbstractCallbackHandler;
 import org.cekpelunasan.utils.MinBungaMessageFormatter;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -23,6 +25,7 @@ public class MinBungaConfirmCallbackHandler extends AbstractCallbackHandler {
     private final MinBungaSessionService sessionService;
     private final BillService billService;
     private final MinBungaMessageFormatter formatter;
+    private final MinBungaBillCalculatorService calculator;
 
     @Override
     public String getCallBackData() {
@@ -57,9 +60,10 @@ public class MinBungaConfirmCallbackHandler extends AbstractCallbackHandler {
                     telegramMessageService.editText(chatId, messageId,
                         "⏳ *Sedang memproses data...*\n_Mohon tunggu sebentar._", client);
 
-                    List<String> messages = formatter.format(
-                        allBills, session.getSelectedDates(), session.getIdentifier()
-                    );
+                    List<LocalDate> targetDates = session.getSelectedDates().stream()
+                        .map(LocalDate::parse).toList();
+                    List<BillsForDate> grouped = calculator.calculate(allBills, targetDates);
+                    List<String> messages = formatter.format(grouped, session.getIdentifier());
 
                     for (String msg : messages) {
                         telegramMessageService.sendText(chatId, msg, client);

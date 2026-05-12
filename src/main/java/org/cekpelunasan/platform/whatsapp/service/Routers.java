@@ -7,6 +7,7 @@ import org.cekpelunasan.platform.whatsapp.service.email.EmailCommandHandler;
 import org.cekpelunasan.platform.whatsapp.service.email.EmailSessionCache;
 import org.cekpelunasan.platform.whatsapp.service.hotkolek.HandleKolekCommand;
 import org.cekpelunasan.platform.whatsapp.service.jatuhbayar.JatuhBayarService;
+import org.cekpelunasan.platform.whatsapp.service.minbunga.WhatsAppMinBungaService;
 import org.cekpelunasan.platform.whatsapp.service.pelunasan.HandlerPelunasan;
 import org.cekpelunasan.platform.whatsapp.service.shortcut.ShortcutMessages;
 import org.cekpelunasan.platform.whatsapp.service.slik.SlikService;
@@ -45,6 +46,7 @@ public class Routers {
 	private final VirtualAccountHandler virtualAccountHandler;
 	private final EmailCommandHandler emailCommandHandler;
 	private final EmailSessionCache emailSessionCache;
+	private final WhatsAppMinBungaService whatsAppMinBungaService;
 
 	@Value("${admin.whatsapp}")
 	private String adminWhatsApp;
@@ -136,6 +138,8 @@ public class Routers {
 			handlerPelunasan.handlePelunasan(webhook).join();
 		} else if (isTabunganCommand(text)) {
 			tabunganService.handleTabungan(webhook);
+		} else if (isMinBungaCommand(webhook)) {
+			whatsAppMinBungaService.handle(webhook);
 		} else if (isMinimalBayarCommand(webhook, text)) {
 			log.warn("Minimal Bayar command not yet implemented");
 		} else if (isJatuhBayarCommand(webhook, text)) {
@@ -214,6 +218,11 @@ public class Routers {
 
 	private boolean isTabunganCommand(String text) {
 		return text.startsWith(COMMAND_PREFIX + "t");
+	}
+
+	private boolean isMinBungaCommand(WhatsAppWebhookDTO webhook) {
+		return isFromAdmin(webhook)
+			&& webhook.getPayload().getBody().startsWith(COMMAND_PREFIX + "minbunga");
 	}
 
 	private boolean isMinimalBayarCommand(WhatsAppWebhookDTO webhook, String text) {

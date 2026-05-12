@@ -2,17 +2,15 @@ package org.cekpelunasan.utils;
 
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.core.entity.Bills;
+import org.cekpelunasan.core.service.minbunga.BillsForDate;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -26,40 +24,26 @@ public class MinBungaMessageFormatter {
     private static final DateTimeFormatter DATE_WITH_DAY = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", ID);
     private static final int MAX_MSG_CHARS = 3800;
 
-    public List<String> format(List<Bills> allBills, List<String> selectedDatesStr, String identifier) {
+    public List<String> format(List<BillsForDate> billsByDate, String identifier) {
         LocalDate today = LocalDate.now(WIB);
-
-        List<LocalDate> sortedDates = selectedDatesStr.stream()
-            .map(LocalDate::parse)
-            .sorted()
-            .toList();
-
-        Set<String> alreadyShown = new HashSet<>();
         List<String> messages = new ArrayList<>();
 
-        for (LocalDate date : sortedDates) {
-            int daysDiff = (int) ChronoUnit.DAYS.between(today, date);
+        for (BillsForDate entry : billsByDate) {
+            LocalDate date = entry.targetDate();
+            int daysDiff = entry.daysDiff();
             int maxDayLateForSection = 90 - daysDiff;
-
-            List<Bills> forThisDate = allBills.stream()
-                .filter(b -> parseDayLate(b.getDayLate()) + daysDiff >= 90)
-                .filter(b -> !alreadyShown.contains(b.getNoSpk()))
-                .toList();
-
-            if (forThisDate.isEmpty()) continue;
-
-            alreadyShown.addAll(forThisDate.stream().map(Bills::getNoSpk).toList());
+            List<Bills> forThisDate = entry.bills();
 
             String header = buildSectionHeader(today, date, daysDiff, maxDayLateForSection, identifier, forThisDate.size());
             StringBuilder current = new StringBuilder(header);
 
             for (Bills bill : forThisDate) {
-                String entry = buildBillEntry(bill, today);
-                if (current.length() + entry.length() > MAX_MSG_CHARS) {
+                String entryStr = buildBillEntry(bill, today);
+                if (current.length() + entryStr.length() > MAX_MSG_CHARS) {
                     messages.add(current.toString());
                     current = new StringBuilder("_Lanjutan " + date.format(DATE_FORMAT) + "_\n\n");
                 }
-                current.append(entry);
+                current.append(entryStr);
             }
 
             if (!current.isEmpty()) {
