@@ -2,6 +2,7 @@
 # MONGODB REACTIVE
 # ============================================================
 spring.data.mongodb.uri=${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/cek_pelunasan}
+spring.data.mongodb.auto-index-creation=true
 
 # ============================================================
 # TELEGRAM BOT
