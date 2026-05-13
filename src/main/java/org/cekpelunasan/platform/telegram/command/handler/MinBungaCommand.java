@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.cekpelunasan.annotation.RequireAuth;
 import org.cekpelunasan.core.entity.AccountOfficerRoles;
+import org.cekpelunasan.core.entity.MinBungaSession;
 import org.cekpelunasan.core.service.bill.BillService;
 import org.cekpelunasan.core.service.log.DataUpdateLogService;
 import org.cekpelunasan.core.service.minbunga.MinBungaSessionService;
@@ -90,28 +91,44 @@ public class MinBungaCommand extends AbstractCommandHandler {
     }
 
     private Mono<Void> handleAo(long chatId, String userCode, SimpleTelegramClient client) {
-        return sessionService.getOrCreate(chatId, userCode, "AO")
+        return sessionService.getSession(chatId)
+            .doOnNext(prev -> deletePreviousIfAny(chatId, prev, client))
+            .then(sessionService.getOrCreate(chatId, userCode, "AO"))
             .flatMap(session -> Mono.fromRunnable(() -> {
                 TdApi.ReplyMarkupInlineKeyboard calendar =
                     calendarBuilder.buildCalendar(userCode, new ArrayList<>(), false);
-                sendMessage(chatId,
+                long msgId = telegramMessageService.sendTextWithKeyboard(chatId,
                     "📅 *Pilih Tanggal Penagihan*\n\n" +
                     "_Pilih satu atau beberapa tanggal target penagihan._\n" +
                     "_Bot akan menampilkan nasabah yang DayLate-nya tidak melebihi 90 hari pada tanggal tersebut._",
                     calendar, client);
+                if (msgId > 0) sessionService.setMessageId(chatId, msgId).subscribe();
             }))
             .then();
     }
 
     private Mono<Void> handlePimpAdmin(long chatId, String userCode, SimpleTelegramClient client) {
-        return billService.lisAllBranch()
+        return sessionService.getSession(chatId)
+            .doOnNext(prev -> deletePreviousIfAny(chatId, prev, client))
+            .then(billService.lisAllBranch())
             .flatMap(branches -> Mono.fromRunnable(() -> {
                 TdApi.ReplyMarkupInlineKeyboard keyboard = buildBranchKeyboard(branches);
-                sendMessage(chatId,
+                long msgId = telegramMessageService.sendTextWithKeyboard(chatId,
                     "🏦 *Pilih Cabang*\n\n_Pilih cabang yang akan dicek tagihan minimal bunganya._",
                     keyboard, client);
+                if (msgId > 0) {
+                    sessionService.getOrCreate(chatId, "", "BRANCH")
+                        .then(sessionService.setMessageId(chatId, msgId))
+                        .subscribe();
+                }
             }))
             .then();
+    }
+
+    private void deletePreviousIfAny(long chatId, MinBungaSession prev, SimpleTelegramClient client) {
+        if (prev != null && prev.getMessageId() != null) {
+            telegramMessageService.delete(chatId, prev.getMessageId(), client);
+        }
     }
 
     private TdApi.ReplyMarkupInlineKeyboard buildBranchKeyboard(Set<String> branches) {

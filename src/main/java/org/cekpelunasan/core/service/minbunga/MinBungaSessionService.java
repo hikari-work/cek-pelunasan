@@ -23,6 +23,7 @@ public class MinBungaSessionService {
                 existing.setIdentifier(identifier);
                 existing.setRole(role);
                 existing.setSelectedDates(new ArrayList<>());
+                existing.setMessageId(null);
                 existing.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
                 return repository.save(existing);
             })
@@ -35,6 +36,15 @@ public class MinBungaSessionService {
                     .build();
                 return repository.save(session);
             }));
+    }
+
+    public Mono<MinBungaSession> setMessageId(long chatId, long messageId) {
+        String key = String.valueOf(chatId);
+        return repository.findById(key)
+            .flatMap(session -> {
+                session.setMessageId(messageId);
+                return repository.save(session);
+            });
     }
 
     public Mono<MinBungaSession> toggleDate(long chatId, String date) {

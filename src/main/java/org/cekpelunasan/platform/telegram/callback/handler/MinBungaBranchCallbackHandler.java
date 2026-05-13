@@ -40,7 +40,14 @@ public class MinBungaBranchCallbackHandler extends AbstractCallbackHandler {
 
         log.info("MinBunga branch selected: {} by chat {}", branch, chatId);
 
-        return sessionService.getOrCreate(chatId, branch, "BRANCH")
+        return sessionService.getSession(chatId)
+            .filter(session -> session.getMessageId() == null || session.getMessageId() == messageId)
+            .switchIfEmpty(Mono.defer(() -> {
+                log.info("MinBunga branch ignored — zombie message {} for chat {}", messageId, chatId);
+                return Mono.empty();
+            }))
+            .then(sessionService.getOrCreate(chatId, branch, "BRANCH"))
+            .flatMap(session -> sessionService.setMessageId(chatId, messageId))
             .flatMap(session -> runBlocking(() -> {
                 TdApi.ReplyMarkupInlineKeyboard calendar =
                     calendarBuilder.buildCalendar(branch, new ArrayList<>(), false);

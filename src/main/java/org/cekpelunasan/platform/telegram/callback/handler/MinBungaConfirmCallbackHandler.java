@@ -42,6 +42,10 @@ public class MinBungaConfirmCallbackHandler extends AbstractCallbackHandler {
         return sessionService.getSession(chatId)
             .switchIfEmpty(runBlocking(() -> sendMessage(chatId, "❌ *Sesi tidak ditemukan. Mulai ulang dengan /minbunga*", client)))
             .flatMap(session -> {
+                if (session.getMessageId() != null && session.getMessageId() != messageId) {
+                    log.info("MinBunga confirm ignored — zombie message {} for chat {}", messageId, chatId);
+                    return Mono.empty();
+                }
                 if (session.getSelectedDates() == null || session.getSelectedDates().isEmpty()) {
                     return runBlocking(() ->
                         sendMessage(chatId, "❌ *Belum ada tanggal yang dipilih.*", client)

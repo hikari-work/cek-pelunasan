@@ -29,6 +29,8 @@ public class MinBungaSession {
     @Builder.Default
     private List<String> selectedDates = new ArrayList<>();
 
+    private Long messageId;
+
     @Indexed(expireAfterSeconds = (int) TTL_SECONDS)
     private LocalDateTime createdAt;
 }
