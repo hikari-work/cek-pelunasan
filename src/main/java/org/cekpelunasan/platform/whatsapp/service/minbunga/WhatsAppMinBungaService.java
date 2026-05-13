@@ -72,7 +72,8 @@ public class WhatsAppMinBungaService {
 
         log.info("WhatsApp minbunga: branch={} dates={}", branch, targetDates);
 
-        List<Bills> allBills = billService.findMinimalBungaByBranch(branch).block();
+        int minDayLate = calculator.minDayLateThreshold(targetDates);
+        List<Bills> allBills = billService.findMinimalBungaByBranch(branch, minDayLate).block();
         if (allBills == null || allBills.isEmpty()) {
             send(chatId, "Tidak ada data tagihan untuk cabang " + branch + ".");
             return CompletableFuture.completedFuture(null);

@@ -267,25 +267,29 @@ public interface BillsRepository extends ReactiveMongoRepository<Bills, String> 
 
     /**
      * Mengambil tagihan di suatu cabang yang mempunyai minimal bunga lebih dari nol,
-     * collectStatus = 02, product bukan KUBTP, dan DayLate kurang dari {@code maxDayLate}.
-     * Dipakai untuk fitur tagihan minimal bunga (/minbunga) dengan filter cabang.
+     * collectStatus = 02, product bukan KUBTP, dan DayLate dalam rentang
+     * {@code [minDayLate, maxDayLate)}. Dipakai untuk fitur tagihan minimal bunga (/minbunga)
+     * dengan filter cabang.
      *
      * @param branch     kode cabang
-     * @param maxDayLate batas atas DayLate yang masih diizinkan (eksklusif)
+     * @param minDayLate batas bawah DayLate yang diizinkan (inklusif)
+     * @param maxDayLate batas atas DayLate yang diizinkan (eksklusif)
      * @return stream tagihan yang memenuhi kriteria
      */
-    @Query("{ 'branch': ?0, 'minInterest': { '$gt': 0 }, 'collectStatus': '02', 'product': { '$ne': 'KUBTP' }, '$expr': { '$lt': [{ '$toInt': { '$ifNull': ['$dayLate', '0'] } }, ?1] } }")
-    Flux<Bills> findByBranchAndMinInterestAndDayLateLessThan(String branch, int maxDayLate);
+    @Query("{ 'branch': ?0, 'minInterest': { '$gt': 0 }, 'collectStatus': '02', 'product': { '$ne': 'KUBTP' }, '$expr': { '$and': [ { '$gte': [{ '$toInt': { '$ifNull': ['$dayLate', '0'] } }, ?1] }, { '$lt': [{ '$toInt': { '$ifNull': ['$dayLate', '0'] } }, ?2] } ] } }")
+    Flux<Bills> findByBranchAndMinInterestAndDayLateBetween(String branch, int minDayLate, int maxDayLate);
 
     /**
      * Mengambil tagihan milik AO tertentu yang mempunyai minimal bunga lebih dari nol,
-     * collectStatus = 02, product bukan KUBTP, dan DayLate kurang dari {@code maxDayLate}.
-     * Dipakai untuk fitur tagihan minimal bunga (/minbunga) dengan filter AO.
+     * collectStatus = 02, product bukan KUBTP, dan DayLate dalam rentang
+     * {@code [minDayLate, maxDayLate)}. Dipakai untuk fitur tagihan minimal bunga (/minbunga)
+     * dengan filter AO.
      *
      * @param accountOfficer kode AO
-     * @param maxDayLate     batas atas DayLate yang masih diizinkan (eksklusif)
+     * @param minDayLate     batas bawah DayLate yang diizinkan (inklusif)
+     * @param maxDayLate     batas atas DayLate yang diizinkan (eksklusif)
      * @return stream tagihan yang memenuhi kriteria
      */
-    @Query("{ 'accountOfficer': ?0, 'minInterest': { '$gt': 0 }, 'collectStatus': '02', 'product': { '$ne': 'KUBTP' }, '$expr': { '$lt': [{ '$toInt': { '$ifNull': ['$dayLate', '0'] } }, ?1] } }")
-    Flux<Bills> findByAccountOfficerAndMinInterestAndDayLateLessThan(String accountOfficer, int maxDayLate);
+    @Query("{ 'accountOfficer': ?0, 'minInterest': { '$gt': 0 }, 'collectStatus': '02', 'product': { '$ne': 'KUBTP' }, '$expr': { '$and': [ { '$gte': [{ '$toInt': { '$ifNull': ['$dayLate', '0'] } }, ?1] }, { '$lt': [{ '$toInt': { '$ifNull': ['$dayLate', '0'] } }, ?2] } ] } }")
+    Flux<Bills> findByAccountOfficerAndMinInterestAndDayLateBetween(String accountOfficer, int minDayLate, int maxDayLate);
 }

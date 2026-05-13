@@ -3,6 +3,7 @@ package org.cekpelunasan.utils;
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.core.entity.Bills;
 import org.cekpelunasan.core.service.minbunga.BillsForDate;
+import org.cekpelunasan.core.service.minbunga.DatedBill;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -31,14 +32,13 @@ public class MinBungaMessageFormatter {
         for (BillsForDate entry : billsByDate) {
             LocalDate date = entry.targetDate();
             int daysDiff = entry.daysDiff();
-            int maxDayLateForSection = 90 - daysDiff;
-            List<Bills> forThisDate = entry.bills();
+            List<DatedBill> forThisDate = entry.bills();
 
-            String header = buildSectionHeader(today, date, daysDiff, maxDayLateForSection, identifier, forThisDate.size());
+            String header = buildSectionHeader(date, daysDiff, identifier, forThisDate.size());
             StringBuilder current = new StringBuilder(header);
 
-            for (Bills bill : forThisDate) {
-                String entryStr = buildBillEntry(bill, today);
+            for (DatedBill db : forThisDate) {
+                String entryStr = buildBillEntry(db, today);
                 if (current.length() + entryStr.length() > MAX_MSG_CHARS) {
                     messages.add(current.toString());
                     current = new StringBuilder("_Lanjutan " + date.format(DATE_FORMAT) + "_\n\n");
@@ -58,16 +58,16 @@ public class MinBungaMessageFormatter {
         return messages;
     }
 
-    private String buildSectionHeader(LocalDate today, LocalDate date, int daysDiff, int maxDayLateForSection, String identifier, int count) {
-        LocalDate batas90Hari = today.plusDays(90 - maxDayLateForSection);
+    private String buildSectionHeader(LocalDate date, int daysDiff, String identifier, int count) {
         return "*Tagihan: " + date.format(DATE_FORMAT) + "* (+" + daysDiff + " hari)\n" +
-            "Minimal bayar Maksimal di: " + batas90Hari.format(DATE_WITH_DAY) + "\n" +
+            "Minimal bayar Maksimal di: " + date.format(DATE_WITH_DAY) + "\n" +
             "ID: " + identifier + " | Jumlah: " + count + " tagihan\n" +
             "─────────────────────\n\n";
     }
 
-    private String buildBillEntry(Bills bill, LocalDate today) {
-        int dayLate = parseDayLate(bill.getDayLate());
+    private String buildBillEntry(DatedBill db, LocalDate today) {
+        Bills bill = db.bill();
+        int dayLate = db.dayLate();
         LocalDate maksBayar = today.plusDays(Math.max(0, 90 - dayLate));
         long jikaNotPay = nullSafe(bill.getLastPrincipal()) + nullSafe(bill.getPrincipal()) + nullSafe(bill.getMinInterest());
 
@@ -83,15 +83,6 @@ public class MinBungaMessageFormatter {
             "Maks. Bayar: " + maksBayar.format(DATE_WITH_DAY) + "\n" +
             "Jika Tdk Bayar: " + rupiahFormatUtils.formatRupiah(jikaNotPay) + "\n" +
             "─────────────────────\n\n";
-    }
-
-    private int parseDayLate(String dayLate) {
-        if (dayLate == null || dayLate.isBlank()) return 0;
-        try {
-            return Integer.parseInt(dayLate.trim());
-        } catch (NumberFormatException e) {
-            return 0;
-        }
     }
 
     private long nullSafe(Long value) {

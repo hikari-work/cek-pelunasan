@@ -18,28 +18,37 @@ public class MinBungaBillCalculatorService {
 
     public List<BillsForDate> calculate(List<Bills> allBills, List<LocalDate> targetDates) {
         LocalDate today = LocalDate.now(WIB);
+        List<DatedBill> dated = allBills.stream().map(DatedBill::of).toList();
         Set<String> alreadyShown = new HashSet<>();
         List<BillsForDate> result = new ArrayList<>();
 
         for (LocalDate date : targetDates.stream().sorted().toList()) {
             int daysDiff = (int) ChronoUnit.DAYS.between(today, date);
-            List<Bills> forThisDate = allBills.stream()
-                .filter(b -> parseDayLate(b.getDayLate()) + daysDiff >= 90)
-                .filter(b -> !alreadyShown.contains(b.getNoSpk()))
+            List<DatedBill> forThisDate = dated.stream()
+                .filter(db -> db.dayLate() + daysDiff >= 90)
+                .filter(db -> !alreadyShown.contains(db.bill().getNoSpk()))
                 .toList();
             if (forThisDate.isEmpty()) continue;
-            alreadyShown.addAll(forThisDate.stream().map(Bills::getNoSpk).toList());
+            alreadyShown.addAll(forThisDate.stream().map(db -> db.bill().getNoSpk()).toList());
             result.add(new BillsForDate(date, daysDiff, forThisDate));
         }
         return result;
     }
 
-    private static int parseDayLate(String dayLate) {
-        if (dayLate == null || dayLate.isBlank()) return 0;
-        try {
-            return Integer.parseInt(dayLate.trim());
-        } catch (NumberFormatException e) {
-            return 0;
-        }
+    /**
+     * Menghitung batas bawah dayLate yang masih bisa tembus 90 hari di salah satu tanggal target.
+     * Bill dengan dayLate di bawah threshold ini tidak mungkin lolos filter {@link #calculate},
+     * jadi tidak perlu diambil dari database.
+     *
+     * @param targetDates daftar tanggal target penagihan
+     * @return threshold {@code minDayLate} (inklusif) untuk query ke DB; minimal 0
+     */
+    public int minDayLateThreshold(List<LocalDate> targetDates) {
+        LocalDate today = LocalDate.now(WIB);
+        int maxDaysDiff = targetDates.stream()
+            .mapToInt(d -> (int) ChronoUnit.DAYS.between(today, d))
+            .max()
+            .orElse(0);
+        return Math.max(0, 90 - maxDaysDiff);
     }
 }
