@@ -4,7 +4,6 @@ package org.cekpelunasan.utils;
 import lombok.RequiredArgsConstructor;
 import org.cekpelunasan.core.entity.Bills;
 import org.cekpelunasan.core.service.log.DataUpdateLogService;
-import org.cekpelunasan.core.service.simulasi.SimulasiService;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -12,7 +11,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 
 /**
  * Memformat data tagihan kredit menjadi teks detail atau kompak untuk ditampilkan di bot.
@@ -31,14 +29,11 @@ import java.util.Map;
 public class TagihanUtils {
 
 	private final RupiahFormatUtils rupiahFormatUtils;
-	private final SimulasiService simulasiService;
 	private final DataUpdateLogService dataUpdateLogService;
 
 	/**
 	 * Memformat detail lengkap tagihan kredit satu nasabah.
 	 * <p>
-	 * Mengambil data keterlambatan dan maksimal hari bayar dari {@link SimulasiService}
-	 * secara real-time, sehingga informasi yang ditampilkan selalu terkini.
 	 * Total tagihan dihitung berdasarkan tanggal realisasi: kalau realisasi hari ini,
 	 * pakai full payment; kalau sudah lewat, pakai tunggakan; kalau belum, pakai angsuran rutin.
 	 * </p>
@@ -47,13 +42,7 @@ public class TagihanUtils {
 	 * @return string detail tagihan lengkap yang siap dikirim
 	 */
 	public Mono<String> detailBills(Bills bill) {
-		return Mono.zip(
-			simulasiService.findTotalKeterlambatan(bill.getNoSpk()),
-			simulasiService.findMaxBayar(bill.getNoSpk())
-		).map(tuple -> {
-			Map<String, Integer> totalKeterlambatan = tuple.getT1();
-			Long maxBayar = tuple.getT2();
-			return String.format("""
+		return Mono.fromSupplier(() -> String.format("""
             📄 *Detail Kredit*
 
             👤 *Nasabah*
@@ -74,11 +63,10 @@ public class TagihanUtils {
             • Total: %s
 
             ⚠️ *Tunggakan*
-            • Bunga: %s x %s
-            • Pokok: %s x %s
+            • Bunga: %s
+            • Pokok: %s
 
             📊 *Status*
-            • Hari Tunggakan: %d hari
             • Kolektibilitas: %s
 
             💸 *Tagihan*
@@ -99,18 +87,14 @@ public class TagihanUtils {
 			rupiahFormatUtils.formatRupiah(bill.getInterest()),
 			rupiahFormatUtils.formatRupiah(bill.getPrincipal()),
 			rupiahFormatUtils.formatRupiah(bill.getInstallment()),
-			totalKeterlambatan.get("I"),
 			rupiahFormatUtils.formatRupiah(bill.getLastInterest()),
-			totalKeterlambatan.get("P"),
 			rupiahFormatUtils.formatRupiah(bill.getLastPrincipal()),
-			Integer.parseInt(String.valueOf(maxBayar)),
 			bill.getCollectStatus(),
 			rupiahFormatUtils.formatRupiah(calculateTotalPayment(bill)),
 			rupiahFormatUtils.formatRupiah(bill.getMinPrincipal()),
 			rupiahFormatUtils.formatRupiah(bill.getMinInterest()),
 			bill.getAccountOfficer()
-			) + dataUpdateLogService.telegramWarning("TAGIHAN");
-		});
+			) + dataUpdateLogService.telegramWarning("TAGIHAN"));
 	}
 
 

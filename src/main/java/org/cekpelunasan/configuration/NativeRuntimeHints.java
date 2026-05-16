@@ -10,8 +10,6 @@ import org.cekpelunasan.core.entity.Paying;
 import org.cekpelunasan.core.entity.Payment;
 import org.cekpelunasan.core.entity.PaymentDetails;
 import org.cekpelunasan.core.entity.Savings;
-import org.cekpelunasan.core.entity.Simulasi;
-import org.cekpelunasan.core.entity.SimulasiResult;
 import org.cekpelunasan.core.entity.SlikNotifiedFile;
 import org.cekpelunasan.core.entity.User;
 import org.cekpelunasan.core.entity.simulasiangsuran.SimulasiAngsuranResult;
@@ -44,8 +42,6 @@ public class NativeRuntimeHints implements RuntimeHintsRegistrar {
 		Payment.class,
 		PaymentDetails.class,
 		Savings.class,
-		Simulasi.class,
-		SimulasiResult.class,
 		SlikNotifiedFile.class,
 		User.class,
 		SimulasiAngsuranResult.class,
