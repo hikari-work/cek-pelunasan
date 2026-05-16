@@ -41,8 +41,15 @@ public class MinBungaCalendarCallbackHandler extends AbstractCallbackHandler {
 
         log.info("MinBunga calendar toggle: {} date {} by chat {}", identifier, date, chatId);
 
-        return sessionService.toggleDate(chatId, date)
-            .switchIfEmpty(Mono.defer(() -> sessionService.getSession(chatId)))
+        return sessionService.getSession(chatId)
+            .filter(session -> session.getMessageId() != null && session.getMessageId() == messageId)
+            .switchIfEmpty(Mono.defer(() -> {
+                log.info("MinBunga calendar ignored — zombie message {} for chat {}", messageId, chatId);
+                return Mono.empty();
+            }))
+            .then(sessionService.toggleDate(chatId, date))
+            .switchIfEmpty(runBlocking(() ->
+                sendMessage(chatId, "⚠️ *Sesi habis, jalankan ulang* `/minbunga`", client)))
             .flatMap(session -> runBlocking(() -> {
                 boolean hasSelection = !session.getSelectedDates().isEmpty();
                 TdApi.ReplyMarkupInlineKeyboard calendar =

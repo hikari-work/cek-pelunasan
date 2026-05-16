@@ -42,6 +42,10 @@ public class MinBungaConfirmCallbackHandler extends AbstractCallbackHandler {
         return sessionService.getSession(chatId)
             .switchIfEmpty(runBlocking(() -> sendMessage(chatId, "❌ *Sesi tidak ditemukan. Mulai ulang dengan /minbunga*", client)))
             .flatMap(session -> {
+                if (session.getMessageId() != null && session.getMessageId() != messageId) {
+                    log.info("MinBunga confirm ignored — zombie message {} for chat {}", messageId, chatId);
+                    return Mono.empty();
+                }
                 if (session.getSelectedDates() == null || session.getSelectedDates().isEmpty()) {
                     return runBlocking(() ->
                         sendMessage(chatId, "❌ *Belum ada tanggal yang dipilih.*", client)
@@ -49,9 +53,13 @@ public class MinBungaConfirmCallbackHandler extends AbstractCallbackHandler {
                 }
 
                 boolean isAo = "AO".equals(session.getRole());
+                List<LocalDate> targetDates = session.getSelectedDates().stream()
+                    .map(LocalDate::parse).toList();
+                int minDayLate = calculator.minDayLateThreshold(targetDates);
+
                 Mono<List<org.cekpelunasan.core.entity.Bills>> billsMono = isAo
-                    ? billService.findMinimalBungaByAccountOfficer(session.getIdentifier())
-                    : billService.findMinimalBungaByBranch(session.getIdentifier());
+                    ? billService.findMinimalBungaByAccountOfficer(session.getIdentifier(), minDayLate)
+                    : billService.findMinimalBungaByBranch(session.getIdentifier(), minDayLate);
 
                 return billsMono.flatMap(allBills -> runBlocking(() -> {
                     log.info("MinBunga: {} bills fetched for {}", allBills.size(), session.getIdentifier());
@@ -60,8 +68,6 @@ public class MinBungaConfirmCallbackHandler extends AbstractCallbackHandler {
                     telegramMessageService.editText(chatId, messageId,
                         "⏳ *Sedang memproses data...*\n_Mohon tunggu sebentar._", client);
 
-                    List<LocalDate> targetDates = session.getSelectedDates().stream()
-                        .map(LocalDate::parse).toList();
                     List<BillsForDate> grouped = calculator.calculate(allBills, targetDates);
                     List<String> messages = formatter.format(grouped, session.getIdentifier());
 

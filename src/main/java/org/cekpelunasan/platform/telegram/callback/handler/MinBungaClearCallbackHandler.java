@@ -41,7 +41,13 @@ public class MinBungaClearCallbackHandler extends AbstractCallbackHandler {
 
         log.info("MinBunga clear dates for chat {}", chatId);
 
-        return sessionService.clearDates(chatId)
+        return sessionService.getSession(chatId)
+            .filter(session -> session.getMessageId() != null && session.getMessageId() == messageId)
+            .switchIfEmpty(Mono.defer(() -> {
+                log.info("MinBunga clear ignored — zombie message {} for chat {}", messageId, chatId);
+                return Mono.empty();
+            }))
+            .then(sessionService.clearDates(chatId))
             .flatMap(session -> runBlocking(() -> {
                 TdApi.ReplyMarkupInlineKeyboard calendar =
                     calendarBuilder.buildCalendar(identifier, new ArrayList<>(), false);

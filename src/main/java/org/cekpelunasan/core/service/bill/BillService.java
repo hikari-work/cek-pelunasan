@@ -291,28 +291,32 @@ public class BillService {
 	}
 
 	/**
-	 * Mengambil semua tagihan di suatu cabang yang punya minimal bunga > 0 dan DayLate < 120.
+	 * Mengambil semua tagihan di suatu cabang yang punya minimal bunga > 0 dan DayLate
+	 * di rentang {@code [minDayLate, 120)}.
 	 * Dipakai oleh fitur /minbunga untuk PIMP/ADMIN yang memilih cabang.
 	 *
-	 * @param branch kode cabang yang ingin dicari
+	 * @param branch     kode cabang yang ingin dicari
+	 * @param minDayLate batas bawah DayLate yang masih relevan (inklusif)
 	 * @return {@link Mono} berisi list tagihan yang memenuhi kriteria
 	 */
-	public Mono<List<Bills>> findMinimalBungaByBranch(String branch) {
+	public Mono<List<Bills>> findMinimalBungaByBranch(String branch, int minDayLate) {
 		return billsRepository
-			.findByBranchAndMinInterestAndDayLateLessThan(branch, 120)
+			.findByBranchAndMinInterestAndDayLateBetween(branch, minDayLate, 120)
 			.collectList();
 	}
 
 	/**
-	 * Mengambil semua tagihan milik AO tertentu yang punya minimal bunga > 0 dan DayLate < 120.
+	 * Mengambil semua tagihan milik AO tertentu yang punya minimal bunga > 0 dan DayLate
+	 * di rentang {@code [minDayLate, 120)}.
 	 * Dipakai oleh fitur /minbunga untuk AO yang melihat tagihan milik sendiri.
 	 *
 	 * @param accountOfficer kode AO yang ingin dicari tagihannya
+	 * @param minDayLate     batas bawah DayLate yang masih relevan (inklusif)
 	 * @return {@link Mono} berisi list tagihan yang memenuhi kriteria
 	 */
-	public Mono<List<Bills>> findMinimalBungaByAccountOfficer(String accountOfficer) {
+	public Mono<List<Bills>> findMinimalBungaByAccountOfficer(String accountOfficer, int minDayLate) {
 		return billsRepository
-			.findByAccountOfficerAndMinInterestAndDayLateLessThan(accountOfficer, 120)
+			.findByAccountOfficerAndMinInterestAndDayLateBetween(accountOfficer, minDayLate, 120)
 			.collectList();
 	}
 

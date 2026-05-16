@@ -3,6 +3,7 @@ package org.cekpelunasan.configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import reactor.core.publisher.Flux;
@@ -39,23 +40,24 @@ import java.net.URI;
  * </p>
  */
 @Configuration
+@ConfigurationProperties(prefix = "r2")
 public class S3ClientConfiguration{
 
 	private static final Logger log = LoggerFactory.getLogger(S3ClientConfiguration.class);
 
-	@Value("${r2.access.key}")
+	@Value("${access.key}")
 	private String accessKey;
 
-	@Value("${r2.account.id}")
+	@Value("${account.id}")
 	private String accountId;
 
-	@Value("${r2.secret.key}")
+	@Value("${secret.key}")
 	private String secretKey;
 
-	@Value("${r2.endpoint}")
+	@Value("${endpoint}")
 	private String endpoint;
 
-	@Value("${r2.bucket}")
+	@Value("${bucket}")
 	private String bucket;
 
 	/**
