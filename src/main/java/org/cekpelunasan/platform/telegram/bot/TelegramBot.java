@@ -38,6 +38,7 @@ public class TelegramBot implements ApplicationListener<ApplicationReadyEvent> {
     private final CallbackHandler callbackHandler;
     private final MessageIdResolver messageIdResolver;
     private final SlikDocumentUploadHandler slikDocumentUploadHandler;
+    private final BotCommandRegistrar botCommandRegistrar;
 
     @Value("${telegram.bot.token}")
     private String botToken;
@@ -60,8 +61,12 @@ public class TelegramBot implements ApplicationListener<ApplicationReadyEvent> {
             SimpleTelegramClientBuilder builder = factory.builder(settings);
             builder.addUpdateHandler(TdApi.UpdateNewMessage.class, this::onMessage);
             builder.addUpdateHandler(TdApi.UpdateNewCallbackQuery.class, this::onCallbackQuery);
-            builder.addUpdateHandler(TdApi.UpdateAuthorizationState.class, update ->
-                log.info("TDLight auth state: {}", update.authorizationState.getClass().getSimpleName()));
+            builder.addUpdateHandler(TdApi.UpdateAuthorizationState.class, update -> {
+                log.info("TDLight auth state: {}", update.authorizationState.getClass().getSimpleName());
+                if (update.authorizationState instanceof TdApi.AuthorizationStateReady) {
+                    botCommandRegistrar.register(client);
+                }
+            });
             builder.addUpdateHandler(TdApi.UpdateMessageSendSucceeded.class, update ->
                 messageIdResolver.resolve(update.oldMessageId, update.message.id));
             client = builder.build(AuthenticationSupplier.bot(botToken));
