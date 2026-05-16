@@ -177,9 +177,31 @@
             <id>native</id>
             <build>
                 <plugins>
+                    <!-- Spring Boot AOT processing — generate kode sebelum native:compile.
+                         Tanpa ini, logback/log4j ke-init di build time dan native-image gagal. -->
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>process-aot</id>
+                                <goals>
+                                    <goal>process-aot</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.graalvm.buildtools</groupId>
                         <artifactId>native-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>add-reachability-metadata</id>
+                                <goals>
+                                    <goal>add-reachability-metadata</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                         <configuration>
                             <imageName>cek-pelunasan</imageName>
                             <mainClass>org.cekpelunasan.CekPelunasanApplication</mainClass>
@@ -191,9 +213,8 @@
                                 <buildArg>-J-Xmx6g</buildArg>
                                 <!-- TDLight pakai JNI ke libtdjni; harus diizinkan -->
                                 <buildArg>--enable-native-access=ALL-UNNAMED</buildArg>
-                                <!-- AWS SDK & PDFBox kerap butuh init at run-time -->
-                                <buildArg>--initialize-at-run-time=org.apache.pdfbox,software.amazon.awssdk,it.tdlight</buildArg>
-                                <!-- Verbose untuk debugging build pertama -->
+                                <!-- PDFBox & TDLight init at run-time (AWS SDK sudah dihandle Spring Boot) -->
+                                <buildArg>--initialize-at-run-time=org.apache.pdfbox,it.tdlight</buildArg>
                                 <buildArg>--verbose</buildArg>
                             </buildArgs>
                         </configuration>
