@@ -186,6 +186,9 @@
                             <buildArgs>
                                 <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                                <!-- Batas memory builder; turunkan kalau server kecil (mis. -J-Xmx4g)
+                                     atau naikkan kalau server besar (mis. -J-Xmx12g) -->
+                                <buildArg>-J-Xmx6g</buildArg>
                                 <!-- TDLight pakai JNI ke libtdjni; harus diizinkan -->
                                 <buildArg>--enable-native-access=ALL-UNNAMED</buildArg>
                                 <!-- AWS SDK & PDFBox kerap butuh init at run-time -->
