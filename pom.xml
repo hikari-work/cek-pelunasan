@@ -171,6 +171,51 @@
                 </dependency>
             </dependencies>
         </profile>
+
+        <!-- GraalVM Native Image build (aktifkan dengan: ./mvnw -Pnative native:compile) -->
+        <profile>
+            <id>native</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <configuration>
+                            <imageName>cek-pelunasan</imageName>
+                            <mainClass>org.cekpelunasan.CekPelunasanApplication</mainClass>
+                            <buildArgs>
+                                <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
+                                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                                <!-- TDLight pakai JNI ke libtdjni; harus diizinkan -->
+                                <buildArg>--enable-native-access=ALL-UNNAMED</buildArg>
+                                <!-- AWS SDK & PDFBox kerap butuh init at run-time -->
+                                <buildArg>--initialize-at-run-time=org.apache.pdfbox,software.amazon.awssdk,it.tdlight</buildArg>
+                                <!-- Verbose untuk debugging build pertama -->
+                                <buildArg>--verbose</buildArg>
+                            </buildArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Profile untuk menjalankan aplikasi dengan tracing agent GraalVM agar
+             config refleksi/resource/JNI digenerate otomatis. Pakai:
+             ./mvnw -Pnative-agent spring-boot:run -->
+        <profile>
+            <id>native-agent</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <configuration>
+                            <jvmArguments>-agentlib:native-image-agent=config-merge-dir=src/main/resources/META-INF/native-image</jvmArguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <build>
