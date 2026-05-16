@@ -1,0 +1,14 @@
+[
+    {
+        "name": "it.tdlight.jni.NativeClientAccess",
+        "allDeclaredFields": true,
+        "allDeclaredMethods": true,
+        "allDeclaredConstructors": true
+    },
+    {
+        "name": "it.tdlight.jni.TdApi",
+        "allDeclaredFields": true,
+        "allDeclaredMethods": true,
+        "allDeclaredConstructors": true
+    }
+]

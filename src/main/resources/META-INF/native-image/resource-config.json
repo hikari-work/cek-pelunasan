@@ -1,0 +1,23 @@
+{
+    "resources": {
+        "includes": [
+            { "pattern": "banner.txt" },
+            { "pattern": "application.properties" },
+            { "pattern": "application.properties.example" },
+            { "pattern": "application-.*\\.properties$" },
+            { "pattern": "application-.*\\.yml$" },
+            { "pattern": "application-.*\\.yaml$" },
+            { "pattern": "static/.*" },
+            { "pattern": "templates/.*" },
+            { "pattern": "images/.*" },
+            { "pattern": "META-INF/spring/.*" },
+            { "pattern": "META-INF/spring.factories" },
+            { "pattern": "META-INF/services/.*" },
+            { "pattern": "org/apache/pdfbox/resources/.*" },
+            { "pattern": "org/apache/fontbox/resources/.*" },
+            { "pattern": "META-INF/maven/.*/pom.properties" },
+            { "pattern": "META-INF/native-image/.*" }
+        ]
+    },
+    "bundles": []
+}

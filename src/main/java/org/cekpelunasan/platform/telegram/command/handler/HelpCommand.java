@@ -33,7 +33,7 @@ public class HelpCommand extends AbstractCommandHandler {
 
 	@Override
 	public String getDescription() {
-		return "";
+		return "Menampilkan menu bantuan dan daftar fitur";
 	}
 
 	/**

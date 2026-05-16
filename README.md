@@ -138,6 +138,59 @@ export $(grep -v '^#' .env | xargs) && mvn spring-boot:run
 
 Atau install plugin **EnvFile** di IntelliJ.
 
+## Build Native (GraalVM)
+
+Aplikasi sudah disiapkan untuk dibuild menjadi binary native dengan GraalVM Native Image. Hasilnya: startup di bawah 200ms, footprint memory ~150–300MB, tanpa JVM.
+
+### Prasyarat
+
+- GraalVM CE 21+ (`graalvm-community-jdk-21`) terpasang dan aktif (`java -version` menunjukkan GraalVM)
+- Toolchain C: `gcc`, `glibc-devel`, `zlib-devel` (Linux) atau Visual Studio Build Tools (Windows)
+
+### Generate hints otomatis (sekali, sebelum build pertama)
+
+Jalankan aplikasi di JVM dengan tracing agent — pakai semua command bot (cek pelunasan, .minbunga, /simangsuran, dll) supaya semua refleksi dan resource access ke-track:
+
+```bash
+./mvnw -Pnative-agent spring-boot:run
+```
+
+Hasil hints di-merge ke `src/main/resources/META-INF/native-image/` secara otomatis.
+
+### Build native binary
+
+```bash
+./mvnw -Pnative -DskipTests native:compile
+```
+
+Binary tersedia di `target/cek-pelunasan`. Build pertama makan 5–15 menit; build inkremental jauh lebih cepat.
+
+### Jalankan
+
+```bash
+export $(grep -v '^#' .env | xargs) && ./target/cek-pelunasan
+```
+
+### Build via Docker
+
+```bash
+docker build -f Dockerfile.native -t cek-pelunasan:native .
+docker run --rm --env-file .env -p 8080:8080 cek-pelunasan:native
+```
+
+Atau lewat docker-compose:
+
+```bash
+docker compose --profile native up -d app-native
+```
+
+### Catatan native
+
+- TDLight memuat `libtdjni.so` lewat JNI; `jni-config.json` dan `--initialize-at-run-time=it.tdlight` sudah disetel
+- PDFBox di-init at run-time untuk menghindari pembekuan resource font/cmap di build time
+- AWS SDK v2 (S3) di-init at run-time karena resolusi region butuh environment runtime
+- Jika muncul `ClassNotFoundException` atau `MissingResourceException`, jalankan ulang langkah tracing agent untuk command/flow yang gagal, lalu rebuild
+
 ## Lisensi
 
 MIT License

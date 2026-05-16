@@ -82,4 +82,14 @@ public interface PaymentDetailsRepository extends ReactiveMongoRepository<Paymen
      * @return stream semua record angsuran AO tersebut pada tanggal yang diminta
      */
     Flux<PaymentDetails> findByKodeAoAndTanggal(String kodeAo, String tanggal);
+
+    /**
+     * Mengambil seluruh record angsuran untuk satu nomor SPK tertentu, diurutkan
+     * berdasarkan tanggal kemudian kode posting agar baris pokok dan bunga pada
+     * tanggal yang sama tampil berdekatan.
+     *
+     * @param noSpk nomor SPK nasabah
+     * @return stream semua record angsuran SPK tersebut
+     */
+    Flux<PaymentDetails> findByNoSpkOrderByTanggalAscKodePostingAsc(String noSpk);
 }

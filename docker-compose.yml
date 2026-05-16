@@ -30,6 +30,24 @@ services:
     networks:
       - app-network
 
+  app-native:
+    build:
+      context: .
+      dockerfile: Dockerfile.native
+    container_name: cek-pelunasan-native
+    restart: always
+    env_file: .env
+    environment:
+      - WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:3000
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    depends_on:
+      - whatsapp
+    networks:
+      - app-network
+    profiles:
+      - native
+
 networks:
   app-network:
     driver: bridge
