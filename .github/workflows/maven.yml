@@ -23,7 +23,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build native image
-        run: ./mvnw -B -Pnative -DskipTests package
+        run: ./mvnw -B -Pnative -DskipTests package native:compile
 
       - name: Smoke test binary
         run: |
