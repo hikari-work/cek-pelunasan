@@ -109,6 +109,17 @@ public class PaymentDetailsService {
     }
 
     /**
+     * Mengambil seluruh record angsuran untuk satu nomor SPK, terurut tanggal asc
+     * lalu kode posting asc.
+     *
+     * @param noSpk nomor SPK
+     * @return {@link Flux} berisi seluruh record angsuran SPK tersebut
+     */
+    public Flux<PaymentDetails> findByNoSpk(String noSpk) {
+        return paymentDetailsRepository.findByNoSpkOrderByTanggalAscKodePostingAsc(noSpk);
+    }
+
+    /**
      * Membaca file CSV, lalu menyimpan data secara batch dengan strategi upsert.
      * <p>
      * Data lama <strong>tidak</strong> dihapus — data bersifat kumulatif per tanggal.

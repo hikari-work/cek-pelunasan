@@ -21,6 +21,8 @@ import org.cekpelunasan.miniapp.dto.CanvasSummaryDTO;
 import org.cekpelunasan.miniapp.dto.KolekTasSummaryDTO;
 import org.cekpelunasan.miniapp.dto.MiniAppAuthRequest;
 import org.cekpelunasan.miniapp.dto.MiniAppAuthResponse;
+import org.cekpelunasan.miniapp.dto.PaymentDetailDTO;
+import org.cekpelunasan.miniapp.dto.PaymentRowDTO;
 import org.cekpelunasan.miniapp.dto.PelunasanDetailDTO;
 import org.cekpelunasan.miniapp.dto.TabunganSummaryDTO;
 import org.cekpelunasan.miniapp.dto.TagihanSummaryDTO;
@@ -53,6 +55,8 @@ public class NativeRuntimeHints implements RuntimeHintsRegistrar {
 		KolekTasSummaryDTO.class,
 		MiniAppAuthRequest.class,
 		MiniAppAuthResponse.class,
+		PaymentDetailDTO.class,
+		PaymentRowDTO.class,
 		PelunasanDetailDTO.class,
 		TabunganSummaryDTO.class,
 		TagihanSummaryDTO.class,
