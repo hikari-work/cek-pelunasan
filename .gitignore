@@ -1,5 +1,12 @@
 HELP.md
 target/
+
+# Go
+bin/
+*.out
+*.test
+coverage.txt
+vendor/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
