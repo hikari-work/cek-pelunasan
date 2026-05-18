@@ -3,6 +3,7 @@ package credithistory
 
 import (
 	"context"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/repository"
 	"github.com/hikari-work/cek-pelunasan/internal/service/csvimport"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
@@ -28,7 +30,7 @@ type PageResult struct {
 	Size  int64
 }
 
-// SearchAddressByKeywords: cari riwayat berdasarkan kata kunci alamat (semua AND),
+// SearchAddressByKeywords SearchAddressByKeywords: cari riwayat berdasarkan kata kunci alamat (semua AND),
 // kecuali nasabah yang status-nya "A" (aktif). 5 hasil per halaman.
 func (s *Service) SearchAddressByKeywords(ctx context.Context, keywords []string, page int64) (PageResult, error) {
 	const size int64 = 5
@@ -66,7 +68,12 @@ func (s *Service) SearchAddressByKeywords(ctx context.Context, keywords []string
 	if err != nil {
 		return PageResult{}, err
 	}
-	defer cur.Close(ctx)
+	defer func(cur *mongo.Cursor, ctx context.Context) {
+		err := cur.Close(ctx)
+		if err != nil {
+			slog.Error("Error Closing MongoDB")
+		}
+	}(cur, ctx)
 	var items []entity.CreditHistory
 	if err := cur.All(ctx, &items); err != nil {
 		return PageResult{}, err
@@ -84,7 +91,7 @@ func (s *Service) Count(ctx context.Context) (int64, error) {
 	return s.repo.Count(ctx)
 }
 
-// ParseCSVAndSave: hapus semua, lalu re-insert dari CSV.
+// ParseCSVAndSave ParseCSVAndSave: hapus semua, lalu re-insert dari CSV.
 // Format kolom: date(epoch), creditId, customerId, name, status, address, phone.
 func (s *Service) ParseCSVAndSave(ctx context.Context, path string, total int64, onProgress csvimport.ProgressFn) error {
 	if err := s.repo.DeleteAll(ctx); err != nil {
