@@ -128,6 +128,18 @@ func (r *Router) RegisterCommand(h CommandHandler) {
 	r.commands[h.Command()] = h
 }
 
+// Commands snapshot semua command handler yang terdaftar — dipakai untuk
+// SetMyCommands ke Telegram.
+func (r *Router) Commands() []CommandHandler {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	out := make([]CommandHandler, 0, len(r.commands))
+	for _, h := range r.commands {
+		out = append(out, h)
+	}
+	return out
+}
+
 func (r *Router) RegisterCallback(h CallbackHandler) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

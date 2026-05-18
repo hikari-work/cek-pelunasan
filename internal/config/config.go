@@ -15,6 +15,12 @@ type Config struct {
 	SLIK      SLIKConfig
 	Mail      MailConfig
 	Server    ServerConfig
+	MiniApp   MiniAppConfig
+}
+
+type MiniAppConfig struct {
+	URL            string
+	SessionTTLMins int
 }
 
 type MongoConfig struct {
@@ -94,6 +100,11 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("SLIK_MAX_RESULTS: %w", err)
 	}
 
+	miniSessionTTL, err := getEnvInt("MINIAPP_SESSION_TTL_MINUTES", 60)
+	if err != nil {
+		return nil, fmt.Errorf("MINIAPP_SESSION_TTL_MINUTES: %w", err)
+	}
+
 	return &Config{
 		Mongo: MongoConfig{
 			URI: getEnv("SPRING_DATA_MONGODB_URI", "mongodb://localhost:27017/cek_pelunasan"),
@@ -133,6 +144,10 @@ func Load() (*Config, error) {
 		},
 		Server: ServerConfig{
 			Port: serverPort,
+		},
+		MiniApp: MiniAppConfig{
+			URL:            os.Getenv("MINIAPP_URL"),
+			SessionTTLMins: miniSessionTTL,
 		},
 	}, nil
 }
