@@ -130,7 +130,7 @@ func run() error {
 	}
 	tgBot := telegram.NewBot(api, cfg.Telegram.OwnerID, authedChats)
 	tgRouter := telegram.NewRouter()
-	registerTelegramHandlers(tgRouter, tgBot, authedChats, usersSvc, billSvc, chSvc, cfg.MiniApp.URL)
+	registerTelegramHandlers(tgRouter, tgBot, authedChats, usersSvc, billSvc, savingsSvc, kolekSvc, chSvc, cfg.MiniApp.URL)
 
 	if err := telegram.RegisterBotCommands(api, tgRouter.Commands()); err != nil {
 		slog.Warn("set bot commands failed", "err", err)
@@ -187,6 +187,8 @@ func registerTelegramHandlers(
 	authed *auth.AuthorizedChats,
 	usersSvc *users.Service,
 	billSvc *bill.Service,
+	savingsSvc *savings.Service,
+	kolekSvc *kolektas.Service,
 	chSvc *credithistory.Service,
 	miniAppURL string,
 ) {
@@ -199,20 +201,25 @@ func registerTelegramHandlers(
 	r.RegisterCommand(&cmdh.Auth{OwnerID: b.OwnerID, Authed: authed, Users: usersSvc})
 	r.RegisterCommand(&cmdh.Otor{Users: usersSvc, Bills: billSvc})
 	r.RegisterCommand(&cmdh.Status{Users: usersSvc, Bills: billSvc, CreditHist: chSvc})
+	r.RegisterCommand(&cmdh.Tagih{Bills: billSvc})
+	r.RegisterCommand(&cmdh.Dauth{OwnerID: b.OwnerID, Authed: authed, Users: usersSvc})
+	r.RegisterCommand(&cmdh.Owner{OwnerID: b.OwnerID, Authed: authed})
+	r.RegisterCommand(&cmdh.Kantor{Users: usersSvc})
+	r.RegisterCommand(&cmdh.Sim{Bills: billSvc})
+	r.RegisterCommand(&cmdh.CariNasabah{Bills: billSvc})
+	r.RegisterCommand(&cmdh.Tab{Savings: savingsSvc, Users: usersSvc})
+	r.RegisterCommand(&cmdh.Canvas{Savings: savingsSvc})
+	r.RegisterCommand(&cmdh.Canvasing{History: chSvc})
+	r.RegisterCommand(&cmdh.JatuhBayar{Bills: billSvc, Users: usersSvc})
+	r.RegisterCommand(&cmdh.MinimalPay{Bills: billSvc, Users: usersSvc})
+	r.RegisterCommand(&cmdh.Kolektas{Service: kolekSvc})
+	r.RegisterCommand(&cmdh.Broadcast{OwnerID: b.OwnerID, Users: usersSvc})
 	if strings.TrimSpace(miniAppURL) != "" {
 		r.RegisterCommand(&cmdh.MiniApp{URL: miniAppURL})
 	}
 
 	pending := []struct{ cmd, desc string }{
-		{"/tagih", "Cari tagihan AO"},
-		{"/cariNasabah", "Cari nasabah"},
-		{"/canvas", "Canvasing tabungan"},
-		{"/canvasingTab", "Canvasing tabungan (tab)"},
-		{"/cariTab", "Cari tabungan"},
-		{"/kolektas", "Kolek Tas (kelompok)"},
-		{"/kantor", "Daftar kantor"},
 		{"/findbyduedate", "Cari by jatuh tempo"},
-		{"/minimalpay", "Tagihan minimal pay"},
 		{"/minbunga", "Tagihan minimal bunga"},
 		{"/slik", "SLIK"},
 		{"/docslik", "Dokumen SLIK"},
@@ -221,21 +228,26 @@ func registerTelegramHandlers(
 		{"/uploadtas", "Upload Kolek Tas"},
 		{"/uploadpayment", "Upload payment details"},
 		{"/uploadhistory", "Upload credit history"},
-		{"/broadcast", "Broadcast pesan"},
-		{"/dauth", "Hapus user"},
-		{"/owner", "Hubungi owner"},
-		{"/sim", "Simulasi angsuran"},
 	}
 	for _, p := range pending {
 		r.RegisterCommand(cmdh.Pending(p.cmd, p.desc))
 	}
 
 	r.RegisterCallback(&cbh.None{})
+	r.RegisterCallback(&cbh.SelectBranch{Bills: billSvc})
+	r.RegisterCallback(&cbh.PagingBills{Bills: billSvc})
+	r.RegisterCallback(&cbh.Tagihan{Bills: billSvc})
+	r.RegisterCallback(&cbh.SavingsBranchPick{Savings: savingsSvc})
+	r.RegisterCallback(&cbh.SavingsPaginate{Savings: savingsSvc})
+	r.RegisterCallback(&cbh.CanvasPaginate{Savings: savingsSvc})
+	r.RegisterCallback(&cbh.CanvasingPaginate{History: chSvc})
+	r.RegisterCallback(&cbh.TagihNext{Bills: billSvc, Users: usersSvc})
+	r.RegisterCallback(&cbh.MinimalPayPaginate{Bills: billSvc, Users: usersSvc})
+	r.RegisterCallback(&cbh.KolektasPaginate{Service: kolekSvc})
 	for _, prefix := range []string{
-		"tagihan", "namaTagihan", "branch", "savingsBranch", "savingsNext",
-		"canvas", "canvasingTab", "kolektas", "minbunga", "minbungaCal",
-		"minbungaClear", "minbungaConfirm", "minimalpay", "slikMonth",
-		"slikName", "slikSender", "tagihNext", "savingsBranchSelect", "services",
+		"canvasingTab", "minbunga", "minbungaCal",
+		"minbungaClear", "minbungaConfirm", "slikMonth",
+		"slikName", "slikSender", "savingsBranchSelect", "services",
 	} {
 		r.RegisterCallback(cbh.Pending(prefix))
 	}

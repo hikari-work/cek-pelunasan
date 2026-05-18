@@ -33,3 +33,31 @@ func (s *Service) SaveUpdateTimestamp(ctx context.Context, dataType string) erro
 func (s *Service) Find(ctx context.Context, dataType string) (*entity.DataUpdateLog, error) {
 	return s.repo.FindByID(ctx, dataType)
 }
+
+// TelegramWarning mengembalikan banner italic Markdown jika data terakhir diupdate
+// bukan hari ini (zona WIB). Kembali "" kalau up-to-date atau belum pernah diupdate.
+func (s *Service) TelegramWarning(ctx context.Context, dataType string) string {
+	return s.warning(ctx, dataType, true)
+}
+
+// WhatsAppWarning padanan plain-text — tanpa markdown.
+func (s *Service) WhatsAppWarning(ctx context.Context, dataType string) string {
+	return s.warning(ctx, dataType, false)
+}
+
+func (s *Service) warning(ctx context.Context, dataType string, asMarkdown bool) string {
+	rec, err := s.repo.FindByID(ctx, dataType)
+	if err != nil || rec == nil {
+		return ""
+	}
+	updated := rec.UpdatedAt.In(JakartaTZ)
+	today := time.Now().In(JakartaTZ)
+	if updated.Year() == today.Year() && updated.YearDay() == today.YearDay() {
+		return ""
+	}
+	stamp := updated.Format("02-01-2006")
+	if asMarkdown {
+		return "\n\n⚠️ _Data terakhir diupdate tanggal " + stamp + "_"
+	}
+	return "\n\n⚠️ Data terakhir diupdate tanggal " + stamp
+}

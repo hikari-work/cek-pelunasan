@@ -133,8 +133,8 @@ Image final pakai `distroless/static` — minimal attack surface, tanpa shell/li
 | Mini App (Fiber, init-data verify) | ✅ |
 | HTTP server + actuator         | ✅ |
 | Telegram bot fondasi           | ✅ |
-| Telegram command handler       | 🚧 7/28 (start, id, help, status, auth, otor, app — sisanya stub) |
-| Telegram callback handler      | 🚧 stub semua |
+| Telegram command handler       | 🚧 20/28 (start, id, help, status, auth, otor, app, tagih, dauth, owner, kantor, sim, cariNasabah, tab, canvas, canvasing, jb, pabpr, kolektas, broadcast — sisanya stub) |
+| Telegram callback handler      | 🚧 11/20 (none, branch, paging, tagihan, savingsBranch, savingsNext, canvas, namaTagihan, tagihNext, minimalpay, kolektas — sisanya stub) |
 | WhatsApp sender + webhook + router | ✅ |
 | WhatsApp handler per fitur     | 🚧 stub semua (.p, .t, .slik, .va, .jb, .minbunga, .email, hot kolek) |
 | SLIK PDF (wkhtmltopdf)         | ⏳ pending |
