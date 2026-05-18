@@ -16,6 +16,31 @@ func NewBillsRepo(m *Mongo) *BillsRepo {
 	return &BillsRepo{coll: m.DB.Collection("tagihan")}
 }
 
+// Collection mengembalikan handle koleksi MongoDB mentah untuk operasi yang
+// belum ditampung di repository (mis. distinct di service layer).
+func (r *BillsRepo) Collection() *mongo.Collection {
+	return r.coll
+}
+
+// DeleteAll menghapus seluruh dokumen — dipakai sebelum import CSV ulang.
+func (r *BillsRepo) DeleteAll(ctx context.Context) error {
+	_, err := r.coll.DeleteMany(ctx, bson.M{})
+	return err
+}
+
+// InsertMany insert batch tanpa validasi unique key (data dari CSV trusted).
+func (r *BillsRepo) InsertMany(ctx context.Context, bills []entity.Bills) error {
+	if len(bills) == 0 {
+		return nil
+	}
+	docs := make([]any, len(bills))
+	for i := range bills {
+		docs[i] = bills[i]
+	}
+	_, err := r.coll.InsertMany(ctx, docs)
+	return err
+}
+
 func (r *BillsRepo) FindByID(ctx context.Context, noSpk string) (*entity.Bills, error) {
 	var b entity.Bills
 	err := r.coll.FindOne(ctx, bson.M{"_id": noSpk}).Decode(&b)
@@ -162,6 +187,37 @@ func (r *BillsRepo) FindAllByBranch(ctx context.Context, branch string) ([]entit
 
 func (r *BillsRepo) FindByBranchAndNoSpkNotIn(ctx context.Context, branch string, paidSpks []string) ([]entity.Bills, error) {
 	filter := bson.M{"branch": branch, "_id": bson.M{"$nin": paidSpks}}
+	cur, err := r.coll.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	var out []entity.Bills
+	if err := cur.All(ctx, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// FindByBranchAndDueDatePrefix: branch + dueDate diawali prefix.
+// Padanan @Query("{ 'branch': ?0, 'dueDate': { '$regex': '^?1' } }").
+func (r *BillsRepo) FindByBranchAndDueDatePrefix(ctx context.Context, branch, prefix string) ([]entity.Bills, error) {
+	filter := bson.M{"branch": branch, "dueDate": bson.M{"$regex": "^" + prefix}}
+	cur, err := r.coll.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+	var out []entity.Bills
+	if err := cur.All(ctx, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// FindByBranchAndRealizationPrefix: branch + realization diawali prefix (case-insensitive).
+func (r *BillsRepo) FindByBranchAndRealizationPrefix(ctx context.Context, branch, prefix string) ([]entity.Bills, error) {
+	filter := bson.M{"branch": branch, "realization": bson.M{"$regex": "^" + prefix, "$options": "i"}}
 	cur, err := r.coll.Find(ctx, filter)
 	if err != nil {
 		return nil, err
