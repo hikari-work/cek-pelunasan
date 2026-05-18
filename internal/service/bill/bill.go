@@ -5,18 +5,14 @@ package bill
 
 import (
 	"context"
-	"encoding/csv"
-	"errors"
 	"fmt"
-	"io"
 	"math/big"
-	"os"
 	"strconv"
 	"strings"
-	"sync/atomic"
 
 	"github.com/hikari-work/cek-pelunasan/internal/entity"
 	"github.com/hikari-work/cek-pelunasan/internal/repository"
+	"github.com/hikari-work/cek-pelunasan/internal/service/csvimport"
 	logsvc "github.com/hikari-work/cek-pelunasan/internal/service/log"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
@@ -160,7 +156,7 @@ func (s *Service) distinct(ctx context.Context, field string) ([]string, error) 
 
 // ProgressFn dipanggil setelah satu batch berhasil disimpan, dengan jumlah
 // baris yang sudah diproses sampai saat ini. Boleh nil.
-type ProgressFn func(processed int64)
+type ProgressFn = csvimport.ProgressFn
 
 // ParseCSVAndSave membaca CSV, hapus seluruh data lama, lalu insert ulang
 // secara batch (500 baris). Setelah selesai, simpan timestamp ke DataUpdateLog.
@@ -170,65 +166,14 @@ func (s *Service) ParseCSVAndSave(ctx context.Context, path string, total int64,
 	if err := s.repo.DeleteAll(ctx); err != nil {
 		return fmt.Errorf("delete all bills: %w", err)
 	}
-
-	f, err := os.Open(path)
-	if err != nil {
-		return fmt.Errorf("open csv: %w", err)
-	}
-	defer f.Close()
-
-	reader := csv.NewReader(f)
-	reader.FieldsPerRecord = -1
-
-	updateInterval := total / 20
-	if updateInterval < 500 {
-		updateInterval = 500
-	}
-
-	var processed atomic.Int64
-	var lastStep atomic.Int64
-	lastStep.Store(-1)
-
-	const batchSize = 500
-	batch := make([]entity.Bills, 0, batchSize)
-
-	flush := func() error {
-		if len(batch) == 0 {
-			return nil
-		}
-		if err := s.repo.InsertMany(ctx, batch); err != nil {
-			return err
-		}
-		done := processed.Add(int64(len(batch)))
-		if onProgress != nil {
-			step := done / updateInterval
-			if step > lastStep.Swap(step) || done >= total {
-				onProgress(done)
-			}
-		}
-		batch = batch[:0]
-		return nil
-	}
-
-	for {
-		row, err := reader.Read()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("read csv: %w", err)
-		}
-		batch = append(batch, mapRowToBill(row))
-		if len(batch) >= batchSize {
-			if err := flush(); err != nil {
-				return err
-			}
-		}
-	}
-	if err := flush(); err != nil {
+	if err := csvimport.Run(
+		ctx, path, false, total,
+		func(row []string) (entity.Bills, bool) { return mapRowToBill(row), true },
+		s.repo.InsertMany,
+		onProgress,
+	); err != nil {
 		return err
 	}
-
 	return s.updates.SaveUpdateTimestamp(ctx, "TAGIHAN")
 }
 

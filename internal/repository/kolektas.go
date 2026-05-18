@@ -15,6 +15,23 @@ func NewKolekTasRepo(m *Mongo) *KolekTasRepo {
 	return &KolekTasRepo{coll: m.DB.Collection("kolek_tas")}
 }
 
+func (r *KolekTasRepo) DeleteAll(ctx context.Context) error {
+	_, err := r.coll.DeleteMany(ctx, bson.M{})
+	return err
+}
+
+func (r *KolekTasRepo) InsertMany(ctx context.Context, items []entity.KolekTas) error {
+	if len(items) == 0 {
+		return nil
+	}
+	docs := make([]any, len(items))
+	for i := range items {
+		docs[i] = items[i]
+	}
+	_, err := r.coll.InsertMany(ctx, docs)
+	return err
+}
+
 func (r *KolekTasRepo) FindByKelompok(ctx context.Context, kelompok string, page Page) ([]entity.KolekTas, error) {
 	filter := bson.M{"kelompok": bson.M{"$regex": "^" + kelompok + "$", "$options": "i"}}
 	cur, err := r.coll.Find(ctx, filter, options.Find().SetSkip(page.Skip()).SetLimit(page.Limit()))

@@ -15,6 +15,15 @@ func NewPaymentDetailsRepo(m *Mongo) *PaymentDetailsRepo {
 	return &PaymentDetailsRepo{coll: m.DB.Collection("payment_details")}
 }
 
+func (r *PaymentDetailsRepo) UpsertMany(ctx context.Context, items []entity.PaymentDetails) error {
+	for i := range items {
+		if err := r.Save(ctx, &items[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (r *PaymentDetailsRepo) FindByKodeAO(ctx context.Context, kodeAO string, page Page) ([]entity.PaymentDetails, error) {
 	return r.findPaged(ctx, bson.M{"kodeAo": kodeAO}, page, nil)
 }

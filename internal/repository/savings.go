@@ -16,6 +16,31 @@ func NewSavingsRepo(m *Mongo) *SavingsRepo {
 	return &SavingsRepo{coll: m.DB.Collection("savings")}
 }
 
+func (r *SavingsRepo) Collection() *mongo.Collection {
+	return r.coll
+}
+
+func (r *SavingsRepo) DeleteAll(ctx context.Context) error {
+	_, err := r.coll.DeleteMany(ctx, bson.M{})
+	return err
+}
+
+func (r *SavingsRepo) InsertMany(ctx context.Context, items []entity.Savings) error {
+	if len(items) == 0 {
+		return nil
+	}
+	docs := make([]any, len(items))
+	for i := range items {
+		docs[i] = items[i]
+	}
+	_, err := r.coll.InsertMany(ctx, docs)
+	return err
+}
+
+func (r *SavingsRepo) Count(ctx context.Context) (int64, error) {
+	return r.coll.CountDocuments(ctx, bson.M{})
+}
+
 func (r *SavingsRepo) FindByNameAndBranch(ctx context.Context, name, branch string, page Page) ([]entity.Savings, error) {
 	filter := bson.M{
 		"name":   bson.M{"$regex": name, "$options": "i"},

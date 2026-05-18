@@ -14,6 +14,31 @@ func NewCreditHistoryRepo(m *Mongo) *CreditHistoryRepo {
 	return &CreditHistoryRepo{coll: m.DB.Collection("credit_history")}
 }
 
+func (r *CreditHistoryRepo) Collection() *mongo.Collection {
+	return r.coll
+}
+
+func (r *CreditHistoryRepo) DeleteAll(ctx context.Context) error {
+	_, err := r.coll.DeleteMany(ctx, bson.M{})
+	return err
+}
+
+func (r *CreditHistoryRepo) InsertMany(ctx context.Context, items []entity.CreditHistory) error {
+	if len(items) == 0 {
+		return nil
+	}
+	docs := make([]any, len(items))
+	for i := range items {
+		docs[i] = items[i]
+	}
+	_, err := r.coll.InsertMany(ctx, docs)
+	return err
+}
+
+func (r *CreditHistoryRepo) Count(ctx context.Context) (int64, error) {
+	return r.coll.CountDocuments(ctx, bson.M{})
+}
+
 func (r *CreditHistoryRepo) Save(ctx context.Context, h *entity.CreditHistory) error {
 	if h.ID == "" {
 		_, err := r.coll.InsertOne(ctx, h)
