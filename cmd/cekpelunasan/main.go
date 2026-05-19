@@ -34,6 +34,7 @@ import (
 	cbh "github.com/hikari-work/cek-pelunasan/internal/platform/telegram/callbackhandler"
 	cmdh "github.com/hikari-work/cek-pelunasan/internal/platform/telegram/commandhandler"
 	wa "github.com/hikari-work/cek-pelunasan/internal/platform/whatsapp"
+	whahandler "github.com/hikari-work/cek-pelunasan/internal/platform/whatsapp/whahandler"
 	"github.com/hikari-work/cek-pelunasan/internal/repository"
 	"github.com/hikari-work/cek-pelunasan/internal/service/auth"
 	"github.com/hikari-work/cek-pelunasan/internal/service/bill"
@@ -162,7 +163,7 @@ func run() error {
 	if waClient != nil {
 		defer waClient.Close()
 		waRouter = wa.NewRouter(cfg.WhatsApp.AdminNumber)
-		registerWhatsAppHandlers(waRouter, waClient.Sender())
+		registerWhatsAppHandlers(waRouter, waClient.Sender(), billSvc, logSvc)
 		waRouter.AttachToClient(waClient, rootCtx)
 	}
 
@@ -256,10 +257,15 @@ func run() error {
 }
 
 // registerWhatsAppHandlers daftar handler bisnis WhatsApp ke router.
-// Saat ini kosong — handler asli (.p, .t, .slik, dll) akan ditambahkan
-// di task lanjutan. Sender disediakan supaya signature siap dipakai.
-func registerWhatsAppHandlers(_ *wa.Router, _ *wa.Sender) {
-	// TODO(task #15): pelunasan
+// Urutan registrasi = urutan match: yang lebih spesifik harus duluan.
+func registerWhatsAppHandlers(r *wa.Router, sender *wa.Sender, billSvc *bill.Service, logSvc *logsvc.Service) {
+	r.Add(&whahandler.Pelunasan{
+		Bills:    billSvc,
+		Updates:  logSvc,
+		Sender:   sender,
+		Router:   r,
+		Reaction: true,
+	})
 	// TODO(task #14): tabungan
 	// TODO(task #10): hot kolek
 	// TODO(task #11): VA + jatuh bayar

@@ -10,6 +10,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/service/bill"
 	"github.com/hikari-work/cek-pelunasan/internal/service/kolektas"
 	"github.com/hikari-work/cek-pelunasan/internal/service/paymentdetails"
+	"github.com/hikari-work/cek-pelunasan/internal/service/pelunasan"
 	"github.com/hikari-work/cek-pelunasan/internal/service/savings"
 )
 
@@ -66,14 +67,36 @@ func registerPelunasan(r fiber.Router, svc *bill.Service) {
 		if b == nil {
 			return c.SendStatus(fiber.StatusNotFound)
 		}
-		// PelunasanService masih di modul WhatsApp — kembalikan fallback Bills basic.
+		// Hitung pelunasan via PelunasanService. Kalau gagal (mis. format
+		// produk/tanggal nyentrik), fallback ke Bills basic supaya client
+		// tetap dapat data — sama persis kontrak field dengan miniapp legacy.
+		res, calcErr := pelunasan.Calculate(b)
+		if calcErr != nil {
+			return c.JSON(fiber.Map{
+				"spk": b.NoSpk, "nama": b.Name, "alamat": b.Address, "product": b.Product,
+				"tglRealisasi": b.Realization, "tglJatuhTempo": b.DueDate, "rencanaPelunasan": nil,
+				"plafond": b.Plafond, "bakiDebet": b.DebitTray,
+				"perhitunganBunga": nil, "typeBunga": nil,
+				"penalty": nil, "multiplierPenalty": nil, "denda": nil,
+				"totalPelunasan": b.FullPayment,
+			})
+		}
 		return c.JSON(fiber.Map{
-			"spk": b.NoSpk, "nama": b.Name, "alamat": b.Address, "product": b.Product,
-			"tglRealisasi": b.Realization, "tglJatuhTempo": b.DueDate, "rencanaPelunasan": nil,
-			"plafond": b.Plafond, "bakiDebet": b.DebitTray,
-			"perhitunganBunga": nil, "typeBunga": nil,
-			"penalty": nil, "multiplierPenalty": nil, "denda": nil,
-			"totalPelunasan": b.FullPayment,
+			"spk":               res.SPK,
+			"nama":              res.Nama,
+			"alamat":            res.Alamat,
+			"product":           b.Product,
+			"tglRealisasi":      res.TglRealisasi,
+			"tglJatuhTempo":     res.TglJatuhTempo,
+			"rencanaPelunasan":  res.RencanaPelunasan,
+			"plafond":           res.Plafond,
+			"bakiDebet":         res.BakiDebet,
+			"perhitunganBunga":  res.PerhitunganBunga,
+			"typeBunga":         res.TypeBunga,
+			"penalty":           res.Penalty,
+			"multiplierPenalty": res.MultiplierPenalty,
+			"denda":             res.Denda,
+			"totalPelunasan":    res.TotalPelunasan(),
 		})
 	})
 }
