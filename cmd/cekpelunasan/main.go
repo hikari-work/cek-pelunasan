@@ -38,8 +38,10 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/service/credithistory"
 	"github.com/hikari-work/cek-pelunasan/internal/service/kolektas"
 	logsvc "github.com/hikari-work/cek-pelunasan/internal/service/log"
+	"github.com/hikari-work/cek-pelunasan/internal/service/minbunga"
 	"github.com/hikari-work/cek-pelunasan/internal/service/paymentdetails"
 	"github.com/hikari-work/cek-pelunasan/internal/service/savings"
+	"github.com/hikari-work/cek-pelunasan/internal/service/slik"
 	"github.com/hikari-work/cek-pelunasan/internal/service/users"
 )
 
@@ -87,7 +89,7 @@ func run() error {
 	pdRepo := repository.NewPaymentDetailsRepo(mongo)
 	chRepo := repository.NewCreditHistoryRepo(mongo)
 	dulRepo := repository.NewDataUpdateLogRepo(mongo)
-	_ = repository.NewMinBungaSessionRepo(mongo)
+	mbSessRepo := repository.NewMinBungaSessionRepo(mongo)
 	_ = repository.NewSlikNotifiedFileRepo(mongo)
 	_ = payingRepo
 
@@ -98,6 +100,8 @@ func run() error {
 	kolekSvc := kolektas.NewService(kolekRepo)
 	pdSvc := paymentdetails.NewService(pdRepo, logSvc)
 	chSvc := credithistory.NewService(chRepo)
+	mbSessSvc := minbunga.NewSessionService(mbSessRepo)
+	slikSessions := slik.NewSessionCache()
 	authedChats := auth.New(usersRepo)
 
 	if err := authedChats.Preload(rootCtx); err != nil {
@@ -130,7 +134,7 @@ func run() error {
 	}
 	tgBot := telegram.NewBot(api, cfg.Telegram.OwnerID, authedChats)
 	tgRouter := telegram.NewRouter()
-	registerTelegramHandlers(tgRouter, tgBot, authedChats, usersSvc, billSvc, savingsSvc, kolekSvc, chSvc, cfg.MiniApp.URL)
+	registerTelegramHandlers(tgRouter, tgBot, authedChats, usersSvc, billSvc, savingsSvc, kolekSvc, pdSvc, chSvc, mbSessSvc, slikSessions, logSvc, cfg.MiniApp.URL)
 
 	if err := telegram.RegisterBotCommands(api, tgRouter.Commands()); err != nil {
 		slog.Warn("set bot commands failed", "err", err)
@@ -189,7 +193,11 @@ func registerTelegramHandlers(
 	billSvc *bill.Service,
 	savingsSvc *savings.Service,
 	kolekSvc *kolektas.Service,
+	pdSvc *paymentdetails.Service,
 	chSvc *credithistory.Service,
+	mbSess *minbunga.SessionService,
+	slikSess *slik.SessionCache,
+	logSvc *logsvc.Service,
 	miniAppURL string,
 ) {
 	// Auth middleware tidak diaktifkan global supaya /start /id tetap accessible.
@@ -214,23 +222,16 @@ func registerTelegramHandlers(
 	r.RegisterCommand(&cmdh.MinimalPay{Bills: billSvc, Users: usersSvc})
 	r.RegisterCommand(&cmdh.Kolektas{Service: kolekSvc})
 	r.RegisterCommand(&cmdh.Broadcast{OwnerID: b.OwnerID, Users: usersSvc})
+	r.RegisterCommand(&cmdh.MinBunga{Users: usersSvc, Bills: billSvc, Sessions: mbSess, Log: logSvc})
+	r.RegisterCommand(&cmdh.Slik{Sessions: slikSess})
+	r.RegisterCommand(&cmdh.DocSlik{Sessions: slikSess})
+	r.RegisterCommand(&cmdh.UploadTagihan{Bills: billSvc})
+	r.RegisterCommand(&cmdh.UploadTab{Savings: savingsSvc})
+	r.RegisterCommand(&cmdh.UploadTas{Kolektas: kolekSvc})
+	r.RegisterCommand(&cmdh.UploadPayment{Payments: pdSvc})
+	r.RegisterCommand(&cmdh.UploadCredit{History: chSvc})
 	if strings.TrimSpace(miniAppURL) != "" {
 		r.RegisterCommand(&cmdh.MiniApp{URL: miniAppURL})
-	}
-
-	pending := []struct{ cmd, desc string }{
-		{"/findbyduedate", "Cari by jatuh tempo"},
-		{"/minbunga", "Tagihan minimal bunga"},
-		{"/slik", "SLIK"},
-		{"/docslik", "Dokumen SLIK"},
-		{"/uploadbills", "Upload data tagihan"},
-		{"/uploadtab", "Upload data tabungan"},
-		{"/uploadtas", "Upload Kolek Tas"},
-		{"/uploadpayment", "Upload payment details"},
-		{"/uploadhistory", "Upload credit history"},
-	}
-	for _, p := range pending {
-		r.RegisterCommand(cmdh.Pending(p.cmd, p.desc))
 	}
 
 	r.RegisterCallback(&cbh.None{})
@@ -244,10 +245,14 @@ func registerTelegramHandlers(
 	r.RegisterCallback(&cbh.TagihNext{Bills: billSvc, Users: usersSvc})
 	r.RegisterCallback(&cbh.MinimalPayPaginate{Bills: billSvc, Users: usersSvc})
 	r.RegisterCallback(&cbh.KolektasPaginate{Service: kolekSvc})
+	r.RegisterCallback(&cbh.MinBungaBranch{Sessions: mbSess})
+	r.RegisterCallback(&cbh.MinBungaCalendarToggle{Sessions: mbSess})
+	r.RegisterCallback(&cbh.MinBungaClear{Sessions: mbSess})
+	r.RegisterCallback(&cbh.MinBungaConfirm{Sessions: mbSess, Bills: billSvc})
+	r.RegisterCallback(&cbh.Services{Bills: billSvc, Savings: savingsSvc})
+	r.RegisterCallback(&cbh.SavingsBranchSelect{Savings: savingsSvc})
 	for _, prefix := range []string{
-		"canvasingTab", "minbunga", "minbungaCal",
-		"minbungaClear", "minbungaConfirm", "slikMonth",
-		"slikName", "slikSender", "savingsBranchSelect", "services",
+		"slikMonth", "slikName", "slikSender",
 	} {
 		r.RegisterCallback(cbh.Pending(prefix))
 	}
