@@ -42,6 +42,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/service/kolektas"
 	logsvc "github.com/hikari-work/cek-pelunasan/internal/service/log"
 	"github.com/hikari-work/cek-pelunasan/internal/service/minbunga"
+	"github.com/hikari-work/cek-pelunasan/internal/service/hotkolek"
 	"github.com/hikari-work/cek-pelunasan/internal/service/paymentdetails"
 	"github.com/hikari-work/cek-pelunasan/internal/service/savings"
 	"github.com/hikari-work/cek-pelunasan/internal/service/slik"
@@ -96,6 +97,7 @@ func run() error {
 	mbSessRepo := repository.NewMinBungaSessionRepo(mongo)
 	slikNotifiedRepo := repository.NewSlikNotifiedFileRepo(mongo)
 	_ = payingRepo
+	hotkolekSvc := hotkolek.NewService(billsRepo, payingRepo)
 
 	logSvc := logsvc.NewService(dulRepo)
 	usersSvc := users.NewService(usersRepo)
@@ -163,7 +165,7 @@ func run() error {
 	if waClient != nil {
 		defer waClient.Close()
 		waRouter = wa.NewRouter(cfg.WhatsApp.AdminNumber)
-		registerWhatsAppHandlers(waRouter, waClient.Sender(), billSvc, logSvc)
+		registerWhatsAppHandlers(waRouter, waClient.Sender(), billSvc, logSvc, hotkolekSvc)
 		waRouter.AttachToClient(waClient, rootCtx)
 	}
 
@@ -258,8 +260,9 @@ func run() error {
 
 // registerWhatsAppHandlers daftar handler bisnis WhatsApp ke router.
 // Urutan registrasi = urutan match: yang lebih spesifik harus duluan.
-func registerWhatsAppHandlers(r *wa.Router, sender *wa.Sender, billSvc *bill.Service, logSvc *logsvc.Service) {
+func registerWhatsAppHandlers(r *wa.Router, sender *wa.Sender, billSvc *bill.Service, logSvc *logsvc.Service, hotkolekSvc *hotkolek.Service) {
 	r.Add(&whahandler.Shortcut{Sender: sender, Router: r})
+	r.Add(&whahandler.HotKolek{Service: hotkolekSvc, Sender: sender})
 	r.Add(&whahandler.Pelunasan{
 		Bills:    billSvc,
 		Updates:  logSvc,
@@ -268,7 +271,6 @@ func registerWhatsAppHandlers(r *wa.Router, sender *wa.Sender, billSvc *bill.Ser
 		Reaction: true,
 	})
 	// TODO(task #14): tabungan
-	// TODO(task #10): hot kolek
 	// TODO(task #11): VA + jatuh bayar
 	// TODO(task #9):  SLIK
 	// TODO(task #3):  minbunga
