@@ -1,32 +1,17 @@
 services:
-  whatsapp:
-    image: aldinokemal2104/go-whatsapp-web-multidevice
-    container_name: whatsapp-gateway
-    restart: always
-    ports:
-      - "3000:3000"
-    volumes:
-      - whatsapp_storages:/app/storages
-    command:
-      - rest
-      - --basic-auth=${WHATSAPP_GATEWAY_USERNAME:-admin}:${WHATSAPP_GATEWAY_PASSWORD:-admin}
-      - --port=3000
-      - --webhook=${WHATSAPP_WEBHOOK:-}
-      - --webhook-secret=${WHATSAPP_WEBHOOK_SECRET:-secret}
-    networks:
-      - app-network
-
   app:
     build: .
     container_name: cek-pelunasan
     restart: always
     env_file: .env
     environment:
-      - WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:3000
+      # Path SQLite untuk session whatsmeow. Volume di bawah memastikan
+      # session persist antar restart — kalau hilang, harus pair ulang via QR.
+      - WA_DB_PATH=/app/data/wa.db
     ports:
       - "${SERVER_PORT:-8080}:8080"
-    depends_on:
-      - whatsapp
+    volumes:
+      - wa-session:/app/data
     networks:
       - app-network
 
@@ -35,4 +20,4 @@ networks:
     driver: bridge
 
 volumes:
-  whatsapp_storages:
+  wa-session:

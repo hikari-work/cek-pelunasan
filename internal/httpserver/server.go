@@ -1,5 +1,5 @@
-// Package httpserver: Fiber app yang mounting mini app + WhatsApp webhook +
-// /actuator equivalent (health, info, prometheus).
+// Package httpserver: Fiber app yang mounting mini app + /actuator equivalent
+// (health, info, prometheus).
 package httpserver
 
 import (
@@ -16,12 +16,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/hikari-work/cek-pelunasan/internal/miniapp"
-	"github.com/hikari-work/cek-pelunasan/internal/platform/whatsapp"
 )
 
 type Deps struct {
-	MiniApp        miniapp.Deps
-	WhatsAppRouter *whatsapp.Router
+	MiniApp miniapp.Deps
 }
 
 var startTime = time.Now()
@@ -30,7 +28,6 @@ var startTime = time.Now()
 //
 // Layout endpoint:
 //   - /api/mini/*       -> miniapp
-//   - /v2/whatsapp      -> WhatsApp webhook
 //   - /actuator/health  -> simple health (UP + uptime)
 //   - /actuator/info    -> app + runtime info
 //   - /actuator/prometheus -> Go runtime + process metrics
@@ -51,7 +48,6 @@ func New(d Deps) *fiber.App {
 	}))
 
 	miniapp.Register(app, d.MiniApp)
-	whatsapp.MountWebhook(app, d.WhatsAppRouter)
 
 	app.Get("/actuator/health", health)
 	app.Get("/actuator/info", info)

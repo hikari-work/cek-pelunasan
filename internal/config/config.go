@@ -41,11 +41,13 @@ type R2Config struct {
 }
 
 type WhatsAppConfig struct {
-	GatewayURL      string
-	GatewayUsername string
-	GatewayPassword string
-	AdminNumber     string
-	ForwardEmailTo  string
+	// whatsmeow-native config.
+	DBPath     string // path file SQLite untuk session whatsmeow (default ./data/wa.db)
+	DeviceName string // nama device yang muncul di "Linked devices" HP user
+	LogLevel   string // INFO/DEBUG/WARN/ERROR untuk whatsmeow internal log
+
+	AdminNumber      string
+	ForwardEmailTo   string
 	ForwardEmailFrom string
 }
 
@@ -121,9 +123,9 @@ func Load() (*Config, error) {
 			Bucket:    os.Getenv("R2_BUCKET"),
 		},
 		WhatsApp: WhatsAppConfig{
-			GatewayURL:       getEnv("WHATSAPP_GATEWAY_URL", "http://localhost:3000"),
-			GatewayUsername:  getEnv("WHATSAPP_GATEWAY_USERNAME", "admin"),
-			GatewayPassword:  getEnv("WHATSAPP_GATEWAY_PASSWORD", "admin"),
+			DBPath:           getEnv("WA_DB_PATH", "./data/wa.db"),
+			DeviceName:       getEnv("WA_DEVICE_NAME", "cek-pelunasan"),
+			LogLevel:         getEnv("WA_LOG_LEVEL", "INFO"),
 			AdminNumber:      os.Getenv("ADMIN_WHATSAPP"),
 			ForwardEmailTo:   os.Getenv("EMAIL_FORWARD_RECIPIENT"),
 			ForwardEmailFrom: os.Getenv("EMAIL_FORWARD_FROM"),

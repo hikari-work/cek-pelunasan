@@ -5,9 +5,10 @@
 //  2. Connect MongoDB
 //  3. Bangun semua repo + service
 //  4. Preload AuthorizedChats
-//  5. Wire HTTP server (Fiber: miniapp + whatsapp webhook + actuator)
+//  5. Wire HTTP server (Fiber: miniapp + actuator)
 //  6. Wire Telegram bot (commands + callbacks)
-//  7. Run keduanya dengan graceful shutdown via signal SIGINT/SIGTERM.
+//  7. Wire WhatsApp client via whatsmeow (QR pairing kalau belum login)
+//  8. Run semuanya dengan graceful shutdown via signal SIGINT/SIGTERM.
 package main
 
 import (
@@ -138,9 +139,28 @@ func run() error {
 		slog.Info("preloaded authorized chats", "count", authedChats.Size())
 	}
 
-	wsSender := wa.NewSender(cfg.WhatsApp.GatewayURL, cfg.WhatsApp.GatewayUsername, cfg.WhatsApp.GatewayPassword)
-	wsRouter := wa.NewRouter(cfg.WhatsApp.AdminNumber)
-	registerWhatsAppHandlers(wsRouter, wsSender)
+	// WhatsApp: foundation whatsmeow.
+	// Store + client di-init eager. QR pairing dilakukan asynchronous di goroutine
+	// supaya bot Telegram + miniapp + actuator tetap bisa start meski user belum
+	// scan QR. Fitur WhatsApp baru live setelah handler-nya ditambahkan (task #12+).
+	waStore, err := wa.OpenStore(rootCtx, cfg.WhatsApp.DBPath, cfg.WhatsApp.LogLevel)
+	if err != nil {
+		slog.Warn("whatsapp store gagal dibuka; fitur WA dinonaktifkan", "err", err)
+	}
+	var waClient *wa.Client
+	if waStore != nil {
+		defer func() { _ = waStore.Close() }()
+		waClient, err = wa.NewClient(waStore, wa.ClientOptions{
+			DeviceName: cfg.WhatsApp.DeviceName,
+			LogLevel:   cfg.WhatsApp.LogLevel,
+		})
+		if err != nil {
+			slog.Warn("whatsapp client gagal dibuat", "err", err)
+		}
+	}
+	if waClient != nil {
+		defer waClient.Close()
+	}
 
 	httpApp := httpserver.New(httpserver.Deps{
 		MiniApp: miniapp.Deps{
@@ -153,7 +173,6 @@ func run() error {
 			KolekTas:       kolekSvc,
 			PaymentDetails: pdSvc,
 		},
-		WhatsAppRouter: wsRouter,
 	})
 
 	api, err := tgbotapi.NewBotAPI(cfg.Telegram.BotToken)
@@ -198,6 +217,20 @@ func run() error {
 		}()
 	}
 
+	// WhatsApp: start client di goroutine sendiri.
+	// QR pairing (kalau perlu) blocking sampai user scan, jadi tidak boleh
+	// menahan main goroutine. Kalau Start gagal, log saja — service lain
+	// tetap jalan tanpa fitur WA.
+	if waClient != nil {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := waClient.Start(rootCtx); err != nil && !errors.Is(err, context.Canceled) {
+				slog.Warn("whatsapp client gagal start", "err", err)
+			}
+		}()
+	}
+
 	select {
 	case <-rootCtx.Done():
 		slog.Info("shutdown signal received")
@@ -216,17 +249,6 @@ func run() error {
 	wg.Wait()
 	slog.Info("shutdown complete")
 	return nil
-}
-
-func registerWhatsAppHandlers(r *wa.Router, sender *wa.Sender) {
-	r.Add(wa.PendingHotKolek(sender))
-	r.Add(wa.PendingCommand(".p", "cek pelunasan", sender))
-	r.Add(wa.PendingCommand(".t", "tabungan", sender))
-	r.Add(wa.PendingCommand(".slik", "SLIK", sender))
-	r.Add(wa.PendingCommand(".va", "virtual account", sender))
-	r.Add(wa.PendingCommand(".jb", "jatuh bayar", sender))
-	r.Add(wa.PendingCommand(".minbunga", "minimal bunga", sender))
-	r.Add(wa.PendingCommand(".email", "email forward", sender))
 }
 
 func registerTelegramHandlers(

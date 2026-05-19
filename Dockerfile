@@ -39,7 +39,9 @@ COPY web/static /app/web/static
 EXPOSE 8080
 
 # Non-root supaya container tidak punya hak tulis ke filesystem image.
-RUN adduser -D -u 1000 app && chown -R app:app /app
+# /app/data dipakai whatsmeow untuk simpan session SQLite — harus writable.
+RUN adduser -D -u 1000 app && mkdir -p /app/data && chown -R app:app /app
 USER app
+VOLUME ["/app/data"]
 
 ENTRYPOINT ["/app/cekpelunasan"]
