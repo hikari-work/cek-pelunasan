@@ -283,7 +283,17 @@ func registerWhatsAppHandlers(
 		Sender:  sender,
 		Router:  r,
 	})
-	// TODO(task #11): VA + jatuh bayar
+	r.Add(&whahandler.VirtualAccount{
+		Bills:   billSvc,
+		Savings: savingsSvc,
+		Sender:  sender,
+	})
+	r.Add(&whahandler.JatuhBayar{
+		Bills:   billSvc,
+		Savings: savingsSvc,
+		Sender:  sender,
+		Router:  r,
+	})
 	// TODO(task #9):  SLIK
 	// TODO(task #3):  minbunga
 	// TODO(task #5):  email forward
