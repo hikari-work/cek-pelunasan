@@ -163,6 +163,16 @@ func (c *Client) Close() {
 	c.WAClient.Disconnect()
 }
 
+// Sender return helper untuk kirim/edit/react/upload pesan via client ini.
+// Aman dipanggil meski Start belum sukses — method Sender akan return error
+// "client nil" sampai koneksi terbentuk.
+func (c *Client) Sender() *Sender {
+	if c == nil {
+		return nil
+	}
+	return NewSender(c.WAClient)
+}
+
 // lifecycleHandler hanya log connection state untuk visibilitas operasional.
 // Dispatch event ke router adalah tanggung jawab adapter di task berikutnya.
 func (c *Client) lifecycleHandler(rawEvt any) {

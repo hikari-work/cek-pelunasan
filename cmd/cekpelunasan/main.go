@@ -148,6 +148,7 @@ func run() error {
 		slog.Warn("whatsapp store gagal dibuka; fitur WA dinonaktifkan", "err", err)
 	}
 	var waClient *wa.Client
+	var waRouter *wa.Router
 	if waStore != nil {
 		defer func() { _ = waStore.Close() }()
 		waClient, err = wa.NewClient(waStore, wa.ClientOptions{
@@ -160,6 +161,9 @@ func run() error {
 	}
 	if waClient != nil {
 		defer waClient.Close()
+		waRouter = wa.NewRouter(cfg.WhatsApp.AdminNumber)
+		registerWhatsAppHandlers(waRouter, waClient.Sender())
+		waRouter.AttachToClient(waClient, rootCtx)
 	}
 
 	httpApp := httpserver.New(httpserver.Deps{
@@ -249,6 +253,20 @@ func run() error {
 	wg.Wait()
 	slog.Info("shutdown complete")
 	return nil
+}
+
+// registerWhatsAppHandlers daftar handler bisnis WhatsApp ke router.
+// Saat ini kosong — handler asli (.p, .t, .slik, dll) akan ditambahkan
+// di task lanjutan. Sender disediakan supaya signature siap dipakai.
+func registerWhatsAppHandlers(_ *wa.Router, _ *wa.Sender) {
+	// TODO(task #15): pelunasan
+	// TODO(task #14): tabungan
+	// TODO(task #10): hot kolek
+	// TODO(task #11): VA + jatuh bayar
+	// TODO(task #9):  SLIK
+	// TODO(task #3):  minbunga
+	// TODO(task #4):  shortcut admin
+	// TODO(task #5):  email forward
 }
 
 func registerTelegramHandlers(
