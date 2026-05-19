@@ -259,6 +259,7 @@ func run() error {
 // registerWhatsAppHandlers daftar handler bisnis WhatsApp ke router.
 // Urutan registrasi = urutan match: yang lebih spesifik harus duluan.
 func registerWhatsAppHandlers(r *wa.Router, sender *wa.Sender, billSvc *bill.Service, logSvc *logsvc.Service) {
+	r.Add(&whahandler.Shortcut{Sender: sender, Router: r})
 	r.Add(&whahandler.Pelunasan{
 		Bills:    billSvc,
 		Updates:  logSvc,
@@ -271,7 +272,6 @@ func registerWhatsAppHandlers(r *wa.Router, sender *wa.Sender, billSvc *bill.Ser
 	// TODO(task #11): VA + jatuh bayar
 	// TODO(task #9):  SLIK
 	// TODO(task #3):  minbunga
-	// TODO(task #4):  shortcut admin
 	// TODO(task #5):  email forward
 }
 
