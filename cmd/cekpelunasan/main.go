@@ -28,6 +28,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/config"
 	"github.com/hikari-work/cek-pelunasan/internal/httpserver"
 	"github.com/hikari-work/cek-pelunasan/internal/miniapp"
+	"github.com/hikari-work/cek-pelunasan/internal/platform/r2"
 	"github.com/hikari-work/cek-pelunasan/internal/platform/telegram"
 	cbh "github.com/hikari-work/cek-pelunasan/internal/platform/telegram/callbackhandler"
 	cmdh "github.com/hikari-work/cek-pelunasan/internal/platform/telegram/commandhandler"
@@ -42,6 +43,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/service/paymentdetails"
 	"github.com/hikari-work/cek-pelunasan/internal/service/savings"
 	"github.com/hikari-work/cek-pelunasan/internal/service/slik"
+	"github.com/hikari-work/cek-pelunasan/internal/service/sliknotifier"
 	"github.com/hikari-work/cek-pelunasan/internal/service/users"
 )
 
@@ -90,7 +92,7 @@ func run() error {
 	chRepo := repository.NewCreditHistoryRepo(mongo)
 	dulRepo := repository.NewDataUpdateLogRepo(mongo)
 	mbSessRepo := repository.NewMinBungaSessionRepo(mongo)
-	_ = repository.NewSlikNotifiedFileRepo(mongo)
+	slikNotifiedRepo := repository.NewSlikNotifiedFileRepo(mongo)
 	_ = payingRepo
 
 	logSvc := logsvc.NewService(dulRepo)
@@ -103,6 +105,32 @@ func run() error {
 	mbSessSvc := minbunga.NewSessionService(mbSessRepo)
 	slikSessions := slik.NewSessionCache()
 	authedChats := auth.New(usersRepo)
+
+	// R2 client opsional — kalau credential belum diset (mis. dev local), modul SLIK
+	// akan fail saat dipakai dengan pesan jelas, tapi bot tetap jalan untuk fitur lain.
+	var r2Client *r2.Client
+	if cfg.R2.Bucket != "" && cfg.R2.AccessKey != "" && cfg.R2.SecretKey != "" {
+		c, err := r2.New(r2.Config{
+			AccessKey: cfg.R2.AccessKey,
+			AccountID: cfg.R2.AccountID,
+			SecretKey: cfg.R2.SecretKey,
+			Endpoint:  cfg.R2.Endpoint,
+			Bucket:    cfg.R2.Bucket,
+		})
+		if err != nil {
+			slog.Warn("init R2 client failed; SLIK features disabled", "err", err)
+		} else {
+			r2Client = c
+			slog.Info("R2 client initialized", "bucket", cfg.R2.Bucket)
+		}
+	} else {
+		slog.Warn("R2 credentials not set; SLIK features disabled")
+	}
+
+	pdfGen := slik.NewPDFGenerator(cfg.SLIK.PDFEndpointURL, cfg.SLIK.PDFLogoURL)
+	if cfg.SLIK.SearchTimeout > 0 {
+		pdfGen.Timeout = cfg.SLIK.SearchTimeout
+	}
 
 	if err := authedChats.Preload(rootCtx); err != nil {
 		slog.Warn("preload authorized chats failed", "err", err)
@@ -134,7 +162,7 @@ func run() error {
 	}
 	tgBot := telegram.NewBot(api, cfg.Telegram.OwnerID, authedChats)
 	tgRouter := telegram.NewRouter()
-	registerTelegramHandlers(tgRouter, tgBot, authedChats, usersSvc, billSvc, savingsSvc, kolekSvc, pdSvc, chSvc, mbSessSvc, slikSessions, logSvc, cfg.MiniApp.URL)
+	registerTelegramHandlers(tgRouter, tgBot, authedChats, usersSvc, billSvc, savingsSvc, kolekSvc, pdSvc, chSvc, mbSessSvc, slikSessions, logSvc, r2Client, pdfGen, cfg.SLIK.MaxPDFSize, cfg.MiniApp.URL)
 
 	if err := telegram.RegisterBotCommands(api, tgRouter.Commands()); err != nil {
 		slog.Warn("set bot commands failed", "err", err)
@@ -153,6 +181,22 @@ func run() error {
 		defer wg.Done()
 		tgErr <- telegram.Run(rootCtx, tgBot, tgRouter)
 	}()
+
+	// SLIK notifier hanya jalan kalau R2 siap. Loop berhenti sendiri saat ctx batal.
+	if r2Client != nil {
+		wg.Add(1)
+		notifier := &sliknotifier.Notifier{
+			Storage:  r2Client,
+			Bot:      tgBot,
+			Users:    usersRepo,
+			Notified: slikNotifiedRepo,
+			Interval: 60 * time.Second,
+		}
+		go func() {
+			defer wg.Done()
+			notifier.Run(rootCtx)
+		}()
+	}
 
 	select {
 	case <-rootCtx.Done():
@@ -198,6 +242,9 @@ func registerTelegramHandlers(
 	mbSess *minbunga.SessionService,
 	slikSess *slik.SessionCache,
 	logSvc *logsvc.Service,
+	r2Client *r2.Client,
+	pdfGen *slik.PDFGenerator,
+	maxPDFSize int64,
 	miniAppURL string,
 ) {
 	// Auth middleware tidak diaktifkan global supaya /start /id tetap accessible.
@@ -234,6 +281,10 @@ func registerTelegramHandlers(
 		r.RegisterCommand(&cmdh.MiniApp{URL: miniAppURL})
 	}
 
+	if r2Client != nil {
+		r.RegisterDocumentHandler(&cmdh.SlikDocumentUpload{Authed: authed, Storage: r2Client})
+	}
+
 	r.RegisterCallback(&cbh.None{})
 	r.RegisterCallback(&cbh.SelectBranch{Bills: billSvc})
 	r.RegisterCallback(&cbh.PagingBills{Bills: billSvc})
@@ -251,9 +302,7 @@ func registerTelegramHandlers(
 	r.RegisterCallback(&cbh.MinBungaConfirm{Sessions: mbSess, Bills: billSvc})
 	r.RegisterCallback(&cbh.Services{Bills: billSvc, Savings: savingsSvc})
 	r.RegisterCallback(&cbh.SavingsBranchSelect{Savings: savingsSvc})
-	for _, prefix := range []string{
-		"slikMonth", "slikName", "slikSender",
-	} {
-		r.RegisterCallback(cbh.Pending(prefix))
-	}
+	r.RegisterCallback(&cbh.SlikMonth{Sessions: slikSess, Storage: r2Client, Users: usersSvc})
+	r.RegisterCallback(&cbh.SlikName{Sessions: slikSess})
+	r.RegisterCallback(&cbh.SlikSender{Storage: r2Client, Generator: pdfGen, MaxPDFSize: maxPDFSize})
 }

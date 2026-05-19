@@ -11,21 +11,21 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/service/bill"
 )
 
-// CariNasabah /cariNasabah <nama> — cari cabang yang punya nasabah dengan nama itu,
+// CariNasabah /tgnama <nama> — cari cabang yang punya nasabah dengan nama itu,
 // lalu tampilkan inline keyboard branch picker. Pemilihan branch ditangani
 // callback handler "branch" → SelectBranchCallback.
 type CariNasabah struct {
 	Bills *bill.Service
 }
 
-func (h *CariNasabah) Command() string     { return "/cariNasabah" }
+func (h *CariNasabah) Command() string     { return "/tgnama" }
 func (h *CariNasabah) Description() string { return "Cari nasabah berdasarkan nama (lalu pilih cabang)" }
 
 func (h *CariNasabah) Handle(ctx context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
 	chatID := msg.Chat.ID
 	parts := strings.SplitN(strings.TrimSpace(msg.Text), " ", 2)
 	if len(parts) < 2 || strings.TrimSpace(parts[1]) == "" {
-		_, _ = b.SendText(chatID, "❌ *Format tidak valid*\n\nContoh: /cariNasabah Budi")
+		_, _ = b.SendText(chatID, "❌ *Format tidak valid*\n\nContoh: /tgnama Budi")
 		return
 	}
 	name := strings.TrimSpace(parts[1])

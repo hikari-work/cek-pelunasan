@@ -13,7 +13,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/utils"
 )
 
-// Dauth /dauth <chatId> — admin mencabut akses bot dari user.
+// Dauth /deauth <chatId> — admin mencabut akses bot dari user.
 // Padanan DeleteUserAccessCommand.
 type Dauth struct {
 	OwnerID int64
@@ -21,7 +21,7 @@ type Dauth struct {
 	Users   *users.Service
 }
 
-func (h *Dauth) Command() string     { return "/dauth" }
+func (h *Dauth) Command() string     { return "/deauth" }
 func (h *Dauth) Description() string { return "Gunakan Command ini untuk menghapus izin user." }
 
 func (h *Dauth) Handle(ctx context.Context, b *telegram.Bot, msg *tgbotapi.Message) {

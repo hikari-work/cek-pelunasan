@@ -39,8 +39,8 @@ func New(d Deps) *fiber.App {
 	app := fiber.New(fiber.Config{
 		AppName:               "cek-pelunasan-go",
 		DisableStartupMessage: true,
-		ReadTimeout:           30 * time.Second,
-		WriteTimeout:          30 * time.Second,
+		ReadTimeout:           60 * time.Second,
+		WriteTimeout:          60 * time.Second,
 	})
 
 	app.Use(recover.New())

@@ -141,3 +141,35 @@ func indonesianMonth(m time.Month) string {
 	}
 	return names[int(m)-1]
 }
+
+// SlikSenderConfirmation bangun keyboard pilih jenis laporan SLIK setelah
+// user pilih bulan untuk query KTP. Format callback:
+//
+//	"slikSender_<yyyymm>_<ktpId>_1" → kirim hanya fasilitas aktif
+//	"slikSender_<yyyymm>_<ktpId>_0" → kirim semua data
+func SlikSenderConfirmation(ktpID, yyyymm string) tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("Kirim Data Fasilitas Aktif",
+			fmt.Sprintf("slikSender_%s_%s_1", yyyymm, ktpID)),
+		tgbotapi.NewInlineKeyboardButtonData("Kirim Semua Data",
+			fmt.Sprintf("slikSender_%s_%s_0", yyyymm, ktpID)),
+	))
+}
+
+// SlikNamePagination bangun keyboard navigasi halaman hasil pencarian SLIK by nama.
+// Tombol Prev hanya muncul kalau bukan halaman pertama; Next hanya kalau bukan terakhir.
+// Format callback: "slikName_<page>".
+func SlikNamePagination(current, total int) tgbotapi.InlineKeyboardMarkup {
+	row := make([]tgbotapi.InlineKeyboardButton, 0, 3)
+	if current > 0 {
+		row = append(row, tgbotapi.NewInlineKeyboardButtonData("◀ Prev",
+			fmt.Sprintf("slikName_%d", current-1)))
+	}
+	row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+		fmt.Sprintf("%d / %d", current+1, total), "none"))
+	if current < total-1 {
+		row = append(row, tgbotapi.NewInlineKeyboardButtonData("Next ▶",
+			fmt.Sprintf("slikName_%d", current+1)))
+	}
+	return tgbotapi.NewInlineKeyboardMarkup(row)
+}

@@ -6,6 +6,9 @@ package telegram
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"sync"
 
@@ -74,6 +77,29 @@ func (b *Bot) SendDocument(chatID int64, fileName string, data []byte) error {
 	return err
 }
 
+// DownloadFile resolve fileID ke direct URL lalu unduh isinya. Hati-hati: Telegram
+// hanya mengizinkan download untuk file < 20MB lewat Bot API. File yang lebih besar
+// akan return error.
+func (b *Bot) DownloadFile(fileID string) ([]byte, error) {
+	url, err := b.API.GetFileDirectURL(fileID)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode/100 != 2 {
+		return nil, fmt.Errorf("download file: %s", resp.Status)
+	}
+	return io.ReadAll(resp.Body)
+}
+
 // AnswerCallback merespons callback query (hilangkan loading spinner di tombol).
 func (b *Bot) AnswerCallback(callbackID string, text string) error {
 	_, err := b.API.Request(tgbotapi.NewCallback(callbackID, text))
@@ -91,6 +117,13 @@ type CommandHandler interface {
 	Command() string
 	Description() string
 	Handle(ctx context.Context, b *Bot, msg *tgbotapi.Message)
+}
+
+// DocumentHandler menangani pesan dengan attachment Document. Dipanggil oleh
+// router untuk update message yang berisi Message.Document (bukan Text).
+// Auth/role check tanggung jawab handler sendiri.
+type DocumentHandler interface {
+	HandleDocument(ctx context.Context, b *Bot, msg *tgbotapi.Message)
 }
 
 // CallbackHandler menangani callback inline button berdasarkan prefix.
@@ -111,6 +144,7 @@ type Router struct {
 	mu          sync.RWMutex
 	commands    map[string]CommandHandler
 	callbacks   map[string]CallbackHandler
+	documents   []DocumentHandler
 	commandMW   []MiddlewareFunc
 	callbackMW  []MiddlewareFunc
 }
@@ -126,6 +160,15 @@ func (r *Router) RegisterCommand(h CommandHandler) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.commands[h.Command()] = h
+}
+
+// RegisterDocumentHandler register handler untuk pesan dengan attachment Document.
+// Semua handler dipanggil berurutan (legacy: hanya satu handler — admin upload SLIK,
+// tapi pakai slice supaya extensible).
+func (r *Router) RegisterDocumentHandler(h DocumentHandler) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.documents = append(r.documents, h)
 }
 
 // Commands snapshot semua command handler yang terdaftar — dipakai untuk
@@ -151,7 +194,22 @@ func (r *Router) UseCallback(mw MiddlewareFunc) { r.callbackMW = append(r.callba
 
 // dispatchMessage dipanggil dari Run untuk tiap message text.
 func (r *Router) dispatchMessage(ctx context.Context, b *Bot, msg *tgbotapi.Message) {
-	if msg == nil || msg.Text == "" {
+	if msg == nil {
+		return
+	}
+	// Pesan dengan attachment dokumen → dispatch ke document handler dulu
+	// (handler bertanggung jawab cek role & ekstensi). Kalau msg juga punya
+	// Text/Caption yang dimulai dengan "/", text command tetap dijalankan.
+	if msg.Document != nil {
+		r.mu.RLock()
+		docs := append([]DocumentHandler(nil), r.documents...)
+		r.mu.RUnlock()
+		for _, h := range docs {
+			h.HandleDocument(ctx, b, msg)
+		}
+		// Tidak return — supaya kalau ada caption "/cmd" tetap dipanggil.
+	}
+	if msg.Text == "" {
 		return
 	}
 	cmd := strings.SplitN(msg.Text, " ", 2)[0]
