@@ -165,7 +165,7 @@ func run() error {
 	if waClient != nil {
 		defer waClient.Close()
 		waRouter = wa.NewRouter(cfg.WhatsApp.AdminNumber)
-		registerWhatsAppHandlers(waRouter, waClient.Sender(), billSvc, logSvc, hotkolekSvc)
+		registerWhatsAppHandlers(waRouter, waClient.Sender(), billSvc, logSvc, hotkolekSvc, savingsSvc)
 		waRouter.AttachToClient(waClient, rootCtx)
 	}
 
@@ -260,7 +260,14 @@ func run() error {
 
 // registerWhatsAppHandlers daftar handler bisnis WhatsApp ke router.
 // Urutan registrasi = urutan match: yang lebih spesifik harus duluan.
-func registerWhatsAppHandlers(r *wa.Router, sender *wa.Sender, billSvc *bill.Service, logSvc *logsvc.Service, hotkolekSvc *hotkolek.Service) {
+func registerWhatsAppHandlers(
+	r *wa.Router,
+	sender *wa.Sender,
+	billSvc *bill.Service,
+	logSvc *logsvc.Service,
+	hotkolekSvc *hotkolek.Service,
+	savingsSvc *savings.Service,
+) {
 	r.Add(&whahandler.Shortcut{Sender: sender, Router: r})
 	r.Add(&whahandler.HotKolek{Service: hotkolekSvc, Sender: sender})
 	r.Add(&whahandler.Pelunasan{
@@ -270,7 +277,12 @@ func registerWhatsAppHandlers(r *wa.Router, sender *wa.Sender, billSvc *bill.Ser
 		Router:   r,
 		Reaction: true,
 	})
-	// TODO(task #14): tabungan
+	r.Add(&whahandler.Tabungan{
+		Service: savingsSvc,
+		Updates: logSvc,
+		Sender:  sender,
+		Router:  r,
+	})
 	// TODO(task #11): VA + jatuh bayar
 	// TODO(task #9):  SLIK
 	// TODO(task #3):  minbunga
