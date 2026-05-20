@@ -132,19 +132,74 @@ Image final pakai `distroless/static` — minimal attack surface, tanpa shell/li
 
 ## Status Migrasi per Modul
 
-| Modul                          | Status |
+Semua modul sudah diport ke Go. Tabel di bawah adalah checklist
+verifikasi manual — tandai ✅ kalau sudah dites end-to-end di
+environment yang dipakai user.
+
+### Telegram
+
+| Command / Callback | Status QA |
 |---|---|
-| Config + entity + repository   | ✅ |
-| Service: users, auth, log, bill, hotkolek, savings, credithistory, paymentdetails, kolektas, simulasiangsuran, minbunga | ✅ |
-| Mini App (Fiber, init-data verify) | ✅ |
-| HTTP server + actuator         | ✅ |
-| Telegram bot fondasi           | ✅ |
-| Telegram command handler       | 🚧 20/28 (start, id, help, status, auth, otor, app, tagih, dauth, owner, kantor, sim, cariNasabah, tab, canvas, canvasing, jb, pabpr, kolektas, broadcast — sisanya stub) |
-| Telegram callback handler      | 🚧 11/20 (none, branch, paging, tagihan, savingsBranch, savingsNext, canvas, namaTagihan, tagihNext, minimalpay, kolektas — sisanya stub) |
-| WhatsApp sender + webhook + router | ✅ |
-| WhatsApp handler per fitur     | 🚧 stub semua (.p, .t, .slik, .va, .jb, .minbunga, .email, hot kolek) |
-| SLIK PDF (wkhtmltopdf)         | ⏳ pending |
-| Telegram CSV upload (bills/tab/payment/history) | ⏳ pending |
+| `/start`, `/id`, `/help` | ☐ |
+| `/auth`, `/dauth`, `/otor`, `/owner` | ☐ |
+| `/status` | ☐ |
+| `/tagih`, callback paging tagihan + branch picker | ☐ |
+| `/tab`, `/canvas`, `/canvasing` (callback paging savings) | ☐ |
+| `/jb` (jatuh bayar harian) | ☐ |
+| `/kolektas`, callback paging kolektas | ☐ |
+| `/sim` (simulasi angsuran), `/cariNasabah` | ☐ |
+| `/kantor`, `/broadcast` | ☐ |
+| `/minbunga` (calendar picker + branch + AO flow) | ☐ |
+| `/minimalpay` | ☐ |
+| `/slik` (NIK / nama search + month picker) | ☐ |
+| `/doc` (ambil dokumen SLIK by name) | ☐ |
+| Upload SLIK via document handler | ☐ |
+| `/uploadtagihan`, `/uploadtab`, `/uploadtas`, `/uploadpayment`, `/uploadcredit` | ☐ |
+| `/app` (Mini App) | ☐ |
+| Services callback (Pelunasan / Tabungan picker) | ☐ |
+
+### WhatsApp
+
+| Perintah | Status QA |
+|---|---|
+| Shortcut admin (`/coba`, `/kasih`, `/tunggu`, `/relog`, `/selesai`, `/enter`, `/input`, `/display`, `/terima`) | ☐ |
+| `.p {SPK}` — pelunasan | ☐ |
+| `.t {nomor / nama}` — tabungan | ☐ |
+| `.va {SPK / rekening}` — virtual account dari bills | ☐ |
+| `.va {rekening}` — virtual account dari savings | ✅ |
+| `.jb` — reminder jatuh bayar harian | ☐ |
+| `.minbunga {cabang} {tanggal}` — admin only | ☐ |
+| `.slik {nama}` — kirim PDF asli + 2 generated | ☐ |
+| `.email` / `.done` — forward media ke email via SMTP | ☐ |
+| `.NNNNNNNNNNNN` — hot kolek (single + multi SPK) | ✅ |
+
+### Mini App (REST API + UI)
+
+| Endpoint | Status QA |
+|---|---|
+| `POST /api/mini/auth` (verify Telegram initData) | ☐ |
+| `GET /api/mini/tagihan/*` | ☐ |
+| `GET /api/mini/tabungan/*` | ☐ |
+| `GET /api/mini/canvas/*` | ☐ |
+| `GET /api/mini/kolektas/*` | ☐ |
+| `GET /api/mini/payment/*` | ☐ |
+| `GET /api/mini/pelunasan/*` | ☐ |
+| Static assets (`GET /`) | ☐ |
+
+### Infrastruktur
+
+| Item | Status QA |
+|---|---|
+| MongoDB connect + ObjectID legacy decode | ✅ |
+| WhatsApp pairing (whatsmeow native) | ✅ |
+| Telegram bot polling | ✅ |
+| Owner auto-authorize saat startup | ✅ |
+| Custom command prefix (`WA_COMMAND_PREFIX`) | ☐ |
+| Single-account dev mode (`WA_ALLOW_SELF_MESSAGES`) | ✅ |
+| `.env` auto-load via godotenv | ✅ |
+| Actuator: `/actuator/health`, `/info`, `/prometheus` | ☐ |
+| CSV import duplicate-key skip (E11000) | ☐ |
+| Docker build + run distroless | ☐ |
 
 ## Lisensi
 
