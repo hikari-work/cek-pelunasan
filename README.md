@@ -165,7 +165,7 @@ environment yang dipakai user.
 | Shortcut admin (`/coba`, `/kasih`, `/tunggu`, `/relog`, `/selesai`, `/enter`, `/input`, `/display`, `/terima`) | ☐ |
 | `.p {SPK}` — pelunasan | ☐ |
 | `.t {nomor / nama}` — tabungan | ☐ |
-| `.va {SPK / rekening}` — virtual account dari bills | ☐ |
+| `.va {SPK / rekening}` — virtual account dari bills | ✅ |
 | `.va {rekening}` — virtual account dari savings | ✅ |
 | `.jb` — reminder jatuh bayar harian | ☐ |
 | `.minbunga {cabang} {tanggal}` — admin only | ☐ |
