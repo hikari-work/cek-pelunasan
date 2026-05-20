@@ -85,7 +85,10 @@ func (r *PaymentDetailsRepo) Save(ctx context.Context, p *entity.PaymentDetails)
 }
 
 func (r *PaymentDetailsRepo) findPaged(ctx context.Context, filter bson.M, page Page, sort bson.D) ([]entity.PaymentDetails, error) {
-	opts := options.Find().SetSkip(page.Skip()).SetLimit(page.Limit())
+	opts := options.Find()
+	if !page.Unlimited() {
+		opts.SetSkip(page.Skip()).SetLimit(page.Limit())
+	}
 	if sort != nil {
 		opts.SetSort(sort)
 	}

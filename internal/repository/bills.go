@@ -291,7 +291,10 @@ func minBungaFilter(base bson.M, minDayLate, maxDayLate int) bson.M {
 }
 
 func (r *BillsRepo) findPaged(ctx context.Context, filter bson.M, page Page, sort bson.D) ([]entity.Bills, error) {
-	opts := options.Find().SetSkip(page.Skip()).SetLimit(page.Limit())
+	opts := options.Find()
+	if !page.Unlimited() {
+		opts.SetSkip(page.Skip()).SetLimit(page.Limit())
+	}
 	if sort != nil {
 		opts.SetSort(sort)
 	}
