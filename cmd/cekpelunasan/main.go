@@ -25,6 +25,7 @@ import (
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/joho/godotenv"
 
 	"github.com/hikari-work/cek-pelunasan/internal/config"
 	"github.com/hikari-work/cek-pelunasan/internal/httpserver"
@@ -62,6 +63,17 @@ func main() {
 }
 
 func run() error {
+	// Load .env opsional — kalau file tidak ada, skip diam-diam (production
+	// biasanya inject env via systemd/Docker). Path default ".env" relatif
+	// ke working directory; bisa dioverride lewat ENV_FILE.
+	envPath := os.Getenv("ENV_FILE")
+	if envPath == "" {
+		envPath = ".env"
+	}
+	if err := godotenv.Load(envPath); err != nil && !os.IsNotExist(err) {
+		slog.Warn("load .env gagal", "path", envPath, "err", err)
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)

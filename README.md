@@ -88,8 +88,13 @@ Hanya `TELEGRAM_BOT_TOKEN` dan `SPRING_DATA_MONGODB_URI` yang wajib (lihat `Vali
 # Build static binary
 make build
 
-# Run lokal (set env dulu)
-export $(grep -v '^#' .env | xargs) && make run
+# Run lokal — binary auto-load .env kalau ada di working directory.
+# Set ENV_FILE=path/to/.env untuk override lokasi.
+make run
+
+# Alternatif: export var .env dulu sebelum go run (berguna kalau child
+# process seperti wkhtmltopdf perlu env yang sama).
+make run-env
 
 # Test + vet + lint
 make test

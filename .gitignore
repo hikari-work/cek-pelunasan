@@ -12,6 +12,15 @@ vendor/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Env files — jangan pernah commit credentials.
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Runtime data (whatsmeow session, dst.)
+data/
+
 ### STS ###
 .apt_generated
 .classpath
