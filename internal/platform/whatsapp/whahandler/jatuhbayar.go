@@ -87,12 +87,8 @@ func (h *JatuhBayar) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
 				slog.Warn("jb: kirim pesan AO gagal", "ao", ao, "err", err)
 			}
 		}
-		// Throttle 1 detik supaya gateway WA tidak rate-limit. Stop kalau
-		// ctx batal.
-		select {
-		case <-ctx.Done():
+		if ctx.Err() != nil {
 			return
-		case <-time.After(1 * time.Second):
 		}
 	}
 }

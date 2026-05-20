@@ -74,10 +74,9 @@ func (h *HotKolek) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
 		return
 	}
 
-	// Reaction "sedang diproses" — delay 2s seperti legacy supaya user
-	// sempat lihat reaksi sebelum bot kirim rekap panjang.
+	// Reaction "sedang diproses" — kirim segera supaya user tahu pesan
+	// sudah diterima. Goroutine supaya tidak nge-block flow utama.
 	go func() {
-		time.Sleep(2 * time.Second)
 		if err := h.Sender.React(ctx, m.Info); err != nil {
 			slog.Warn("hotkolek: reaction gagal", "err", err)
 		}
