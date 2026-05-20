@@ -21,8 +21,16 @@ type Mongo struct {
 
 // Connect membuka koneksi ke MongoDB lalu memverifikasi via Ping.
 // Ping di-bound 5 detik agar startup tidak menggantung kalau URI salah.
+//
+// BSONOptions.ObjectIDAsHexString diaktifkan supaya dokumen lama yang
+// _id-nya bertipe ObjectID (mis. legacy Java auto-generate) bisa
+// di-decode ke field Go bertipe string. Tanpa flag ini, decoder
+// mongo-driver/v2 akan return error.
 func Connect(ctx context.Context, uri string) (*Mongo, error) {
-	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+	clientOpts := options.Client().ApplyURI(uri).SetBSONOptions(&options.BSONOptions{
+		ObjectIDAsHexString: true,
+	})
+	client, err := mongo.Connect(clientOpts)
 	if err != nil {
 		return nil, fmt.Errorf("mongo connect: %w", err)
 	}
