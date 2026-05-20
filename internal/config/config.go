@@ -49,6 +49,12 @@ type WhatsAppConfig struct {
 	AdminNumber      string
 	ForwardEmailTo   string
 	ForwardEmailFrom string
+
+	// CommandPrefix awalan token yang dipakai handler bisnis (.p, .t, .va, dll).
+	// Default "." kalau env tidak diset. Boleh diisi karakter apa saja non-spasi
+	// (mis. "!", "/", "#") — handler akan compose prefix + nama command secara
+	// runtime, jadi tidak ada hardcoded "." lagi di code.
+	CommandPrefix string
 }
 
 type SLIKConfig struct {
@@ -129,6 +135,7 @@ func Load() (*Config, error) {
 			AdminNumber:      os.Getenv("ADMIN_WHATSAPP"),
 			ForwardEmailTo:   os.Getenv("EMAIL_FORWARD_RECIPIENT"),
 			ForwardEmailFrom: os.Getenv("EMAIL_FORWARD_FROM"),
+			CommandPrefix:    getEnv("WA_COMMAND_PREFIX", "."),
 		},
 		SLIK: SLIKConfig{
 			PDFEndpointURL: getEnv("PDF_ENDPOINT_URL", "https://kredit.suryayudha.id/ideb/generate.php"),

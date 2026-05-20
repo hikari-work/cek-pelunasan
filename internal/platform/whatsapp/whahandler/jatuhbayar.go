@@ -15,8 +15,8 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/utils"
 )
 
-// JatuhBayar — perintah ".jb" dari admin: kirim reminder jatuh bayar harian
-// per Account Officer untuk cabang Kaligondang (1075).
+// JatuhBayar — perintah "{prefix}jb" dari admin: kirim reminder jatuh bayar
+// harian per Account Officer untuk cabang Kaligondang (1075).
 //
 // Flow:
 //
@@ -34,20 +34,17 @@ type JatuhBayar struct {
 	Savings *savings.Service
 	Sender  *whatsapp.Sender
 	Router  *whatsapp.Router
+	Prefix  string // default "." kalau kosong
 }
 
-const (
-	jbPrefix     = ".jb"
-	jbBranchCode = "1075"
-)
+const jbBranchCode = "1075"
 
 func (h *JatuhBayar) Match(m *whatsapp.IncomingMessage) bool {
 	if m == nil || h.Router == nil {
 		return false
 	}
 	body := strings.TrimSpace(m.Body)
-	// Match ".jb" persis, atau ".jb<spasi>..." kalau ada argumen tambahan.
-	if body != jbPrefix && !strings.HasPrefix(body, jbPrefix+" ") {
+	if !matchCommand(body, prefixed(h.Prefix, "jb")) {
 		return false
 	}
 	return h.Router.IsFromAdmin(m)

@@ -11,14 +11,14 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/service/hotkolek"
 )
 
-// HotKolek menangani perintah hot koleksi: ".010600001234" atau beberapa
-// SPK dipisah spasi (".010600001234 010600005678").
+// HotKolek menangani perintah hot koleksi: "{prefix}010600001234" atau beberapa
+// SPK dipisah spasi ("{prefix}010600001234 010600005678").
 //
 // Flow legacy:
 //
 //  1. Validasi pola.
 //  2. Reaction emoji ke pesan asli (delay 2s untuk meniru "loading").
-//  3. Ekstrak nomor SPK (strip prefix titik di token pertama).
+//  3. Ekstrak nomor SPK (strip prefix di token pertama).
 //  4. Simpan paying flag untuk semua SPK (tandai "sudah dibayar hari ini").
 //  5. Generate rekap 3 lokasi (Kaligondang/Kalikajar/Kejobong) dengan 3
 //     kategori per lokasi (Minimal Bayar/Angsuran Pertama/Jatuh Tempo).
@@ -29,10 +29,19 @@ import (
 type HotKolek struct {
 	Service *hotkolek.Service
 	Sender  *whatsapp.Sender
+	Prefix  string // default "." kalau kosong
 }
 
-// hotKolekPattern: titik diikuti 12 digit, optional tambahan dipisah spasi.
-var hotKolekPattern = regexp.MustCompile(`^\.\d{12}(?:\s\d{12})*$`)
+// hotKolekPattern: prefix command diikuti 12 digit, optional tambahan dipisah
+// spasi. Pattern di-compile per-handler di Match() supaya prefix dinamis.
+// Default prefix "." → ^\.\d{12}(?:\s\d{12})*$.
+func (h *HotKolek) hotKolekPattern() *regexp.Regexp {
+	p := h.Prefix
+	if p == "" {
+		p = defaultPrefix
+	}
+	return regexp.MustCompile(`^` + regexp.QuoteMeta(p) + `\d{12}(?:\s\d{12})*$`)
+}
 
 // kiosConfigs urut sama dengan legacy supaya output identik.
 type kiosConfig struct {
@@ -50,7 +59,7 @@ func (h *HotKolek) Match(m *whatsapp.IncomingMessage) bool {
 	if m == nil {
 		return false
 	}
-	return hotKolekPattern.MatchString(strings.TrimSpace(m.Body))
+	return h.hotKolekPattern().MatchString(strings.TrimSpace(m.Body))
 }
 
 func (h *HotKolek) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
@@ -59,7 +68,7 @@ func (h *HotKolek) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
 	}
 
 	body := strings.TrimSpace(m.Body)
-	spks := extractSPKs(body)
+	spks := extractSPKs(body, h.Prefix)
 	if len(spks) == 0 {
 		// Match() sudah validasi pola, tapi safety untuk extractor.
 		return
@@ -123,15 +132,17 @@ func (h *HotKolek) buildLocations(ctx context.Context) ([]hotkolek.LocationBills
 	return out, nil
 }
 
-// extractSPKs split by whitespace, strip prefix "." kalau ada, ambil
-// hanya yang 12 digit angka.
-func extractSPKs(text string) []string {
+// extractSPKs split by whitespace, strip prefix kalau ada, ambil
+// hanya yang 12 digit angka. prefix boleh kosong → fallback "."
+// supaya tetap kompatibel dengan caller test yang tidak set prefix.
+func extractSPKs(text, prefix string) []string {
+	if prefix == "" {
+		prefix = defaultPrefix
+	}
 	tokens := strings.Fields(text)
 	out := make([]string, 0, len(tokens))
 	for _, tok := range tokens {
-		if strings.HasPrefix(tok, ".") {
-			tok = tok[1:]
-		}
+		tok = strings.TrimPrefix(tok, prefix)
 		if len(tok) != 12 {
 			continue
 		}

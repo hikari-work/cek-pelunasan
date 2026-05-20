@@ -12,11 +12,11 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/service/pelunasan"
 )
 
-// Pelunasan menangani perintah ".p {SPK 12 digit}".
+// Pelunasan menangani perintah "{prefix}p {SPK 12 digit}".
 //
 // Flow:
 //
-//  1. Validasi format (.p + spasi + 12 digit angka).
+//  1. Validasi format (prefix + "p" + spasi + 12 digit angka).
 //  2. Lookup Bills by SPK.
 //  3. Kalau tidak ada → balas "data tidak ditemukan" (admin: edit pesan,
 //     dengan delay 2 detik untuk meniru perilaku legacy yang memberi
@@ -29,17 +29,16 @@ type Pelunasan struct {
 	Sender   *whatsapp.Sender
 	Router   *whatsapp.Router // untuk cek IsFromAdmin
 	Reaction bool             // false untuk skip reaction (testing)
+	Prefix   string           // default "." kalau kosong
 }
-
-const (
-	pelunasanPrefix = ".p "
-	pelunasanFormat = ".p [SPK 12 digit]"
-)
 
 var spkPattern = regexp.MustCompile(`^\d{12}$`)
 
 func (h *Pelunasan) Match(m *whatsapp.IncomingMessage) bool {
-	return m != nil && strings.HasPrefix(m.Body, pelunasanPrefix)
+	if m == nil {
+		return false
+	}
+	return strings.HasPrefix(m.Body, prefixed(h.Prefix, "p")+" ")
 }
 
 func (h *Pelunasan) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
@@ -47,9 +46,10 @@ func (h *Pelunasan) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
 		return
 	}
 
-	spk := strings.TrimSpace(strings.TrimPrefix(m.Body, pelunasanPrefix))
+	cmd := prefixed(h.Prefix, "p")
+	spk := strings.TrimSpace(strings.TrimPrefix(m.Body, cmd+" "))
 	if !spkPattern.MatchString(spk) {
-		h.replyError(ctx, m, "Format SPK tidak valid. Gunakan: "+pelunasanFormat)
+		h.replyError(ctx, m, "Format SPK tidak valid. Gunakan: "+cmd+" [SPK 12 digit]")
 		return
 	}
 

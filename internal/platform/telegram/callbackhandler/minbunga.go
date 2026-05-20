@@ -13,7 +13,6 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/platform/telegram/keyboard"
 	"github.com/hikari-work/cek-pelunasan/internal/service/bill"
 	"github.com/hikari-work/cek-pelunasan/internal/service/minbunga"
-	"github.com/hikari-work/cek-pelunasan/internal/utils"
 )
 
 // MinBungaBranch /minbunga branch picker (PIMP/ADMIN flow).
@@ -173,7 +172,7 @@ func (h *MinBungaConfirm) Handle(ctx context.Context, b *telegram.Bot, q *tgbota
 	}
 
 	grouped := minbunga.Calculate(bills, targets)
-	for _, msg := range formatMinBungaMessages(grouped, sess.Identifier) {
+	for _, msg := range minbunga.FormatMessages(grouped, sess.Identifier) {
 		_, _ = b.SendText(chatID, msg)
 	}
 	_ = h.Sessions.Delete(ctx, chatID)
@@ -191,77 +190,4 @@ func minBungaCaption(identifier, role string, selectedCount int) string {
 		caption += fmt.Sprintf("\n\n✅ *Tanggal terpilih: %d*", selectedCount)
 	}
 	return caption
-}
-
-const maxMinBungaChars = 3800
-
-// formatMinBungaMessages chunk hasil per kelompok tanggal supaya tidak melebihi
-// batas char Telegram. Padanan MinBungaMessageFormatter.format dari legacy.
-func formatMinBungaMessages(groups []minbunga.BillsForDate, identifier string) []string {
-	wib := time.FixedZone("WIB", 7*3600)
-	today := time.Now().In(wib)
-	var messages []string
-
-	for _, g := range groups {
-		header := buildMinBungaHeader(g.TargetDate, g.DaysDiff, identifier, len(g.Bills))
-		current := header
-		for _, db := range g.Bills {
-			entryStr := buildMinBungaEntry(db, today)
-			if len(current)+len(entryStr) > maxMinBungaChars {
-				messages = append(messages, current)
-				current = "_Lanjutan " + formatTanggalID(g.TargetDate) + "_\n\n"
-			}
-			current += entryStr
-		}
-		if current != "" {
-			messages = append(messages, current)
-		}
-	}
-
-	if len(messages) == 0 {
-		messages = append(messages,
-			"*Tidak ada tagihan yang memenuhi kriteria.*\n_Semua nasabah masih aman dalam batas DayLate 90 hari._")
-	}
-	return messages
-}
-
-func buildMinBungaHeader(date time.Time, daysDiff int, identifier string, count int) string {
-	return "*Tagihan: " + formatTanggalID(date) + "* (+" + fmt.Sprintf("%d", daysDiff) + " hari)\n" +
-		"Minimal bayar Maksimal di: " + formatTanggalDayID(date) + "\n" +
-		"ID: " + identifier + " | Jumlah: " + fmt.Sprintf("%d", count) + " tagihan\n" +
-		"─────────────────────\n\n"
-}
-
-func buildMinBungaEntry(db minbunga.DatedBill, today time.Time) string {
-	bill := db.Bill
-	threshold := 90 - db.DayLate
-	if threshold < 0 {
-		threshold = 0
-	}
-	maksBayar := today.AddDate(0, 0, threshold)
-	jikaNotPay := bill.LastPrincipal + bill.Principal + bill.MinInterest
-
-	return "*" + bill.Name + "*\n" +
-		"Alamat: " + bill.Address + "\n" +
-		"AO: " + bill.AccountOfficer + "\n\n" +
-		"Plafond: " + utils.FormatRupiah(bill.Plafond) + "\n" +
-		"Baki Debet: " + utils.FormatRupiah(bill.DebitTray) + "\n" +
-		"Tgg. Pokok: " + utils.FormatRupiah(bill.LastPrincipal) + "\n" +
-		"Tgg. Bunga: " + utils.FormatRupiah(bill.LastInterest) + "\n" +
-		"Min. Pokok: " + utils.FormatRupiah(bill.MinPrincipal) + "\n" +
-		"Min. Bunga: " + utils.FormatRupiah(bill.MinInterest) + "\n\n" +
-		"Maks. Bayar: " + formatTanggalDayID(maksBayar) + "\n" +
-		"Jika Tdk Bayar: " + utils.FormatRupiah(jikaNotPay) + "\n" +
-		"─────────────────────\n\n"
-}
-
-func formatTanggalID(t time.Time) string {
-	bulan := []string{"Januari", "Februari", "Maret", "April", "Mei", "Juni",
-		"Juli", "Agustus", "September", "Oktober", "November", "Desember"}
-	return fmt.Sprintf("%d %s %d", t.Day(), bulan[int(t.Month())-1], t.Year())
-}
-
-func formatTanggalDayID(t time.Time) string {
-	hari := []string{"Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"}
-	return hari[int(t.Weekday())] + ", " + formatTanggalID(t)
 }

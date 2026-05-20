@@ -67,6 +67,13 @@ func (m *IncomingMessage) IsTextOnly() bool {
 	return m.MediaKind == ""
 }
 
+// ParseJID wrap types.ParseJID supaya caller di luar package tidak perlu
+// import whatsmeow/types langsung. Dipakai mis. notifier email yang nyimpen
+// chat ID sebagai string lalu kirim balik via Sender.
+func ParseJID(s string) (types.JID, error) {
+	return types.ParseJID(s)
+}
+
 // fromEvent menormalisasi *events.Message jadi IncomingMessage.
 //
 // Kembalikan nil kalau event ini bukan pesan yang bisa diproses

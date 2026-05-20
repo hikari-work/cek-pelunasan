@@ -39,6 +39,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/service/auth"
 	"github.com/hikari-work/cek-pelunasan/internal/service/bill"
 	"github.com/hikari-work/cek-pelunasan/internal/service/credithistory"
+	"github.com/hikari-work/cek-pelunasan/internal/service/email"
 	"github.com/hikari-work/cek-pelunasan/internal/service/kolektas"
 	logsvc "github.com/hikari-work/cek-pelunasan/internal/service/log"
 	"github.com/hikari-work/cek-pelunasan/internal/service/minbunga"
@@ -165,7 +166,7 @@ func run() error {
 	if waClient != nil {
 		defer waClient.Close()
 		waRouter = wa.NewRouter(cfg.WhatsApp.AdminNumber)
-		registerWhatsAppHandlers(waRouter, waClient.Sender(), billSvc, logSvc, hotkolekSvc, savingsSvc)
+		registerWhatsAppHandlers(waRouter, waClient.Sender(), billSvc, logSvc, hotkolekSvc, savingsSvc, r2Client, pdfGen, cfg.SLIK.MaxPDFSize, cfg.Mail, cfg.WhatsApp.ForwardEmailFrom, cfg.WhatsApp.ForwardEmailTo, cfg.WhatsApp.CommandPrefix)
 		waRouter.AttachToClient(waClient, rootCtx)
 	}
 
@@ -267,36 +268,90 @@ func registerWhatsAppHandlers(
 	logSvc *logsvc.Service,
 	hotkolekSvc *hotkolek.Service,
 	savingsSvc *savings.Service,
+	r2Client *r2.Client,
+	pdfGen *slik.PDFGenerator,
+	maxPDFSize int64,
+	mailCfg config.MailConfig,
+	emailFrom, emailDefaultTo string,
+	cmdPrefix string,
 ) {
 	r.Add(&whahandler.Shortcut{Sender: sender, Router: r})
-	r.Add(&whahandler.HotKolek{Service: hotkolekSvc, Sender: sender})
+	r.Add(&whahandler.HotKolek{Service: hotkolekSvc, Sender: sender, Prefix: cmdPrefix})
 	r.Add(&whahandler.Pelunasan{
 		Bills:    billSvc,
 		Updates:  logSvc,
 		Sender:   sender,
 		Router:   r,
 		Reaction: true,
+		Prefix:   cmdPrefix,
 	})
 	r.Add(&whahandler.Tabungan{
 		Service: savingsSvc,
 		Updates: logSvc,
 		Sender:  sender,
 		Router:  r,
+		Prefix:  cmdPrefix,
 	})
 	r.Add(&whahandler.VirtualAccount{
 		Bills:   billSvc,
 		Savings: savingsSvc,
 		Sender:  sender,
+		Prefix:  cmdPrefix,
 	})
 	r.Add(&whahandler.JatuhBayar{
 		Bills:   billSvc,
 		Savings: savingsSvc,
 		Sender:  sender,
 		Router:  r,
+		Prefix:  cmdPrefix,
 	})
-	// TODO(task #9):  SLIK
-	// TODO(task #3):  minbunga
-	// TODO(task #5):  email forward
+	r.Add(&whahandler.MinBunga{
+		Bills:  billSvc,
+		Sender: sender,
+		Router: r,
+		Prefix: cmdPrefix,
+	})
+	if r2Client != nil {
+		r.Add(&whahandler.Slik{
+			Storage:    r2Client,
+			Generator:  pdfGen,
+			Sender:     sender,
+			Router:     r,
+			MaxPDFSize: maxPDFSize,
+			Prefix:     cmdPrefix,
+		})
+	}
+
+	if strings.TrimSpace(mailCfg.Host) != "" && strings.TrimSpace(emailFrom) != "" {
+		emailSender := email.NewSender(email.SMTPConfig{
+			Host:     mailCfg.Host,
+			Port:     mailCfg.Port,
+			Username: mailCfg.Username,
+			Password: mailCfg.Password,
+			UseSSL:   mailCfg.UseSSL,
+		})
+		notifier := whahandler.NewWhatsAppNotifier(sender)
+		forwarder := email.NewForwarder(emailSender, emailFrom, notifier)
+		sessions := email.NewSessionCache()
+
+		r.Add(&whahandler.Email{
+			Sessions:         sessions,
+			Forwarder:        forwarder,
+			DefaultRecipient: emailDefaultTo,
+			Sender:           sender,
+			Router:           r,
+			Prefix:           cmdPrefix,
+		})
+		// Collector terdaftar SETELAH Email handler — supaya .email/.done
+		// (teks) tidak ke-intercept oleh collector. Collector hanya match
+		// pesan media saat sesi aktif.
+		r.Add(&whahandler.EmailCollector{
+			Sessions: sessions,
+			Sender:   sender,
+		})
+	} else {
+		slog.Warn("email forward dinonaktifkan: MAIL_HOST atau EMAIL_FORWARD_FROM kosong")
+	}
 }
 
 func registerTelegramHandlers(

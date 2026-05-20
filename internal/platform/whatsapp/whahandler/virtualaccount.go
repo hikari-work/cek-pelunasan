@@ -12,9 +12,9 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/service/savings"
 )
 
-// VirtualAccount menangani perintah ".va {nomor}" — generate Virtual Account
-// dari empat bank (Mandiri, BRI, Danamon, BNI) untuk nomor SPK kredit
-// atau nomor rekening tabungan.
+// VirtualAccount menangani perintah "{prefix}va {nomor}" — generate Virtual
+// Account dari empat bank (Mandiri, BRI, Danamon, BNI) untuk nomor SPK
+// kredit atau nomor rekening tabungan.
 //
 // Lookup order: Bills (kredit) dulu — kalau ada → balas dengan VA. Kalau
 // tidak ada → cek Savings (tabungan); kalau ada → balas dengan VA + pesan
@@ -23,12 +23,14 @@ type VirtualAccount struct {
 	Bills   *bill.Service
 	Savings *savings.Service
 	Sender  *whatsapp.Sender
+	Prefix  string // default "." kalau kosong
 }
 
-const vaPrefix = ".va "
-
 func (h *VirtualAccount) Match(m *whatsapp.IncomingMessage) bool {
-	return m != nil && strings.HasPrefix(m.Body, vaPrefix)
+	if m == nil {
+		return false
+	}
+	return strings.HasPrefix(m.Body, prefixed(h.Prefix, "va")+" ")
 }
 
 func (h *VirtualAccount) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
@@ -36,10 +38,11 @@ func (h *VirtualAccount) Handle(ctx context.Context, m *whatsapp.IncomingMessage
 		return
 	}
 
-	number := strings.TrimSpace(strings.TrimPrefix(m.Body, vaPrefix))
+	cmd := prefixed(h.Prefix, "va")
+	number := strings.TrimSpace(strings.TrimPrefix(m.Body, cmd+" "))
 	if number == "" {
 		_, _ = h.Sender.SendText(ctx, m.ChatJID(),
-			"❌ Format: .va [nomor SPK atau nomor rekening]", &m.Info)
+			"❌ Format: "+cmd+" [nomor SPK atau nomor rekening]", &m.Info)
 		return
 	}
 

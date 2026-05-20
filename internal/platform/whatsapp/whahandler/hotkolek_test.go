@@ -24,7 +24,7 @@ func TestExtractSPKs(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got := extractSPKs(c.in)
+			got := extractSPKs(c.in, "")
 			if len(got) == 0 && len(c.want) == 0 {
 				return
 			}

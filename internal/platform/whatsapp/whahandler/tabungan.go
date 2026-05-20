@@ -14,7 +14,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/utils"
 )
 
-// Tabungan menangani perintah ".t {input}":
+// Tabungan menangani perintah "{prefix}t {input}":
 //
 //   - {input} 12 digit angka  → detail satu rekening (FindByID).
 //   - selain itu              → cari nama, hasil dibatasi 5 rekening teratas.
@@ -29,17 +29,18 @@ type Tabungan struct {
 	Updates *logsvc.Service
 	Sender  *whatsapp.Sender
 	Router  *whatsapp.Router
+	Prefix  string // default "." kalau kosong
 }
 
-const (
-	tabunganPrefix     = ".t "
-	tabunganMaxResults = 5
-)
+const tabunganMaxResults = 5
 
 var accountPattern = regexp.MustCompile(`^\d{12}$`)
 
 func (h *Tabungan) Match(m *whatsapp.IncomingMessage) bool {
-	return m != nil && strings.HasPrefix(m.Body, tabunganPrefix)
+	if m == nil {
+		return false
+	}
+	return strings.HasPrefix(m.Body, prefixed(h.Prefix, "t")+" ")
 }
 
 func (h *Tabungan) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
@@ -47,9 +48,10 @@ func (h *Tabungan) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
 		return
 	}
 
-	input := strings.TrimSpace(strings.TrimPrefix(m.Body, tabunganPrefix))
+	cmd := prefixed(h.Prefix, "t")
+	input := strings.TrimSpace(strings.TrimPrefix(m.Body, cmd+" "))
 	if input == "" {
-		h.replyError(ctx, m, "Format: .t [nomor rekening 12 digit] atau .t [nama]")
+		h.replyError(ctx, m, "Format: "+cmd+" [nomor rekening 12 digit] atau "+cmd+" [nama]")
 		return
 	}
 
