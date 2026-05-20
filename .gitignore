@@ -21,6 +21,9 @@ vendor/
 # Runtime data (whatsmeow session, dst.)
 data/
 
+# Local CSV imports (data nasabah, jangan commit)
+files/
+
 ### STS ###
 .apt_generated
 .classpath

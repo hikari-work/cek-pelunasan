@@ -53,12 +53,26 @@ import (
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: parseLogLevel(os.Getenv("LOG_LEVEL"))}))
 	slog.SetDefault(logger)
 
 	if err := run(); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, http.ErrServerClosed) {
 		slog.Error("fatal", "err", err)
 		os.Exit(1)
+	}
+}
+
+// parseLogLevel: map env value → slog.Level. Default INFO kalau kosong/typo.
+func parseLogLevel(s string) slog.Level {
+	switch strings.ToUpper(strings.TrimSpace(s)) {
+	case "DEBUG":
+		return slog.LevelDebug
+	case "WARN", "WARNING":
+		return slog.LevelWarn
+	case "ERROR":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
 	}
 }
 
@@ -155,6 +169,18 @@ func run() error {
 		slog.Info("preloaded authorized chats", "count", authedChats.Size())
 	}
 
+	// Auto-authorize owner. Owner per definisi punya akses penuh ke bot,
+	// jadi tidak perlu /auth dirinya sendiri. Idempoten: kalau owner sudah
+	// ada di MongoDB dengan role lain (mis. PIMP), biarkan; kalau belum ada
+	// dibuat dengan role ADMIN.
+	if cfg.Telegram.OwnerID != 0 {
+		authedChats.AddChat(cfg.Telegram.OwnerID)
+		if err := usersSvc.EnsureAdmin(rootCtx, cfg.Telegram.OwnerID); err != nil {
+			slog.Warn("ensure owner admin gagal", "err", err)
+		}
+		slog.Info("owner auto-authorized", "chat_id", cfg.Telegram.OwnerID)
+	}
+
 	// WhatsApp: foundation whatsmeow.
 	// Store + client di-init eager. QR pairing dilakukan asynchronous di goroutine
 	// supaya bot Telegram + miniapp + actuator tetap bisa start meski user belum
@@ -178,6 +204,7 @@ func run() error {
 	if waClient != nil {
 		defer waClient.Close()
 		waRouter = wa.NewRouter(cfg.WhatsApp.AdminNumber)
+		waRouter.SetAllowSelfMessages(cfg.WhatsApp.AllowSelfMessages)
 		registerWhatsAppHandlers(waRouter, waClient.Sender(), billSvc, logSvc, hotkolekSvc, savingsSvc, r2Client, pdfGen, cfg.SLIK.MaxPDFSize, cfg.Mail, cfg.WhatsApp.ForwardEmailFrom, cfg.WhatsApp.ForwardEmailTo, cfg.WhatsApp.CommandPrefix)
 		waRouter.AttachToClient(waClient, rootCtx)
 	}

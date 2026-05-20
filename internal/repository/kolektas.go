@@ -28,7 +28,11 @@ func (r *KolekTasRepo) InsertMany(ctx context.Context, items []entity.KolekTas) 
 	for i := range items {
 		docs[i] = items[i]
 	}
-	_, err := r.coll.InsertMany(ctx, docs)
+	opts := options.InsertMany().SetOrdered(false)
+	_, err := r.coll.InsertMany(ctx, docs, opts)
+	if isDuplicateKeyError(err) {
+		return nil
+	}
 	return err
 }
 

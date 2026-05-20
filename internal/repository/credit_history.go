@@ -6,6 +6,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/entity"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type CreditHistoryRepo struct{ coll *mongo.Collection }
@@ -31,7 +32,11 @@ func (r *CreditHistoryRepo) InsertMany(ctx context.Context, items []entity.Credi
 	for i := range items {
 		docs[i] = items[i]
 	}
-	_, err := r.coll.InsertMany(ctx, docs)
+	opts := options.InsertMany().SetOrdered(false)
+	_, err := r.coll.InsertMany(ctx, docs, opts)
+	if isDuplicateKeyError(err) {
+		return nil
+	}
 	return err
 }
 

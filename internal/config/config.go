@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -55,6 +56,12 @@ type WhatsAppConfig struct {
 	// (mis. "!", "/", "#") — handler akan compose prefix + nama command secara
 	// runtime, jadi tidak ada hardcoded "." lagi di code.
 	CommandPrefix string
+
+	// AllowSelfMessages = true → izinkan pesan yang dikirim dari akun bot
+	// sendiri (IsFromMe) tetap di-dispatch ke handler. Default false untuk
+	// hindari loop. Berguna untuk dev/testing pas admin = nomor bot yang
+	// dipair, atau setup single-account.
+	AllowSelfMessages bool
 }
 
 type SLIKConfig struct {
@@ -129,13 +136,14 @@ func Load() (*Config, error) {
 			Bucket:    os.Getenv("R2_BUCKET"),
 		},
 		WhatsApp: WhatsAppConfig{
-			DBPath:           getEnv("WA_DB_PATH", "./data/wa.db"),
-			DeviceName:       getEnv("WA_DEVICE_NAME", "cek-pelunasan"),
-			LogLevel:         getEnv("WA_LOG_LEVEL", "INFO"),
-			AdminNumber:      os.Getenv("ADMIN_WHATSAPP"),
-			ForwardEmailTo:   os.Getenv("EMAIL_FORWARD_RECIPIENT"),
-			ForwardEmailFrom: os.Getenv("EMAIL_FORWARD_FROM"),
-			CommandPrefix:    getEnv("WA_COMMAND_PREFIX", "."),
+			DBPath:            getEnv("WA_DB_PATH", "./data/wa.db"),
+			DeviceName:        getEnv("WA_DEVICE_NAME", "cek-pelunasan"),
+			LogLevel:          getEnv("WA_LOG_LEVEL", "INFO"),
+			AdminNumber:       os.Getenv("ADMIN_WHATSAPP"),
+			ForwardEmailTo:    os.Getenv("EMAIL_FORWARD_RECIPIENT"),
+			ForwardEmailFrom:  os.Getenv("EMAIL_FORWARD_FROM"),
+			CommandPrefix:     getEnv("WA_COMMAND_PREFIX", "."),
+			AllowSelfMessages: parseBool(os.Getenv("WA_ALLOW_SELF_MESSAGES")),
 		},
 		SLIK: SLIKConfig{
 			PDFEndpointURL: getEnv("PDF_ENDPOINT_URL", "https://kredit.suryayudha.id/ideb/generate.php"),
@@ -200,4 +208,15 @@ func getEnvInt64(key string, fallback int64) (int64, error) {
 		return 0, err
 	}
 	return n, nil
+}
+
+// parseBool true untuk "true"/"1"/"yes"/"on" (case-insensitive), false
+// untuk apa pun selain itu. Sengaja tidak return error supaya env yang
+// salah ketik tidak crash startup — caller treat sebagai disabled.
+func parseBool(s string) bool {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "true", "1", "yes", "on":
+		return true
+	}
+	return false
 }

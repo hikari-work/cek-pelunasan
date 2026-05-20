@@ -28,7 +28,10 @@ func (r *BillsRepo) DeleteAll(ctx context.Context) error {
 	return err
 }
 
-// InsertMany insert batch tanpa validasi unique key (data dari CSV trusted).
+// InsertMany insert batch dengan ordered=false. Duplicate key error
+// (E11000) tidak akan menghentikan batch — record yang konflik di-skip,
+// sisanya tetap ter-insert. Caller boleh treat err non-nil sebagai
+// soft-warning (panggil isDuplicateKeyError untuk filter).
 func (r *BillsRepo) InsertMany(ctx context.Context, bills []entity.Bills) error {
 	if len(bills) == 0 {
 		return nil
@@ -37,7 +40,11 @@ func (r *BillsRepo) InsertMany(ctx context.Context, bills []entity.Bills) error 
 	for i := range bills {
 		docs[i] = bills[i]
 	}
-	_, err := r.coll.InsertMany(ctx, docs)
+	opts := options.InsertMany().SetOrdered(false)
+	_, err := r.coll.InsertMany(ctx, docs, opts)
+	if isDuplicateKeyError(err) {
+		return nil
+	}
 	return err
 }
 

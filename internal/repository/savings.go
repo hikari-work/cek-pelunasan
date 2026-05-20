@@ -33,7 +33,11 @@ func (r *SavingsRepo) InsertMany(ctx context.Context, items []entity.Savings) er
 	for i := range items {
 		docs[i] = items[i]
 	}
-	_, err := r.coll.InsertMany(ctx, docs)
+	opts := options.InsertMany().SetOrdered(false)
+	_, err := r.coll.InsertMany(ctx, docs, opts)
+	if isDuplicateKeyError(err) {
+		return nil
+	}
 	return err
 }
 

@@ -23,6 +23,22 @@ func (s *Service) InsertNew(ctx context.Context, chatID int64) error {
 	return s.repo.Save(ctx, &entity.User{ChatID: chatID, Roles: entity.RoleAO})
 }
 
+// EnsureAdmin idempotent: kalau user belum ada → buat dengan role ADMIN.
+// Kalau sudah ada dengan role lain → biarkan apa adanya (jangan overwrite,
+// supaya admin yang sudah set jadi PIMP/AO secara manual tidak ke-reset).
+//
+// Dipakai untuk auto-register owner saat bot start.
+func (s *Service) EnsureAdmin(ctx context.Context, chatID int64) error {
+	existing, err := s.repo.FindByID(ctx, chatID)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		return nil
+	}
+	return s.repo.Save(ctx, &entity.User{ChatID: chatID, Roles: entity.RoleAdmin})
+}
+
 func (s *Service) Delete(ctx context.Context, chatID int64) error {
 	return s.repo.DeleteByID(ctx, chatID)
 }

@@ -36,6 +36,10 @@ type Router struct {
 	// IsAdminInGroup pakai field ini.
 	admin string
 
+	// allowSelf izinkan pesan IsFromMe (dari device bot sendiri) tetap
+	// di-dispatch. Default false. Berguna untuk single-account dev/testing.
+	allowSelf bool
+
 	// rootCtx dipakai sebagai parent context untuk setiap dispatch.
 	// Diisi saat AttachToClient dipanggil. Selama belum diset, fallback
 	// ke context.Background.
@@ -46,6 +50,14 @@ type Router struct {
 // concept "admin" (semua handler treat sender setara).
 func NewRouter(adminPhone string) *Router {
 	return &Router{admin: strings.TrimSpace(adminPhone)}
+}
+
+// SetAllowSelfMessages set apakah pesan dari device bot sendiri di-dispatch.
+// Default false (skip untuk hindari loop). Aman dipanggil sebelum AttachToClient.
+func (r *Router) SetAllowSelfMessages(allow bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.allowSelf = allow
 }
 
 // Add daftarkan handler. Dispatch order = urutan Add — yang duluan
@@ -64,11 +76,34 @@ func (r *Router) AdminPhone() string { return r.admin }
 
 // IsFromAdmin true kalau pesan datang dari admin (DM atau dia yang
 // kirim di grup). Dipakai handler shortcut, .minbunga, .jb, dll.
+//
+// Tiga kondisi yang dianggap admin:
+//
+//  1. IsFromMe — pesan dari akun bot sendiri. Kalau bot di-pair ke
+//     nomor admin (single-account setup), setiap pesan yang Anda kirim
+//     dari HP itu masuk ke handler dengan IsFromMe=true. By definition,
+//     ini dari pemilik akun = admin.
+//  2. Sender.User contains adminPhone — admin kirim DM dari nomor lain
+//     ke bot.
+//  3. SenderAlt.User contains adminPhone — pesan masuk addressing mode
+//     LID, dan whatsmeow sudah punya mapping phone-nya.
 func (r *Router) IsFromAdmin(m *IncomingMessage) bool {
-	if r == nil || r.admin == "" || m == nil {
+	if r == nil || m == nil {
 		return false
 	}
-	return strings.Contains(m.Info.Sender.User, r.admin)
+	if m.IsFromMe {
+		return true
+	}
+	if r.admin == "" {
+		return false
+	}
+	if strings.Contains(m.Info.Sender.User, r.admin) {
+		return true
+	}
+	if strings.Contains(m.Info.SenderAlt.User, r.admin) {
+		return true
+	}
+	return false
 }
 
 // IsAdminInGroup true kalau pesan dikirim oleh admin di chat grup.
@@ -103,11 +138,28 @@ func (r *Router) eventHandler(rawEvt any) {
 	}
 	msg := fromEvent(evt)
 	if msg == nil {
+		slog.Debug("whatsapp: fromEvent return nil — pesan tanpa body & tanpa media",
+			"id", evt.Info.ID)
 		return
 	}
-	if msg.IsFromMe {
-		// Pesan dari device kita sendiri (mis. balasan auto dari bot lain
-		// di akun yang sama) — skip supaya tidak loop.
+	slog.Debug("whatsapp: event masuk",
+		"sender", msg.Info.Sender.String(),
+		"sender_alt", msg.Info.SenderAlt.String(),
+		"addressing_mode", string(msg.Info.AddressingMode),
+		"chat", msg.Info.Chat.String(),
+		"is_from_me", msg.IsFromMe,
+		"is_group", msg.IsGroup,
+		"media", msg.MediaKind,
+		"body", truncate(msg.Body, 80),
+	)
+
+	r.mu.RLock()
+	allowSelf := r.allowSelf
+	r.mu.RUnlock()
+
+	if msg.IsFromMe && !allowSelf {
+		slog.Debug("whatsapp: skip IsFromMe (set WA_ALLOW_SELF_MESSAGES=true untuk dispatch)",
+			"sender", msg.Info.Sender.String())
 		return
 	}
 	r.dispatch(msg)
