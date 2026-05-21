@@ -168,8 +168,8 @@ environment yang dipakai user.
 | `.va {SPK / rekening}` — virtual account dari bills | ✅ |
 | `.va {rekening}` — virtual account dari savings | ✅ |
 | `.jb` — reminder jatuh bayar harian | ☐ |
-| `.minbunga {cabang} {tanggal}` — admin only | ☐ |
-| `.slik {nama}` — kirim PDF asli + 2 generated | ☐ |
+| `.minbunga {cabang} {tanggal}` — admin only | ✅ |
+| `.slik {nama}` — kirim PDF asli + 2 generated | ✅ |
 | `.email` / `.done` — forward media ke email via SMTP | ☐ |
 | `.NNNNNNNNNNNN` — hot kolek (single + multi SPK) | ✅ |
 
