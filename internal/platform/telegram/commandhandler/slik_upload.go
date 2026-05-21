@@ -51,6 +51,7 @@ func (h *SlikDocumentUpload) HandleDocument(ctx context.Context, b *telegram.Bot
 	}
 	if strings.Contains(strings.ToLower(fileName), "empty") {
 		_, _ = b.SendText(chatID, "⚠️ Nama file mengandung `Empty`, file ditolak")
+		go func() { _ = b.DeleteMessage(chatID, msg.MessageID) }()
 		return
 	}
 	ext := strings.ToLower(strings.TrimPrefix(path.Ext(fileName), "."))
