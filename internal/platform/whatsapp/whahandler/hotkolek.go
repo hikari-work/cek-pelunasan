@@ -101,30 +101,27 @@ func (h *HotKolek) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
 	}
 }
 
-// buildLocations panggil 3 method service per kios dan rakit struct
-// LocationBills. Order kategori per legacy: minimal pay (header kosong),
-// "Angsuran Pertama", "Jatuh tempo".
+// buildLocations panggil BuildLocations sekali (4 query paralel) lalu rakit
+// struct LocationBills per kios. Order kategori per legacy: minimal pay
+// (header kosong), "Angsuran Pertama", "Jatuh tempo".
 func (h *HotKolek) buildLocations(ctx context.Context) ([]hotkolek.LocationBills, error) {
+	codes := make([]string, 0, len(kiosConfigs))
+	for _, c := range kiosConfigs {
+		codes = append(codes, c.code)
+	}
+	byKios, err := h.Service.BuildLocations(ctx, codes)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]hotkolek.LocationBills, 0, len(kiosConfigs))
 	for _, c := range kiosConfigs {
-		minPay, err := h.Service.FindMinimalPay(ctx, c.code)
-		if err != nil {
-			return nil, err
-		}
-		firstPay, err := h.Service.FindFirstPay(ctx, c.code)
-		if err != nil {
-			return nil, err
-		}
-		dueDate, err := h.Service.FindDueDate(ctx, c.code)
-		if err != nil {
-			return nil, err
-		}
+		cat := byKios[c.code]
 		out = append(out, hotkolek.LocationBills{
 			Name: c.location,
 			Category: []hotkolek.CategoryBills{
-				{Header: "", Bills: minPay},
-				{Header: "Angsuran Pertama", Bills: firstPay},
-				{Header: "Jatuh tempo", Bills: dueDate},
+				{Header: "", Bills: cat.MinimalPay},
+				{Header: "Angsuran Pertama", Bills: cat.FirstPay},
+				{Header: "Jatuh tempo", Bills: cat.DueDate},
 			},
 		})
 	}

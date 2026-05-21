@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/hikari-work/cek-pelunasan/internal/entity"
 	"github.com/hikari-work/cek-pelunasan/internal/repository"
 )
@@ -30,53 +32,114 @@ func NewService(bills *repository.BillsRepo, paying *repository.PayingRepo) *Ser
 func currentMonth() string  { return time.Now().In(jakartaTZ).Format("2006-01") }
 func previousMonth() string { return time.Now().In(jakartaTZ).AddDate(0, -1, 0).Format("2006-01") }
 
-// FindDueDate mengembalikan tagihan jatuh tempo bulan ini yang belum lunas,
-// difilter sesuai aturan kios.
-func (s *Service) FindDueDate(ctx context.Context, kiosCode string) ([]entity.Bills, error) {
-	bills, err := s.bills.FindByBranchAndDueDatePrefix(ctx, TargetBranch, currentMonth())
-	if err != nil {
-		return nil, err
-	}
-	return s.filterByKios(ctx, bills, kiosCode)
+// LocationCategories: tagihan di satu kios, dibagi 3 kategori sesuai legacy.
+type LocationCategories struct {
+	MinimalPay []entity.Bills
+	FirstPay   []entity.Bills
+	DueDate    []entity.Bills
 }
 
-// FindFirstPay: nasabah yang baru pertama bayar bulan lalu (dilihat dari realization).
-func (s *Service) FindFirstPay(ctx context.Context, kiosCode string) ([]entity.Bills, error) {
-	bills, err := s.bills.FindByBranchAndRealizationPrefix(ctx, TargetBranch, previousMonth())
-	if err != nil {
-		return nil, err
-	}
-	return s.filterByKios(ctx, bills, kiosCode)
-}
-
-// FindMinimalPay mengembalikan nasabah dengan minimal bayar. Aturan dari Java:
-//   - kosong/sama dengan TargetBranch -> tagihan branch saja (tanpa kios)
-//   - selainnya -> branch + kios spesifik
+// BuildLocations ambil 4 dataset (paid IDs + 3 query bills) secara paralel,
+// lalu partisi hasilnya per kios di Go. Lebih cepat dari versi lama yang
+// nge-loop 3 kios × 3 query = 9 round-trip + N call FindAllIDs lagi di
+// dalam filterByKios.
 //
-// Setelah filter kios, buang juga tagihan dengan dayLate > 125 atau dayLate non-numeric.
-func (s *Service) FindMinimalPay(ctx context.Context, kiosCode string) ([]entity.Bills, error) {
-	var bills []entity.Bills
-	var err error
-	if kiosCode == "" || kiosCode == TargetBranch {
-		bills, err = s.bills.FindByBranchAndTotalMin(ctx, TargetBranch, 0, repository.Page{Size: 0})
-	} else {
-		bills, err = s.bills.FindByBranchAndKiosAndTotalMin(ctx, TargetBranch, kiosCode, 0, repository.Page{Size: 0})
-	}
-	if err != nil {
+// Untuk MinimalPay path "branch-only" (kios kosong/sama dengan TargetBranch),
+// kita query tanpa filter kios; sisanya difilter di memori per kiosCode.
+func (s *Service) BuildLocations(ctx context.Context, kiosCodes []string) (map[string]LocationCategories, error) {
+	var (
+		paidIDs    []string
+		dueBills   []entity.Bills
+		firstBills []entity.Bills
+		minBills   []entity.Bills
+	)
+
+	g, gCtx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		ids, err := s.paying.FindAllIDs(gCtx)
+		if err != nil {
+			return err
+		}
+		paidIDs = ids
+		return nil
+	})
+	g.Go(func() error {
+		b, err := s.bills.FindByBranchAndDueDatePrefix(gCtx, TargetBranch, currentMonth())
+		if err != nil {
+			return err
+		}
+		dueBills = b
+		return nil
+	})
+	g.Go(func() error {
+		b, err := s.bills.FindByBranchAndRealizationPrefix(gCtx, TargetBranch, previousMonth())
+		if err != nil {
+			return err
+		}
+		firstBills = b
+		return nil
+	})
+	g.Go(func() error {
+		b, err := s.bills.FindByBranchAndTotalMin(gCtx, TargetBranch, 0, repository.Page{Size: 0})
+		if err != nil {
+			return err
+		}
+		minBills = b
+		return nil
+	})
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
-	filtered, err := s.filterByKios(ctx, bills, kiosCode)
-	if err != nil {
-		return nil, err
+	paidSet := make(map[string]struct{}, len(paidIDs))
+	for _, id := range paidIDs {
+		paidSet[id] = struct{}{}
 	}
+
+	out := make(map[string]LocationCategories, len(kiosCodes))
+	for _, code := range kiosCodes {
+		out[code] = LocationCategories{
+			MinimalPay: filterMinimalPay(minBills, paidSet, code),
+			FirstPay:   filterByKiosSet(firstBills, paidSet, code),
+			DueDate:    filterByKiosSet(dueBills, paidSet, code),
+		}
+	}
+	return out, nil
+}
+
+func filterByKiosSet(bills []entity.Bills, paidSet map[string]struct{}, kiosCode string) []entity.Bills {
+	out := make([]entity.Bills, 0, len(bills))
+	for _, b := range bills {
+		if _, lunas := paidSet[b.NoSpk]; lunas {
+			continue
+		}
+		if b.Branch != TargetBranch {
+			continue
+		}
+		switch {
+		case kiosCode == TargetBranch:
+			if strings.TrimSpace(b.Kios) != "" {
+				continue
+			}
+		case kiosCode != "":
+			if b.Kios != kiosCode {
+				continue
+			}
+		}
+		out = append(out, b)
+	}
+	return out
+}
+
+func filterMinimalPay(bills []entity.Bills, paidSet map[string]struct{}, kiosCode string) []entity.Bills {
+	filtered := filterByKiosSet(bills, paidSet, kiosCode)
 	out := filtered[:0]
 	for _, b := range filtered {
 		if isValidForCollection(b) {
 			out = append(out, b)
 		}
 	}
-	return out, nil
+	return out
 }
 
 // FindUnpaidByBranch mengembalikan tagihan suatu cabang yang SPK-nya tidak ada
@@ -100,49 +163,6 @@ func (s *Service) SaveAllPaying(ctx context.Context, spks []string) error {
 		}
 	}
 	return nil
-}
-
-// filterByKios menerapkan aturan filter kios + buang SPK yang sudah lunas + pastikan
-// hasil hanya dari TargetBranch (1075).
-//
-// Aturan kios (dari Java):
-//   - kiosCode == TargetBranch  -> sisakan yang field kios kosong/null
-//   - kiosCode != ""            -> hanya yang kios == kiosCode
-//   - kiosCode == ""            -> tanpa filter tambahan
-func (s *Service) filterByKios(ctx context.Context, bills []entity.Bills, kiosCode string) ([]entity.Bills, error) {
-	if len(bills) == 0 {
-		return bills, nil
-	}
-	paidIDs, err := s.paying.FindAllIDs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	paidSet := make(map[string]struct{}, len(paidIDs))
-	for _, id := range paidIDs {
-		paidSet[id] = struct{}{}
-	}
-
-	out := bills[:0]
-	for _, b := range bills {
-		if _, lunas := paidSet[b.NoSpk]; lunas {
-			continue
-		}
-		switch {
-		case kiosCode == TargetBranch:
-			if strings.TrimSpace(b.Kios) != "" {
-				continue
-			}
-		case kiosCode != "":
-			if b.Kios != kiosCode {
-				continue
-			}
-		}
-		if b.Branch != TargetBranch {
-			continue
-		}
-		out = append(out, b)
-	}
-	return out, nil
 }
 
 func isValidForCollection(b entity.Bills) bool {
