@@ -163,7 +163,7 @@ environment yang dipakai user.
 | Perintah | Status QA |
 |---|---|
 | Shortcut admin (`/coba`, `/kasih`, `/tunggu`, `/relog`, `/selesai`, `/enter`, `/input`, `/display`, `/terima`) | ✅ |
-| `.p {SPK}` — pelunasan | ☐ |
+| `.p {SPK}` — pelunasan | ✅ |
 | `.t {nomor / nama}` — tabungan | ☐ |
 | `.va {SPK / rekening}` — virtual account dari bills | ✅ |
 | `.va {rekening}` — virtual account dari savings | ✅ |
