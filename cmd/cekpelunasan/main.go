@@ -316,6 +316,7 @@ func registerWhatsAppHandlers(
 ) {
 	r.Add(&whahandler.Shortcut{Sender: sender, Router: r})
 	r.Add(&whahandler.HotKolek{Service: hotkolekSvc, Sender: sender, Prefix: cmdPrefix})
+	r.Add(&whahandler.ResetPaid{Service: hotkolekSvc, Sender: sender, Router: r, Prefix: cmdPrefix})
 	r.Add(&whahandler.Pelunasan{
 		Bills:    billSvc,
 		Updates:  logSvc,

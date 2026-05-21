@@ -87,7 +87,7 @@ func (h *HotKolek) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
 		// Jangan return — tetap kirim rekap supaya user dapat info terbaru.
 	}
 
-	locations, err := h.buildLocations(ctx)
+	locations, err := buildHotKolekLocations(ctx, h.Service)
 	if err != nil {
 		slog.Error("hotkolek: build rekap gagal", "err", err)
 		_, _ = h.Sender.SendText(ctx, m.ChatJID(), "❌ Gagal mengambil rekap. Silakan coba lagi.", &m.Info)
@@ -101,15 +101,16 @@ func (h *HotKolek) Handle(ctx context.Context, m *whatsapp.IncomingMessage) {
 	}
 }
 
-// buildLocations panggil BuildLocations sekali (4 query paralel) lalu rakit
-// struct LocationBills per kios. Order kategori per legacy: minimal pay
-// (header kosong), "Angsuran Pertama", "Jatuh tempo".
-func (h *HotKolek) buildLocations(ctx context.Context) ([]hotkolek.LocationBills, error) {
+// buildHotKolekLocations panggil BuildLocations sekali (4 query paralel) lalu
+// rakit struct LocationBills per kios. Order kategori per legacy: minimal pay
+// (header kosong), "Angsuran Pertama", "Jatuh tempo". Dipakai bersama oleh
+// handler .NNNNNNNNNNNN dan .resetpaid.
+func buildHotKolekLocations(ctx context.Context, svc *hotkolek.Service) ([]hotkolek.LocationBills, error) {
 	codes := make([]string, 0, len(kiosConfigs))
 	for _, c := range kiosConfigs {
 		codes = append(codes, c.code)
 	}
-	byKios, err := h.Service.BuildLocations(ctx, codes)
+	byKios, err := svc.BuildLocations(ctx, codes)
 	if err != nil {
 		return nil, err
 	}

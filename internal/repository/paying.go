@@ -39,6 +39,16 @@ func (r *PayingRepo) DeleteByID(ctx context.Context, id string) error {
 	return err
 }
 
+// DeleteAll hapus semua dokumen di koleksi paying. Dipakai oleh
+// command admin .resetpaid untuk reset flag "sudah dibayar hari ini".
+func (r *PayingRepo) DeleteAll(ctx context.Context) (int64, error) {
+	res, err := r.coll.DeleteMany(ctx, bson.M{})
+	if err != nil {
+		return 0, err
+	}
+	return res.DeletedCount, nil
+}
+
 // FindAllIDs ambil semua _id koleksi paying — dipakai untuk filter "spk yang sudah lunas".
 func (r *PayingRepo) FindAllIDs(ctx context.Context) ([]string, error) {
 	cur, err := r.coll.Find(ctx, bson.M{}, options.Find().SetProjection(bson.M{"_id": 1}))

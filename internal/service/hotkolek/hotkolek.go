@@ -165,6 +165,12 @@ func (s *Service) SaveAllPaying(ctx context.Context, spks []string) error {
 	return nil
 }
 
+// ResetAllPaying hapus semua flag "sudah dibayar hari ini". Return jumlah
+// dokumen yang dihapus.
+func (s *Service) ResetAllPaying(ctx context.Context) (int64, error) {
+	return s.paying.DeleteAll(ctx)
+}
+
 func isValidForCollection(b entity.Bills) bool {
 	dl, err := strconv.Atoi(strings.TrimSpace(b.DayLate))
 	if err != nil {
