@@ -49,6 +49,10 @@ func (h *SlikDocumentUpload) HandleDocument(ctx context.Context, b *telegram.Bot
 		_, _ = b.SendText(chatID, "⚠️ File tidak punya nama, abaikan")
 		return
 	}
+	if strings.Contains(strings.ToLower(fileName), "empty") {
+		_, _ = b.SendText(chatID, "⚠️ Nama file mengandung `Empty`, file ditolak")
+		return
+	}
 	ext := strings.ToLower(strings.TrimPrefix(path.Ext(fileName), "."))
 	sub, contentType := slik.SubfolderForExt(ext)
 	if sub == "" {
@@ -73,4 +77,5 @@ func (h *SlikDocumentUpload) HandleDocument(ctx context.Context, b *telegram.Bot
 	}
 	slog.Info("SLIK upload success", "key", key, "size", len(bytes), "chat_id", chatID)
 	_, _ = b.SendText(chatID, "✅ Upload berhasil: `"+key+"`")
+	go func() { _ = b.DeleteMessage(chatID, msg.MessageID) }()
 }
