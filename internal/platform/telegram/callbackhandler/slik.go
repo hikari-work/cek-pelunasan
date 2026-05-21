@@ -51,8 +51,9 @@ func (h *SlikMonth) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.Cal
 		return
 	}
 
-	// Hapus pesan keyboard bulan supaya bersih.
-	_ = b.DeleteMessage(chatID, q.Message.MessageID)
+	// Delete async — flow lanjut tanpa nunggu round-trip ke Telegram.
+	msgID := q.Message.MessageID
+	go func() { _ = b.DeleteMessage(chatID, msgID) }()
 	folder := slik.FolderForMonth(yyyymm)
 
 	switch pending.Type {
@@ -245,12 +246,18 @@ func (h *SlikSender) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.Ca
 		return
 	}
 
-	_ = b.DeleteMessage(chatID, q.Message.MessageID)
-
-	loadingID, err := b.SendText(chatID, "⏳ Mengambil Data KTP...")
-	if err != nil {
-		slog.Error("send loading failed", "err", err)
-		return
+	// Edit pesan keyboard jadi loading sekaligus drop tombol — 1 round-trip,
+	// menggantikan delete + send terpisah.
+	loadingID := q.Message.MessageID
+	if err := b.EditTextWithMarkup(chatID, loadingID, "⏳ Mengambil Data KTP...",
+		tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{}}); err != nil {
+		// Fallback: pesan asli sudah hilang / tidak bisa di-edit. Kirim baru.
+		newID, sendErr := b.SendText(chatID, "⏳ Mengambil Data KTP...")
+		if sendErr != nil {
+			slog.Error("send loading failed", "err", sendErr)
+			return
+		}
+		loadingID = newID
 	}
 
 	folder := slik.FolderForMonth(yyyymm)
@@ -298,7 +305,9 @@ func (h *SlikSender) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.Ca
 		return
 	}
 
-	_ = b.DeleteMessage(chatID, loadingID)
+	// Delete loading async — kirim PDF langsung supaya user nggak nunggu
+	// round-trip delete dulu.
+	go func() { _ = b.DeleteMessage(chatID, loadingID) }()
 	if err := b.SendDocument(chatID, customerID+".pdf", pdfBytes); err != nil {
 		slog.Error("send pdf failed", "customer_id", customerID, "err", err)
 		_, _ = b.SendText(chatID, "❌ Gagal mengirim PDF")
