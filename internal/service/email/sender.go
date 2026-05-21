@@ -97,10 +97,12 @@ func (s *Sender) Send(ctx context.Context, m Mail) error {
 	defer func() { _ = c.Close() }()
 
 	if !s.cfg.UseSSL {
-		if ok, _ := c.Extension("STARTTLS"); ok {
-			if err := c.StartTLS(tlsCfg); err != nil {
-				return fmt.Errorf("starttls: %w", err)
-			}
+		ok, _ := c.Extension("STARTTLS")
+		if !ok {
+			return errors.New("starttls: server tidak menawarkan STARTTLS di port non-SSL")
+		}
+		if err := c.StartTLS(tlsCfg); err != nil {
+			return fmt.Errorf("starttls: %w", err)
 		}
 	}
 

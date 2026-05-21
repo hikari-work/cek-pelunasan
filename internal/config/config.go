@@ -157,7 +157,7 @@ func Load() (*Config, error) {
 			Port:     mailPort,
 			Username: os.Getenv("MAIL_USERNAME"),
 			Password: os.Getenv("MAIL_PASSWORD"),
-			UseSSL:   true,
+			UseSSL:   mailPort == 465,
 		},
 		Server: ServerConfig{
 			Port: serverPort,
