@@ -170,7 +170,7 @@ environment yang dipakai user.
 | `.jb` — reminder jatuh bayar harian | ✅ |
 | `.minbunga {cabang} {tanggal}` — admin only | ✅ |
 | `.slik {nama}` — kirim PDF asli + 2 generated | ✅ |
-| `.email` / `.done` — forward media ke email via SMTP | ☐ |
+| `.email` / `.done` — forward media ke email via SMTP | ✅ |
 | `.NNNNNNNNNNNN` — hot kolek (single + multi SPK) | ✅ |
 
 ### Mini App (REST API + UI)

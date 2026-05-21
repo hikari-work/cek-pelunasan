@@ -112,16 +112,33 @@ func (h *Email) handleStart(ctx context.Context, m *whatsapp.IncomingMessage) {
 
 func (h *Email) handleDone(ctx context.Context, m *whatsapp.IncomingMessage) {
 	phone := m.SenderPhone()
+	chat := m.ChatJID()
 	sess := h.Sessions.Remove(phone)
 	if sess == nil {
 		emailCmd := prefixed(h.Prefix, "email")
-		_, _ = h.Sender.SendText(ctx, m.ChatJID(),
+		_, _ = h.Sender.SendText(ctx, chat,
 			"⚠️ Tidak ada sesi email aktif. Ketik *"+emailCmd+"* untuk mulai.", &m.Info)
 		return
 	}
 	slog.Info("email: sesi ditutup user", "phone", phone, "media", sess.MediaCount())
-	// Kirim sinkron — caller (Router goroutine) sudah terisolasi.
-	h.Forwarder.Send(ctx, sess)
+
+	placeholder := fmt.Sprintf("📧 Mengirim email ke %s ...\n📎 %d file dilampirkan.",
+		sess.Recipient, sess.MediaCount())
+	msgID, err := h.Sender.SendText(ctx, chat, placeholder, &m.Info)
+	if err != nil {
+		slog.Warn("email: kirim placeholder gagal", "phone", phone, "err", err)
+	}
+
+	summary := h.Forwarder.Deliver(ctx, sess)
+	if msgID == "" {
+		_, _ = h.Sender.SendText(ctx, chat, summary, &m.Info)
+		return
+	}
+	if err := h.Sender.EditMessage(ctx, chat, msgID, summary); err != nil {
+		slog.Warn("email: edit pesan hasil gagal, fallback kirim baru",
+			"phone", phone, "err", err)
+		_, _ = h.Sender.SendText(ctx, chat, summary, &m.Info)
+	}
 }
 
 func (h *Email) resolveRecipient(body string) string {

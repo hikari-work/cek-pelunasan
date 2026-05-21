@@ -37,11 +37,22 @@ func (f *Forwarder) Send(ctx context.Context, s *Session) {
 	if f == nil || s == nil {
 		return
 	}
+	summary := f.Deliver(ctx, s)
+	f.notify(ctx, s, summary)
+}
+
+// Deliver kirim email + return ringkasan hasil (untuk ditampilkan ke user).
+// Tidak memanggil Notifier — caller bertanggung jawab menampilkan summary
+// (mis. via edit pesan placeholder). Path .done pakai ini untuk dapat
+// state-update yang lebih responsif.
+func (f *Forwarder) Deliver(ctx context.Context, s *Session) string {
+	if f == nil || s == nil {
+		return ""
+	}
 
 	media := s.Media()
 	if len(media) == 0 {
-		f.notify(ctx, s, "❌ Tidak ada media yang terkumpul. Email tidak dikirim.")
-		return
+		return "❌ Tidak ada media yang terkumpul. Email tidak dikirim."
 	}
 
 	atts := make([]Attachment, 0, len(media))
@@ -58,8 +69,7 @@ func (f *Forwarder) Send(ctx context.Context, s *Session) {
 		})
 	}
 	if len(atts) == 0 {
-		f.notify(ctx, s, "❌ Semua media gagal didownload. Email tidak dikirim.")
-		return
+		return "❌ Semua media gagal didownload. Email tidak dikirim."
 	}
 
 	mail := Mail{
@@ -72,15 +82,14 @@ func (f *Forwarder) Send(ctx context.Context, s *Session) {
 	if err := f.Sender.Send(ctx, mail); err != nil {
 		slog.Error("email forward: kirim gagal",
 			"phone", s.SenderPhone, "to", s.Recipient, "err", err)
-		f.notify(ctx, s, "❌ Gagal mengirim email. Silakan coba lagi.")
-		return
+		return "❌ Gagal mengirim email. Silakan coba lagi."
 	}
 
 	slog.Info("email forward: terkirim",
 		"phone", s.SenderPhone, "to", s.Recipient,
 		"attachments", len(atts), "total", len(media), "skipped", skipped)
-	f.notify(ctx, s, fmt.Sprintf("✅ Email berhasil dikirim ke %s\n📎 %d dari %d file terkirim.",
-		s.Recipient, len(atts), len(media)))
+	return fmt.Sprintf("✅ Email berhasil dikirim ke %s\n📎 %d dari %d file terkirim.",
+		s.Recipient, len(atts), len(media))
 }
 
 func (f *Forwarder) notify(ctx context.Context, s *Session, msg string) {
