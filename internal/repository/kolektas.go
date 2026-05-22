@@ -72,3 +72,15 @@ func (r *KolekTasRepo) CountByKelompok(ctx context.Context, kelompok string) (in
 	filter := bson.M{"kelompok": bson.M{"$regex": "^" + kelompok + "$", "$options": "i"}}
 	return r.coll.CountDocuments(ctx, filter)
 }
+
+func (r *KolekTasRepo) FindByID(ctx context.Context, id string) (*entity.KolekTas, error) {
+	var result entity.KolekTas
+	err := r.coll.FindOne(ctx, bson.M{"_id": id}).Decode(&result)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}

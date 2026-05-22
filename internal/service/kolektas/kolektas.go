@@ -44,6 +44,10 @@ func (s *Service) FindByKelompok(ctx context.Context, kelompok string, page, siz
 	return PageResult{Items: items, Total: total, Page: page, Size: size}, nil
 }
 
+func (s *Service) FindByID(ctx context.Context, id string) (*entity.KolekTas, error) {
+	return s.repo.FindByID(ctx, id)
+}
+
 func (s *Service) ParseCSVAndSave(ctx context.Context, path string, total int64, onProgress csvimport.ProgressFn) error {
 	if err := s.repo.DeleteAll(ctx); err != nil {
 		return err

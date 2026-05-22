@@ -239,6 +239,17 @@ func registerKolekTas(r fiber.Router, svc *kolektas.Service) {
 		}
 		return c.JSON(res.Items)
 	})
+	g.Get("/:id", func(c *fiber.Ctx) error {
+		id := c.Params("id")
+		item, err := svc.FindByID(c.UserContext(), id)
+		if err != nil {
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+		if item == nil {
+			return c.SendStatus(fiber.StatusNotFound)
+		}
+		return c.JSON(item)
+	})
 }
 
 func registerPayment(r fiber.Router, billSvc *bill.Service, pdSvc *paymentdetails.Service) {
