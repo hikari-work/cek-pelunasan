@@ -36,6 +36,7 @@ func Register(app *fiber.App, d Deps) {
 	store := newSessionStore(ttl)
 
 	mini := app.Group("/api/mini")
+	mini.Use(loggerMiddleware())
 	mini.Post("/auth", authHandler(verifier, store, d.Auth, d.Users))
 
 	// Semua subgroup di bawah ini butuh session token.
