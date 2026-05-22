@@ -57,19 +57,19 @@ type Bills struct {
 }
 
 type Savings struct {
-	ID              string `bson:"_id,omitempty"`
-	Branch          string `bson:"branch,omitempty"`
-	Type            string `bson:"type,omitempty"`
-	CIF             string `bson:"cif,omitempty"`
-	TabID           string `bson:"tabId,omitempty"`
-	Name            string `bson:"name,omitempty"`
-	Address         string `bson:"address,omitempty"`
-	Balance         int64  `bson:"balance,omitempty"`
-	Transaction     int64  `bson:"transaction,omitempty"`
-	AccountOfficer  string `bson:"accountOfficer,omitempty"`
-	Phone           string `bson:"phone,omitempty"`
-	MinimumBalance  int64  `bson:"minimumBalance,omitempty"`
-	BlockingBalance int64  `bson:"blockingBalance,omitempty"`
+	ID              string `bson:"_id,omitempty" json:"id,omitempty"`
+	Branch          string `bson:"branch,omitempty" json:"branch,omitempty"`
+	Type            string `bson:"type,omitempty" json:"type,omitempty"`
+	CIF             string `bson:"cif,omitempty" json:"cif,omitempty"`
+	TabID           string `bson:"tabId,omitempty" json:"tabId,omitempty"`
+	Name            string `bson:"name,omitempty" json:"name,omitempty"`
+	Address         string `bson:"address,omitempty" json:"address,omitempty"`
+	Balance         int64  `bson:"balance,omitempty" json:"balance,omitempty"`
+	Transaction     int64  `bson:"transaction,omitempty" json:"transaction,omitempty"`
+	AccountOfficer  string `bson:"accountOfficer,omitempty" json:"accountOfficer,omitempty"`
+	Phone           string `bson:"phone,omitempty" json:"phone,omitempty"`
+	MinimumBalance  int64  `bson:"minimumBalance,omitempty" json:"minimumBalance,omitempty"`
+	BlockingBalance int64  `bson:"blockingBalance,omitempty" json:"blockingBalance,omitempty"`
 }
 
 type KolekTas struct {
