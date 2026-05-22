@@ -21,39 +21,39 @@ type User struct {
 }
 
 type Bills struct {
-	NoSpk             string `bson:"_id"`
-	CustomerID        string `bson:"customerId,omitempty"`
-	Wilayah           string `bson:"wilayah,omitempty"`
-	Branch            string `bson:"branch,omitempty"`
-	OfficeLocation    string `bson:"officeLocation,omitempty"`
-	Product           string `bson:"product,omitempty"`
-	Name              string `bson:"name,omitempty"`
-	Address           string `bson:"address,omitempty"`
-	PayDown           string `bson:"payDown,omitempty"`
-	Realization       string `bson:"realization,omitempty"`
-	DueDate           string `bson:"dueDate,omitempty"`
-	CollectStatus     string `bson:"collectStatus,omitempty"`
-	DayLate           string `bson:"dayLate,omitempty"`
-	Plafond           int64  `bson:"plafond,omitempty"`
-	DebitTray         int64  `bson:"debitTray,omitempty"`
-	Interest          int64  `bson:"interest,omitempty"`
-	Principal         int64  `bson:"principal,omitempty"`
-	Installment       int64  `bson:"installment,omitempty"`
-	LastInterest      int64  `bson:"lastInterest,omitempty"`
-	LastPrincipal     int64  `bson:"lastPrincipal,omitempty"`
-	LastInstallment   int64  `bson:"lastInstallment,omitempty"`
-	FullPayment       int64  `bson:"fullPayment,omitempty"`
-	MinInterest       int64  `bson:"minInterest,omitempty"`
-	MinPrincipal      int64  `bson:"minPrincipal,omitempty"`
-	PenaltyInterest   int64  `bson:"penaltyInterest,omitempty"`
-	PenaltyPrincipal  int64  `bson:"penaltyPrincipal,omitempty"`
-	AccountOfficer    string `bson:"accountOfficer,omitempty"`
-	Kios              string `bson:"kios,omitempty"`
-	Titipan           int64  `bson:"titipan,omitempty"`
-	FixedInterest     int64  `bson:"fixedInterest,omitempty"`
-	CKPNType          string `bson:"ckpnType,omitempty"`
-	CKPNNominal       int64  `bson:"ckpnNominal,omitempty"`
-	RekeningAutobedet string `bson:"rekeningAutobedet,omitempty"`
+	NoSpk             string `bson:"_id" json:"noSpk"`
+	CustomerID        string `bson:"customerId,omitempty" json:"customerId,omitempty"`
+	Wilayah           string `bson:"wilayah,omitempty" json:"wilayah,omitempty"`
+	Branch            string `bson:"branch,omitempty" json:"branch,omitempty"`
+	OfficeLocation    string `bson:"officeLocation,omitempty" json:"officeLocation,omitempty"`
+	Product           string `bson:"product,omitempty" json:"product,omitempty"`
+	Name              string `bson:"name,omitempty" json:"name,omitempty"`
+	Address           string `bson:"address,omitempty" json:"address,omitempty"`
+	PayDown           string `bson:"payDown,omitempty" json:"payDown,omitempty"`
+	Realization       string `bson:"realization,omitempty" json:"realization,omitempty"`
+	DueDate           string `bson:"dueDate,omitempty" json:"dueDate,omitempty"`
+	CollectStatus     string `bson:"collectStatus,omitempty" json:"collectStatus,omitempty"`
+	DayLate           string `bson:"dayLate,omitempty" json:"dayLate,omitempty"`
+	Plafond           int64  `bson:"plafond,omitempty" json:"plafond,omitempty"`
+	DebitTray         int64  `bson:"debitTray,omitempty" json:"debitTray,omitempty"`
+	Interest          int64  `bson:"interest,omitempty" json:"interest,omitempty"`
+	Principal         int64  `bson:"principal,omitempty" json:"principal,omitempty"`
+	Installment       int64  `bson:"installment,omitempty" json:"installment,omitempty"`
+	LastInterest      int64  `bson:"lastInterest,omitempty" json:"lastInterest,omitempty"`
+	LastPrincipal     int64  `bson:"lastPrincipal,omitempty" json:"lastPrincipal,omitempty"`
+	LastInstallment   int64  `bson:"lastInstallment,omitempty" json:"lastInstallment,omitempty"`
+	FullPayment       int64  `bson:"fullPayment,omitempty" json:"fullPayment,omitempty"`
+	MinInterest       int64  `bson:"minInterest,omitempty" json:"minInterest,omitempty"`
+	MinPrincipal      int64  `bson:"minPrincipal,omitempty" json:"minPrincipal,omitempty"`
+	PenaltyInterest   int64  `bson:"penaltyInterest,omitempty" json:"penaltyInterest,omitempty"`
+	PenaltyPrincipal  int64  `bson:"penaltyPrincipal,omitempty" json:"penaltyPrincipal,omitempty"`
+	AccountOfficer    string `bson:"accountOfficer,omitempty" json:"accountOfficer,omitempty"`
+	Kios              string `bson:"kios,omitempty" json:"kios,omitempty"`
+	Titipan           int64  `bson:"titipan,omitempty" json:"titipan,omitempty"`
+	FixedInterest     int64  `bson:"fixedInterest,omitempty" json:"fixedInterest,omitempty"`
+	CKPNType          string `bson:"ckpnType,omitempty" json:"ckpnType,omitempty"`
+	CKPNNominal       int64  `bson:"ckpnNominal,omitempty" json:"ckpnNominal,omitempty"`
+	RekeningAutobedet string `bson:"rekeningAutobedet,omitempty" json:"rekeningAutobedet,omitempty"`
 }
 
 type Savings struct {
@@ -73,17 +73,17 @@ type Savings struct {
 }
 
 type KolekTas struct {
-	ID             string `bson:"_id,omitempty"`
-	Kelompok       string `bson:"kelompok,omitempty"`
-	Kantor         string `bson:"kantor,omitempty"`
-	Rekening       string `bson:"rekening,omitempty"`
-	Nama           string `bson:"nama,omitempty"`
-	Alamat         string `bson:"alamat,omitempty"`
-	NoHP           string `bson:"noHp,omitempty"`
-	Kolek          string `bson:"kolek,omitempty"`
-	Nominal        string `bson:"nominal,omitempty"`
-	AccountOfficer string `bson:"accountOfficer,omitempty"`
-	CIF            string `bson:"cif,omitempty"`
+	ID             string `bson:"_id,omitempty" json:"id,omitempty"`
+	Kelompok       string `bson:"kelompok,omitempty" json:"kelompok,omitempty"`
+	Kantor         string `bson:"kantor,omitempty" json:"kantor,omitempty"`
+	Rekening       string `bson:"rekening,omitempty" json:"rekening,omitempty"`
+	Nama           string `bson:"nama,omitempty" json:"nama,omitempty"`
+	Alamat         string `bson:"alamat,omitempty" json:"alamat,omitempty"`
+	NoHP           string `bson:"noHp,omitempty" json:"noHp,omitempty"`
+	Kolek          string `bson:"kolek,omitempty" json:"kolek,omitempty"`
+	Nominal        string `bson:"nominal,omitempty" json:"nominal,omitempty"`
+	AccountOfficer string `bson:"accountOfficer,omitempty" json:"accountOfficer,omitempty"`
+	CIF            string `bson:"cif,omitempty" json:"cif,omitempty"`
 }
 
 type Paying struct {
