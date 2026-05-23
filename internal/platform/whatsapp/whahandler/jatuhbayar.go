@@ -117,31 +117,31 @@ func (h *JatuhBayar) formatJatuhBayar(ctx context.Context, bills []entity.Bills,
 	if len(bills) == 0 {
 		return ""
 	}
-	var b strings.Builder
-	b.WriteString("🔔 *REMINDER JATUH BAYAR*\n")
-	fmt.Fprintf(&b, "📅 Tanggal: %s\n", today.Format("2006-01-02"))
-	fmt.Fprintf(&b, "👤 AO: *%s*\n", ao)
-	fmt.Fprintf(&b, "📊 Total Nasabah: %d orang\n\n", len(bills))
+	var sb strings.Builder
+	sb.WriteString("🔔 *REMINDER JATUH BAYAR*\n")
+	fmt.Fprintf(&sb, "📅 Tanggal: %s\n", today.Format("2006-01-02"))
+	fmt.Fprintf(&sb, "👤 AO: *%s*\n", ao)
+	fmt.Fprintf(&sb, "📊 Total Nasabah: %d orang\n\n", len(bills))
 
-	for i, bill := range bills {
-		fmt.Fprintf(&b, "*%d. %s*\n", i+1, bill.Name)
-		fmt.Fprintf(&b, "   💳 No SPK : %s\n", bill.NoSpk)
+	for i, b := range bills {
+		fmt.Fprintf(&sb, "*%d. %s*\n", i+1, b.Name)
+		fmt.Fprintf(&sb, "   💳 No SPK : %s\n", b.NoSpk)
 
-		if bill.LastInstallment > 0 {
-			fmt.Fprintf(&b, "   ⚠️ Tunggakan: %s\n", utils.FormatRupiah(bill.LastInstallment))
+		if b.LastInstallment > 0 {
+			fmt.Fprintf(&sb, "   ⚠️ Tunggakan: %s\n", utils.FormatRupiah(b.LastInstallment))
 		} else {
-			fmt.Fprintf(&b, "   💰 Angsuran: %s\n", utils.FormatRupiah(bill.Installment))
+			fmt.Fprintf(&sb, "   💰 Angsuran: %s\n", utils.FormatRupiah(b.Installment))
 		}
 
-		phone := h.lookupPhone(ctx, bill.CustomerID)
-		fmt.Fprintf(&b, "   📱 No HP: %s\n", phone)
-		b.WriteString("\n")
+		phone := h.lookupPhone(ctx, b.CustomerID)
+		fmt.Fprintf(&sb, "   📱 No HP: %s\n", phone)
+		sb.WriteString("\n")
 	}
 
-	b.WriteString("═══════════════════\n")
-	b.WriteString("Harap segera lakukan follow up kepada nasabah terkait.\n")
-	b.WriteString("_Pesan otomatis dari sistem_")
-	return b.String()
+	sb.WriteString("═══════════════════\n")
+	sb.WriteString("Harap segera lakukan follow up kepada nasabah terkait.\n")
+	sb.WriteString("_Pesan otomatis dari sistem_")
+	return sb.String()
 }
 
 func (h *JatuhBayar) lookupPhone(ctx context.Context, cif string) string {

@@ -152,7 +152,7 @@ func buildFasilitasText(index int, k *KreditPembiayaan) string {
 }
 
 func findWorstKol(tb map[string]string) string {
-	var max int
+	var maxVal int
 	var found string
 	for k, v := range tb {
 		if !strings.HasSuffix(k, "Kol") || strings.TrimSpace(v) == "" {
@@ -162,8 +162,8 @@ func findWorstKol(tb map[string]string) string {
 		if err != nil {
 			continue
 		}
-		if n > max {
-			max = n
+		if n > maxVal {
+			maxVal = n
 			found = v
 		}
 	}
@@ -171,7 +171,7 @@ func findWorstKol(tb map[string]string) string {
 }
 
 func findMaxHt(tb map[string]string) string {
-	var max int
+	var maxVal int
 	var found string
 	for k, v := range tb {
 		if !strings.HasSuffix(k, "Ht") || strings.TrimSpace(v) == "" {
@@ -181,8 +181,8 @@ func findMaxHt(tb map[string]string) string {
 		if err != nil {
 			continue
 		}
-		if n > max {
-			max = n
+		if n > maxVal {
+			maxVal = n
 			found = v
 		}
 	}

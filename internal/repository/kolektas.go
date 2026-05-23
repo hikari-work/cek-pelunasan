@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/hikari-work/cek-pelunasan/internal/entity"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -76,7 +77,7 @@ func (r *KolekTasRepo) CountByKelompok(ctx context.Context, kelompok string) (in
 func (r *KolekTasRepo) FindByID(ctx context.Context, id string) (*entity.KolekTas, error) {
 	var result entity.KolekTas
 	err := r.coll.FindOne(ctx, bson.M{"_id": id}).Decode(&result)
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, nil
 	}
 	if err != nil {
