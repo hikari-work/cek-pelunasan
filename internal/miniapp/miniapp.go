@@ -16,14 +16,14 @@ import (
 
 // Deps mengumpulkan service yang dibutuhkan miniapp.
 type Deps struct {
-	BotToken        string
-	SessionTTL      int // menit, default 60 kalau 0
-	Auth            *auth.AuthorizedChats
-	Users           *users.Service
-	Bills           *bill.Service
-	Savings         *savings.Service
-	KolekTas        *kolektas.Service
-	PaymentDetails  *paymentdetails.Service
+	BotToken       string
+	SessionTTL     int // menit, default 60 kalau 0
+	Auth           *auth.AuthorizedChats
+	Users          *users.Service
+	Bills          *bill.Service
+	Savings        *savings.Service
+	KolekTas       *kolektas.Service
+	PaymentDetails *paymentdetails.Service
 }
 
 // Register memasang seluruh route /api/mini/* ke app Fiber.

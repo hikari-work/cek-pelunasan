@@ -23,7 +23,7 @@ import (
 //   - doc:  fetch dari pdf/txt/ideb subfolder, kirim file langsung
 //   - ktp:  tampilkan keyboard pilih jenis laporan (aktif / semua)
 //   - name: list folder pdf/, filter by query, simpan halaman ke session,
-//           kirim halaman 1 + keyboard pagination.
+//     kirim halaman 1 + keyboard pagination.
 type SlikMonth struct {
 	Sessions *slik.SessionCache
 	Storage  *r2.Client

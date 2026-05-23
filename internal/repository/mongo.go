@@ -26,10 +26,20 @@ type Mongo struct {
 // _id-nya bertipe ObjectID (mis. legacy Java auto-generate) bisa
 // di-decode ke field Go bertipe string. Tanpa flag ini, decoder
 // mongo-driver/v2 akan return error.
+//
+// Connection pool settings disesuaikan untuk server dengan RAM terbatas (~1GB):
+// - MaxPoolSize=40: maksimal 40 koneksi concurrent (~40-80MB overhead)
+// - MinPoolSize=5: idle pool kecil untuk mengurangi memory footprint
+// - MaxConnIdleTime=30s: tutup idle connection cepat untuk free memory
 func Connect(ctx context.Context, uri string) (*Mongo, error) {
-	clientOpts := options.Client().ApplyURI(uri).SetBSONOptions(&options.BSONOptions{
-		ObjectIDAsHexString: true,
-	})
+	clientOpts := options.Client().
+		ApplyURI(uri).
+		SetMaxPoolSize(40).
+		SetMinPoolSize(5).
+		SetMaxConnIdleTime(30 * time.Second).
+		SetBSONOptions(&options.BSONOptions{
+			ObjectIDAsHexString: true,
+		})
 	client, err := mongo.Connect(clientOpts)
 	if err != nil {
 		return nil, fmt.Errorf("mongo connect: %w", err)

@@ -8,10 +8,10 @@ import (
 
 func TestHitung_RecommendsCheapest(t *testing.T) {
 	b := &entity.Bills{
-		DayLate:       "10",
-		LastInterest:  500_000,
-		MinInterest:   400_000,
-		MinPrincipal:  1_000_000,
+		DayLate:      "10",
+		LastInterest: 500_000,
+		MinInterest:  400_000,
+		MinPrincipal: 1_000_000,
 	}
 	got := Hitung(b)
 	// A=1.5jt, B=1jt, C=1.4jt -> recommend B

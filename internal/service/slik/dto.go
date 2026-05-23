@@ -21,7 +21,7 @@ type Header struct {
 }
 
 type Individual struct {
-	DataPokokDebitur   []DataPokokDebitur `json:"dataPokokDebitur"`
+	DataPokokDebitur   []DataPokokDebitur  `json:"dataPokokDebitur"`
 	RingkasanFasilitas *RingkasanFasilitas `json:"ringkasanFasilitas"`
 	Fasilitas          *Fasilitas          `json:"fasilitas"`
 }

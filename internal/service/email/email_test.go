@@ -190,10 +190,10 @@ func TestEncodeHeader(t *testing.T) {
 
 func TestDetectContentType(t *testing.T) {
 	cases := map[string]string{
-		"file.pdf":     "application/pdf",
-		"img.jpg":      "image/jpeg",
-		"unknown":      "application/octet-stream",
-		"":             "application/octet-stream",
+		"file.pdf": "application/pdf",
+		"img.jpg":  "image/jpeg",
+		"unknown":  "application/octet-stream",
+		"":         "application/octet-stream",
 	}
 	for in, want := range cases {
 		got := detectContentType(in)

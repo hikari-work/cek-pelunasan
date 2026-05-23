@@ -18,8 +18,10 @@ type CariNasabah struct {
 	Bills *bill.Service
 }
 
-func (h *CariNasabah) Command() string     { return "/tgnama" }
-func (h *CariNasabah) Description() string { return "Cari nasabah berdasarkan nama (lalu pilih cabang)" }
+func (h *CariNasabah) Command() string { return "/tgnama" }
+func (h *CariNasabah) Description() string {
+	return "Cari nasabah berdasarkan nama (lalu pilih cabang)"
+}
 
 func (h *CariNasabah) Handle(ctx context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
 	chatID := msg.Chat.ID

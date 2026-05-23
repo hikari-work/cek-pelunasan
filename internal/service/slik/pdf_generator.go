@@ -24,23 +24,23 @@ import (
 //
 // Binary wkhtmltopdf wajib tersedia di PATH. Di Docker, install via apk/apt.
 type PDFGenerator struct {
-	HTTPClient    *http.Client
-	EndpointURL   string
-	LogoURL       string
+	HTTPClient     *http.Client
+	EndpointURL    string
+	LogoURL        string
 	WkhtmltopdfBin string // default "wkhtmltopdf"
-	UserAgent     string // default Mozilla
-	Timeout       time.Duration
+	UserAgent      string // default Mozilla
+	Timeout        time.Duration
 }
 
 // NewPDFGenerator builder dengan default sesuai legacy.
 func NewPDFGenerator(endpointURL, logoURL string) *PDFGenerator {
 	return &PDFGenerator{
-		HTTPClient:    &http.Client{Timeout: 60 * time.Second},
-		EndpointURL:   endpointURL,
-		LogoURL:       logoURL,
+		HTTPClient:     &http.Client{Timeout: 60 * time.Second},
+		EndpointURL:    endpointURL,
+		LogoURL:        logoURL,
 		WkhtmltopdfBin: "wkhtmltopdf",
-		UserAgent:     "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-		Timeout:       60 * time.Second,
+		UserAgent:      "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+		Timeout:        60 * time.Second,
 	}
 }
 

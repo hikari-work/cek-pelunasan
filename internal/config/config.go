@@ -9,14 +9,14 @@ import (
 )
 
 type Config struct {
-	Mongo     MongoConfig
-	Telegram  TelegramConfig
-	R2        R2Config
-	WhatsApp  WhatsAppConfig
-	SLIK      SLIKConfig
-	Mail      MailConfig
-	Server    ServerConfig
-	MiniApp   MiniAppConfig
+	Mongo    MongoConfig
+	Telegram TelegramConfig
+	R2       R2Config
+	WhatsApp WhatsAppConfig
+	SLIK     SLIKConfig
+	Mail     MailConfig
+	Server   ServerConfig
+	MiniApp  MiniAppConfig
 }
 
 type MiniAppConfig struct {
@@ -65,11 +65,11 @@ type WhatsAppConfig struct {
 }
 
 type SLIKConfig struct {
-	PDFEndpointURL  string
-	PDFLogoURL      string
-	MaxPDFSize      int64
-	SearchTimeout   time.Duration
-	MaxResults      int
+	PDFEndpointURL string
+	PDFLogoURL     string
+	MaxPDFSize     int64
+	SearchTimeout  time.Duration
+	MaxResults     int
 }
 
 type MailConfig struct {

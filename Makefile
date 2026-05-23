@@ -5,7 +5,9 @@ PKG := ./cmd/cekpelunasan
 
 build:
 	@mkdir -p bin
-	go build -o $(BIN) $(PKG)
+	go build -trimpath -ldflags="-s -w" -o $(BIN) $(PKG)
+	@echo "✓ Binary built: $(BIN)"
+	@ls -lh $(BIN)
 
 # run: jalan langsung. Binary auto-load .env kalau ada di working directory.
 # Override path via ENV_FILE=path/to/.env make run.

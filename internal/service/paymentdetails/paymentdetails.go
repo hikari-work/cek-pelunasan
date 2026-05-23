@@ -90,8 +90,6 @@ func (s *Service) FindByNoSpk(ctx context.Context, noSpk string) ([]entity.Payme
 	return s.repo.FindByNoSpkOrdered(ctx, noSpk)
 }
 
-// ParseCSVAndSave: data tidak dihapus dulu (kumulatif). Pakai upsert via composite ID.
-// Format CSV: MLTPODT, MDLBRCO, MDLAOCO, MDLDLRF, MDLNAME, MLTSCTY, MLTAMNT, MLTAMPE, MLTWAME.
 func (s *Service) ParseCSVAndSave(ctx context.Context, path string, total int64, onProgress csvimport.ProgressFn) error {
 	if err := csvimport.Run(
 		ctx, path, true, total,

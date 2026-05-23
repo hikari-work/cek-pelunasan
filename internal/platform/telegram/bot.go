@@ -21,7 +21,7 @@ import (
 // Bot membungkus tgbotapi.BotAPI plus context cancellation dan adaptasi
 // kebiasaan service (parseMode default Markdown, helper kirim file dari bytes).
 type Bot struct {
-	API   *tgbotapi.BotAPI
+	API     *tgbotapi.BotAPI
 	OwnerID int64
 
 	authed *auth.AuthorizedChats
@@ -141,12 +141,12 @@ type MiddlewareFunc func(ctx context.Context, b *Bot, chatID int64) bool
 // melindungi map handler kalau perlu register dynamic, tapi normalnya semua
 // handler register sekali saat startup.
 type Router struct {
-	mu          sync.RWMutex
-	commands    map[string]CommandHandler
-	callbacks   map[string]CallbackHandler
-	documents   []DocumentHandler
-	commandMW   []MiddlewareFunc
-	callbackMW  []MiddlewareFunc
+	mu         sync.RWMutex
+	commands   map[string]CommandHandler
+	callbacks  map[string]CallbackHandler
+	documents  []DocumentHandler
+	commandMW  []MiddlewareFunc
+	callbackMW []MiddlewareFunc
 }
 
 func NewRouter() *Router {

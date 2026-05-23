@@ -3,9 +3,9 @@ package whatsapp
 import (
 	"strings"
 
+	waE2E "go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
-	waE2E "go.mau.fi/whatsmeow/proto/waE2E"
 )
 
 // IncomingMessage adalah view netral atas event pesan WhatsApp yang sudah

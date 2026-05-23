@@ -64,12 +64,12 @@ func TestMatchSlikFile(t *testing.T) {
 
 func TestFolderFromPDFKey(t *testing.T) {
 	cases := map[string]string{
-		"2026_05/pdf/SMG_budi.pdf":     "2026_05",
-		"2024_12/pdf/sub/file.pdf":     "2024_12",
-		"no_pdf_segment.pdf":           "",
-		"":                             "",
-		"/pdf/leading.pdf":             "",
-		"folder/notpdf/SMG_budi.pdf":   "",
+		"2026_05/pdf/SMG_budi.pdf":   "2026_05",
+		"2024_12/pdf/sub/file.pdf":   "2024_12",
+		"no_pdf_segment.pdf":         "",
+		"":                           "",
+		"/pdf/leading.pdf":           "",
+		"folder/notpdf/SMG_budi.pdf": "",
 	}
 	for in, want := range cases {
 		if got := folderFromPDFKey(in); got != want {
@@ -80,13 +80,13 @@ func TestFolderFromPDFKey(t *testing.T) {
 
 func TestExtractSlikDisplayName(t *testing.T) {
 	cases := map[string]string{
-		"2026_05/pdf/SMG_2024_budi_santoso.pdf":     "Budi_Santoso",
-		"SMG_2024_budi.pdf":                         "Budi",
-		"SMG_2024_budi_santoso_pratama.pdf":         "Budi_Santoso_Pratama",
-		"only.pdf":                                  "only",
-		"two_segments.pdf":                          "two_segments",
-		"SMG_2024__santoso.pdf":                     "Santoso", // segmen kosong di-skip
-		"2026_05/pdf/SMG_2024_aLi.pdf":              "ALi",     // hanya huruf pertama yang di-uppercase
+		"2026_05/pdf/SMG_2024_budi_santoso.pdf": "Budi_Santoso",
+		"SMG_2024_budi.pdf":                     "Budi",
+		"SMG_2024_budi_santoso_pratama.pdf":     "Budi_Santoso_Pratama",
+		"only.pdf":                              "only",
+		"two_segments.pdf":                      "two_segments",
+		"SMG_2024__santoso.pdf":                 "Santoso", // segmen kosong di-skip
+		"2026_05/pdf/SMG_2024_aLi.pdf":          "ALi",     // hanya huruf pertama yang di-uppercase
 	}
 	for in, want := range cases {
 		t.Run(in, func(t *testing.T) {

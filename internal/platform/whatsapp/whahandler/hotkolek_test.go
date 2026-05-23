@@ -45,11 +45,11 @@ func TestHotKolekMatch(t *testing.T) {
 		{".010600001234", true},
 		{".010600001234 010600005678", true},
 		{".010600001234 010600005678 010600009999", true},
-		{"010600001234", false},        // tidak ada prefix titik
-		{".0106000", false},             // kurang dari 12 digit
-		{".010600001234ABCD", false},    // ada karakter non-digit
+		{"010600001234", false},               // tidak ada prefix titik
+		{".0106000", false},                   // kurang dari 12 digit
+		{".010600001234ABCD", false},          // ada karakter non-digit
 		{".010600001234,010600005678", false}, // separator koma, bukan spasi
-		{".p 010600001234", false},      // command lain
+		{".p 010600001234", false},            // command lain
 		{"halo bos", false},
 		{"", false},
 	}

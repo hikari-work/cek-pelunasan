@@ -17,13 +17,15 @@ import (
 // Status: ringkasan kesehatan sistem, jumlah user, jumlah data tagihan/kredit,
 // dan penggunaan CPU/RAM. Eksekusi paralel pakai goroutine + WaitGroup.
 type Status struct {
-	Users        *users.Service
-	Bills        *bill.Service
-	CreditHist   *credithistory.Service
+	Users      *users.Service
+	Bills      *bill.Service
+	CreditHist *credithistory.Service
 }
 
-func (h *Status) Command() string     { return "/status" }
-func (h *Status) Description() string { return "Mengecek Status Server dan Database serta user terdaftar" }
+func (h *Status) Command() string { return "/status" }
+func (h *Status) Description() string {
+	return "Mengecek Status Server dan Database serta user terdaftar"
+}
 
 func (h *Status) Handle(ctx context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
 	chatID := msg.Chat.ID

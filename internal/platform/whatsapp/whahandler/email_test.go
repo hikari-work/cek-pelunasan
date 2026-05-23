@@ -47,12 +47,12 @@ func TestEmail_MatchNilRouter(t *testing.T) {
 func TestEmail_ResolveRecipient(t *testing.T) {
 	h := &Email{DefaultRecipient: "default@example.com"}
 	cases := map[string]string{
-		".email":                       "default@example.com",
-		".email user@example.com":      "user@example.com",
-		".email   spaced@example.com":  "spaced@example.com",
-		".email not-an-email":          "",
-		".email user@invalid":          "", // tld minimal 2 char
-		".email @example.com":          "",
+		".email":                      "default@example.com",
+		".email user@example.com":     "user@example.com",
+		".email   spaced@example.com": "spaced@example.com",
+		".email not-an-email":         "",
+		".email user@invalid":         "", // tld minimal 2 char
+		".email @example.com":         "",
 	}
 	for in, want := range cases {
 		t.Run(in, func(t *testing.T) {
@@ -131,12 +131,12 @@ func TestDefaultMediaFilename(t *testing.T) {
 
 func TestSanitizeFilename(t *testing.T) {
 	cases := map[string]string{
-		"normal.pdf":          "normal.pdf",
-		"path/with/dir.pdf":   "dir.pdf",
-		"../../etc/passwd":    "passwd",
-		"":                    "attachment",
-		".":                   "attachment",
-		"/":                   "attachment",
+		"normal.pdf":        "normal.pdf",
+		"path/with/dir.pdf": "dir.pdf",
+		"../../etc/passwd":  "passwd",
+		"":                  "attachment",
+		".":                 "attachment",
+		"/":                 "attachment",
 	}
 	for in, want := range cases {
 		if got := sanitizeFilename(in); got != want {

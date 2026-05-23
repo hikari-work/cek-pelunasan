@@ -280,9 +280,9 @@ func TestFormatWhatsApp_ContainsKeyFields(t *testing.T) {
 		"BUDI",
 		"010600001234",
 		"Jl. Mawar No. 1",
-		"Rp 5.000.000",   // BakiDebet
-		"Rp 12.000.000",  // Plafond
-		"Penalty (6x)",   // multiplier
+		"Rp 5.000.000",    // BakiDebet
+		"Rp 12.000.000",   // Plafond
+		"Penalty (6x)",    // multiplier
 		"Tunggakan Bunga", // tipe bunga
 		"Realisasi",
 		"Jatuh Tempo",
@@ -315,12 +315,12 @@ func TestFormatWhatsApp_SanitizesMarkdown(t *testing.T) {
 
 func TestFormatNumberID(t *testing.T) {
 	cases := map[int64]string{
-		0:           "0",
-		1:           "1",
-		100:         "100",
-		1_000:       "1.000",
-		1_500_000:   "1.500.000",
-		-2_000:      "-2.000",
+		0:             "0",
+		1:             "1",
+		100:           "100",
+		1_000:         "1.000",
+		1_500_000:     "1.500.000",
+		-2_000:        "-2.000",
 		1_000_000_000: "1.000.000.000",
 	}
 	for in, want := range cases {

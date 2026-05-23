@@ -2,9 +2,9 @@
 //
 // Flow:
 //
-//	1. User kirim ".email" → buka session, TTL 60 detik.
-//	2. Setiap media yang masuk saat session aktif → ditambah ke daftar.
-//	3. User ketik ".done" atau TTL habis → kirim email via SMTP.
+//  1. User kirim ".email" → buka session, TTL 60 detik.
+//  2. Setiap media yang masuk saat session aktif → ditambah ke daftar.
+//  3. User ketik ".done" atau TTL habis → kirim email via SMTP.
 //
 // Session disimpan in-memory, key = nomor pengirim WhatsApp (clean, tanpa
 // suffix server). Aman dipakai concurrent.
