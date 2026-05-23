@@ -53,7 +53,7 @@ html, body {
   overflow: hidden;
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--font-body);
+  font-family: var(--font-body, sans-serif);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -132,7 +132,7 @@ html, body {
 }
 
 .loading-text {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 11px;
   font-weight: 600;
   color: var(--ink-soft);
@@ -176,7 +176,7 @@ html, body {
 }
 
 .app-eyebrow {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 2px;
@@ -187,7 +187,7 @@ html, body {
 }
 
 .app-title {
-  font-family: var(--font-display);
+  font-family: var(--font-display, sans-serif);
   font-size: 62px;
   line-height: 0.9;
   letter-spacing: 1px;
@@ -207,7 +207,6 @@ html, body {
 .service-grid {
   display: flex;
   flex-direction: column;
-  gap: 0;
   padding: 20px 16px;
   gap: 12px;
 }
@@ -265,7 +264,7 @@ html, body {
 }
 
 .service-label {
-  font-family: var(--font-display);
+  font-family: var(--font-display, sans-serif);
   font-size: 28px;
   letter-spacing: 1px;
   color: var(--ink);
@@ -292,8 +291,8 @@ html, body {
   text-align: center;
   font-size: 11px;
   color: var(--ink-soft);
-  font-family: var(--font-mono);
-  letter-spacing: 0.5px;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 1px;
   padding: 0 16px;
   opacity: 0.5;
 }
@@ -323,7 +322,7 @@ html, body {
 }
 
 .search-title {
-  font-family: var(--font-display);
+  font-family: var(--font-display, sans-serif);
   font-size: 34px;
   letter-spacing: 1px;
   line-height: 1;
@@ -349,7 +348,7 @@ html, body {
   font-size: 18px;
   color: var(--ink-soft);
   pointer-events: none;
-  font-family: var(--font-body);
+  font-family: var(--font-body, sans-serif);
   line-height: 1;
 }
 
@@ -358,7 +357,7 @@ html, body {
   padding: 11px 40px 11px 36px;
   font-size: 15px;
   font-weight: 600;
-  font-family: var(--font-body);
+  font-family: var(--font-body, sans-serif);
   border: var(--bd);
   box-shadow: var(--sh-xs);
   background: var(--surface);
@@ -379,15 +378,15 @@ html, body {
   color: var(--ink-soft);
   cursor: pointer;
   padding: 4px;
-  font-family: var(--font-body);
+  font-family: var(--font-body, sans-serif);
 }
 
 .search-hint {
   font-size: 11px;
   color: var(--ink-soft);
   margin-top: 7px;
-  font-family: var(--font-mono);
-  letter-spacing: 0.3px;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0;
 }
 .search-hint b { color: var(--ink); }
 
@@ -405,10 +404,10 @@ html, body {
 
 .filter-chip {
   padding: 4px 10px;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   text-transform: uppercase;
   border: var(--bd-2);
   box-shadow: var(--sh-xs);
@@ -458,7 +457,7 @@ html, body {
 
 .state-icon {
   font-size: 28px;
-  font-family: var(--font-body);
+  font-family: var(--font-body, sans-serif);
   color: var(--ink);
   line-height: 1;
 }
@@ -472,7 +471,7 @@ html, body {
 .state-sub {
   font-size: 12px;
   color: var(--ink-soft);
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
 }
 
 /* =====================================================
@@ -529,10 +528,10 @@ html, body {
   display: inline-flex;
   align-items: center;
   padding: 2px 7px;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   background: var(--ink);
   color: var(--bg);
   white-space: nowrap;
@@ -556,14 +555,14 @@ html, body {
   font-size: 11px;
   font-weight: 600;
   color: var(--ink-soft);
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
 }
 
 .result-address {
   font-size: 11px;
   color: var(--ink-soft);
   margin-bottom: 6px;
-  font-family: var(--font-body);
+  font-family: var(--font-body, sans-serif);
   line-height: 1.4;
 }
 
@@ -580,12 +579,12 @@ html, body {
   font-weight: 600;
   color: var(--ink-soft);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-family: var(--font-mono);
+  letter-spacing: 1px;
+  font-family: var(--font-mono, monospace);
 }
 
 .result-amount {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 14px;
   font-weight: 700;
   color: var(--ink);
@@ -600,11 +599,10 @@ html, body {
 #screen-detail { padding: 0; }
 
 .detail-content {
-  padding: 16px;
+  padding: 16px 16px 32px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding-bottom: 32px;
 }
 
 /* Hero card */
@@ -632,9 +630,9 @@ html, body {
 }
 
 .detail-hero-name {
-  font-family: var(--font-display);
+  font-family: var(--font-display, sans-serif);
   font-size: 30px;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   color: var(--ink);
   line-height: 1.1;
   margin-bottom: 6px;
@@ -647,7 +645,7 @@ html, body {
 }
 
 .detail-hero-meta-item {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 11px;
   font-weight: 600;
   color: var(--ink-soft);
@@ -666,14 +664,14 @@ html, body {
 }
 
 .detail-total-label {
-  font-family: var(--font-display);
+  font-family: var(--font-display, sans-serif);
   font-size: 18px;
   letter-spacing: 1px;
   color: var(--ink);
 }
 
 .detail-total-value {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 18px;
   font-weight: 700;
   color: var(--ink);
@@ -688,10 +686,10 @@ html, body {
 
 .detail-section-title {
   padding: 8px 14px;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
   text-transform: uppercase;
   background: var(--ink);
   color: var(--bg);
@@ -727,17 +725,17 @@ html, body {
   word-break: break-word;
 }
 .detail-row-value.mono {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 12px;
 }
 .detail-row-value.big {
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 14px;
   font-weight: 700;
   color: var(--ink);
 }
-.detail-row-value.good  { color: var(--c-tabungan); font-family: var(--font-mono); }
-.detail-row-value.alert { color: var(--c-tagihan);  font-family: var(--font-mono); }
+.detail-row-value.good  { color: var(--c-tabungan); font-family: var(--font-mono, monospace); }
+.detail-row-value.alert { color: var(--c-tagihan);  font-family: var(--font-mono, monospace); }
 
 /* =====================================================
    ERROR TOAST
@@ -852,7 +850,7 @@ html, body {
 .kolek-badge {
   display: inline-block;
   padding: 2px 8px;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 11px;
   font-weight: 700;
   border: 2px solid var(--border-col);
@@ -892,9 +890,9 @@ html, body {
 .payment-table th {
   padding: 8px 10px;
   text-align: left;
-  font-family: var(--font-display);
+  font-family: var(--font-display, sans-serif);
   font-size: 13px;
-  letter-spacing: 0.6px;
+  letter-spacing: 1px;
   font-weight: 400;
   border-right: 1px solid rgba(255, 255, 255, 0.12);
   white-space: nowrap;
@@ -911,7 +909,7 @@ html, body {
 }
 .payment-table td:last-child { border-right: 0; }
 .payment-table td.num  { text-align: right; }
-.payment-table td.mono { font-family: var(--font-mono); font-size: 11.5px; }
+.payment-table td.mono { font-family: var(--font-mono, monospace); font-size: 12px; }
 
 .payment-table tbody tr.is-alert td {
   background: var(--c-danger);
@@ -921,7 +919,7 @@ html, body {
 .type-badge {
   display: inline-block;
   padding: 1px 7px;
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
   font-size: 11px;
   font-weight: 700;
   border: 2px solid var(--border-col);
@@ -947,5 +945,5 @@ html, body {
   box-shadow: var(--sh-sm);
   font-size: 13px;
   color: var(--ink-soft);
-  font-family: var(--font-mono);
+  font-family: var(--font-mono, monospace);
 }
