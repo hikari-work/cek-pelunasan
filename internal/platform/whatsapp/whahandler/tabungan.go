@@ -19,7 +19,7 @@ import (
 //   - {input} 12 digit angka  → detail satu rekening (FindByID).
 //   - selain itu              → cari nama, hasil dibatasi 5 rekening teratas.
 //
-// Admin: balasan via edit pesan asli (efek "loading → hasil"). User biasa:
+// Admin balasan via edit pesan asli (efek "loading → hasil"). User biasa:
 // pesan baru sebagai reply.
 //
 // React emoji dikirim sebelum balasan utama hanya saat hit by ID, sama

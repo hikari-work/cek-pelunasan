@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// PendingType: jenis query yang menunggu pilih bulan.
+// PendingType jenis query yang menunggu pilih bulan.
 //
 //	"ktp"  — query cocok pola 16 digit (NIK)
 //	"name" — query bebas (nama)

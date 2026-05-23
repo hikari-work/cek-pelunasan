@@ -101,7 +101,7 @@ func (r *BillsRepo) CountByName(ctx context.Context, name string) (int64, error)
 	return r.coll.CountDocuments(ctx, bson.M{"name": bson.M{"$regex": name, "$options": "i"}})
 }
 
-// FindByOfficeLocationWithMinTunggakan: tagihan kantor X dengan minInterest+minPrincipal > 0.
+// FindByOfficeLocationWithMinTunggakan tagihan kantor X dengan minInterest+minPrincipal > 0.
 func (r *BillsRepo) FindByOfficeLocationWithMinTunggakan(ctx context.Context, officeLocation string, page Page) ([]entity.Bills, error) {
 	filter := bson.M{
 		"officeLocation": officeLocation,
@@ -206,7 +206,7 @@ func (r *BillsRepo) FindByBranchAndNoSpkNotIn(ctx context.Context, branch string
 	return out, nil
 }
 
-// FindByBranchAndDueDatePrefix: branch + dueDate diawali prefix.
+// FindByBranchAndDueDatePrefix branch + dueDate diawali prefix.
 // Padanan @Query("{ 'branch': ?0, 'dueDate': { '$regex': '^?1' } }").
 func (r *BillsRepo) FindByBranchAndDueDatePrefix(ctx context.Context, branch, prefix string) ([]entity.Bills, error) {
 	filter := bson.M{"branch": branch, "dueDate": bson.M{"$regex": "^" + prefix}}
@@ -222,7 +222,7 @@ func (r *BillsRepo) FindByBranchAndDueDatePrefix(ctx context.Context, branch, pr
 	return out, nil
 }
 
-// FindByBranchAndRealizationPrefix: branch + realization diawali prefix (case-insensitive).
+// FindByBranchAndRealizationPrefix branch + realization diawali prefix (case-insensitive).
 func (r *BillsRepo) FindByBranchAndRealizationPrefix(ctx context.Context, branch, prefix string) ([]entity.Bills, error) {
 	filter := bson.M{"branch": branch, "realization": bson.M{"$regex": "^" + prefix, "$options": "i"}}
 	cur, err := r.coll.Find(ctx, filter)

@@ -17,7 +17,7 @@ var ktpRe = regexp.MustCompile(`^\d{16}$`)
 // Slik /slik — entry point pencarian SLIK. Pilih bulan dulu, eksekusi
 // dilakukan callback handler "slikMonth" setelah user pilih bulan.
 //
-// Catatan: PDF generator (wkhtmltopdf) belum diport. Saat user memilih bulan,
+// Catatan PDF generator (wkhtmltopdf) belum diport. Saat user memilih bulan,
 // callback masih balas stub kalau handler-nya belum ada.
 type Slik struct {
 	Sessions *slik.SessionCache

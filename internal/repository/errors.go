@@ -10,7 +10,7 @@ import (
 // key error (E11000) — bukan kombinasi dengan error lain. Caller boleh
 // treat sebagai sukses.
 //
-// Logika: pakai mongo.ServerError.HasErrorCode(11000), lalu pastikan
+// Logika pakai mongo.ServerError.HasErrorCode(11000), lalu pastikan
 // SEMUA write error juga code 11000. Kalau ada error code lain (mis. 121
 // document validation), tetap return false supaya caller tidak swallow
 // error real.

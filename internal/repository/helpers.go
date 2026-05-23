@@ -10,7 +10,7 @@ import (
 )
 
 // deferCloseCursor returns a function that closes the cursor and logs any error.
-// Usage: defer deferCloseCursor(ctx, cur)()
+// Usage defer deferCloseCursor(ctx, cur)()
 func deferCloseCursor(ctx context.Context, cur *mongo.Cursor) func() {
 	return func() {
 		if err := cur.Close(ctx); err != nil {

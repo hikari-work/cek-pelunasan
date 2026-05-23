@@ -16,7 +16,7 @@ import (
 // dari non-admin yang diawali "/" akan diabaikan supaya tidak ada user
 // yang tidak sengaja men-trigger preset.
 //
-// Action: EditMessage. Pesan asli admin di-replace dengan balasan,
+// Action EditMessage. Pesan asli admin di-replace dengan balasan,
 // memberi efek "admin sendiri yang ngetik balasan" tanpa double bubble
 // di chat.
 type Shortcut struct {

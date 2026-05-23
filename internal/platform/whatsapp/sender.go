@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"go.mau.fi/whatsmeow"
-	waE2E "go.mau.fi/whatsmeow/proto/waE2E"
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"google.golang.org/protobuf/proto"
 )

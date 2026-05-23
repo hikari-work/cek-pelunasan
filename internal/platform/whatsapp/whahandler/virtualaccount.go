@@ -122,8 +122,8 @@ func generateVA(label string, accountNum string, fn vaFormatter) string {
 	return label + "\n" + out
 }
 
-// Mandiri: prefix "86219 1 " + segmen 4 digit awal + 6 digit (idx 6..12).
-// Catatan: di legacy, segmen ke-2 di-skip — bukan typo, ikut perilaku Java.
+// Mandiri prefix "86219 1 " + segmen 4 digit awal + 6 digit (idx 6..12).
+// Catatan di legacy, segmen ke-2 di-skip — bukan typo, ikut perilaku Java.
 func vaMandiri(accountNum string) (string, error) {
 	if len(accountNum) < 12 {
 		return "", errVATooShort
@@ -131,7 +131,7 @@ func vaMandiri(accountNum string) (string, error) {
 	return "86219 1 " + accountNum[:4] + " " + accountNum[6:12], nil
 }
 
-// BRI: prefix "14654 " + 4 digit awal + 6 digit (idx 6..12).
+// BRI prefix "14654 " + 4 digit awal + 6 digit (idx 6..12).
 func vaBRI(accountNum string) (string, error) {
 	if len(accountNum) < 12 {
 		return "", errVATooShort
@@ -139,7 +139,7 @@ func vaBRI(accountNum string) (string, error) {
 	return "14654 " + accountNum[:4] + " " + accountNum[6:12], nil
 }
 
-// Danamon: 7997 + 4 digit awal + 2 digit (4..6) + 6 digit (6..12).
+// Danamon 7997 + 4 digit awal + 2 digit (4..6) + 6 digit (6..12).
 func vaDanamon(accountNum string) (string, error) {
 	if len(accountNum) < 12 {
 		return "", errVATooShort
@@ -147,7 +147,7 @@ func vaDanamon(accountNum string) (string, error) {
 	return "7997 " + accountNum[:4] + " " + accountNum[4:6] + " " + accountNum[6:12], nil
 }
 
-// BNI: 8743 + format sama dengan Danamon.
+// BNI 8743 + format sama dengan Danamon.
 func vaBNI(accountNum string) (string, error) {
 	if len(accountNum) < 12 {
 		return "", errVATooShort

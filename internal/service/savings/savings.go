@@ -54,7 +54,7 @@ func (s *Service) FindByID(ctx context.Context, tabID string) (*entity.Savings, 
 	return s.repo.FindByTabID(ctx, tabID)
 }
 
-// FindByName: cari semua rekening dengan name regex. limit<=0 berarti tanpa batas.
+// FindByName cari semua rekening dengan name regex. limit<=0 berarti tanpa batas.
 func (s *Service) FindByName(ctx context.Context, name string, limit int) ([]entity.Savings, error) {
 	rows, err := s.repo.FindByName(ctx, name)
 	if err != nil {
@@ -66,7 +66,7 @@ func (s *Service) FindByName(ctx context.Context, name string, limit int) ([]ent
 	return rows, nil
 }
 
-// ListBranches: distinct branch dari savings yang name-nya match.
+// ListBranches distinct branch dari savings yang name-nya match.
 func (s *Service) ListBranches(ctx context.Context, name string) ([]string, error) {
 	res := s.repo.Collection().Distinct(ctx, "branch", bson.M{"name": bson.M{"$regex": name, "$options": "i"}})
 	var raw []any
@@ -83,7 +83,7 @@ func (s *Service) ListBranches(ctx context.Context, name string) ([]string, erro
 	return out, nil
 }
 
-// FindFiltered: cari savings by alamat (semua AND), kecuali CIF yang ada di Bills.
+// FindFiltered cari savings by alamat (semua AND), kecuali CIF yang ada di Bills.
 // Dedupe per CIF (ambil dokumen pertama saja).
 func (s *Service) FindFiltered(ctx context.Context, addressKeywords []string, page, size int64) (PageResult, error) {
 	billsCollRes := s.bills.Collection().Distinct(ctx, "customerId", bson.M{})
@@ -153,7 +153,7 @@ func (s *Service) FindFiltered(ctx context.Context, addressKeywords []string, pa
 	return PageResult{Items: items, Total: total, Page: page, Size: size}, nil
 }
 
-// ParseCSVAndSave: hapus semua, lalu re-insert dari CSV. Header di-skip.
+// ParseCSVAndSave hapus semua, lalu re-insert dari CSV. Header di-skip.
 // Baris dengan kolom kurang dari 6 di-skip (data tidak lengkap).
 func (s *Service) ParseCSVAndSave(ctx context.Context, path string, total int64, onProgress csvimport.ProgressFn) error {
 	if err := s.repo.DeleteAll(ctx); err != nil {

@@ -66,7 +66,7 @@ func TestCalculate_FlatMurni_LongTerm_AfterYear(t *testing.T) {
 	}
 }
 
-// FlatMurni: jatuh tempo bulan dan tahun yang sama dengan today → multiplier 0.
+// FlatMurni jatuh tempo bulan dan tahun yang sama dengan today → multiplier 0.
 func TestCalculate_FlatMurni_DueThisMonth(t *testing.T) {
 	b := baseBills()
 	res, err := calculateAt(b, today(2026, 1, 5))
@@ -113,7 +113,7 @@ func TestCalculate_FlatMurni_ShortTerm_EarlyStage(t *testing.T) {
 	}
 }
 
-// Anuitas: bulan jatuh tempo bukan bulan today → multiplier 1.
+// Anuitas bulan jatuh tempo bukan bulan today → multiplier 1.
 func TestCalculate_Anuitas_NotDueThisMonth(t *testing.T) {
 	b := baseBills()
 	b.Product = "KMG-DG"
@@ -130,7 +130,7 @@ func TestCalculate_Anuitas_NotDueThisMonth(t *testing.T) {
 	}
 }
 
-// Anuitas: jatuh tempo bulan ini → 0.
+// Anuitas jatuh tempo bulan ini → 0.
 func TestCalculate_Anuitas_DueThisMonth(t *testing.T) {
 	b := baseBills()
 	b.Product = "KMG-DG"
@@ -158,7 +158,7 @@ func TestCalculate_UnknownProductType(t *testing.T) {
 	}
 }
 
-// Bunga: kalau hari realisasi > hari today di bulan ini → tambah Interest berjalan.
+// Bunga kalau hari realisasi > hari today di bulan ini → tambah Interest berjalan.
 func TestCalculate_Interest_RealizationLater(t *testing.T) {
 	b := baseBills()
 	// Realization day 25, today day 10 → 25 > 10 → tambah Interest.
@@ -175,7 +175,7 @@ func TestCalculate_Interest_RealizationLater(t *testing.T) {
 	}
 }
 
-// Bunga: hari realisasi <= hari today → tidak tambah Interest, base jadi 150_000.
+// Bunga hari realisasi <= hari today → tidak tambah Interest, base jadi 150_000.
 func TestCalculate_Interest_RealizationPassed(t *testing.T) {
 	b := baseBills()
 	res, err := calculateAt(b, today(2024, 6, 20))
@@ -294,7 +294,7 @@ func TestFormatWhatsApp_ContainsKeyFields(t *testing.T) {
 	}
 }
 
-// Sanitize: tanda * di nama harus di-escape supaya tidak break formatting WA.
+// Sanitize tanda * di nama harus di-escape supaya tidak break formatting WA.
 func TestFormatWhatsApp_SanitizesMarkdown(t *testing.T) {
 	b := baseBills()
 	b.Name = "PT *PALSU*"

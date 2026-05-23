@@ -11,7 +11,7 @@ import (
 
 // MiniApp mengirim tombol URL yang membuka miniapp.
 //
-// Catatan: tgbotapi v5.5.1 belum punya InlineKeyboardButtonWebApp. Fallback
+// Catatan tgbotapi v5.5.1 belum punya InlineKeyboardButtonWebApp. Fallback
 // pakai NewInlineKeyboardButtonURL — user tetap bisa klik link untuk buka
 // halaman mini app. Saat library di-upgrade dan punya WebApp button, ganti
 // ke `NewInlineKeyboardButtonWebApp` agar mini app dibuka in-app oleh

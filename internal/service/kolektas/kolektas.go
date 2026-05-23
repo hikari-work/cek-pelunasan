@@ -26,7 +26,7 @@ type PageResult struct {
 	Size  int64
 }
 
-// FindByKelompok: page 1-based (sesuai konvensi tampilan bot).
+// FindByKelompok page 1-based (sesuai konvensi tampilan bot).
 func (s *Service) FindByKelompok(ctx context.Context, kelompok string, page, size int64) (PageResult, error) {
 	zero := page - 1
 	if zero < 0 {

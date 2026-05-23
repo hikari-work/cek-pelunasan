@@ -68,7 +68,7 @@ func (m *Mongo) Close(ctx context.Context) error {
 }
 
 // dbNameFromURI mengekstrak nama database dari URI MongoDB.
-// Ex: "mongodb://host:27017/cek_pelunasan?opts=..." -> "cek_pelunasan".
+// Ex "mongodb://host:27017/cek_pelunasan?opts=..." -> "cek_pelunasan".
 func dbNameFromURI(uri string) string {
 	// Cari "/" setelah host, ambil sampai "?".
 	i := -1

@@ -24,7 +24,7 @@ import (
 //     (fasilitas aktif & semua) lewat slik.PDFGenerator.
 //  5. Kirim 3 dokumen: PDF asli, PDF fasilitas aktif, PDF semua.
 //
-// Fallback: kalau langkah 4 gagal di bagian generate (NIK tidak ketemu,
+// Fallback kalau langkah 4 gagal di bagian generate (NIK tidak ketemu,
 // txt tidak ada, wkhtmltopdf error, dst), kirim PDF asli saja dengan
 // caption yang menjelaskan kondisi.
 type Slik struct {
@@ -217,12 +217,12 @@ func folderFromPDFKey(key string) string {
 
 // extractSlikDisplayName ambil bagian nama tampilan dari nama file.
 //
-// Contoh: "2026_05/pdf/SMG_2024_budi_santoso.pdf" → "Budi_Santoso".
+// Contoh "2026_05/pdf/SMG_2024_budi_santoso.pdf" → "Budi_Santoso".
 // Algoritma ikut legacy: split basename (tanpa ekstensi) di "_", skip 2
 // segmen pertama (kode kantor + tahun), capitalize huruf pertama setiap
 // sisanya, gabung dengan "_".
 //
-// Fallback: kalau cuma <= 2 segmen, return basename tanpa ekstensi apa adanya.
+// Fallback kalau cuma <= 2 segmen, return basename tanpa ekstensi apa adanya.
 func extractSlikDisplayName(key string) string {
 	base := key
 	if i := strings.LastIndex(key, "/"); i >= 0 {

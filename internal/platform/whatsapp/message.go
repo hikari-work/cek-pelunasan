@@ -3,7 +3,7 @@ package whatsapp
 import (
 	"strings"
 
-	waE2E "go.mau.fi/whatsmeow/proto/waE2E"
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 )
@@ -105,7 +105,7 @@ func fromEvent(evt *events.Message) *IncomingMessage {
 }
 
 // extractBodyAndReply ambil teks utama + replied-to ID dari struct waE2E.
-// Urutan: Conversation, ExtendedTextMessage, lalu caption media.
+// Urutan Conversation, ExtendedTextMessage, lalu caption media.
 func extractBodyAndReply(m *waE2E.Message) (body, repliedTo string) {
 	if c := m.GetConversation(); c != "" {
 		return c, ""

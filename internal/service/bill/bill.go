@@ -91,7 +91,7 @@ func (s *Service) FindByName(ctx context.Context, name string, page, size int64)
 }
 
 // FindMinimalPaymentByBranch — port apa adanya dari Java.
-// Catatan: di legacy, parameter "branch" dipakai sebagai kios di
+// Catatan di legacy, parameter "branch" dipakai sebagai kios di
 // findByKiosAndTotalMin. Pertahankan kuirk-nya.
 func (s *Service) FindMinimalPaymentByBranch(ctx context.Context, branch string, page, size int64) (PageResult[entity.Bills], error) {
 	p := repository.Page{Page: page, Size: size}
@@ -119,7 +119,7 @@ func (s *Service) FindAllByBranch(ctx context.Context, branch string) ([]entity.
 	return s.repo.FindAllByBranch(ctx, branch)
 }
 
-// MinBunga: branch + minInterest > 0 + collectStatus=02 + product != KUBTP, dayLate dalam [minDayLate, 120).
+// MinBunga branch + minInterest > 0 + collectStatus=02 + product != KUBTP, dayLate dalam [minDayLate, 120).
 func (s *Service) FindMinimalBungaByBranch(ctx context.Context, branch string, minDayLate int) ([]entity.Bills, error) {
 	return s.repo.FindByBranchAndMinInterestAndDayLateBetween(ctx, branch, minDayLate, 120)
 }

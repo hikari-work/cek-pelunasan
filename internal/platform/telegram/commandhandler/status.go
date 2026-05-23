@@ -14,7 +14,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/utils"
 )
 
-// Status: ringkasan kesehatan sistem, jumlah user, jumlah data tagihan/kredit,
+// Status ringkasan kesehatan sistem, jumlah user, jumlah data tagihan/kredit,
 // dan penggunaan CPU/RAM. Eksekusi paralel pakai goroutine + WaitGroup.
 type Status struct {
 	Users      *users.Service

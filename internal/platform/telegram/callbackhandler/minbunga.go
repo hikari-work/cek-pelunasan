@@ -16,7 +16,7 @@ import (
 )
 
 // MinBungaBranch /minbunga branch picker (PIMP/ADMIN flow).
-// Callback: "minbunga_<branch>" — replace pesan "Pilih Cabang" jadi kalender.
+// Callback "minbunga_<branch>" — replace pesan "Pilih Cabang" jadi kalender.
 type MinBungaBranch struct {
 	Sessions *minbunga.SessionService
 }
@@ -51,7 +51,7 @@ func (h *MinBungaBranch) Handle(ctx context.Context, b *telegram.Bot, q *tgbotap
 	_ = b.AnswerCallback(q.ID, "")
 }
 
-// MinBungaCalendarToggle: callback "minbungaCal_<id>_YYYY-MM-DD".
+// MinBungaCalendarToggle callback "minbungaCal_<id>_YYYY-MM-DD".
 type MinBungaCalendarToggle struct {
 	Sessions *minbunga.SessionService
 }
@@ -85,7 +85,7 @@ func (h *MinBungaCalendarToggle) Handle(ctx context.Context, b *telegram.Bot, q 
 	_ = b.AnswerCallback(q.ID, "")
 }
 
-// MinBungaClear: callback "minbungaClear_<id>" — kosongkan tanggal terpilih.
+// MinBungaClear callback "minbungaClear_<id>" — kosongkan tanggal terpilih.
 type MinBungaClear struct {
 	Sessions *minbunga.SessionService
 }
@@ -116,7 +116,7 @@ func (h *MinBungaClear) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi
 	_ = b.AnswerCallback(q.ID, "")
 }
 
-// MinBungaConfirm: callback "minbungaConfirm_<id>" — eksekusi pencarian dan kirim
+// MinBungaConfirm callback "minbungaConfirm_<id>" — eksekusi pencarian dan kirim
 // hasil per chunk pesan, lalu hapus sesi.
 type MinBungaConfirm struct {
 	Sessions *minbunga.SessionService

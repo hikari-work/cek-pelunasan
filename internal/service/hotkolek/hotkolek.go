@@ -32,7 +32,7 @@ func NewService(bills *repository.BillsRepo, paying *repository.PayingRepo) *Ser
 func currentMonth() string  { return time.Now().In(jakartaTZ).Format("2006-01") }
 func previousMonth() string { return time.Now().In(jakartaTZ).AddDate(0, -1, 0).Format("2006-01") }
 
-// LocationCategories: tagihan di satu kios, dibagi 3 kategori sesuai legacy.
+// LocationCategories tagihan di satu kios, dibagi 3 kategori sesuai legacy.
 type LocationCategories struct {
 	MinimalPay []entity.Bills
 	FirstPay   []entity.Bills

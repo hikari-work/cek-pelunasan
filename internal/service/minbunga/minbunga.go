@@ -25,7 +25,7 @@ func toDated(b entity.Bills) DatedBill {
 	return DatedBill{Bill: b, DayLate: parseDayLate(b.DayLate)}
 }
 
-// BillsForDate: kelompok tagihan yang akan tembus hari ke-90 di tanggal targetDate.
+// BillsForDate kelompok tagihan yang akan tembus hari ke-90 di tanggal targetDate.
 type BillsForDate struct {
 	TargetDate time.Time
 	DaysDiff   int
@@ -34,7 +34,7 @@ type BillsForDate struct {
 
 // Calculate menghitung kelompok tagihan per tanggal target.
 //
-// Aturan: tagihan masuk grup tanggal X kalau dayLate + (X - today) >= 90.
+// Aturan tagihan masuk grup tanggal X kalau dayLate + (X - today) >= 90.
 // Tagihan dengan SPK yang sudah muncul di tanggal sebelumnya (urut menaik)
 // tidak ditampilkan ulang.
 func Calculate(allBills []entity.Bills, targets []time.Time) []BillsForDate {
@@ -73,7 +73,7 @@ func Calculate(allBills []entity.Bills, targets []time.Time) []BillsForDate {
 	return out
 }
 
-// MinDayLateThreshold: minimum dayLate yang masih mungkin tembus 90 hari di salah
+// MinDayLateThreshold minimum dayLate yang masih mungkin tembus 90 hari di salah
 // satu target. Bills dengan dayLate di bawah threshold ini tidak perlu di-load.
 func MinDayLateThreshold(targets []time.Time) int {
 	today := time.Now().In(jakartaTZ).Truncate(24 * time.Hour)
