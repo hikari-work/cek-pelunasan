@@ -35,7 +35,7 @@ import (
 	cbh "github.com/hikari-work/cek-pelunasan/internal/platform/telegram/callbackhandler"
 	cmdh "github.com/hikari-work/cek-pelunasan/internal/platform/telegram/commandhandler"
 	wa "github.com/hikari-work/cek-pelunasan/internal/platform/whatsapp"
-	whahandler "github.com/hikari-work/cek-pelunasan/internal/platform/whatsapp/whahandler"
+	"github.com/hikari-work/cek-pelunasan/internal/platform/whatsapp/whahandler"
 	"github.com/hikari-work/cek-pelunasan/internal/repository"
 	"github.com/hikari-work/cek-pelunasan/internal/service/auth"
 	"github.com/hikari-work/cek-pelunasan/internal/service/bill"
