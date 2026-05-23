@@ -79,8 +79,7 @@ func (c *Client) GetObject(ctx context.Context, key string) ([]byte, error) {
 	var buf bytes.Buffer
 	_, err = io.Copy(&buf, obj)
 	if err != nil {
-		var er minio.ErrorResponse
-		if errors.As(err, &er) && (er.Code == "NoSuchKey" || er.StatusCode == 404) {
+		if er, ok := errors.AsType[minio.ErrorResponse](err); ok && (er.Code == "NoSuchKey" || er.StatusCode == 404) {
 			return nil, nil
 		}
 		// minio kadang return error generic; cek string.
