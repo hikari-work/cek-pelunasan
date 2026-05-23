@@ -66,30 +66,8 @@ func (v *initDataVerifier) Verify(initData string) verifyResult {
 		}
 	}
 
-	keys := make([]string, 0, len(params))
-	for k := range params {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	var sb strings.Builder
-	for i, k := range keys {
-		if i > 0 {
-			sb.WriteByte('\n')
-		}
-		sb.WriteString(k)
-		sb.WriteByte('=')
-		sb.WriteString(params[k])
-	}
-
-	// secretKey = HMAC_SHA256("WebAppData", botToken)
-	secretMac := hmac.New(sha256.New, []byte("WebAppData"))
-	secretMac.Write([]byte(v.botToken))
-	secret := secretMac.Sum(nil)
-
-	mac := hmac.New(sha256.New, secret)
-	mac.Write([]byte(sb.String()))
-	expected := hex.EncodeToString(mac.Sum(nil))
+	dataCheckString := buildDataCheckString(params)
+	expected := computeHash(v.botToken, dataCheckString)
 
 	if !strings.EqualFold(expected, receivedHash) {
 		return verifyResult{}
@@ -113,3 +91,37 @@ func (v *initDataVerifier) Verify(initData string) verifyResult {
 }
 
 func (verifyResult) String() string { return fmt.Sprintf("verify-result") }
+
+// buildDataCheckString membuat string untuk verifikasi HMAC dari params yang sudah
+// di-sort. Format: key1=value1\nkey2=value2\n...
+func buildDataCheckString(params map[string]string) string {
+	keys := make([]string, 0, len(params))
+	for k := range params {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var sb strings.Builder
+	for i, k := range keys {
+		if i > 0 {
+			sb.WriteByte('\n')
+		}
+		sb.WriteString(k)
+		sb.WriteByte('=')
+		sb.WriteString(params[k])
+	}
+	return sb.String()
+}
+
+// computeHash menghitung HMAC-SHA256 hash untuk Telegram Mini App verification.
+// secretKey = HMAC_SHA256("WebAppData", botToken)
+// hash = HMAC_SHA256(secretKey, dataCheckString)
+func computeHash(botToken, dataCheckString string) string {
+	secretMac := hmac.New(sha256.New, []byte("WebAppData"))
+	secretMac.Write([]byte(botToken))
+	secret := secretMac.Sum(nil)
+
+	mac := hmac.New(sha256.New, secret)
+	mac.Write([]byte(dataCheckString))
+	return hex.EncodeToString(mac.Sum(nil))
+}

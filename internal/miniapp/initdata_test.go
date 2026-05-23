@@ -1,13 +1,8 @@
 package miniapp
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"net/url"
-	"sort"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 )
@@ -16,29 +11,8 @@ import (
 // Output sudah URL-encoded; verifier akan men-decode kembali sebelum cek hash.
 func buildSignedInitData(t *testing.T, botToken string, fields map[string]string) string {
 	t.Helper()
-	keys := make([]string, 0, len(fields))
-	for k := range fields {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	var sb strings.Builder
-	for i, k := range keys {
-		if i > 0 {
-			sb.WriteByte('\n')
-		}
-		sb.WriteString(k)
-		sb.WriteByte('=')
-		sb.WriteString(fields[k])
-	}
-
-	secretMac := hmac.New(sha256.New, []byte("WebAppData"))
-	secretMac.Write([]byte(botToken))
-	secret := secretMac.Sum(nil)
-
-	mac := hmac.New(sha256.New, secret)
-	mac.Write([]byte(sb.String()))
-	hash := hex.EncodeToString(mac.Sum(nil))
+	dataCheckString := buildDataCheckString(fields)
+	hash := computeHash(botToken, dataCheckString)
 
 	values := url.Values{}
 	for k, v := range fields {
