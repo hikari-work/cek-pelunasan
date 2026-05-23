@@ -34,7 +34,7 @@ func (h *SelectBranch) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.
 		editNotFound(b, chatID, q.Message.MessageID)
 		return
 	}
-	text, kb := cmdh.BuildBillsListView(ctx, h.Bills, page, name, branch, 0)
+	text, kb := cmdh.BuildBillsListView(page, name, branch, 0)
 	_ = b.EditTextWithMarkup(chatID, q.Message.MessageID, text, kb)
 }
 
@@ -64,7 +64,7 @@ func (h *PagingBills) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.C
 		answerNotFound(b, q.ID)
 		return
 	}
-	text, kb := cmdh.BuildBillsListView(ctx, h.Bills, page, name, branch, pageNum)
+	text, kb := cmdh.BuildBillsListView(page, name, branch, pageNum)
 	_ = b.EditTextWithMarkup(chatID, q.Message.MessageID, text, kb)
 }
 

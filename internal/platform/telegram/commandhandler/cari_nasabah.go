@@ -93,6 +93,6 @@ func showBills(ctx context.Context, b *telegram.Bot, bills *bill.Service, chatID
 		_, _ = b.SendText(chatID, "❌ *Data tidak ditemukan*")
 		return
 	}
-	text, kb := BuildBillsListView(ctx, bills, page, name, branch, 0)
+	text, kb := BuildBillsListView(page, name, branch, 0)
 	_, _ = b.SendTextWithKeyboard(chatID, text, kb)
 }

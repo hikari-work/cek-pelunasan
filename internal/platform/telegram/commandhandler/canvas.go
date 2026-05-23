@@ -29,7 +29,11 @@ func (h *Canvas) Handle(ctx context.Context, b *telegram.Bot, msg *tgbotapi.Mess
 	}
 	keywords := splitCanvasKeywords(rest)
 	page, err := h.Savings.FindFiltered(ctx, keywords, 0, 5)
-	if err != nil || len(page.Items) == 0 {
+	if err != nil {
+		_, _ = b.SendText(chatID, "Tidak ada data yang ditemukan")
+		return
+	}
+	if len(page.Items) == 0 {
 		_, _ = b.SendText(chatID, "Tidak ada data yang ditemukan")
 		return
 	}

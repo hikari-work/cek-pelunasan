@@ -21,9 +21,3 @@ func (h *pendingHandler) Description() string { return h.desc }
 func (h *pendingHandler) Handle(_ context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
 	_, _ = b.SendText(msg.Chat.ID, "🚧 Perintah `"+h.cmd+"` masih dimigrasikan ke versi Go. Coba lagi nanti.")
 }
-
-// Pending bikin handler stub untuk command yang belum sempat di-port.
-// Description tetap diisi supaya menu bot Telegram tetap menampilkannya.
-func Pending(cmd, desc string) telegram.CommandHandler {
-	return &pendingHandler{cmd: cmd, desc: desc}
-}

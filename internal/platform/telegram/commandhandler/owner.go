@@ -28,7 +28,7 @@ var twelveDigitPattern = regexp.MustCompile(`\d{12}`)
 func (h *Owner) Command() string     { return "/owner" }
 func (h *Owner) Description() string { return "Hubungi owner bot" }
 
-func (h *Owner) Handle(ctx context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
+func (h *Owner) Handle(_ context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
 	chatID := msg.Chat.ID
 	text := strings.TrimSpace(msg.Text)
 
@@ -62,10 +62,4 @@ func selectServicesKeyboard(num string) tgbotapi.InlineKeyboardMarkup {
 			tgbotapi.NewInlineKeyboardButtonData("Tabungan", "services_Tabungan_"+num),
 		),
 	)
-}
-
-// IsTwelveDigit dipakai router untuk fallback kalau pesan punya 12 digit
-// tapi bukan command. Tidak dipakai di sini, sekedar contoh untuk dokumentasi.
-func IsTwelveDigit(s string) bool {
-	return twelveDigitPattern.MatchString(s)
 }

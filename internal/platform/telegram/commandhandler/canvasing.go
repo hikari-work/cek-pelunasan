@@ -33,7 +33,11 @@ func (h *Canvasing) Handle(ctx context.Context, b *telegram.Bot, msg *tgbotapi.M
 	}
 	keywords := strings.Fields(rest)
 	page, err := h.History.SearchAddressByKeywords(ctx, keywords, 0)
-	if err != nil || len(page.Items) == 0 {
+	if err != nil {
+		_, _ = b.SendText(chatID, fmt.Sprintf("Data dengan alamat %s Tidak Ditemukan\n", rest))
+		return
+	}
+	if len(page.Items) == 0 {
 		_, _ = b.SendText(chatID, fmt.Sprintf("Data dengan alamat %s Tidak Ditemukan\n", rest))
 		return
 	}
@@ -97,6 +101,3 @@ func formatCanvasingItem(h *entity.CreditHistory) string {
 func BuildCanvasingView(page credithistory.PageResult, address string, currentPage int64) (string, tgbotapi.InlineKeyboardMarkup) {
 	return buildCanvasingView(page, address, currentPage)
 }
-
-// _ to keep context import used in signature for future.
-var _ = context.TODO

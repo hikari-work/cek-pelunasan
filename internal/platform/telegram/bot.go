@@ -14,7 +14,6 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"github.com/hikari-work/cek-pelunasan/internal/entity"
 	"github.com/hikari-work/cek-pelunasan/internal/service/auth"
 )
 
@@ -97,7 +96,11 @@ func (b *Bot) DownloadFile(fileID string) ([]byte, error) {
 	if resp.StatusCode/100 != 2 {
 		return nil, fmt.Errorf("download file: %s", resp.Status)
 	}
-	return io.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // AnswerCallback merespons callback query (hilangkan loading spinner di tombol).
@@ -252,45 +255,4 @@ func (r *Router) dispatchCallback(ctx context.Context, b *Bot, q *tgbotapi.Callb
 		}
 	}
 	h.Handle(ctx, b, q)
-}
-
-// AuthMiddleware tolak chatID yang tidak terdaftar di AuthorizedChats.
-// Kirim pesan penolakan ringan biar user tahu.
-func AuthMiddleware(authed *auth.AuthorizedChats) MiddlewareFunc {
-	return func(ctx context.Context, b *Bot, chatID int64) bool {
-		if !authed.IsAuthorized(chatID) {
-			_, _ = b.SendText(chatID, "Anda tidak memiliki akses ke bot ini")
-			return false
-		}
-		return true
-	}
-}
-
-// RoleMiddleware tolak kalau role pengguna tidak masuk daftar allowed.
-// ADMIN selalu lolos. Kalau allowed kosong, hanya cek "sudah authorized".
-func RoleMiddleware(authed *auth.AuthorizedChats, allowed ...entity.Role) MiddlewareFunc {
-	return func(ctx context.Context, b *Bot, chatID int64) bool {
-		if !authed.IsAuthorized(chatID) {
-			_, _ = b.SendText(chatID, "Anda tidak memiliki akses ke bot ini")
-			return false
-		}
-		role, err := authed.Roles(ctx, chatID)
-		if err != nil {
-			_, _ = b.SendText(chatID, "Gagal memeriksa role.")
-			return false
-		}
-		if role == entity.RoleAdmin {
-			return true
-		}
-		if len(allowed) == 0 {
-			return true
-		}
-		for _, r := range allowed {
-			if role == r {
-				return true
-			}
-		}
-		_, _ = b.SendText(chatID, "Anda tidak memiliki akses ke bot ini")
-		return false
-	}
 }

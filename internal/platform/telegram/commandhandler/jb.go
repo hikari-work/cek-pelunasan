@@ -40,7 +40,11 @@ func (h *JatuhBayar) Handle(ctx context.Context, b *telegram.Bot, msg *tgbotapi.
 	}
 	today := utils.DayOfMonth(time.Now().In(logsvc.JakartaTZ))
 	page, ok := fetchJB(ctx, h.Bills, user, today, 0)
-	if !ok || len(page.Items) == 0 {
+	if !ok {
+		_, _ = b.SendText(chatID, "❌ *Data tidak ditemukan*")
+		return
+	}
+	if len(page.Items) == 0 {
 		_, _ = b.SendText(chatID, "❌ *Data tidak ditemukan*")
 		return
 	}

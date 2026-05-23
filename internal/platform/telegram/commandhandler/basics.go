@@ -24,7 +24,7 @@ type Start struct {
 func (h *Start) Command() string     { return "/start" }
 func (h *Start) Description() string { return "Mengecek Bot Apakah Aktif" }
 
-func (h *Start) Handle(ctx context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
+func (h *Start) Handle(_ context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
 	chatID := msg.Chat.ID
 	if h.Authed.IsAuthorized(chatID) {
 		_, _ = b.SendText(chatID, "👋 *PONG!!!*\n")
@@ -40,7 +40,7 @@ type ID struct{}
 func (h *ID) Command() string     { return "/id" }
 func (h *ID) Description() string { return "Menampilkan chat ID kamu" }
 
-func (h *ID) Handle(ctx context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
+func (h *ID) Handle(_ context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
 	_, _ = b.SendText(msg.Chat.ID, "Chat ID kamu: `"+strconv.FormatInt(msg.Chat.ID, 10)+"`")
 }
 
@@ -50,7 +50,7 @@ type Help struct{}
 func (h *Help) Command() string     { return "/help" }
 func (h *Help) Description() string { return "Menampilkan menu bantuan dan daftar fitur" }
 
-func (h *Help) Handle(ctx context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
+func (h *Help) Handle(_ context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
 	const text = `Bot ini dipakai untuk mencari tagihan dan pelunasan.
 
 Perintah dasar:

@@ -1,7 +1,6 @@
 package commandhandler
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -19,8 +18,6 @@ import (
 // SelectBranchCallbackHandler. Dipakai oleh command (/cariNasabah)
 // dan oleh callback (branch picker, tombol Kembali, paging).
 func BuildBillsListView(
-	ctx context.Context,
-	billsSvc *bill.Service,
 	page bill.PageResult[entity.Bills],
 	name, branch string,
 	currentPage int64,
@@ -35,7 +32,7 @@ func BuildBillsListView(
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("🏦 *DAFTAR NASABAH*\n══════════════════\n📋 Halaman %d dari %d\n",
 		currentPage+1, totalPages))
-	for _, bill := range page.Items {
+	for _, b := range page.Items {
 		sb.WriteString(fmt.Sprintf(`
 🔷 *%s*
 ────────────────
@@ -48,11 +45,11 @@ func BuildBillsListView(
 ▪️ AO			: %s
 ────────────────
 `,
-			bill.Name,
-			bill.NoSpk,
-			bill.Address,
-			utils.FormatRupiah(bill.Plafond),
-			bill.AccountOfficer,
+			b.Name,
+			b.NoSpk,
+			b.Address,
+			utils.FormatRupiah(b.Plafond),
+			b.AccountOfficer,
 		))
 	}
 
@@ -85,10 +82,10 @@ func buildBillsKeyboard(page bill.PageResult[entity.Bills], name, branch string,
 
 	// Baris nama (2 per baris).
 	current := make([]tgbotapi.InlineKeyboardButton, 0, 2)
-	for i, bill := range page.Items {
+	for i, b := range page.Items {
 		current = append(current, tgbotapi.NewInlineKeyboardButtonData(
-			truncate(bill.Name, 28),
-			fmt.Sprintf("tagihan_%s_%s_%s_%d", bill.NoSpk, name, branch, currentPage),
+			truncate(b.Name, 28),
+			fmt.Sprintf("tagihan_%s_%s_%s_%d", b.NoSpk, name, branch, currentPage),
 		))
 		if len(current) == 2 || i == len(page.Items)-1 {
 			rows = append(rows, current)
@@ -104,6 +101,3 @@ func truncate(s string, n int) string {
 	}
 	return s[:n-1] + "…"
 }
-
-// _ unused-context guard untuk jaga import kalau di masa depan butuh ctx.
-var _ = context.TODO
