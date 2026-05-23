@@ -58,58 +58,6 @@ func editNotFound(b *telegram.Bot, chatID int64, messageID int) {
 	_ = b.EditText(chatID, messageID, "❌ *Data tidak ditemukan*")
 }
 
-// buildPaginationKeyboard membuat inline keyboard untuk pagination dengan tombol prev/next.
-// page: struct dengan field Page, Size, Total (int64)
-// prefix: callback prefix untuk tombol (e.g., "paging", "savingsNext")
-// params: parameter tambahan untuk callback data (e.g., name, branch)
-func buildPaginationKeyboard(page interface {
-	GetPage() int64
-	GetSize() int64
-	GetTotal() int64
-}, prefix string, params ...string) tgbotapi.InlineKeyboardMarkup {
-	currentPage := page.GetPage()
-	size := page.GetSize()
-	total := page.GetTotal()
-
-	totalPages := int64(0)
-	if size > 0 {
-		totalPages = (total + size - 1) / size
-	}
-
-	row := make([]tgbotapi.InlineKeyboardButton, 0, 3)
-
-	// Prev button
-	if currentPage > 0 {
-		callbackData := prefix
-		for _, p := range params {
-			callbackData += "_" + p
-		}
-		callbackData += "_" + strconv.FormatInt(currentPage-1, 10)
-		row = append(row, tgbotapi.NewInlineKeyboardButtonData("⬅ Prev", callbackData))
-	}
-
-	// Current range indicator
-	first := currentPage*size + 1
-	last := currentPage*size + int64(size)
-	if last > total {
-		last = total
-	}
-	rangeText := strconv.FormatInt(first, 10) + " - " + strconv.FormatInt(last, 10) + " / " + strconv.FormatInt(total, 10)
-	row = append(row, tgbotapi.NewInlineKeyboardButtonData(rangeText, "none"))
-
-	// Next button
-	if currentPage+1 < totalPages {
-		callbackData := prefix
-		for _, p := range params {
-			callbackData += "_" + p
-		}
-		callbackData += "_" + strconv.FormatInt(currentPage+1, 10)
-		row = append(row, tgbotapi.NewInlineKeyboardButtonData("Next ➡", callbackData))
-	}
-
-	return tgbotapi.NewInlineKeyboardMarkup(row)
-}
-
 // buildBranchKeyboard membuat inline keyboard untuk memilih branch.
 // branches: list nama branch
 // prefix: callback prefix (e.g., "branch", "branchtab")
@@ -130,7 +78,7 @@ func buildBranchKeyboard(branches []string, prefix, query string, perRow int) tg
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-// handleUserPaginationCallback adalah generic handler untuk pagination yang memerlukan user lookup.
+// UserPaginationHandler handleUserPaginationCallback adalah generic handler untuk pagination yang memerlukan user lookup.
 // Digunakan untuk pattern: parse callback -> get user -> fetch page -> render view.
 type UserPaginationHandler struct {
 	Users     *users.Service
