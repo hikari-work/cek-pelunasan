@@ -25,31 +25,19 @@ type TagihNext struct {
 func (h *TagihNext) Prefix() string { return "tagihNext" }
 
 func (h *TagihNext) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts, err := parseCallbackParts(q.Data, 3)
-	if err != nil {
-		answerInvalid(b, q.ID)
-		return
-	}
-	pageNum, err := parsePageNum(parts[2])
-	if err != nil {
-		answerInvalidPage(b, q.ID)
-		return
-	}
-	chatID := q.Message.Chat.ID
-
-	user, err := h.Users.FindByChatID(ctx, chatID)
-	if err != nil || user == nil {
-		answerUserNotFound(b, q.ID)
-		return
-	}
 	today := utils.DayOfMonth(time.Now().In(logsvc.JakartaTZ))
-	page, ok := cmdh.FetchJB(ctx, h.Bills, user, today, pageNum)
-	if !ok || len(page.Items) == 0 {
-		answerNotFound(b, q.ID)
-		return
+	handler := &UserPaginationHandler{
+		Users: h.Users,
+		FetchPage: func(ctx context.Context, user *entity.User, pageNum int64) (string, tgbotapi.InlineKeyboardMarkup, bool) {
+			page, ok := cmdh.FetchJB(ctx, h.Bills, user, today, pageNum)
+			if !ok || len(page.Items) == 0 {
+				return "", tgbotapi.InlineKeyboardMarkup{}, false
+			}
+			text, kb := cmdh.BuildJBView(page, user.UserCode, pageNum)
+			return text, kb, true
+		},
 	}
-	text, kb := cmdh.BuildJBView(page, user.UserCode, pageNum)
-	_ = b.EditTextWithMarkup(chatID, q.Message.MessageID, text, kb)
+	handler.Handle(ctx, b, q)
 }
 
 // suppress unused imports.

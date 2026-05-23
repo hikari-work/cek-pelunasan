@@ -1,13 +1,16 @@
 package callbackhandler
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
+	"github.com/hikari-work/cek-pelunasan/internal/entity"
 	"github.com/hikari-work/cek-pelunasan/internal/platform/telegram"
+	"github.com/hikari-work/cek-pelunasan/internal/service/users"
 )
 
 // parseCallbackParts memparse callback data dengan delimiter "_" dan validasi jumlah parts.
@@ -125,4 +128,37 @@ func buildBranchKeyboard(branches []string, prefix, query string, perRow int) tg
 	}
 
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+// handleUserPaginationCallback adalah generic handler untuk pagination yang memerlukan user lookup.
+// Digunakan untuk pattern: parse callback -> get user -> fetch page -> render view.
+type UserPaginationHandler struct {
+	Users     *users.Service
+	FetchPage func(ctx context.Context, user *entity.User, pageNum int64) (string, tgbotapi.InlineKeyboardMarkup, bool)
+}
+
+func (h *UserPaginationHandler) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
+	parts, err := parseCallbackParts(q.Data, 3)
+	if err != nil {
+		answerInvalid(b, q.ID)
+		return
+	}
+	pageNum, err := parsePageNum(parts[2])
+	if err != nil {
+		answerInvalidPage(b, q.ID)
+		return
+	}
+	chatID := q.Message.Chat.ID
+
+	user, err := h.Users.FindByChatID(ctx, chatID)
+	if err != nil || user == nil {
+		answerUserNotFound(b, q.ID)
+		return
+	}
+	text, kb, ok := h.FetchPage(ctx, user, pageNum)
+	if !ok {
+		answerNotFound(b, q.ID)
+		return
+	}
+	_ = b.EditTextWithMarkup(chatID, q.Message.MessageID, text, kb)
 }
