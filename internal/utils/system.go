@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"runtime"
 
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/mem"
@@ -24,9 +23,4 @@ func SystemSummary() string {
 	}
 
 	return fmt.Sprintf("%.2f%% | %dMB / %dMB", cpuPct, usedMB, totalMB)
-}
-
-// GoRuntimeInfo dipakai endpoint health untuk debugging.
-func GoRuntimeInfo() (numGoroutine int, version string) {
-	return runtime.NumGoroutine(), runtime.Version()
 }

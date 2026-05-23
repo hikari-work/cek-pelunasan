@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	waE2E "go.mau.fi/whatsmeow/proto/waE2E"
+"go.mau.fi/whatsmeow/proto/waE2E"
 
 	"github.com/hikari-work/cek-pelunasan/internal/platform/whatsapp"
 	"github.com/hikari-work/cek-pelunasan/internal/service/email"

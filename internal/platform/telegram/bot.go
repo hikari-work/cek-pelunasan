@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -92,7 +93,11 @@ func (b *Bot) DownloadFile(fileID string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			slog.Error("failed to close response body", "error", closeErr)
+		}
+	}()
 	if resp.StatusCode/100 != 2 {
 		return nil, fmt.Errorf("download file: %s", resp.Status)
 	}

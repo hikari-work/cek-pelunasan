@@ -44,7 +44,7 @@ func (h *ID) Handle(_ context.Context, b *telegram.Bot, msg *tgbotapi.Message) {
 	_, _ = b.SendText(msg.Chat.ID, "Chat ID kamu: `"+strconv.FormatInt(msg.Chat.ID, 10)+"`")
 }
 
-// Help: pesan ringkas + instruksi.
+// Help pesan ringkas + instruksi.
 type Help struct{}
 
 func (h *Help) Command() string     { return "/help" }

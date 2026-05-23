@@ -104,7 +104,7 @@ func parseDayLate(s string) int {
 }
 
 // SessionService menyimpan state UI pemilihan tanggal /minbunga di Mongo.
-// Dokumen punya TTL 30 menit (lihat entity.MinBungaSessionTTL + index Mongo).
+// Dokumen punya TTL 30 menit (diatur via index Mongo).
 type SessionService struct {
 	repo *repository.MinBungaSessionRepo
 }

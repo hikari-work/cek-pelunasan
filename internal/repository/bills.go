@@ -17,6 +17,16 @@ func NewBillsRepo(m *Mongo) *BillsRepo {
 	return &BillsRepo{coll: m.DB.Collection("tagihan")}
 }
 
+// deferCloseCursor returns a function that closes the cursor and logs any error.
+// Usage: defer deferCloseCursor(ctx, cur)()
+func deferCloseCursor(ctx context.Context, cur *mongo.Cursor) func() {
+	return func() {
+		if err := cur.Close(ctx); err != nil {
+			slog.Error("failed to close cursor", "error", err)
+		}
+	}
+}
+
 // Collection mengembalikan handle koleksi MongoDB mentah untuk operasi yang
 // belum ditampung di repository (mis. distinct di service layer).
 func (r *BillsRepo) Collection() *mongo.Collection {
@@ -185,11 +195,7 @@ func (r *BillsRepo) FindAllByBranch(ctx context.Context, branch string) ([]entit
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if closeErr := cur.Close(ctx); closeErr != nil {
-			slog.Error("failed to close cursor", "error", closeErr)
-		}
-	}()
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.Bills
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
@@ -203,11 +209,7 @@ func (r *BillsRepo) FindByBranchAndNoSpkNotIn(ctx context.Context, branch string
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if closeErr := cur.Close(ctx); closeErr != nil {
-			slog.Error("failed to close cursor", "error", closeErr)
-		}
-	}()
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.Bills
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
@@ -223,11 +225,7 @@ func (r *BillsRepo) FindByBranchAndDueDatePrefix(ctx context.Context, branch, pr
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if closeErr := cur.Close(ctx); closeErr != nil {
-			slog.Error("failed to close cursor", "error", closeErr)
-		}
-	}()
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.Bills
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
@@ -242,11 +240,7 @@ func (r *BillsRepo) FindByBranchAndRealizationPrefix(ctx context.Context, branch
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if closeErr := cur.Close(ctx); closeErr != nil {
-			slog.Error("failed to close cursor", "error", closeErr)
-		}
-	}()
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.Bills
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
@@ -262,11 +256,7 @@ func (r *BillsRepo) FindByBranchAndMinInterestAndDayLateBetween(ctx context.Cont
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if closeErr := cur.Close(ctx); closeErr != nil {
-			slog.Error("failed to close cursor", "error", closeErr)
-		}
-	}()
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.Bills
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
@@ -280,11 +270,7 @@ func (r *BillsRepo) FindByAOAndMinInterestAndDayLateBetween(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if closeErr := cur.Close(ctx); closeErr != nil {
-			slog.Error("failed to close cursor", "error", closeErr)
-		}
-	}()
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.Bills
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
@@ -327,11 +313,7 @@ func (r *BillsRepo) findPaged(ctx context.Context, filter bson.M, page Page, sor
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if closeErr := cur.Close(ctx); closeErr != nil {
-			slog.Error("failed to close cursor", "error", closeErr)
-		}
-	}()
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.Bills
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err

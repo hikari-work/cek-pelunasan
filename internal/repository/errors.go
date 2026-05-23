@@ -18,8 +18,7 @@ func isDuplicateKeyError(err error) bool {
 	if err == nil {
 		return false
 	}
-	var bwe mongo.BulkWriteException
-	if errors.As(err, &bwe) {
+	if bwe, ok := errors.AsType[mongo.BulkWriteException](err); ok {
 		if len(bwe.WriteErrors) == 0 {
 			return false
 		}
@@ -30,8 +29,7 @@ func isDuplicateKeyError(err error) bool {
 		}
 		return true
 	}
-	var we mongo.WriteException
-	if errors.As(err, &we) {
+	if we, ok := errors.AsType[mongo.WriteException](err); ok {
 		if len(we.WriteErrors) == 0 {
 			return false
 		}

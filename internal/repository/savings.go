@@ -58,7 +58,7 @@ func (r *SavingsRepo) FindByNameAndBranch(ctx context.Context, name, branch stri
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.Savings
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (r *SavingsRepo) FindByName(ctx context.Context, name string) ([]entity.Sav
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.Savings
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err

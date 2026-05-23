@@ -82,5 +82,5 @@ func formatTanggalID(t time.Time) string {
 
 func formatTanggalDayID(t time.Time) string {
 	hari := []string{"Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"}
-	return hari[int(t.Weekday())] + ", " + formatTanggalID(t)
+	return hari[t.Weekday()] + ", " + formatTanggalID(t)
 }

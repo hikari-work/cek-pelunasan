@@ -7,8 +7,11 @@ import (
 	waE2E "go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
-	"google.golang.org/protobuf/proto"
 )
+
+func stringPtr(s string) *string {
+	return &s
+}
 
 func TestFromEvent_Conversation(t *testing.T) {
 	evt := &events.Message{
@@ -22,7 +25,7 @@ func TestFromEvent_Conversation(t *testing.T) {
 			PushName: "Budi",
 		},
 		Message: &waE2E.Message{
-			Conversation: proto.String("  .p 010600001234  "),
+			Conversation: stringPtr("  .p 010600001234  "),
 		},
 	}
 
@@ -55,9 +58,9 @@ func TestFromEvent_ExtendedTextWithReply(t *testing.T) {
 		},
 		Message: &waE2E.Message{
 			ExtendedTextMessage: &waE2E.ExtendedTextMessage{
-				Text: proto.String(".email"),
+				Text: stringPtr(".email"),
 				ContextInfo: &waE2E.ContextInfo{
-					StanzaID: proto.String("REPLIED_ID"),
+					StanzaID: stringPtr("REPLIED_ID"),
 				},
 			},
 		},
@@ -86,7 +89,7 @@ func TestFromEvent_DocumentWithCaption(t *testing.T) {
 		},
 		Message: &waE2E.Message{
 			DocumentMessage: &waE2E.DocumentMessage{
-				Caption: proto.String("invoice"),
+				Caption: stringPtr("invoice"),
 			},
 		},
 	}

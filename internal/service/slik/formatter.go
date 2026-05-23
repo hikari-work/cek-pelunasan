@@ -24,7 +24,7 @@ var indMonthShort = [12]string{"Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", 
 type PageData struct {
 	ContentKey string
 	IDNumber   string
-	DTO        *SlikJsonDto
+	DTO        *JsonDto
 }
 
 // FormatPage bangun pesan Markdown untuk halaman ke-current dari total. Output

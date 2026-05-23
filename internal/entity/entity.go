@@ -133,8 +133,6 @@ type SlikNotifiedFile struct {
 	NotifiedAt time.Time `bson:"notifiedAt"`
 }
 
-const MinBungaSessionTTL = 30 * time.Minute
-
 type MinBungaSession struct {
 	ChatID        string    `bson:"_id"`
 	Identifier    string    `bson:"identifier,omitempty"`

@@ -64,7 +64,7 @@ func TestParseSlikJSON_basic(t *testing.T) {
 }
 
 func TestFormatPage_full(t *testing.T) {
-	dto := &SlikJsonDto{
+	dto := &JsonDto{
 		Individual: Individual{
 			DataPokokDebitur: []DataPokokDebitur{{
 				NamaDebitur: "Budi", NoIdentitas: "3201234567890001", Alamat: "Jl A",

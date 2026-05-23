@@ -6,11 +6,11 @@ import (
 	"strings"
 )
 
-// SlikJsonDto representasi struktur JSON SLIK (file txt isinya JSON OJK).
+// JsonDto representasi struktur JSON SLIK (file txt isinya JSON OJK).
 // Field tidak dikenal otomatis di-skip; tahunBulanXX (24 bulan terakhir) ditangkap
 // di TahunBulan pakai unmarshal map manual karena Go tidak punya equivalent
 // JsonAnySetter — diparse dua-pass (struct + map).
-type SlikJsonDto struct {
+type JsonDto struct {
 	Header     Header     `json:"header"`
 	Individual Individual `json:"individual"`
 }
@@ -109,7 +109,7 @@ func (k *KreditPembiayaan) UnmarshalJSON(data []byte) error {
 
 // ParseSlikJSON parse byte array JSON SLIK. Coba UTF-8 dulu; kalau gagal,
 // retry dengan Windows-1252 fallback (legacy convention untuk file lama).
-func ParseSlikJSON(data []byte) (*SlikJsonDto, error) {
+func ParseSlikJSON(data []byte) (*JsonDto, error) {
 	dto, err := unmarshalSlik(data)
 	if err == nil {
 		return dto, nil
@@ -118,8 +118,8 @@ func ParseSlikJSON(data []byte) (*SlikJsonDto, error) {
 	return unmarshalSlik(decodeWindows1252(data))
 }
 
-func unmarshalSlik(data []byte) (*SlikJsonDto, error) {
-	var dto SlikJsonDto
+func unmarshalSlik(data []byte) (*JsonDto, error) {
+	var dto JsonDto
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.UseNumber()
 	// UseNumber dipakai supaya angka besar tidak kehilangan presisi; tapi kita

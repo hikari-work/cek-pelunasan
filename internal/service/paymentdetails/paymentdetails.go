@@ -31,55 +31,60 @@ type PageResult struct {
 	Size  int64
 }
 
-func (s *Service) FindByKodeAO(ctx context.Context, kodeAO string, page, size int64) (PageResult, error) {
+// findPaged is a helper to eliminate duplicate pagination logic.
+func (s *Service) findPaged(
+	ctx context.Context,
+	page, size int64,
+	findFn func(context.Context, repository.Page) ([]entity.PaymentDetails, error),
+	countFn func(context.Context) (int64, error),
+) (PageResult, error) {
 	zero := page - 1
 	if zero < 0 {
 		zero = 0
 	}
 	p := repository.Page{Page: zero, Size: size}
-	items, err := s.repo.FindByKodeAO(ctx, kodeAO, p)
+	items, err := findFn(ctx, p)
 	if err != nil {
 		return PageResult{}, err
 	}
-	total, err := s.repo.CountByKodeAO(ctx, kodeAO)
+	total, err := countFn(ctx)
 	if err != nil {
 		return PageResult{}, err
 	}
 	return PageResult{Items: items, Total: total, Page: page, Size: size}, nil
+}
+
+func (s *Service) FindByKodeAO(ctx context.Context, kodeAO string, page, size int64) (PageResult, error) {
+	return s.findPaged(ctx, page, size,
+		func(ctx context.Context, p repository.Page) ([]entity.PaymentDetails, error) {
+			return s.repo.FindByKodeAO(ctx, kodeAO, p)
+		},
+		func(ctx context.Context) (int64, error) {
+			return s.repo.CountByKodeAO(ctx, kodeAO)
+		},
+	)
 }
 
 func (s *Service) FindByCabangAndTanggal(ctx context.Context, cabang, tanggal string, page, size int64) (PageResult, error) {
-	zero := page - 1
-	if zero < 0 {
-		zero = 0
-	}
-	p := repository.Page{Page: zero, Size: size}
-	items, err := s.repo.FindByKodeCabangAndTanggal(ctx, cabang, tanggal, p)
-	if err != nil {
-		return PageResult{}, err
-	}
-	total, err := s.repo.CountByKodeCabangAndTanggal(ctx, cabang, tanggal)
-	if err != nil {
-		return PageResult{}, err
-	}
-	return PageResult{Items: items, Total: total, Page: page, Size: size}, nil
+	return s.findPaged(ctx, page, size,
+		func(ctx context.Context, p repository.Page) ([]entity.PaymentDetails, error) {
+			return s.repo.FindByKodeCabangAndTanggal(ctx, cabang, tanggal, p)
+		},
+		func(ctx context.Context) (int64, error) {
+			return s.repo.CountByKodeCabangAndTanggal(ctx, cabang, tanggal)
+		},
+	)
 }
 
 func (s *Service) FindPelunasanByTanggal(ctx context.Context, tanggal string, page, size int64) (PageResult, error) {
-	zero := page - 1
-	if zero < 0 {
-		zero = 0
-	}
-	p := repository.Page{Page: zero, Size: size}
-	items, err := s.repo.FindByTanggalAndFlagPelunasan(ctx, tanggal, true, p)
-	if err != nil {
-		return PageResult{}, err
-	}
-	total, err := s.repo.CountByTanggalAndFlagPelunasan(ctx, tanggal, true)
-	if err != nil {
-		return PageResult{}, err
-	}
-	return PageResult{Items: items, Total: total, Page: page, Size: size}, nil
+	return s.findPaged(ctx, page, size,
+		func(ctx context.Context, p repository.Page) ([]entity.PaymentDetails, error) {
+			return s.repo.FindByTanggalAndFlagPelunasan(ctx, tanggal, true, p)
+		},
+		func(ctx context.Context) (int64, error) {
+			return s.repo.CountByTanggalAndFlagPelunasan(ctx, tanggal, true)
+		},
+	)
 }
 
 func (s *Service) FindByKodeAOAndTanggal(ctx context.Context, kodeAO, tanggal string) ([]entity.PaymentDetails, error) {

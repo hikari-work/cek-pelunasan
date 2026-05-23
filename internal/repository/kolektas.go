@@ -47,7 +47,7 @@ func (r *KolekTasRepo) FindByKelompok(ctx context.Context, kelompok string, page
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.KolekTas
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (r *KolekTasRepo) FindAllByKelompok(ctx context.Context, kelompok string) (
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.KolekTas
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
