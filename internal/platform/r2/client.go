@@ -74,7 +74,12 @@ func (c *Client) GetObject(ctx context.Context, key string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer obj.Close()
+	defer func() {
+		if closeErr := obj.Close(); closeErr != nil {
+			// Log close error tapi tidak override return error
+			_ = closeErr
+		}
+	}()
 
 	var buf bytes.Buffer
 	_, err = io.Copy(&buf, obj)
