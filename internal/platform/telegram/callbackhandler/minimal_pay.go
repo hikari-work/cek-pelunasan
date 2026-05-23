@@ -2,8 +2,6 @@ package callbackhandler
 
 import (
 	"context"
-	"strconv"
-	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -23,25 +21,25 @@ type MinimalPayPaginate struct {
 func (h *MinimalPayPaginate) Prefix() string { return "minimalpay" }
 
 func (h *MinimalPayPaginate) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 3)
-	if len(parts) < 3 {
-		_ = b.AnswerCallback(q.ID, "Data callback tidak valid")
+	parts, err := parseCallbackParts(q.Data, 3)
+	if err != nil {
+		answerInvalid(b, q.ID)
 		return
 	}
-	pageNum, err := strconv.ParseInt(parts[2], 10, 64)
+	pageNum, err := parsePageNum(parts[2])
 	if err != nil {
-		_ = b.AnswerCallback(q.ID, "Halaman tidak valid")
+		answerInvalidPage(b, q.ID)
 		return
 	}
 	chatID := q.Message.Chat.ID
 	user, err := h.Users.FindByChatID(ctx, chatID)
 	if err != nil || user == nil {
-		_ = b.AnswerCallback(q.ID, "User tidak ditemukan")
+		answerUserNotFound(b, q.ID)
 		return
 	}
 	page, ok := cmdh.FetchMinimalPay(ctx, h.Bills, user, pageNum)
 	if !ok || len(page.Items) == 0 {
-		_ = b.AnswerCallback(q.ID, "Data tidak ditemukan")
+		answerNotFound(b, q.ID)
 		return
 	}
 	text, kb := cmdh.BuildMinimalPayView(page, user.UserCode, pageNum)
@@ -56,21 +54,21 @@ type KolektasPaginate struct {
 func (h *KolektasPaginate) Prefix() string { return "kolektas" }
 
 func (h *KolektasPaginate) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 3)
-	if len(parts) < 3 {
-		_ = b.AnswerCallback(q.ID, "Data callback tidak valid")
+	parts, err := parseCallbackParts(q.Data, 3)
+	if err != nil {
+		answerInvalid(b, q.ID)
 		return
 	}
 	kelompok := parts[1]
-	pageNum, err := strconv.ParseInt(parts[2], 10, 64)
+	pageNum, err := parsePageNum(parts[2])
 	if err != nil || pageNum < 1 {
-		_ = b.AnswerCallback(q.ID, "Halaman tidak valid")
+		answerInvalidPage(b, q.ID)
 		return
 	}
 	chatID := q.Message.Chat.ID
 	page, err := h.Service.FindByKelompok(ctx, kelompok, pageNum, 5)
 	if err != nil || len(page.Items) == 0 {
-		_ = b.AnswerCallback(q.ID, "Data tidak ditemukan")
+		answerNotFound(b, q.ID)
 		return
 	}
 	text, kb := cmdh.BuildKolektasView(page, kelompok)

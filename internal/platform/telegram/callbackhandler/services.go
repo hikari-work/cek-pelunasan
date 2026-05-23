@@ -2,7 +2,6 @@ package callbackhandler
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -22,8 +21,8 @@ type Services struct {
 func (h *Services) Prefix() string { return "services" }
 
 func (h *Services) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 3)
-	if len(parts) < 3 {
+	parts, err := parseCallbackParts(q.Data, 3)
+	if err != nil {
 		_ = b.AnswerCallback(q.ID, "Data tidak valid")
 		return
 	}
@@ -36,54 +35,24 @@ func (h *Services) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.Call
 	case "Pelunasan":
 		branches, err := h.Bills.ListAllBranches(ctx)
 		if err != nil || len(branches) == 0 {
-			_ = b.EditText(chatID, messageID, "❌ *Data tidak ditemukan*")
+			editNotFound(b, chatID, messageID)
 			return
 		}
-		kb := pelunasanBranchKB(branches, query)
+		kb := buildBranchKeyboard(branches, "branch", query, 3)
 		_ = b.EditTextWithMarkup(chatID, messageID,
 			"🏦 *Pilih Cabang untuk Pelunasan*\n\nNasabah: *"+query+"*", kb)
 	case "Tabungan":
 		branches, err := h.Savings.ListBranches(ctx, query)
 		if err != nil || len(branches) == 0 {
-			_ = b.EditText(chatID, messageID, "❌ *Data tidak ditemukan*")
+			editNotFound(b, chatID, messageID)
 			return
 		}
-		kb := tabunganBranchKB(branches, query)
+		kb := buildBranchKeyboard(branches, "branchtab", query, 4)
 		_ = b.EditTextWithMarkup(chatID, messageID,
 			"💰 *Pilih Cabang untuk Tabungan*\n\nNasabah: *"+query+"*", kb)
 	default:
 		_ = b.EditText(chatID, messageID, "❌ *Layanan tidak dikenali*")
 	}
-}
-
-// pelunasanBranchKB pakai prefix "branch_" yang sudah ditangani SelectBranch handler
-// di bills.go (paginate tagihan by name).
-func pelunasanBranchKB(branches []string, query string) tgbotapi.InlineKeyboardMarkup {
-	rows := make([][]tgbotapi.InlineKeyboardButton, 0, (len(branches)+2)/3)
-	row := make([]tgbotapi.InlineKeyboardButton, 0, 3)
-	for i, br := range branches {
-		row = append(row, tgbotapi.NewInlineKeyboardButtonData(br, "branch_"+br+"_"+query))
-		if len(row) == 3 || i == len(branches)-1 {
-			rows = append(rows, row)
-			row = make([]tgbotapi.InlineKeyboardButton, 0, 3)
-		}
-	}
-	return tgbotapi.NewInlineKeyboardMarkup(rows...)
-}
-
-// tabunganBranchKB pakai prefix "branchtab_" yang ditangani SavingsBranchSelect.
-// Legacy max 4 per baris; kita ikuti.
-func tabunganBranchKB(branches []string, query string) tgbotapi.InlineKeyboardMarkup {
-	rows := make([][]tgbotapi.InlineKeyboardButton, 0, (len(branches)+3)/4)
-	row := make([]tgbotapi.InlineKeyboardButton, 0, 4)
-	for i, br := range branches {
-		row = append(row, tgbotapi.NewInlineKeyboardButtonData(br, "branchtab_"+br+"_"+query))
-		if len(row) == 4 || i == len(branches)-1 {
-			rows = append(rows, row)
-			row = make([]tgbotapi.InlineKeyboardButton, 0, 4)
-		}
-	}
-	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
 // SavingsBranchSelect menangani callback "branchtab_<branch>_<query>" — branch
@@ -95,8 +64,8 @@ type SavingsBranchSelect struct {
 func (h *SavingsBranchSelect) Prefix() string { return "branchtab" }
 
 func (h *SavingsBranchSelect) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 3)
-	if len(parts) < 3 {
+	parts, err := parseCallbackParts(q.Data, 3)
+	if err != nil {
 		_ = b.AnswerCallback(q.ID, "Data tidak valid")
 		return
 	}
@@ -108,7 +77,7 @@ func (h *SavingsBranchSelect) Handle(ctx context.Context, b *telegram.Bot, q *tg
 	start := time.Now()
 	page, err := h.Savings.FindByNameAndBranch(ctx, query, branch, 0)
 	if err != nil || len(page.Items) == 0 {
-		_ = b.EditText(chatID, messageID, "❌ *Data tidak ditemukan*")
+		editNotFound(b, chatID, messageID)
 		return
 	}
 	text := h.Savings.FormatPage(ctx, page, time.Since(start).Milliseconds())

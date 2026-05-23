@@ -2,8 +2,6 @@ package callbackhandler
 
 import (
 	"context"
-	"strconv"
-	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -27,27 +25,27 @@ type TagihNext struct {
 func (h *TagihNext) Prefix() string { return "tagihNext" }
 
 func (h *TagihNext) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 3)
-	if len(parts) < 3 {
-		_ = b.AnswerCallback(q.ID, "Data callback tidak valid")
+	parts, err := parseCallbackParts(q.Data, 3)
+	if err != nil {
+		answerInvalid(b, q.ID)
 		return
 	}
-	pageNum, err := strconv.ParseInt(parts[2], 10, 64)
+	pageNum, err := parsePageNum(parts[2])
 	if err != nil {
-		_ = b.AnswerCallback(q.ID, "Halaman tidak valid")
+		answerInvalidPage(b, q.ID)
 		return
 	}
 	chatID := q.Message.Chat.ID
 
 	user, err := h.Users.FindByChatID(ctx, chatID)
 	if err != nil || user == nil {
-		_ = b.AnswerCallback(q.ID, "User tidak ditemukan")
+		answerUserNotFound(b, q.ID)
 		return
 	}
 	today := utils.DayOfMonth(time.Now().In(logsvc.JakartaTZ))
 	page, ok := cmdh.FetchJB(ctx, h.Bills, user, today, pageNum)
 	if !ok || len(page.Items) == 0 {
-		_ = b.AnswerCallback(q.ID, "Data tidak ditemukan")
+		answerNotFound(b, q.ID)
 		return
 	}
 	text, kb := cmdh.BuildJBView(page, user.UserCode, pageNum)

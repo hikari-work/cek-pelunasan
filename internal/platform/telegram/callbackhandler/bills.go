@@ -4,8 +4,6 @@ package callbackhandler
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -23,9 +21,9 @@ type SelectBranch struct {
 func (h *SelectBranch) Prefix() string { return "branch" }
 
 func (h *SelectBranch) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 3)
-	if len(parts) < 3 {
-		_ = b.AnswerCallback(q.ID, "Data callback tidak valid")
+	parts, err := parseCallbackParts(q.Data, 3)
+	if err != nil {
+		answerInvalid(b, q.ID)
 		return
 	}
 	branch, name := parts[1], parts[2]
@@ -33,7 +31,7 @@ func (h *SelectBranch) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.
 
 	page, err := h.Bills.FindByNameAndBranch(ctx, name, branch, 0, 5)
 	if err != nil || len(page.Items) == 0 {
-		_ = b.EditText(chatID, q.Message.MessageID, "❌ *Data tidak ditemukan*")
+		editNotFound(b, chatID, q.Message.MessageID)
 		return
 	}
 	text, kb := cmdh.BuildBillsListView(ctx, h.Bills, page, name, branch, 0)
@@ -48,22 +46,22 @@ type PagingBills struct {
 func (h *PagingBills) Prefix() string { return "paging" }
 
 func (h *PagingBills) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 4)
-	if len(parts) < 4 {
-		_ = b.AnswerCallback(q.ID, "Data callback tidak valid")
+	parts, err := parseCallbackParts(q.Data, 4)
+	if err != nil {
+		answerInvalid(b, q.ID)
 		return
 	}
 	name, branch := parts[1], parts[2]
-	pageNum, err := strconv.ParseInt(parts[3], 10, 64)
+	pageNum, err := parsePageNum(parts[3])
 	if err != nil {
-		_ = b.AnswerCallback(q.ID, "Halaman tidak valid")
+		answerInvalidPage(b, q.ID)
 		return
 	}
 	chatID := q.Message.Chat.ID
 
 	page, err := h.Bills.FindByNameAndBranch(ctx, name, branch, pageNum, 5)
 	if err != nil || len(page.Items) == 0 {
-		_ = b.AnswerCallback(q.ID, "Data tidak ditemukan")
+		answerNotFound(b, q.ID)
 		return
 	}
 	text, kb := cmdh.BuildBillsListView(ctx, h.Bills, page, name, branch, pageNum)
@@ -79,9 +77,9 @@ type Tagihan struct {
 func (h *Tagihan) Prefix() string { return "tagihan" }
 
 func (h *Tagihan) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 5)
-	if len(parts) < 5 {
-		_ = b.AnswerCallback(q.ID, "Data callback tidak valid")
+	parts, err := parseCallbackParts(q.Data, 5)
+	if err != nil {
+		answerInvalid(b, q.ID)
 		return
 	}
 	spk, name, branch, pageStr := parts[1], parts[2], parts[3], parts[4]
@@ -89,7 +87,7 @@ func (h *Tagihan) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.Callb
 
 	bills, err := h.Bills.GetByID(ctx, spk)
 	if err != nil || bills == nil {
-		_ = b.EditText(chatID, q.Message.MessageID, "❌ *Data tidak ditemukan*")
+		editNotFound(b, chatID, q.Message.MessageID)
 		return
 	}
 	text := h.Bills.DetailMarkdown(ctx, bills)

@@ -21,16 +21,16 @@ type SavingsBranchPick struct {
 func (h *SavingsBranchPick) Prefix() string { return "savingsBranch" }
 
 func (h *SavingsBranchPick) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 3)
-	if len(parts) < 3 {
-		_ = b.AnswerCallback(q.ID, "Data callback tidak valid")
+	parts, err := parseCallbackParts(q.Data, 3)
+	if err != nil {
+		answerInvalid(b, q.ID)
 		return
 	}
 	branch, name := parts[1], parts[2]
 	page, err := h.Savings.FindByNameAndBranch(ctx, name, branch, 0)
 	chatID := q.Message.Chat.ID
 	if err != nil || len(page.Items) == 0 {
-		_ = b.EditText(chatID, q.Message.MessageID, "❌ *Data tidak ditemukan*")
+		editNotFound(b, chatID, q.Message.MessageID)
 		return
 	}
 	text := h.Savings.FormatPage(ctx, page, 0)
@@ -46,21 +46,21 @@ type SavingsPaginate struct {
 func (h *SavingsPaginate) Prefix() string { return "savingsNext" }
 
 func (h *SavingsPaginate) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 4)
-	if len(parts) < 4 {
-		_ = b.AnswerCallback(q.ID, "Data callback tidak valid")
+	parts, err := parseCallbackParts(q.Data, 4)
+	if err != nil {
+		answerInvalid(b, q.ID)
 		return
 	}
 	branch, name := parts[1], parts[2]
-	pageNum, err := strconv.ParseInt(parts[3], 10, 64)
+	pageNum, err := parsePageNum(parts[3])
 	if err != nil {
-		_ = b.AnswerCallback(q.ID, "Halaman tidak valid")
+		answerInvalidPage(b, q.ID)
 		return
 	}
 	chatID := q.Message.Chat.ID
 	page, err := h.Savings.FindByNameAndBranch(ctx, name, branch, pageNum)
 	if err != nil || len(page.Items) == 0 {
-		_ = b.AnswerCallback(q.ID, "Data tidak ditemukan")
+		answerNotFound(b, q.ID)
 		return
 	}
 	text := h.Savings.FormatPage(ctx, page, 0)
@@ -100,22 +100,22 @@ type CanvasPaginate struct {
 func (h *CanvasPaginate) Prefix() string { return "canvas" }
 
 func (h *CanvasPaginate) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 3)
-	if len(parts) < 3 {
-		_ = b.AnswerCallback(q.ID, "Data callback tidak valid")
+	parts, err := parseCallbackParts(q.Data, 3)
+	if err != nil {
+		answerInvalid(b, q.ID)
 		return
 	}
 	address := parts[1]
-	pageNum, err := strconv.ParseInt(parts[2], 10, 64)
+	pageNum, err := parsePageNum(parts[2])
 	if err != nil {
-		_ = b.AnswerCallback(q.ID, "Halaman tidak valid")
+		answerInvalidPage(b, q.ID)
 		return
 	}
 	chatID := q.Message.Chat.ID
 	keywords := strings.Fields(strings.ReplaceAll(address, ",", " "))
 	page, err := h.Savings.FindFiltered(ctx, keywords, pageNum, 5)
 	if err != nil || len(page.Items) == 0 {
-		_ = b.AnswerCallback(q.ID, "Data tidak ditemukan")
+		answerNotFound(b, q.ID)
 		return
 	}
 	text, kb := cmdh.BuildCanvasView(page, address, pageNum)
@@ -130,22 +130,22 @@ type CanvasingPaginate struct {
 func (h *CanvasingPaginate) Prefix() string { return "namaTagihan" }
 
 func (h *CanvasingPaginate) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
-	parts := strings.SplitN(q.Data, "_", 3)
-	if len(parts) < 3 {
-		_ = b.AnswerCallback(q.ID, "Data callback tidak valid")
+	parts, err := parseCallbackParts(q.Data, 3)
+	if err != nil {
+		answerInvalid(b, q.ID)
 		return
 	}
 	address := parts[1]
-	pageNum, err := strconv.ParseInt(parts[2], 10, 64)
+	pageNum, err := parsePageNum(parts[2])
 	if err != nil {
-		_ = b.AnswerCallback(q.ID, "Halaman tidak valid")
+		answerInvalidPage(b, q.ID)
 		return
 	}
 	chatID := q.Message.Chat.ID
 	keywords := strings.Fields(address)
 	page, err := h.History.SearchAddressByKeywords(ctx, keywords, pageNum)
 	if err != nil || len(page.Items) == 0 {
-		_ = b.AnswerCallback(q.ID, "Data tidak ditemukan")
+		answerNotFound(b, q.ID)
 		return
 	}
 	text, kb := cmdh.BuildCanvasingView(page, address, pageNum)
