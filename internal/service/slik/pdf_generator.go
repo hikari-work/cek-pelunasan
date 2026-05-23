@@ -100,7 +100,7 @@ func (g *PDFGenerator) fetchHTML(ctx context.Context, body []byte, fasilitasAkti
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode/100 != 2 {
 		return "", fmt.Errorf("endpoint returned %s", resp.Status)
 	}
@@ -232,7 +232,7 @@ func fixSignatureGrid(doc *goquery.Document) {
 	}
 	for i := 0; i < 3 && i < limit; i++ {
 		text := strings.TrimSpace(children.Eq(i).Text())
-		fmt.Fprintf(&tableHTML, `<td style="border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;">%s</td>`, html.EscapeString(text))
+		_, _ = fmt.Fprintf(&tableHTML, `<td style="border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;">%s</td>`, html.EscapeString(text))
 	}
 	tableHTML.WriteString(`</tr><tr>`)
 	for i := 3; i < 6 && i < limit; i++ {

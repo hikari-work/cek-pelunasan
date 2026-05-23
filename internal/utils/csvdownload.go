@@ -57,7 +57,7 @@ func DownloadCSV(fileURL string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("download: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("status %d dari %s", resp.StatusCode, fileURL)
 	}
@@ -66,7 +66,7 @@ func DownloadCSV(fileURL string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("buka file tujuan: %w", err)
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 	if _, err := io.Copy(out, resp.Body); err != nil {
 		return "", fmt.Errorf("simpan file: %w", err)
 	}
@@ -80,7 +80,7 @@ func CountCSVDataLines(path string) int64 {
 	if err != nil {
 		return 0
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	var (
 		buf   = make([]byte, 64*1024)
 		count int64

@@ -136,8 +136,8 @@ func (s *Sender) SendDocument(ctx context.Context, to types.JID, data []byte, fi
 }
 
 // DownloadMedia ambil bytes media dari pesan inbound.
-// msg adalah waE2E.Message dari IncomingMessage.Raw — whatsmeow akan pilih
-// downloader yang tepat berdasarkan tipe media yang ada di message.
+// msg adalah waE2E.Message dari IncomingMessage.Raw — method ini akan pilih
+// tipe media yang tepat (image/document/video/audio/sticker) dan download.
 func (s *Sender) DownloadMedia(ctx context.Context, msg *waE2E.Message) ([]byte, error) {
 	if s == nil || s.cli == nil {
 		return nil, errors.New("whatsapp sender: client nil")
@@ -145,7 +145,25 @@ func (s *Sender) DownloadMedia(ctx context.Context, msg *waE2E.Message) ([]byte,
 	if msg == nil {
 		return nil, errors.New("whatsapp sender: message nil")
 	}
-	data, err := s.cli.DownloadAny(ctx, msg)
+
+	// Find the first non-nil downloadable message type
+	var downloadable whatsmeow.DownloadableMessage
+	switch {
+	case msg.GetImageMessage() != nil:
+		downloadable = msg.GetImageMessage()
+	case msg.GetDocumentMessage() != nil:
+		downloadable = msg.GetDocumentMessage()
+	case msg.GetVideoMessage() != nil:
+		downloadable = msg.GetVideoMessage()
+	case msg.GetAudioMessage() != nil:
+		downloadable = msg.GetAudioMessage()
+	case msg.GetStickerMessage() != nil:
+		downloadable = msg.GetStickerMessage()
+	default:
+		return nil, errors.New("no downloadable media found in message")
+	}
+
+	data, err := s.cli.Download(ctx, downloadable)
 	if err != nil {
 		return nil, fmt.Errorf("download media: %w", err)
 	}

@@ -108,15 +108,15 @@ func buildSubject(s *Session) string {
 func buildBody(s *Session, media []CollectedMedia) string {
 	var b strings.Builder
 	b.WriteString("Pesan diteruskan dari WhatsApp\n\n")
-	fmt.Fprintf(&b, "Pengirim : %s\n", s.FromName)
-	fmt.Fprintf(&b, "Nomor    : %s\n\n", s.SenderPhone)
+	_, _ = fmt.Fprintf(&b, "Pengirim : %s\n", s.FromName)
+	_, _ = fmt.Fprintf(&b, "Nomor    : %s\n\n", s.SenderPhone)
 
 	if len(media) > 0 {
 		b.WriteString("Media yang dilampirkan:\n")
 		for i, m := range media {
-			fmt.Fprintf(&b, "%d. %s", i+1, m.Filename)
+			_, _ = fmt.Fprintf(&b, "%d. %s", i+1, m.Filename)
 			if strings.TrimSpace(m.Caption) != "" {
-				fmt.Fprintf(&b, " — %s", m.Caption)
+				_, _ = fmt.Fprintf(&b, " — %s", m.Caption)
 			}
 			b.WriteString("\n")
 		}

@@ -78,7 +78,7 @@ func buildJBView(page bill.PageResult[entity.Bills], code string, currentPage in
 		}
 	}
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "Halaman %d dari %d\n📋 *Daftar Tagihan Jatuh Tempo Hari Ini:*\n\n",
+	_, _ = fmt.Fprintf(&sb, "Halaman %d dari %d\n📋 *Daftar Tagihan Jatuh Tempo Hari Ini:*\n\n",
 		currentPage+1, totalPages)
 	for i := range page.Items {
 		sb.WriteString(formatJBItem(&page.Items[i]))

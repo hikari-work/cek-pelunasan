@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"errors"
-	"log/slog"
 
 	"github.com/hikari-work/cek-pelunasan/internal/entity"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -15,16 +14,6 @@ type BillsRepo struct{ coll *mongo.Collection }
 
 func NewBillsRepo(m *Mongo) *BillsRepo {
 	return &BillsRepo{coll: m.DB.Collection("tagihan")}
-}
-
-// deferCloseCursor returns a function that closes the cursor and logs any error.
-// Usage: defer deferCloseCursor(ctx, cur)()
-func deferCloseCursor(ctx context.Context, cur *mongo.Cursor) func() {
-	return func() {
-		if err := cur.Close(ctx); err != nil {
-			slog.Error("failed to close cursor", "error", err)
-		}
-	}
 }
 
 // Collection mengembalikan handle koleksi MongoDB mentah untuk operasi yang
@@ -302,21 +291,5 @@ func minBungaFilter(base bson.M, minDayLate, maxDayLate int) bson.M {
 }
 
 func (r *BillsRepo) findPaged(ctx context.Context, filter bson.M, page Page, sort bson.D) ([]entity.Bills, error) {
-	opts := options.Find()
-	if !page.Unlimited() {
-		opts.SetSkip(page.Skip()).SetLimit(page.Limit())
-	}
-	if sort != nil {
-		opts.SetSort(sort)
-	}
-	cur, err := r.coll.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer deferCloseCursor(ctx, cur)()
-	var out []entity.Bills
-	if err := cur.All(ctx, &out); err != nil {
-		return nil, err
-	}
-	return out, nil
+	return findPaged[entity.Bills](ctx, r.coll, filter, page, sort)
 }

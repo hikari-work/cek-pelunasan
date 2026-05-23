@@ -39,20 +39,7 @@ func (r *KolekTasRepo) InsertMany(ctx context.Context, items []entity.KolekTas) 
 
 func (r *KolekTasRepo) FindByKelompok(ctx context.Context, kelompok string, page Page) ([]entity.KolekTas, error) {
 	filter := bson.M{"kelompok": bson.M{"$regex": "^" + kelompok + "$", "$options": "i"}}
-	opts := options.Find()
-	if !page.Unlimited() {
-		opts.SetSkip(page.Skip()).SetLimit(page.Limit())
-	}
-	cur, err := r.coll.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer deferCloseCursor(ctx, cur)()
-	var out []entity.KolekTas
-	if err := cur.All(ctx, &out); err != nil {
-		return nil, err
-	}
-	return out, nil
+	return findPaged[entity.KolekTas](ctx, r.coll, filter, page, nil)
 }
 
 func (r *KolekTasRepo) FindAllByKelompok(ctx context.Context, kelompok string) ([]entity.KolekTas, error) {

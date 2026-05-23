@@ -167,11 +167,7 @@ const App = (() => {
     return sessionStorage.getItem('miniapp_token');
   }
 
-  function getCurrentService() {
-    return currentService;
-  }
-
-  return { init, showScreen, openService, openDetail, showError, goBack, getToken, getCurrentService, toggleTheme };
+  return { init, openService, openDetail, showError, getToken, toggleTheme };
 })();
 
 // Start

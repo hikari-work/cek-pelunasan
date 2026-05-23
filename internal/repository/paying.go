@@ -55,7 +55,7 @@ func (r *PayingRepo) FindAllIDs(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer deferCloseCursor(ctx, cur)()
 	var rows []struct {
 		ID string `bson:"_id"`
 	}

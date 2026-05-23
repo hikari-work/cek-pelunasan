@@ -59,7 +59,7 @@ func (r *CreditHistoryRepo) FindByStatus(ctx context.Context, status string) ([]
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.CreditHistory
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err

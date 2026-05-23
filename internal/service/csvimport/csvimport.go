@@ -34,7 +34,7 @@ func Run[T any](
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	reader := csv.NewReader(f)
 	reader.FieldsPerRecord = -1

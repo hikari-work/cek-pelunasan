@@ -44,44 +44,44 @@ func formatFull(p PageData, current, total int) string {
 	if len(dto.Individual.DataPokokDebitur) > 0 {
 		nama = dto.Individual.DataPokokDebitur[0].NamaDebitur
 	}
-	fmt.Fprintf(&b, "*📊 HASIL SLIK — %s*\n", mdEscape(orDash(nama)))
+	_, _ = fmt.Fprintf(&b, "*📊 HASIL SLIK — %s*\n", mdEscape(orDash(nama)))
 	b.WriteString("━━━━━━━━━━━━━━━━━━━━━\n")
 
 	hdr := dto.Header
 	if hdr.KodeReferensiPengguna != "" || hdr.TanggalPermintaan != "" {
-		fmt.Fprintf(&b, "📋 Ref: `%s`\n", orDash(hdr.KodeReferensiPengguna))
-		fmt.Fprintf(&b, "📅 Tanggal: %s\n", formatDateTime(hdr.TanggalPermintaan))
+		_, _ = fmt.Fprintf(&b, "📋 Ref: `%s`\n", orDash(hdr.KodeReferensiPengguna))
+		_, _ = fmt.Fprintf(&b, "📅 Tanggal: %s\n", formatDateTime(hdr.TanggalPermintaan))
 	}
 
 	if len(dto.Individual.DataPokokDebitur) > 0 {
 		deb := dto.Individual.DataPokokDebitur[0]
 		b.WriteString("\n👤 *DATA DEBITUR*\n")
-		fmt.Fprintf(&b, "🪪 KTP: `%s`\n", orDash(deb.NoIdentitas))
-		fmt.Fprintf(&b, "📍 Alamat: %s\n", mdEscape(orDash(deb.Alamat)))
+		_, _ = fmt.Fprintf(&b, "🪪 KTP: `%s`\n", orDash(deb.NoIdentitas))
+		_, _ = fmt.Fprintf(&b, "📍 Alamat: %s\n", mdEscape(orDash(deb.Alamat)))
 		if deb.TempatLahir != "" || deb.TanggalLahir != "" {
-			fmt.Fprintf(&b, "🎂 Lahir: %s, %s\n", mdEscape(orDash(deb.TempatLahir)), formatDate(deb.TanggalLahir))
+			_, _ = fmt.Fprintf(&b, "🎂 Lahir: %s, %s\n", mdEscape(orDash(deb.TempatLahir)), formatDate(deb.TanggalLahir))
 		}
-		fmt.Fprintf(&b, "💼 Pekerjaan: %s\n", mdEscape(orDash(deb.PekerjaanKet)))
+		_, _ = fmt.Fprintf(&b, "💼 Pekerjaan: %s\n", mdEscape(orDash(deb.PekerjaanKet)))
 	}
 
 	if rf := dto.Individual.RingkasanFasilitas; rf != nil {
 		b.WriteString("\n📈 *RINGKASAN FASILITAS*\n")
-		fmt.Fprintf(&b, "Kol. Terburuk : *%s*\n", mdEscape(orDash(rf.KualitasTerburuk)))
-		fmt.Fprintf(&b, "Bulan Data    : %s\n", formatYearMonth(rf.KualitasBulanDataTerburuk))
-		fmt.Fprintf(&b, "Plafon Total  : %s\n", formatRupiahStr(rf.PlafonEfektifTotal))
-		fmt.Fprintf(&b, "Baki Debet    : %s\n", formatRupiahStr(rf.BakiDebetTotal))
+		_, _ = fmt.Fprintf(&b, "Kol. Terburuk : *%s*\n", mdEscape(orDash(rf.KualitasTerburuk)))
+		_, _ = fmt.Fprintf(&b, "Bulan Data    : %s\n", formatYearMonth(rf.KualitasBulanDataTerburuk))
+		_, _ = fmt.Fprintf(&b, "Plafon Total  : %s\n", formatRupiahStr(rf.PlafonEfektifTotal))
+		_, _ = fmt.Fprintf(&b, "Baki Debet    : %s\n", formatRupiahStr(rf.BakiDebetTotal))
 	}
 
 	if dto.Individual.Fasilitas != nil && len(dto.Individual.Fasilitas.KreditPembiayan) > 0 {
 		list := dto.Individual.Fasilitas.KreditPembiayan
-		fmt.Fprintf(&b, "\n💳 *FASILITAS KREDIT (%d)*\n", len(list))
+		_, _ = fmt.Fprintf(&b, "\n💳 *FASILITAS KREDIT (%d)*\n", len(list))
 		shown := 0
 		for i, k := range list {
 			fas := buildFasilitasText(i+1, &k)
 			// 200 chars buffer untuk footer.
 			if b.Len()+len(fas)+200 > MaxContentChars {
 				rem := len(list) - shown
-				fmt.Fprintf(&b, "_(+%d fasilitas lainnya — gunakan /slik {ktp} untuk detail)_\n", rem)
+				_, _ = fmt.Fprintf(&b, "_(+%d fasilitas lainnya — gunakan /slik {ktp} untuk detail)_\n", rem)
 				break
 			}
 			b.WriteString(fas)
@@ -96,10 +96,10 @@ func formatFull(p PageData, current, total int) string {
 
 func formatNoData(p PageData, current, total int) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "*📊 HASIL SLIK — %s*\n", mdEscape(extractDisplayName(p.ContentKey)))
+	_, _ = fmt.Fprintf(&b, "*📊 HASIL SLIK — %s*\n", mdEscape(extractDisplayName(p.ContentKey)))
 	b.WriteString("━━━━━━━━━━━━━━━━━━━━━\n")
 	if p.IDNumber != "" {
-		fmt.Fprintf(&b, "🪪 No KTP: `%s`\n", p.IDNumber)
+		_, _ = fmt.Fprintf(&b, "🪪 No KTP: `%s`\n", p.IDNumber)
 	} else {
 		b.WriteString("🪪 No KTP: _Tidak ditemukan_\n")
 	}
@@ -110,29 +110,29 @@ func formatNoData(p PageData, current, total int) string {
 
 func writeFooter(b *strings.Builder, p PageData, current, total int) {
 	if p.IDNumber != "" {
-		fmt.Fprintf(b, "\n🎯 `/slik %s`\n", p.IDNumber)
+		_, _ = fmt.Fprintf(b, "\n🎯 `/slik %s`\n", p.IDNumber)
 	}
 	if p.ContentKey != "" {
-		fmt.Fprintf(b, "📥 `/doc %s`\n", path.Base(p.ContentKey))
+		_, _ = fmt.Fprintf(b, "📥 `/doc %s`\n", path.Base(p.ContentKey))
 	}
-	fmt.Fprintf(b, "_📄 Halaman %d dari %d_", current+1, total)
+	_, _ = fmt.Fprintf(b, "_📄 Halaman %d dari %d_", current+1, total)
 }
 
 func buildFasilitasText(index int, k *KreditPembiayaan) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "%d. %s\n", index, mdEscape(orDash(k.LjkKet)))
+	_, _ = fmt.Fprintf(&b, "%d. %s\n", index, mdEscape(orDash(k.LjkKet)))
 	if k.CabangKet != "" {
-		fmt.Fprintf(&b, "Cabang    : %s\n", mdEscape(k.CabangKet))
+		_, _ = fmt.Fprintf(&b, "Cabang    : %s\n", mdEscape(k.CabangKet))
 	}
-	fmt.Fprintf(&b, "Plafon    : %s | Bakidebet: %s\n",
+	_, _ = fmt.Fprintf(&b, "Plafon    : %s | Bakidebet: %s\n",
 		formatRupiahStr(k.PlafonAwal), formatRupiahStr(k.BakiDebet))
-	fmt.Fprintf(&b, "Kondisi   : %s | Kol: %s\n",
+	_, _ = fmt.Fprintf(&b, "Kondisi   : %s | Kol: %s\n",
 		mdEscape(orDash(k.KondisiKet)), mdEscape(orDash(k.KualitasKet)))
 	if k.JenisPenggunaanKet != "" {
-		fmt.Fprintf(&b, "Penggunaan: %s\n", mdEscape(k.JenisPenggunaanKet))
+		_, _ = fmt.Fprintf(&b, "Penggunaan: %s\n", mdEscape(k.JenisPenggunaanKet))
 	}
 	if k.TanggalAkadAwal != "" || k.TanggalJatuhTempo != "" {
-		fmt.Fprintf(&b, "Jangka    : %s → %s\n",
+		_, _ = fmt.Fprintf(&b, "Jangka    : %s → %s\n",
 			formatDate(k.TanggalAkadAwal), formatDate(k.TanggalJatuhTempo))
 	}
 	worstKol := findWorstKol(k.TahunBulan)
@@ -143,10 +143,10 @@ func buildFasilitasText(index int, k *KreditPembiayaan) string {
 		kolLabel = "Kol Terburuk s.d. " + kolPeriod
 	}
 	if worstKol != "" {
-		fmt.Fprintf(&b, "%s: %s\n", kolLabel, worstKol)
+		_, _ = fmt.Fprintf(&b, "%s: %s\n", kolLabel, worstKol)
 	}
 	if maxHt != "" && maxHt != "0" {
-		fmt.Fprintf(&b, "Max Hari Tunggakan: %s hari\n", maxHt)
+		_, _ = fmt.Fprintf(&b, "Max Hari Tunggakan: %s hari\n", maxHt)
 	}
 	return b.String()
 }

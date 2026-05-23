@@ -59,14 +59,14 @@ func monthYearID(t time.Time) string {
 //   - Footer: instruksi standard untuk AO.
 func FormatHotKolekMessage(locations []LocationBills, now time.Time) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "*HOT COLLECTION BULAN %s*\n*TAGIHAN YG PENGARUH NPL*\n\n", monthYearID(now))
+	_, _ = fmt.Fprintf(&b, "*HOT COLLECTION BULAN %s*\n*TAGIHAN YG PENGARUH NPL*\n\n", monthYearID(now))
 
 	for _, loc := range locations {
 		b.WriteString("\n")
 		if !loc.HasAnyData() {
 			continue
 		}
-		fmt.Fprintf(&b, "*%s* : \n", loc.Name)
+		_, _ = fmt.Fprintf(&b, "*%s* : \n", loc.Name)
 		for _, cat := range loc.Category {
 			b.WriteString("\n")
 			if len(cat.Bills) == 0 {
@@ -89,7 +89,7 @@ func appendBills(b *strings.Builder, bills []entity.Bills) {
 		// Format legacy: %2d. %-13s %-22s %10s — kolom name di-bold via "*name*",
 		// jadi width 22 termasuk dua karakter bintang.
 		nameField := "*" + name + "*"
-		fmt.Fprintf(b, "%2d. %-13s %-22s %10s\n", i+1, bill.NoSpk, nameField, FormatToShort(bill.DebitTray))
+		_, _ = fmt.Fprintf(b, "%2d. %-13s %-22s %10s\n", i+1, bill.NoSpk, nameField, FormatToShort(bill.DebitTray))
 	}
 }
 

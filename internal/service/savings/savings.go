@@ -123,7 +123,7 @@ func (s *Service) FindFiltered(ctx context.Context, addressKeywords []string, pa
 	if err != nil {
 		return PageResult{}, err
 	}
-	defer cur.Close(ctx)
+	defer func() { _ = cur.Close(ctx) }()
 	var items []entity.Savings
 	if err := cur.All(ctx, &items); err != nil {
 		return PageResult{}, err
@@ -138,7 +138,7 @@ func (s *Service) FindFiltered(ctx context.Context, addressKeywords []string, pa
 	if err != nil {
 		return PageResult{}, err
 	}
-	defer countCur.Close(ctx)
+	defer func() { _ = countCur.Close(ctx) }()
 	var countRows []struct {
 		Total int64 `bson:"total"`
 	}

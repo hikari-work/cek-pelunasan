@@ -50,20 +50,7 @@ func (r *SavingsRepo) FindByNameAndBranch(ctx context.Context, name, branch stri
 		"name":   bson.M{"$regex": name, "$options": "i"},
 		"branch": branch,
 	}
-	opts := options.Find()
-	if !page.Unlimited() {
-		opts.SetSkip(page.Skip()).SetLimit(page.Limit())
-	}
-	cur, err := r.coll.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer deferCloseCursor(ctx, cur)()
-	var out []entity.Savings
-	if err := cur.All(ctx, &out); err != nil {
-		return nil, err
-	}
-	return out, nil
+	return findPaged[entity.Savings](ctx, r.coll, filter, page, nil)
 }
 
 func (r *SavingsRepo) CountByNameAndBranch(ctx context.Context, name, branch string) (int64, error) {

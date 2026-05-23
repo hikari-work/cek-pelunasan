@@ -56,7 +56,7 @@ func buildCanvasingView(page credithistory.PageResult, address string, currentPa
 		}
 	}
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "📄 Halaman %d dari %d\n\n", currentPage+1, totalPages)
+	_, _ = fmt.Fprintf(&sb, "📄 Halaman %d dari %d\n\n", currentPage+1, totalPages)
 	for i := range page.Items {
 		sb.WriteString(formatCanvasingItem(&page.Items[i]))
 	}

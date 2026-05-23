@@ -95,9 +95,9 @@ func (h *VirtualAccount) lookupAccount(ctx context.Context, number string) (name
 func buildVAMessage(name, accountNum, addr string) string {
 	var b strings.Builder
 	b.WriteString("*Informasi Akun*\n\n")
-	fmt.Fprintf(&b, "No SPK: _%s_\n", accountNum)
-	fmt.Fprintf(&b, "Nama: _%s_\n", name)
-	fmt.Fprintf(&b, "Alamat: _%s_\n\n", addr)
+	_, _ = fmt.Fprintf(&b, "No SPK: _%s_\n", accountNum)
+	_, _ = fmt.Fprintf(&b, "Nama: _%s_\n", name)
+	_, _ = fmt.Fprintf(&b, "Alamat: _%s_\n\n", addr)
 
 	b.WriteString("*Virtual Account Numbers*\n\n")
 	b.WriteString(generateVA("🏦 *Mandiri*", accountNum, vaMandiri))

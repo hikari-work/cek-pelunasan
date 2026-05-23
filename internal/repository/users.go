@@ -33,7 +33,7 @@ func (r *UserRepo) FindByUserCode(ctx context.Context, code string) ([]entity.Us
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.User
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (r *UserRepo) FindAll(ctx context.Context) ([]entity.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.User
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err

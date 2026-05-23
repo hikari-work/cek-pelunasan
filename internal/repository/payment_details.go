@@ -53,7 +53,7 @@ func (r *PaymentDetailsRepo) FindByKodeAOAndTanggal(ctx context.Context, kodeAO,
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.PaymentDetails
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (r *PaymentDetailsRepo) FindByNoSpkOrdered(ctx context.Context, noSpk strin
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
+	defer deferCloseCursor(ctx, cur)()
 	var out []entity.PaymentDetails
 	if err := cur.All(ctx, &out); err != nil {
 		return nil, err
@@ -85,21 +85,5 @@ func (r *PaymentDetailsRepo) Save(ctx context.Context, p *entity.PaymentDetails)
 }
 
 func (r *PaymentDetailsRepo) findPaged(ctx context.Context, filter bson.M, page Page, sort bson.D) ([]entity.PaymentDetails, error) {
-	opts := options.Find()
-	if !page.Unlimited() {
-		opts.SetSkip(page.Skip()).SetLimit(page.Limit())
-	}
-	if sort != nil {
-		opts.SetSort(sort)
-	}
-	cur, err := r.coll.Find(ctx, filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cur.Close(ctx)
-	var out []entity.PaymentDetails
-	if err := cur.All(ctx, &out); err != nil {
-		return nil, err
-	}
-	return out, nil
+	return findPaged[entity.PaymentDetails](ctx, r.coll, filter, page, sort)
 }

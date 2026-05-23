@@ -88,7 +88,7 @@ func (s *Sender) Send(ctx context.Context, m Mail) error {
 	if err != nil {
 		return fmt.Errorf("dial smtp: %w", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	c, err := smtp.NewClient(conn, s.cfg.Host)
 	if err != nil {
@@ -162,7 +162,7 @@ func buildMessage(m Mail) ([]byte, error) {
 	buf.WriteString("\r\n")
 
 	// Body part.
-	fmt.Fprintf(&buf, "--%s\r\n", boundary)
+	_, _ = fmt.Fprintf(&buf, "--%s\r\n", boundary)
 	buf.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
 	buf.WriteString("Content-Transfer-Encoding: 8bit\r\n\r\n")
 	buf.WriteString(m.Body)
@@ -174,15 +174,15 @@ func buildMessage(m Mail) ([]byte, error) {
 		if strings.TrimSpace(ct) == "" {
 			ct = detectContentType(att.Filename)
 		}
-		fmt.Fprintf(&buf, "--%s\r\n", boundary)
-		fmt.Fprintf(&buf, "Content-Type: %s; name=\"%s\"\r\n", ct, att.Filename)
+		_, _ = fmt.Fprintf(&buf, "--%s\r\n", boundary)
+		_, _ = fmt.Fprintf(&buf, "Content-Type: %s; name=\"%s\"\r\n", ct, att.Filename)
 		buf.WriteString("Content-Transfer-Encoding: base64\r\n")
-		fmt.Fprintf(&buf, "Content-Disposition: attachment; filename=\"%s\"\r\n\r\n",
+		_, _ = fmt.Fprintf(&buf, "Content-Disposition: attachment; filename=\"%s\"\r\n\r\n",
 			att.Filename)
 		writeBase64Wrapped(&buf, att.Bytes)
 		buf.WriteString("\r\n")
 	}
-	fmt.Fprintf(&buf, "--%s--\r\n", boundary)
+	_, _ = fmt.Fprintf(&buf, "--%s--\r\n", boundary)
 	return buf.Bytes(), nil
 }
 

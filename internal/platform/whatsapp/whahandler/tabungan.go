@@ -124,14 +124,14 @@ func formatSavingDetailWA(s *entity.Savings) string {
 	book := s.Balance + s.Transaction
 	effective := book - s.MinimumBalance - s.BlockingBalance
 	var b strings.Builder
-	fmt.Fprintf(&b, "👤 *%s*\n", s.Name)
-	fmt.Fprintf(&b, "No. Rek: %s\n", s.TabID)
-	fmt.Fprintf(&b, "Alamat : %s\n\n", s.Address)
+	_, _ = fmt.Fprintf(&b, "👤 *%s*\n", s.Name)
+	_, _ = fmt.Fprintf(&b, "No. Rek: %s\n", s.TabID)
+	_, _ = fmt.Fprintf(&b, "Alamat : %s\n\n", s.Address)
 	b.WriteString("💰 Saldo:\n")
-	fmt.Fprintf(&b, "• Buku    : %s\n", utils.FormatRupiah(book))
-	fmt.Fprintf(&b, "• Min     : %s\n", utils.FormatRupiah(s.MinimumBalance))
-	fmt.Fprintf(&b, "• Block   : %s\n", utils.FormatRupiah(s.BlockingBalance))
-	fmt.Fprintf(&b, "• Efektif : *%s*\n", utils.FormatRupiah(effective))
+	_, _ = fmt.Fprintf(&b, "• Buku    : %s\n", utils.FormatRupiah(book))
+	_, _ = fmt.Fprintf(&b, "• Min     : %s\n", utils.FormatRupiah(s.MinimumBalance))
+	_, _ = fmt.Fprintf(&b, "• Block   : %s\n", utils.FormatRupiah(s.BlockingBalance))
+	_, _ = fmt.Fprintf(&b, "• Efektif : *%s*\n", utils.FormatRupiah(effective))
 	return b.String()
 }
 
@@ -140,15 +140,15 @@ func formatNameSearchWA(query string, results []entity.Savings, max int) string 
 		return "❌ Tidak ditemukan nasabah dengan nama *" + query + "*"
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "🔍 *Hasil pencarian: \"%s\"*\n", query)
-	fmt.Fprintf(&b, "Ditemukan: %d nasabah\n", len(results))
+	_, _ = fmt.Fprintf(&b, "🔍 *Hasil pencarian: \"%s\"*\n", query)
+	_, _ = fmt.Fprintf(&b, "Ditemukan: %d nasabah\n", len(results))
 	b.WriteString("━━━━━━━━━━━━━━━━━\n\n")
 	for i := range results {
 		b.WriteString(formatSavingDetailWA(&results[i]))
 		b.WriteString("\n")
 	}
 	if len(results) >= max {
-		fmt.Fprintf(&b, "_Hasil dibatasi %d nasabah._\n", max)
+		_, _ = fmt.Fprintf(&b, "_Hasil dibatasi %d nasabah._\n", max)
 	}
 	b.WriteString("\n💡 Gunakan `.t {nomor rekening}` untuk detail lengkap.")
 	return b.String()

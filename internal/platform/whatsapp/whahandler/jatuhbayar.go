@@ -119,22 +119,22 @@ func (h *JatuhBayar) formatJatuhBayar(ctx context.Context, bills []entity.Bills,
 	}
 	var sb strings.Builder
 	sb.WriteString("🔔 *REMINDER JATUH BAYAR*\n")
-	fmt.Fprintf(&sb, "📅 Tanggal: %s\n", today.Format("2006-01-02"))
-	fmt.Fprintf(&sb, "👤 AO: *%s*\n", ao)
-	fmt.Fprintf(&sb, "📊 Total Nasabah: %d orang\n\n", len(bills))
+	_, _ = fmt.Fprintf(&sb, "📅 Tanggal: %s\n", today.Format("2006-01-02"))
+	_, _ = fmt.Fprintf(&sb, "👤 AO: *%s*\n", ao)
+	_, _ = fmt.Fprintf(&sb, "📊 Total Nasabah: %d orang\n\n", len(bills))
 
 	for i, b := range bills {
-		fmt.Fprintf(&sb, "*%d. %s*\n", i+1, b.Name)
-		fmt.Fprintf(&sb, "   💳 No SPK : %s\n", b.NoSpk)
+		_, _ = fmt.Fprintf(&sb, "*%d. %s*\n", i+1, b.Name)
+		_, _ = fmt.Fprintf(&sb, "   💳 No SPK : %s\n", b.NoSpk)
 
 		if b.LastInstallment > 0 {
-			fmt.Fprintf(&sb, "   ⚠️ Tunggakan: %s\n", utils.FormatRupiah(b.LastInstallment))
+			_, _ = fmt.Fprintf(&sb, "   ⚠️ Tunggakan: %s\n", utils.FormatRupiah(b.LastInstallment))
 		} else {
-			fmt.Fprintf(&sb, "   💰 Angsuran: %s\n", utils.FormatRupiah(b.Installment))
+			_, _ = fmt.Fprintf(&sb, "   💰 Angsuran: %s\n", utils.FormatRupiah(b.Installment))
 		}
 
 		phone := h.lookupPhone(ctx, b.CustomerID)
-		fmt.Fprintf(&sb, "   📱 No HP: %s\n", phone)
+		_, _ = fmt.Fprintf(&sb, "   📱 No HP: %s\n", phone)
 		sb.WriteString("\n")
 	}
 

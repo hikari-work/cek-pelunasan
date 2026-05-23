@@ -65,7 +65,7 @@ func buildCanvasView(page savings.PageResult, address string, currentPage int64)
 		}
 	}
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "📊 *INFORMASI TABUNGAN*\n───────────────────\n📄 Halaman %d dari %d\n\n",
+	_, _ = fmt.Fprintf(&sb, "📊 *INFORMASI TABUNGAN*\n───────────────────\n📄 Halaman %d dari %d\n\n",
 		currentPage+1, totalPages)
 	for i := range page.Items {
 		sb.WriteString(savings.FormatCanvas(&page.Items[i]))

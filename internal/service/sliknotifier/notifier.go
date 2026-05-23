@@ -139,11 +139,11 @@ func groupByCodePrefix(keys []string) map[string][]string {
 func buildMessage(code string, files []string) string {
 	var b strings.Builder
 	b.WriteString("📄 *SLIK Update*\n")
-	fmt.Fprintf(&b, "Kode: *%s*\n", code)
-	fmt.Fprintf(&b, "Total file: *%d*\n\n", len(files))
+	_, _ = fmt.Fprintf(&b, "Kode: *%s*\n", code)
+	_, _ = fmt.Fprintf(&b, "Total file: *%d*\n\n", len(files))
 	b.WriteString("*Daftar File:*\n")
 	for _, f := range files {
-		fmt.Fprintf(&b, "• `%s`\n", f)
+		_, _ = fmt.Fprintf(&b, "• `%s`\n", f)
 	}
 	return b.String()
 }
