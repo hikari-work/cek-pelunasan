@@ -16,11 +16,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/hikari-work/cek-pelunasan/internal/httpserver/ideb"
 	"github.com/hikari-work/cek-pelunasan/internal/miniapp"
 )
 
 type Deps struct {
-	MiniApp miniapp.Deps
+	MiniApp     miniapp.Deps
+	IdebHandler *ideb.Handler
 }
 
 var startTime = time.Now()
@@ -29,6 +31,7 @@ var startTime = time.Now()
 //
 // Layout endpoint:
 //   - /api/mini/*       -> miniapp
+//   - /ideb/generate    -> iDeb HTML generator (PHP replacement)
 //   - /actuator/health  -> simple health (UP + uptime)
 //   - /actuator/info    -> app + runtime info
 //   - /actuator/prometheus -> Go runtime + process metrics
@@ -49,6 +52,11 @@ func New(d Deps) *fiber.App {
 	}))
 
 	miniapp.Register(app, d.MiniApp)
+
+	// IDEB endpoint (PHP generate.php replacement)
+	if d.IdebHandler != nil {
+		app.Post("/ideb/generate", d.IdebHandler.Generate)
+	}
 
 	app.Get("/actuator/health", health)
 	app.Get("/actuator/info", info)

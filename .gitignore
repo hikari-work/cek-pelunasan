@@ -64,3 +64,13 @@ unhandled-callbacks.md
 /wkhtmltopdf-bin
 cek-pelunasan*
 /backup
+
+# Test files and outputs
+test_*.sh
+test_*.txt
+test_*.json
+test_*.html
+php_output*.html
+**/test_output*.html
+go_output.html
+

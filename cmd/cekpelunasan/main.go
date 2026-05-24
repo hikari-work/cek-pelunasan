@@ -29,6 +29,7 @@ import (
 
 	"github.com/hikari-work/cek-pelunasan/internal/config"
 	"github.com/hikari-work/cek-pelunasan/internal/httpserver"
+	"github.com/hikari-work/cek-pelunasan/internal/httpserver/ideb"
 	"github.com/hikari-work/cek-pelunasan/internal/miniapp"
 	"github.com/hikari-work/cek-pelunasan/internal/platform/r2"
 	"github.com/hikari-work/cek-pelunasan/internal/platform/telegram"
@@ -163,6 +164,10 @@ func run() error {
 		pdfGen.Timeout = cfg.SLIK.SearchTimeout
 	}
 
+	// IDEB HTML generator (Go replacement for PHP generate.php)
+	htmlGen := &slik.HTMLGenerator{LogoURL: cfg.SLIK.PDFLogoURL}
+	idebHandler := &ideb.Handler{Generator: htmlGen}
+
 	if err := authedChats.Preload(rootCtx); err != nil {
 		slog.Warn("preload authorized chats failed", "err", err)
 	} else {
@@ -220,6 +225,7 @@ func run() error {
 			KolekTas:       kolekSvc,
 			PaymentDetails: pdSvc,
 		},
+		IdebHandler: idebHandler,
 	})
 
 	api, err := tgbotapi.NewBotAPI(cfg.Telegram.BotToken)
