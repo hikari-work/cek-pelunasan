@@ -145,15 +145,24 @@ func indonesianMonth(m time.Month) string {
 // SlikSenderConfirmation bangun keyboard pilih jenis laporan SLIK setelah
 // user pilih bulan untuk query KTP. Format callback:
 //
-//	"slikSender_<yyyymm>_<ktpId>_1" → kirim hanya fasilitas aktif
-//	"slikSender_<yyyymm>_<ktpId>_0" → kirim semua data
+//	"slikSender_<yyyymm>_<ktpId>_<active>_<endpoint>"
+//	active: 1 = hanya fasilitas aktif, 0 = semua data
+//	endpoint: php = PHP endpoint, go = Go native
 func SlikSenderConfirmation(ktpID, yyyymm string) tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("Kirim Data Fasilitas Aktif",
-			fmt.Sprintf("slikSender_%s_%s_1", yyyymm, ktpID)),
-		tgbotapi.NewInlineKeyboardButtonData("Kirim Semua Data",
-			fmt.Sprintf("slikSender_%s_%s_0", yyyymm, ktpID)),
-	))
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔵 PHP - Aktif",
+				fmt.Sprintf("slikSender_%s_%s_1_php", yyyymm, ktpID)),
+			tgbotapi.NewInlineKeyboardButtonData("🔵 PHP - Semua",
+				fmt.Sprintf("slikSender_%s_%s_0_php", yyyymm, ktpID)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🟢 Go - Aktif",
+				fmt.Sprintf("slikSender_%s_%s_1_go", yyyymm, ktpID)),
+			tgbotapi.NewInlineKeyboardButtonData("🟢 Go - Semua",
+				fmt.Sprintf("slikSender_%s_%s_0_go", yyyymm, ktpID)),
+		),
+	)
 }
 
 // SlikNamePagination bangun keyboard navigasi halaman hasil pencarian SLIK by nama.

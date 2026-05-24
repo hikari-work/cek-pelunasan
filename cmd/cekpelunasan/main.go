@@ -234,7 +234,7 @@ func run() error {
 	}
 	tgBot := telegram.NewBot(api, cfg.Telegram.OwnerID, authedChats)
 	tgRouter := telegram.NewRouter()
-	registerTelegramHandlers(tgRouter, tgBot, authedChats, usersSvc, billSvc, savingsSvc, kolekSvc, pdSvc, chSvc, mbSessSvc, slikSessions, logSvc, r2Client, pdfGen, cfg.SLIK.MaxPDFSize, cfg.MiniApp.URL)
+	registerTelegramHandlers(tgRouter, tgBot, authedChats, usersSvc, billSvc, savingsSvc, kolekSvc, pdSvc, chSvc, mbSessSvc, slikSessions, logSvc, r2Client, pdfGen, htmlGen, cfg.SLIK.MaxPDFSize, cfg.MiniApp.URL)
 
 	if err := telegram.RegisterBotCommands(api, tgRouter.Commands()); err != nil {
 		slog.Warn("set bot commands failed", "err", err)
@@ -415,6 +415,7 @@ func registerTelegramHandlers(
 	logSvc *logsvc.Service,
 	r2Client *r2.Client,
 	pdfGen *slik.PDFGenerator,
+	htmlGen *slik.HTMLGenerator,
 	maxPDFSize int64,
 	miniAppURL string,
 ) {
@@ -475,5 +476,5 @@ func registerTelegramHandlers(
 	r.RegisterCallback(&cbh.SavingsBranchSelect{Savings: savingsSvc})
 	r.RegisterCallback(&cbh.SlikMonth{Sessions: slikSess, Storage: r2Client, Users: usersSvc})
 	r.RegisterCallback(&cbh.SlikName{Sessions: slikSess})
-	r.RegisterCallback(&cbh.SlikSender{Storage: r2Client, Generator: pdfGen, MaxPDFSize: maxPDFSize})
+	r.RegisterCallback(&cbh.SlikSender{Storage: r2Client, Generator: pdfGen, HTMLGenerator: htmlGen, MaxPDFSize: maxPDFSize})
 }

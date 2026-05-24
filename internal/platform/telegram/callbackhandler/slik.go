@@ -220,19 +220,20 @@ func (h *SlikName) Handle(_ context.Context, b *telegram.Bot, q *tgbotapi.Callba
 	_ = b.EditTextWithMarkup(chatID, q.Message.MessageID, text, kb)
 }
 
-// SlikSender handler "slikSender_<yyyymm>_<ktpId>_<active>" — fetch KTP txt dari R2,
-// generate PDF via PDFGenerator, kirim sebagai dokumen.
+// SlikSender handler "slikSender_<yyyymm>_<ktpId>_<active>_<endpoint>" — fetch KTP txt dari R2,
+// generate PDF via PDFGenerator (PHP) atau HTMLGenerator (Go), kirim sebagai dokumen.
 type SlikSender struct {
-	Storage    *r2.Client
-	Generator  *slik.PDFGenerator
-	MaxPDFSize int64
+	Storage       *r2.Client
+	Generator     *slik.PDFGenerator // PHP endpoint
+	HTMLGenerator *slik.HTMLGenerator // Go native
+	MaxPDFSize    int64
 }
 
 func (h *SlikSender) Prefix() string { return "slikSender" }
 
 func (h *SlikSender) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.CallbackQuery) {
 	chatID := q.Message.Chat.ID
-	parts := strings.SplitN(q.Data, "_", 4)
+	parts := strings.SplitN(q.Data, "_", 5)
 	if len(parts) < 4 {
 		_, _ = b.SendText(chatID, "⚠️ Format callback tidak valid")
 		return
@@ -240,6 +241,12 @@ func (h *SlikSender) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.Ca
 	yyyymm := parts[1]
 	customerID := parts[2]
 	active := parts[3] == "1"
+
+	// Endpoint type: "php" or "go" (default to php for backward compatibility)
+	endpoint := "php"
+	if len(parts) >= 5 {
+		endpoint = parts[4]
+	}
 
 	if len(yyyymm) != 6 {
 		_, _ = b.SendText(chatID, "⚠️ Format bulan tidak valid")
@@ -285,21 +292,44 @@ func (h *SlikSender) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.Ca
 		return
 	}
 
-	if h.Generator == nil {
-		_ = b.EditText(chatID, loadingID, "❌ PDF generator belum dikonfigurasi")
-		return
+	var pdfBytes []byte
+
+	if endpoint == "go" {
+		// Use Go native HTML generator
+		if h.HTMLGenerator == nil {
+			_ = b.EditText(chatID, loadingID, "❌ Go HTML generator belum dikonfigurasi")
+			return
+		}
+
+		_ = b.EditText(chatID, loadingID, fmt.Sprintf("✅ Data KTP `%s` ditemukan. Menggenerate PDF (Go)...", customerID))
+
+		genCtx, cancelGen := context.WithTimeout(ctx, 90*time.Second)
+		defer cancelGen()
+		pdfBytes, err = h.generatePDFWithGo(genCtx, data, active)
+		if err != nil {
+			slog.Error("generate pdf with go failed", "customer_id", customerID, "err", err)
+			_ = b.EditText(chatID, loadingID, fmt.Sprintf("❌ Gagal generate PDF (Go): %s", err.Error()))
+			return
+		}
+	} else {
+		// Use PHP endpoint (legacy)
+		if h.Generator == nil {
+			_ = b.EditText(chatID, loadingID, "❌ PDF generator belum dikonfigurasi")
+			return
+		}
+
+		_ = b.EditText(chatID, loadingID, fmt.Sprintf("✅ Data KTP `%s` ditemukan. Menggenerate PDF (PHP)...", customerID))
+
+		genCtx, cancelGen := context.WithTimeout(ctx, 90*time.Second)
+		defer cancelGen()
+		pdfBytes, err = h.Generator.Generate(genCtx, data, active)
+		if err != nil {
+			slog.Error("generate pdf with php failed", "customer_id", customerID, "err", err)
+			_ = b.EditText(chatID, loadingID, fmt.Sprintf("❌ Gagal generate PDF (PHP): %s", err.Error()))
+			return
+		}
 	}
 
-	_ = b.EditText(chatID, loadingID, fmt.Sprintf("✅ Data KTP `%s` ditemukan. Menggenerate PDF...", customerID))
-
-	genCtx, cancelGen := context.WithTimeout(ctx, 90*time.Second)
-	defer cancelGen()
-	pdfBytes, err := h.Generator.Generate(genCtx, data, active)
-	if err != nil {
-		slog.Error("generate pdf failed", "customer_id", customerID, "err", err)
-		_ = b.EditText(chatID, loadingID, fmt.Sprintf("❌ Gagal generate PDF: %s", err.Error()))
-		return
-	}
 	if len(pdfBytes) == 0 {
 		_ = b.EditText(chatID, loadingID, fmt.Sprintf("❌ Data KTP `%s` tidak ditemukan", customerID))
 		return
@@ -313,5 +343,29 @@ func (h *SlikSender) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.Ca
 		_, _ = b.SendText(chatID, "❌ Gagal mengirim PDF")
 		return
 	}
-	slog.Info("slik PDF sent", "customer_id", customerID, "active", active, "size", len(pdfBytes))
+	slog.Info("slik PDF sent", "customer_id", customerID, "active", active, "endpoint", endpoint, "size", len(pdfBytes))
+}
+
+// generatePDFWithGo generates PDF using Go native HTMLGenerator + wkhtmltopdf.
+// This is more efficient than calling PHP endpoint via HTTP.
+func (h *SlikSender) generatePDFWithGo(ctx context.Context, slikData []byte, fasilitasAktif bool) ([]byte, error) {
+	// Parse SLIK JSON
+	dto, err := slik.ParseSlikJSON(slikData)
+	if err != nil {
+		return nil, fmt.Errorf("parse slik json: %w", err)
+	}
+
+	// Generate HTML
+	html := h.HTMLGenerator.GenerateHTML(dto, fasilitasAktif)
+	if html == "" {
+		return nil, fmt.Errorf("html generation returned empty result")
+	}
+
+	// Convert HTML to PDF using wkhtmltopdf
+	pdfBytes, err := slik.RenderHTMLToPDF(ctx, html, 90*time.Second)
+	if err != nil {
+		return nil, fmt.Errorf("render pdf: %w", err)
+	}
+
+	return pdfBytes, nil
 }
