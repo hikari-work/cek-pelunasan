@@ -112,28 +112,51 @@ func (g *HTMLGenerator) writeDebiturInfo(b *strings.Builder, dto *JsonDto) {
 	b.WriteString("          </div>\n\n")
 
 	// Signature grid - use table instead of CSS grid for wkhtmltopdf compatibility
+	// Wrap in div for proper flex alignment
 	b.WriteString("          <!-- Kanan: Signature Table -->\n")
-	b.WriteString("          <table style=\"width: 300px; border-collapse: collapse; font-family: sans-serif; font-size: 12px; border: 0.5px solid blue; margin-top: 0px; page-break-inside: avoid;\">\n")
-	b.WriteString("            <tbody>\n")
-	b.WriteString("              <tr>\n")
-	b.WriteString("                <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Petugas</td>\n")
-	b.WriteString("                <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Pemeriksa</td>\n")
-	b.WriteString("                <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Pimpinan</td>\n")
-	b.WriteString("              </tr>\n")
-	b.WriteString("              <tr>\n")
-	b.WriteString("                <td style=\"border: 0.5px solid blue; height: 40px;\"></td>\n")
-	b.WriteString("                <td style=\"border: 0.5px solid blue; height: 40px;\"></td>\n")
-	b.WriteString("                <td style=\"border: 0.5px solid blue; height: 40px;\"></td>\n")
-	b.WriteString("              </tr>\n")
-	b.WriteString("            </tbody>\n")
-	b.WriteString("          </table>\n")
+	b.WriteString("          <div>\n")
+	b.WriteString("            <table style=\"width: 300px; border-collapse: collapse; font-family: sans-serif; font-size: 12px; border: 0.5px solid blue; margin-top: 0px; page-break-inside: avoid;\">\n")
+	b.WriteString("              <tbody>\n")
+	b.WriteString("                <tr>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Petugas</td>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Pemeriksa</td>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Pimpinan</td>\n")
+	b.WriteString("                </tr>\n")
+	b.WriteString("                <tr>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; height: 60px;\"></td>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; height: 60px;\"></td>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; height: 60px;\"></td>\n")
+	b.WriteString("                </tr>\n")
+	b.WriteString("              </tbody>\n")
+	b.WriteString("            </table>\n")
+	b.WriteString("          </div>\n")
 	b.WriteString("        </div>\n\n")
 	b.WriteString("\n\n")
 }
 
 func (g *HTMLGenerator) writeKreditTable(b *strings.Builder, dto *JsonDto, fasilitasAktif bool) {
+	facilities := dto.Individual.Fasilitas
+	if facilities == nil {
+		facilities = &Fasilitas{}
+	}
+
+	var filtered []KreditPembiayaan
+	if fasilitasAktif {
+		// Filter only active facilities (kondisiKet = "LANCAR" or similar)
+		for _, k := range facilities.KreditPembiayan {
+			if isActiveFacility(k.KondisiKet) {
+				filtered = append(filtered, k)
+			}
+		}
+	} else {
+		filtered = facilities.KreditPembiayan
+	}
+
+	// Count bank types
+	umum, bpr, lembaga, lainnya := CountBankTypes(filtered)
+
 	b.WriteString("        <small><b>Kredit / Pembiayaan:</b></small><br>\n")
-	b.WriteString("        <small><i>Bank Umum (), BPR/S (), Lembaga Pembiayaan (), Lainnya ()</i></small>\n")
+	fmt.Fprintf(b, "        <small><i>Bank Umum (%d), BPR/S (%d), Lembaga Pembiayaan (%d), Lainnya (%d)</i></small>\n", umum, bpr, lembaga, lainnya)
 	b.WriteString("        <table style=\"font-size: 70%;\">\n")
 	b.WriteString("            <thead>\n")
 	b.WriteString("                <tr>\n")
@@ -154,24 +177,6 @@ func (g *HTMLGenerator) writeKreditTable(b *strings.Builder, dto *JsonDto, fasil
 	b.WriteString("                </tr>\n")
 	b.WriteString("            </thead>\n")
 	b.WriteString("            <tbody>\n")
-
-	// Filter facilities if needed
-	facilities := dto.Individual.Fasilitas
-	if facilities == nil {
-		facilities = &Fasilitas{}
-	}
-
-	var filtered []KreditPembiayaan
-	if fasilitasAktif {
-		// Filter only active facilities (kondisiKet = "LANCAR" or similar)
-		for _, k := range facilities.KreditPembiayan {
-			if isActiveFacility(k.KondisiKet) {
-				filtered = append(filtered, k)
-			}
-		}
-	} else {
-		filtered = facilities.KreditPembiayan
-	}
 
 	// Write facility rows
 	var totalPlafon, totalBakiDebet, totalTgkBunga, totalTgkPokok int64
@@ -310,7 +315,10 @@ func (g *HTMLGenerator) writeRiwayatHeaders(b *strings.Builder, months []string)
 func (g *HTMLGenerator) writeRiwayatRow(b *strings.Builder, index int, k *KreditPembiayaan, months []string) {
 	b.WriteString("                                <tr>\n")
 	fmt.Fprintf(b, "                    <td style=\"text-align: center;\">%d</td>\n", index)
-	b.WriteString("                    <td style=\"text-align: center;\">-</td>\n") // Bulan data label
+
+	// Get latest month from tahunBulan data
+	latestMonth := GetLatestMonth(k.TahunBulan)
+	fmt.Fprintf(b, "                    <td style=\"text-align: center;\">%s</td>\n", html.EscapeString(latestMonth))
 
 	// Write kol and ht for each month
 	for i := 1; i <= 24; i++ {
