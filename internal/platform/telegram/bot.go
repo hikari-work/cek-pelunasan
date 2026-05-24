@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -72,9 +73,27 @@ func (b *Bot) EditTextWithMarkup(chatID int64, messageID int, text string, kb tg
 
 // SendDocument kirim file dari bytes (tanpa simpan ke disk dulu).
 func (b *Bot) SendDocument(chatID int64, fileName string, data []byte) error {
-	doc := tgbotapi.NewDocument(chatID, tgbotapi.FileBytes{Name: fileName, Bytes: data})
-	_, err := b.API.Send(doc)
+	_, err := b.SendDocumentWithID(chatID, fileName, data)
 	return err
+}
+
+// SendDocumentWithID kirim file dari bytes dan kembalikan messageID.
+func (b *Bot) SendDocumentWithID(chatID int64, fileName string, data []byte) (int, error) {
+	doc := tgbotapi.NewDocument(chatID, tgbotapi.FileBytes{Name: fileName, Bytes: data})
+	sent, err := b.API.Send(doc)
+	if err != nil {
+		return 0, err
+	}
+	return sent.MessageID, nil
+}
+
+// DeleteMessageDelayed hapus pesan setelah delay tertentu.
+// Non-blocking: langsung return setelah spawn goroutine.
+func (b *Bot) DeleteMessageDelayed(chatID int64, messageID int, delay time.Duration) {
+	go func() {
+		time.Sleep(delay)
+		_ = b.DeleteMessage(chatID, messageID)
+	}()
 }
 
 // DownloadFile resolve fileID ke direct URL lalu unduh isinya. Hati-hati: Telegram

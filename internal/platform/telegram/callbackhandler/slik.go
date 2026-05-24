@@ -345,12 +345,26 @@ func (h *SlikSender) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.Ca
 	// Delete loading async — kirim PDF langsung supaya user nggak nunggu
 	// round-trip delete dulu.
 	go func() { _ = b.DeleteMessage(chatID, loadingID) }()
-	if err := b.SendDocument(chatID, customerID+".pdf", pdfBytes); err != nil {
+
+	pdfMsgID, err := b.SendDocumentWithID(chatID, customerID+".pdf", pdfBytes)
+	if err != nil {
 		slog.Error("send pdf failed", "customer_id", customerID, "err", err)
 		_, _ = b.SendText(chatID, "❌ Gagal mengirim PDF")
 		return
 	}
-	slog.Info("slik PDF sent", "customer_id", customerID, "active", active, "endpoint", endpoint, "size", len(pdfBytes))
+
+	// Send auto-delete notification
+	notifMsg := "🔐 *Demi keamanan data nasabah*, file PDF di atas akan dihapus otomatis dalam *5 menit*."
+	notifMsgID, _ := b.SendText(chatID, notifMsg)
+
+	// Schedule deletion after 5 minutes
+	const deleteDelay = 5 * time.Minute
+	b.DeleteMessageDelayed(chatID, pdfMsgID, deleteDelay)
+	if notifMsgID != 0 {
+		b.DeleteMessageDelayed(chatID, notifMsgID, deleteDelay)
+	}
+
+	slog.Info("slik PDF sent with auto-delete", "customer_id", customerID, "active", active, "endpoint", endpoint, "size", len(pdfBytes))
 }
 
 // generatePDFWithGo generates PDF using Go native HTMLGenerator + wkhtmltopdf.
