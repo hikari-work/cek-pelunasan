@@ -8,7 +8,7 @@ Bot Telegram & WhatsApp untuk manajemen data pelunasan kredit, tabungan, dan kol
 - **HTTP Framework:** [Fiber v2](https://github.com/gofiber/fiber)
 - **Database:** MongoDB (mongo-driver v2)
 - **Telegram Bot:** [go-telegram-bot-api/v5](https://github.com/go-telegram-bot-api/telegram-bot-api)
-- **WhatsApp Gateway:** [go-whatsapp-web-multidevice](https://github.com/aldinokemal2104/go-whatsapp-web-multidevice)
+- **WhatsApp:** [whatsmeow](https://github.com/tulir/whatsmeow) (native library, multi-device API)
 - **Logging:** stdlib `log/slog` (JSON structured logging)
 - **Metrics:** [prometheus/client_golang](https://github.com/prometheus/client_golang)
 - **PDF Generation:** wkhtmltopdf (untuk laporan SLIK)
@@ -116,13 +116,15 @@ SPRING_DATA_MONGODB_URI=mongodb://localhost:27017/cek_pelunasan
 TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
 TELEGRAM_BOT_OWNER=your_telegram_chat_id
 
-# WhatsApp Gateway
-WHATSAPP_GATEWAY_URL=http://localhost:3000
-WHATSAPP_GATEWAY_USERNAME=admin
-WHATSAPP_GATEWAY_PASSWORD=password
+# WhatsApp (whatsmeow native)
+WA_DB_PATH=./data/wa.db
+WA_DEVICE_NAME=Bot Cek Pelunasan
+WA_LOG_LEVEL=INFO
 ADMIN_WHATSAPP=628123456789
 WA_COMMAND_PREFIX=.
 WA_ALLOW_SELF_MESSAGES=false
+EMAIL_FORWARD_RECIPIENT=recipient@example.com
+EMAIL_FORWARD_FROM=sender@example.com
 
 # Cloudflare R2 (untuk storage SLIK)
 R2_ACCOUNT_ID=your_account_id
@@ -182,6 +184,24 @@ go run ./cmd/cekpelunasan
 ```
 
 Server akan berjalan di `http://localhost:8080`
+
+### 6. WhatsApp Pairing (First Time)
+
+Saat pertama kali dijalankan, bot akan menampilkan QR code di terminal:
+
+```bash
+INFO whatsapp: belum pair, mulai QR flow
+INFO whatsapp: scan QR di HP — WhatsApp → Linked devices → Link a device
+```
+
+**Cara pairing:**
+1. Buka WhatsApp di HP
+2. Tap menu (⋮) → **Linked devices**
+3. Tap **Link a device**
+4. Scan QR code yang muncul di terminal
+5. Tunggu sampai muncul: `INFO whatsapp: paired`
+
+Session akan tersimpan di `./data/wa.db` (SQLite). Restart berikutnya tidak perlu scan QR lagi.
 
 ## Project Structure
 
@@ -482,12 +502,30 @@ Metrics yang tersedia:
 
 ### WhatsApp tidak terkoneksi
 
-1. Cek WhatsApp gateway status:
+1. Cek apakah session masih valid:
    ```bash
-   curl http://localhost:3000/health
+   # Cek log untuk "whatsapp: connected"
+   journalctl -u cek-pelunasan -n 100 | grep whatsapp
    ```
 
-2. Re-pair WhatsApp device melalui gateway UI
+2. Jika logged out, hapus session dan pair ulang:
+   ```bash
+   rm -f ./data/wa.db
+   # Restart service, QR code akan muncul di log
+   sudo systemctl restart cek-pelunasan
+   sudo journalctl -u cek-pelunasan -f
+   ```
+
+3. Cek WhatsApp di HP:
+   - Buka WhatsApp → Linked devices
+   - Pastikan device "Bot Cek Pelunasan" masih terdaftar
+   - Jika tidak ada, pair ulang dengan scan QR
+
+4. Verifikasi file session:
+   ```bash
+   ls -lh ./data/wa.db
+   # File harus ada dan > 0 bytes
+   ```
 
 ### MongoDB connection error
 
