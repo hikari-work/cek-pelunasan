@@ -337,17 +337,13 @@ func (g *HTMLGenerator) writeFooter(b *strings.Builder, dto *JsonDto) {
 	b.WriteString("        \n")
 	tanggal := formatDateTimeSlash(dto.Header.TanggalPermintaan)
 	kodeRef := dto.Header.KodeReferensiPengguna
-	fmt.Fprintf(b, "        <small><i>Tanggal Permintaan <b>%s</b>, Kode Ref. Pengguna <b>%s</b>, Tujuan Penggunaan <b></b>, Petugas Permintaan <b></b></i></small><br>\n",
+	fmt.Fprintf(b, "        <small><i>Tanggal Permintaan <b>%s</b>, Kode Ref. Pengguna <b>%s</b></i></small><br>\n",
 		html.EscapeString(tanggal), html.EscapeString(kodeRef))
 	b.WriteString("        <small> - <i>PT Bank Perekonomian Rakyat Surya Yudhakencana</i></small><br>\n\n")
 	b.WriteString("\n\n")
 }
 
 func (g *HTMLGenerator) writePrintButtons(b *strings.Builder) {
-	b.WriteString("    </div>\n")
-	b.WriteString("    <div class=\"text-right\">\n")
-	b.WriteString("        <button id=\"print\" class=\"btn btn-default btn-outline\" type=\"button\"> <span><i class=\"fa fa-print\"></i> Cetak</span> </button>\n")
-	b.WriteString("        <a href=\"index.php\"><button class=\"btn btn-default btn-outline\" type=\"button\">Kembali</button></a>\n")
 	b.WriteString("    </div>\n")
 }
 
@@ -390,10 +386,30 @@ func (g *HTMLGenerator) writeScripts(b *strings.Builder) {
 // Helper functions
 
 func isActiveFacility(kondisi string) bool {
-	// Consider facility active if kondisi is "LANCAR" or similar
-	// This logic may need adjustment based on actual business rules
+	// Consider facility active if NOT closed/paid off
+	// Active = any status except LUNAS (paid off), HAPUS BUKU (written off), TUTUP (closed)
 	kondisi = strings.ToUpper(strings.TrimSpace(kondisi))
-	return kondisi == "LANCAR" || kondisi == "AKTIF" || kondisi == "ACTIVE"
+
+	// Exclude closed/inactive statuses
+	inactiveStatuses := []string{
+		"LUNAS",           // Paid off
+		"HAPUS BUKU",      // Written off
+		"HAPUS",           // Deleted
+		"TUTUP",           // Closed
+		"DITUTUP",         // Closed
+		"CLOSED",          // Closed (English)
+		"PAID OFF",        // Paid off (English)
+	}
+
+	for _, inactive := range inactiveStatuses {
+		if kondisi == inactive {
+			return false
+		}
+	}
+
+	// All other statuses are considered active (LANCAR, DALAM PERHATIAN KHUSUS,
+	// KURANG LANCAR, DIRAGUKAN, MACET, etc.)
+	return kondisi != ""
 }
 
 func formatDateSlash(dateStr string) string {

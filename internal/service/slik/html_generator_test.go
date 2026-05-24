@@ -232,13 +232,25 @@ func TestIsActiveFacility(t *testing.T) {
 		kondisi string
 		want    bool
 	}{
+		// Active statuses (not closed/paid off)
 		{"LANCAR", true},
 		{"lancar", true},
 		{"AKTIF", true},
 		{"ACTIVE", true},
-		{"LUNAS", false},
-		{"MACET", false},
-		{"", false},
+		{"MACET", true},                      // NPL but still active (not closed)
+		{"DALAM PERHATIAN KHUSUS", true},     // Special mention
+		{"KURANG LANCAR", true},              // Substandard
+		{"DIRAGUKAN", true},                  // Doubtful
+
+		// Inactive statuses (closed/paid off)
+		{"LUNAS", false},                     // Paid off
+		{"HAPUS BUKU", false},                // Written off
+		{"HAPUS", false},                     // Deleted
+		{"TUTUP", false},                     // Closed
+		{"DITUTUP", false},                   // Closed
+		{"CLOSED", false},                    // Closed (English)
+		{"PAID OFF", false},                  // Paid off (English)
+		{"", false},                          // Empty
 	}
 
 	for _, tt := range tests {
