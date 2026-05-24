@@ -15,6 +15,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/service/csvimport"
 	logsvc "github.com/hikari-work/cek-pelunasan/internal/service/log"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"golang.org/x/sync/errgroup"
 )
 
 type Service struct {
@@ -40,53 +41,105 @@ func (s *Service) GetByID(ctx context.Context, id string) (*entity.Bills, error)
 
 func (s *Service) FindByAOAndPayDown(ctx context.Context, ao, payDown string, page, size int64) (PageResult[entity.Bills], error) {
 	p := repository.Page{Page: page, Size: size}
-	items, err := s.repo.FindByAccountOfficerAndPayDown(ctx, ao, payDown, p)
-	if err != nil {
+	var items []entity.Bills
+	var total int64
+
+	g, gCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		var err error
+		items, err = s.repo.FindByAccountOfficerAndPayDown(gCtx, ao, payDown, p)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		total, err = s.repo.CountByAccountOfficerAndPayDown(gCtx, ao, payDown)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return PageResult[entity.Bills]{}, err
 	}
-	total, err := s.repo.CountByAccountOfficerAndPayDown(ctx, ao, payDown)
-	if err != nil {
-		return PageResult[entity.Bills]{}, err
-	}
+
 	return PageResult[entity.Bills]{Items: items, Total: total, Page: page, Size: size}, nil
 }
 
 func (s *Service) FindByBranchAndPayDown(ctx context.Context, branch, payDown string, page, size int64) (PageResult[entity.Bills], error) {
 	p := repository.Page{Page: page, Size: size}
-	items, err := s.repo.FindByBranchAndPayDownOrderByAO(ctx, branch, payDown, p)
-	if err != nil {
+	var items []entity.Bills
+	var total int64
+
+	g, gCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		var err error
+		items, err = s.repo.FindByBranchAndPayDownOrderByAO(gCtx, branch, payDown, p)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		total, err = s.repo.CountByBranchAndPayDown(gCtx, branch, payDown)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return PageResult[entity.Bills]{}, err
 	}
-	total, err := s.repo.CountByBranchAndPayDown(ctx, branch, payDown)
-	if err != nil {
-		return PageResult[entity.Bills]{}, err
-	}
+
 	return PageResult[entity.Bills]{Items: items, Total: total, Page: page, Size: size}, nil
 }
 
 func (s *Service) FindByNameAndBranch(ctx context.Context, name, branch string, page, size int64) (PageResult[entity.Bills], error) {
 	p := repository.Page{Page: page, Size: size}
-	items, err := s.repo.FindByNameAndBranch(ctx, name, branch, p)
-	if err != nil {
+	var items []entity.Bills
+	var total int64
+
+	g, gCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		var err error
+		items, err = s.repo.FindByNameAndBranch(gCtx, name, branch, p)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		total, err = s.repo.CountByNameAndBranch(gCtx, name, branch)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return PageResult[entity.Bills]{}, err
 	}
-	total, err := s.repo.CountByNameAndBranch(ctx, name, branch)
-	if err != nil {
-		return PageResult[entity.Bills]{}, err
-	}
+
 	return PageResult[entity.Bills]{Items: items, Total: total, Page: page, Size: size}, nil
 }
 
 func (s *Service) FindByName(ctx context.Context, name string, page, size int64) (PageResult[entity.Bills], error) {
 	p := repository.Page{Page: page, Size: size}
-	items, err := s.repo.FindByName(ctx, name, p)
-	if err != nil {
+	var items []entity.Bills
+	var total int64
+
+	g, gCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		var err error
+		items, err = s.repo.FindByName(gCtx, name, p)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		total, err = s.repo.CountByName(gCtx, name)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return PageResult[entity.Bills]{}, err
 	}
-	total, err := s.repo.CountByName(ctx, name)
-	if err != nil {
-		return PageResult[entity.Bills]{}, err
-	}
+
 	return PageResult[entity.Bills]{Items: items, Total: total, Page: page, Size: size}, nil
 }
 
@@ -104,14 +157,27 @@ func (s *Service) FindMinimalPaymentByBranch(ctx context.Context, branch string,
 
 func (s *Service) FindMinimalPaymentByAO(ctx context.Context, officer string, page, size int64) (PageResult[entity.Bills], error) {
 	p := repository.Page{Page: page, Size: size}
-	items, err := s.repo.FindByAOWithMinTunggakan(ctx, officer, p)
-	if err != nil {
+	var items []entity.Bills
+	var total int64
+
+	g, gCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		var err error
+		items, err = s.repo.FindByAOWithMinTunggakan(gCtx, officer, p)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		total, err = s.repo.CountByAOWithMinTunggakan(gCtx, officer)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return PageResult[entity.Bills]{}, err
 	}
-	total, err := s.repo.CountByAOWithMinTunggakan(ctx, officer)
-	if err != nil {
-		return PageResult[entity.Bills]{}, err
-	}
+
 	return PageResult[entity.Bills]{Items: items, Total: total, Page: page, Size: size}, nil
 }
 
