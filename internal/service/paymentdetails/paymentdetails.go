@@ -11,6 +11,7 @@ import (
 	"github.com/hikari-work/cek-pelunasan/internal/repository"
 	"github.com/hikari-work/cek-pelunasan/internal/service/csvimport"
 	logsvc "github.com/hikari-work/cek-pelunasan/internal/service/log"
+	"golang.org/x/sync/errgroup"
 )
 
 const dataType = "PAYMENT_DETAILS"
@@ -32,6 +33,7 @@ type PageResult struct {
 }
 
 // findPaged is a helper to eliminate duplicate pagination logic.
+// Executes find and count operations in parallel using errgroup.
 func (s *Service) findPaged(
 	ctx context.Context,
 	page, size int64,
@@ -43,14 +45,28 @@ func (s *Service) findPaged(
 		zero = 0
 	}
 	p := repository.Page{Page: zero, Size: size}
-	items, err := findFn(ctx, p)
-	if err != nil {
+
+	var items []entity.PaymentDetails
+	var total int64
+
+	g, gCtx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		var err error
+		items, err = findFn(gCtx, p)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		total, err = countFn(gCtx)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return PageResult{}, err
 	}
-	total, err := countFn(ctx)
-	if err != nil {
-		return PageResult{}, err
-	}
+
 	return PageResult{Items: items, Total: total, Page: page, Size: size}, nil
 }
 
