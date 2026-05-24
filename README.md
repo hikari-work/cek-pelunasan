@@ -2,12 +2,11 @@
 
 Bot Telegram & WhatsApp untuk manajemen data pelunasan kredit di lingkup koperasi/BPR.
 
-> **Status migrasi (2026-05-18):** Codebase sedang dimigrasikan dari Spring Boot/Java
-> ke Go murni di branch `feat/migrate-golang`. Source Java lama dipertahankan di
-> folder [`legacy/`](./legacy) sebagai referensi sampai migrasi selesai.
+> **Status migrasi (2026-05-24):** ✅ Migrasi dari Spring Boot/Java ke Go **selesai**.
+> Semua modul sudah diport dan berjalan di production. Source Java lama dipertahankan
+> di folder [`legacy/`](./legacy) sebagai referensi historis.
 >
-> Perintah/fitur yang belum diport akan membalas pesan
-> "fitur sedang dimigrasikan" — bot tetap responsif tapi belum lengkap.
+> Checklist QA di bawah untuk verifikasi end-to-end testing di environment production.
 
 ## Tech Stack (versi Go)
 
