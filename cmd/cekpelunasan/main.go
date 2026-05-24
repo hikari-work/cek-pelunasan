@@ -476,5 +476,5 @@ func registerTelegramHandlers(
 	r.RegisterCallback(&cbh.SavingsBranchSelect{Savings: savingsSvc})
 	r.RegisterCallback(&cbh.SlikMonth{Sessions: slikSess, Storage: r2Client, Users: usersSvc})
 	r.RegisterCallback(&cbh.SlikName{Sessions: slikSess})
-	r.RegisterCallback(&cbh.SlikSender{Storage: r2Client, Generator: pdfGen, HTMLGenerator: htmlGen, MaxPDFSize: maxPDFSize})
+	r.RegisterCallback(&cbh.SlikSender{Storage: r2Client, Generator: pdfGen, HTMLGenerator: htmlGen, Users: usersSvc, MaxPDFSize: maxPDFSize})
 }

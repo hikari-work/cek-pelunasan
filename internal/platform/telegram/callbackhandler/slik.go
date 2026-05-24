@@ -224,8 +224,9 @@ func (h *SlikName) Handle(_ context.Context, b *telegram.Bot, q *tgbotapi.Callba
 // generate PDF via PDFGenerator (PHP) atau HTMLGenerator (Go), kirim sebagai dokumen.
 type SlikSender struct {
 	Storage       *r2.Client
-	Generator     *slik.PDFGenerator // PHP endpoint
+	Generator     *slik.PDFGenerator  // PHP endpoint
 	HTMLGenerator *slik.HTMLGenerator // Go native
+	Users         *users.Service
 	MaxPDFSize    int64
 }
 
@@ -305,7 +306,13 @@ func (h *SlikSender) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.Ca
 
 		genCtx, cancelGen := context.WithTimeout(ctx, 90*time.Second)
 		defer cancelGen()
-		pdfBytes, err = h.generatePDFWithGo(genCtx, data, active)
+
+		requesterName := q.From.FirstName
+		if q.From.LastName != "" {
+			requesterName += " " + q.From.LastName
+		}
+
+		pdfBytes, err = h.generatePDFWithGo(genCtx, chatID, data, active, requesterName)
 		if err != nil {
 			slog.Error("generate pdf with go failed", "customer_id", customerID, "err", err)
 			_ = b.EditText(chatID, loadingID, fmt.Sprintf("❌ Gagal generate PDF (Go): %s", err.Error()))
@@ -348,11 +355,26 @@ func (h *SlikSender) Handle(ctx context.Context, b *telegram.Bot, q *tgbotapi.Ca
 
 // generatePDFWithGo generates PDF using Go native HTMLGenerator + wkhtmltopdf.
 // This is more efficient than calling PHP endpoint via HTTP.
-func (h *SlikSender) generatePDFWithGo(ctx context.Context, slikData []byte, fasilitasAktif bool) ([]byte, error) {
+func (h *SlikSender) generatePDFWithGo(ctx context.Context, chatID int64, slikData []byte, fasilitasAktif bool, requesterName string) ([]byte, error) {
 	// Parse SLIK JSON
 	dto, err := slik.ParseSlikJSON(slikData)
 	if err != nil {
 		return nil, fmt.Errorf("parse slik json: %w", err)
+	}
+
+	// Populate requester info if possible
+	if dto.Header.TujuanPenggunaan == "" {
+		dto.Header.TujuanPenggunaan = "Analisa Kredit"
+	}
+	if dto.Header.PetugasPermintaan == "" {
+		if requesterName != "" {
+			dto.Header.PetugasPermintaan = requesterName
+		} else if h.Users != nil {
+			user, err := h.Users.FindByChatID(ctx, chatID)
+			if err == nil && user != nil && user.UserCode != "" {
+				dto.Header.PetugasPermintaan = user.UserCode
+			}
+		}
 	}
 
 	// Generate HTML

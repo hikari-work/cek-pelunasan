@@ -28,6 +28,7 @@ func (g *HTMLGenerator) GenerateHTML(dto *JsonDto, fasilitasAktif bool) string {
 	g.writeKreditTable(&b, dto, fasilitasAktif)
 	g.writeRiwayatTable(&b, dto, fasilitasAktif)
 	g.writeFooter(&b, dto)
+	g.writeSignatureTable(&b)
 	g.writePrintButtons(&b)
 	g.writeDocumentClose(&b)
 	g.writeScripts(&b)
@@ -53,15 +54,16 @@ func (g *HTMLGenerator) writeDocumentHead(b *strings.Builder, dto *JsonDto) {
 
 func (g *HTMLGenerator) writeStyles(b *strings.Builder) {
 	b.WriteString(`        <style>
+            @page { size: A4 landscape; margin: 15mm; }
             /* CSS untuk gaya tabel */
             table {
                 width: 100%;
                 border-collapse: collapse;
             }
             th, td {
-                border: 1px solid #dddddd;
+                border: 1px solid #555;
                 text-align: left;
-                padding: 1px;
+                padding: 2px 5px;
             }
             th {
                 background-color: #f2f2f2;
@@ -69,16 +71,11 @@ func (g *HTMLGenerator) writeStyles(b *strings.Builder) {
             .bpr {
                 background-color: #EBF5FB;
             }
-            .right-image {
-                position: absolute;
-                top: 0;
-                right: 0;
-                max-width: 200px; /* Adjust the size of the image */
-                margin: 10px; /* Adjust margin as needed */
-            }
             input[type="tel"] {
                 width: 95%;
             }
+            table:not(.slik-header) { border-collapse: collapse; }
+            .slik-header, .slik-header td, .slik-header th { border: none !important; }
         </style>
 `)
 }
@@ -88,9 +85,19 @@ func (g *HTMLGenerator) writeHeader(b *strings.Builder) {
 	if logoURL == "" {
 		logoURL = "logo.png"
 	}
-	b.WriteString("        <h3 style=\"margin-bottom: 1px;margin-top: 1px;\">Resume Informasi Debitur (iDeb)</h3>\n")
-	fmt.Fprintf(b, "        <img src=\"%s\" alt=\"Logo BSY\" class=\"right-image\" width=\"160\"> \n", html.EscapeString(logoURL))
-	b.WriteString("                <h3 style=\"margin-bottom: 8px;margin-top: 1px;\">Perorangan</h3>\n")
+
+	b.WriteString(`        <table class="slik-header" style="width: 100%; border: none; margin-bottom: 20px; border-collapse: collapse;">
+            <tr>
+                <td style="border: none; vertical-align: middle; text-align: left;">
+                    <h3 style="margin: 2px 0; font-family: sans-serif;">Resume Informasi Debitur (iDeb)</h3>
+                    <h3 style="margin: 2px 0; font-family: sans-serif;">Perorangan</h3>
+                </td>
+                <td style="border: none; vertical-align: middle; text-align: right; width: 1%; white-space: nowrap;">
+                    <img src="` + html.EscapeString(logoURL) + `" alt="Logo BSY" width="160">
+                </td>
+            </tr>
+        </table>
+`)
 }
 
 func (g *HTMLGenerator) writeDebiturInfo(b *strings.Builder, dto *JsonDto) {
@@ -103,33 +110,10 @@ func (g *HTMLGenerator) writeDebiturInfo(b *strings.Builder, dto *JsonDto) {
 	}
 
 	b.WriteString("        \n")
-	b.WriteString("        <div style=\"display: flex; justify-content: space-between; align-items: flex-start;\">\n")
-	b.WriteString("          <!-- Kiri: Info -->\n")
-	b.WriteString("          <div style=\"font-family: sans-serif;\">\n")
-	fmt.Fprintf(b, "            <div><code>ID: <b>%s</b></code></div>\n", html.EscapeString(noIdentitas))
-	fmt.Fprintf(b, "            <div><code>Nama: <b>%s</b></code></div>\n", html.EscapeString(namaDebitur))
-	fmt.Fprintf(b, "            <div><code>Alamat: <b>%s</b></code></div>\n", html.EscapeString(alamat))
-	b.WriteString("          </div>\n\n")
-
-	// Signature grid - use table instead of CSS grid for wkhtmltopdf compatibility
-	// Wrap in div for proper flex alignment
-	b.WriteString("          <!-- Kanan: Signature Table -->\n")
-	b.WriteString("          <div>\n")
-	b.WriteString("            <table style=\"width: 300px; border-collapse: collapse; font-family: sans-serif; font-size: 12px; border: 0.5px solid blue; margin-top: 0px; page-break-inside: avoid;\">\n")
-	b.WriteString("              <tbody>\n")
-	b.WriteString("                <tr>\n")
-	b.WriteString("                  <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Petugas</td>\n")
-	b.WriteString("                  <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Pemeriksa</td>\n")
-	b.WriteString("                  <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Pimpinan</td>\n")
-	b.WriteString("                </tr>\n")
-	b.WriteString("                <tr>\n")
-	b.WriteString("                  <td style=\"border: 0.5px solid blue; height: 60px;\"></td>\n")
-	b.WriteString("                  <td style=\"border: 0.5px solid blue; height: 60px;\"></td>\n")
-	b.WriteString("                  <td style=\"border: 0.5px solid blue; height: 60px;\"></td>\n")
-	b.WriteString("                </tr>\n")
-	b.WriteString("              </tbody>\n")
-	b.WriteString("            </table>\n")
-	b.WriteString("          </div>\n")
+	b.WriteString("        <div style=\"font-family: sans-serif;\">\n")
+	fmt.Fprintf(b, "          <div><code>ID: <b>%s</b></code></div>\n", html.EscapeString(noIdentitas))
+	fmt.Fprintf(b, "          <div><code>Nama: <b>%s</b></code></div>\n", html.EscapeString(namaDebitur))
+	fmt.Fprintf(b, "          <div><code>Alamat: <b>%s</b></code></div>\n", html.EscapeString(alamat))
 	b.WriteString("        </div>\n\n")
 	b.WriteString("\n\n")
 }
@@ -181,28 +165,34 @@ func (g *HTMLGenerator) writeKreditTable(b *strings.Builder, dto *JsonDto, fasil
 	// Write facility rows
 	var totalPlafon, totalBakiDebet, totalTgkBunga, totalTgkPokok int64
 	for i, k := range filtered {
-		b.WriteString("                                <tr class=\"\">\n")
+		rowClass := ""
+		if ClassifyBank(k.LjkKet) == BankTypeBPR {
+			rowClass = "bpr"
+		}
+		fmt.Fprintf(b, "                                <tr class=\"%s\">\n", rowClass)
 		fmt.Fprintf(b, "                    <td style=\"text-align: center;\">%d</td>\n", i+1)
 		fmt.Fprintf(b, "                    <td> - %s</td>\n", html.EscapeString(k.LjkKet))
 		fmt.Fprintf(b, "                    <td style=\"text-align: center;\">%s</td>\n", formatDateSlash(k.TanggalAkadAwal))
 		fmt.Fprintf(b, "                    <td style=\"text-align: center;\">%s</td>\n", formatDateSlash(k.TanggalJatuhTempo))
-		b.WriteString("                    <td style=\"text-align: right;\">0,00</td>\n") // Suku bunga not in DTO
-		b.WriteString("                    <td style=\"text-align: left;\"></td>\n")
+		fmt.Fprintf(b, "                    <td style=\"text-align: right;\">%s</td>\n", formatSukuBunga(k.SukuBunga))
+		fmt.Fprintf(b, "                    <td style=\"text-align: left;\">%s</td>\n", html.EscapeString(k.SukuBungaKet))
 		fmt.Fprintf(b, "                    <td style=\"text-align: right;\">%s</td>\n", formatNumberDots(k.PlafonAwal))
 		fmt.Fprintf(b, "                    <td style=\"text-align: right;\">%s</td>\n", formatNumberDots(k.BakiDebet))
-		b.WriteString("                    <td style=\"text-align: right;\">0</td>\n") // Tunggakan not in DTO
-		b.WriteString("                    <td style=\"text-align: right;\">0</td>\n")
+		fmt.Fprintf(b, "                    <td style=\"text-align: right;\">%s</td>\n", formatNumberDots(k.TunggakanBunga))
+		fmt.Fprintf(b, "                    <td style=\"text-align: right;\">%s</td>\n", formatNumberDots(k.TunggakanPokok))
 		fmt.Fprintf(b, "                    <td>%s</td>\n", html.EscapeString(k.KualitasKet))
 		fmt.Fprintf(b, "                    <td>%s</td>\n", html.EscapeString(k.JenisPenggunaanKet))
-		b.WriteString("                    <td></td>\n") // Sektor ekonomi not in DTO
+		fmt.Fprintf(b, "                    <td>%s</td>\n", html.EscapeString(k.SektorEkonomiKet))
 		fmt.Fprintf(b, "                    <td>%s</td>\n", html.EscapeString(k.KondisiKet))
-		b.WriteString("                    <td style=\"text-align: center;\">\n")
-		b.WriteString("                        Tidak                    </td>\n") // Restrukturisasi not in DTO
+		fmt.Fprintf(b, "                    <td style=\"text-align: center;\">\n")
+		fmt.Fprintf(b, "                        %s                    </td>\n", orDefault(k.RestrukturisasiKet, "Tidak"))
 		b.WriteString("                </tr>\n")
 
 		// Accumulate totals
 		totalPlafon += parseNumber(k.PlafonAwal)
 		totalBakiDebet += parseNumber(k.BakiDebet)
+		totalTgkBunga += parseNumber(k.TunggakanBunga)
+		totalTgkPokok += parseNumber(k.TunggakanPokok)
 	}
 
 	b.WriteString("                                <!-- Anda dapat menambahkan lebih banyak baris di sini -->\n")
@@ -210,14 +200,19 @@ func (g *HTMLGenerator) writeKreditTable(b *strings.Builder, dto *JsonDto, fasil
 	b.WriteString("                    <td colspan=\"6\"><b>Total</b></td>\n")
 	fmt.Fprintf(b, "                    <td style=\"text-align: right;\"><b>%s</b></td>\n", formatNumberDots(strconv.FormatInt(totalPlafon, 10)))
 	fmt.Fprintf(b, "                    <td style=\"text-align: right;\"><b>%s</b></td>\n", formatNumberDots(strconv.FormatInt(totalBakiDebet, 10)))
-	fmt.Fprintf(b, "                    <td style=\"text-align: right;\"><b>%d</b></td>\n", totalTgkBunga)
-	fmt.Fprintf(b, "                    <td style=\"text-align: right;\"><b>%d</b></td>\n", totalTgkPokok)
+	fmt.Fprintf(b, "                    <td style=\"text-align: right;\"><b>%s</b></td>\n", formatNumberDots(strconv.FormatInt(totalTgkBunga, 10)))
+	fmt.Fprintf(b, "                    <td style=\"text-align: right;\"><b>%s</b></td>\n", formatNumberDots(strconv.FormatInt(totalTgkPokok, 10)))
 	b.WriteString("                    <td colspan=\"3\"></td>\n")
 	b.WriteString("                    <td style=\"text-align: right;\" contenteditable=\"true\"></td>\n")
+	b.WriteString("                    <td style=\"text-align: right;\"></td>\n")
 	b.WriteString("                </tr>\n")
 	b.WriteString("            </tbody>\n")
 	b.WriteString("        </table>\n")
-	b.WriteString("        <small><i>Kualitas Terburuk/Terendah:</i> Umum (), BPR/S* (), Lainnya ()</small><br>\n")
+
+	// Calculate worst quality per type
+	wUmum, wBpr, wLain := GetWorstQualityPerType(filtered)
+	fmt.Fprintf(b, "        <small><i>Kualitas Terburuk/Terendah:</i> Umum (%s), BPR/S* (%s), Lainnya (%s)</small><br>\n",
+		html.EscapeString(wUmum), html.EscapeString(wBpr), html.EscapeString(wLain))
 	b.WriteString("        <br>\n")
 }
 
@@ -238,10 +233,21 @@ func (g *HTMLGenerator) writeRiwayatTable(b *strings.Builder, dto *JsonDto, fasi
 		filtered = facilities.KreditPembiayan
 	}
 
-	// Get worst quality from ringkasan
+	// Get worst quality from ringkasan or calculate from filtered facilities
 	worstQuality := "0"
-	if dto.Individual.RingkasanFasilitas != nil {
+	if dto.Individual.RingkasanFasilitas != nil && dto.Individual.RingkasanFasilitas.KualitasTerburuk != "" {
 		worstQuality = dto.Individual.RingkasanFasilitas.KualitasTerburuk
+	} else {
+		maxQ := 0
+		for _, k := range filtered {
+			q, _ := strconv.Atoi(k.Kualitas)
+			if q > maxQ {
+				maxQ = q
+			}
+		}
+		if maxQ > 0 {
+			worstQuality = strconv.Itoa(maxQ)
+		}
 	}
 
 	b.WriteString("        <small>Riwayat Kualitas:</small><br>\n")
@@ -333,12 +339,35 @@ func (g *HTMLGenerator) writeRiwayatRow(b *strings.Builder, index int, k *Kredit
 	b.WriteString("                </tr>\n")
 }
 
+func (g *HTMLGenerator) writeSignatureTable(b *strings.Builder) {
+	b.WriteString("        <div style=\"display: flex; justify-content: flex-end; margin-top: 20px; text-align: right;\">\n")
+	b.WriteString("          <div style=\"display: inline-block;\">\n")
+	b.WriteString("            <table style=\"width: 300px; border-collapse: collapse; font-family: sans-serif; font-size: 12px; border: 0.5px solid blue; page-break-inside: avoid;\">\n")
+	b.WriteString("              <tbody>\n")
+	b.WriteString("                <tr>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Petugas</td>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Pemeriksa</td>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; font-weight: bold; color: blue; text-align: center; padding: 4px; width: 100px;\">Pimpinan</td>\n")
+	b.WriteString("                </tr>\n")
+	b.WriteString("                <tr>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; height: 60px;\"></td>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; height: 60px;\"></td>\n")
+	b.WriteString("                  <td style=\"border: 0.5px solid blue; height: 60px;\"></td>\n")
+	b.WriteString("                </tr>\n")
+	b.WriteString("              </tbody>\n")
+	b.WriteString("            </table>\n")
+	b.WriteString("          </div>\n")
+	b.WriteString("        </div>\n")
+}
+
 func (g *HTMLGenerator) writeFooter(b *strings.Builder, dto *JsonDto) {
 	b.WriteString("        \n")
 	tanggal := formatDateTimeSlash(dto.Header.TanggalPermintaan)
 	kodeRef := dto.Header.KodeReferensiPengguna
-	fmt.Fprintf(b, "        <small><i>Tanggal Permintaan <b>%s</b>, Kode Ref. Pengguna <b>%s</b>, Tujuan Penggunaan <b></b>, Petugas Permintaan <b></b></i></small><br>\n",
-		html.EscapeString(tanggal), html.EscapeString(kodeRef))
+	tujuan := mapTujuanCode(dto.Header.TujuanPenggunaan)
+	petugas := orDefault(dto.Header.PetugasPermintaan, "Petugas Bank")
+	fmt.Fprintf(b, "        <small><i>Tanggal Permintaan <b>%s</b>, Kode Ref. Pengguna <b>%s</b>, Tujuan Penggunaan <b>%s</b>, Petugas Permintaan <b>%s</b></i></small><br>\n",
+		html.EscapeString(tanggal), html.EscapeString(kodeRef), html.EscapeString(tujuan), html.EscapeString(petugas))
 	b.WriteString("        <small> - <i>PT Bank Perekonomian Rakyat Surya Yudhakencana</i></small><br>\n\n")
 	b.WriteString("\n\n")
 }
@@ -500,4 +529,54 @@ func parseNumber(numStr string) int64 {
 		return 0
 	}
 	return n
+}
+
+func formatSukuBunga(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return "0,00"
+	}
+	// Try to convert to float and format with comma
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return s
+	}
+	return strings.Replace(fmt.Sprintf("%.2f", f), ".", ",", 1)
+}
+
+func orDefault(s, def string) string {
+	if strings.TrimSpace(s) == "" {
+		return def
+	}
+	return s
+}
+
+func mapTujuanCode(code string) string {
+	code = strings.TrimSpace(code)
+	if code == "" {
+		return "Analisa Kredit"
+	}
+	// Official SLIK purpose codes mapping
+	switch code {
+	case "01":
+		return "Penilaian calon Debitur"
+	case "02":
+		return "Penerapan one obligor concept"
+	case "03":
+		return "Monitoring Debitur existing"
+	case "04":
+		return "Melayani permintaan Debitur"
+	case "05":
+		return "Dalam rangka pelaksanaan audit"
+	case "06":
+		return "Penanganan pengaduan Debitur"
+	case "07":
+		return "Penilaian karyawan atau calon karyawan"
+	case "08":
+		return "Penilaian calon rekanan, agen, merchant, maupun vendor Pelapor"
+	case "99":
+		return "Lain - lain"
+	default:
+		return "Analisa Kredit (" + code + ")"
+	}
 }

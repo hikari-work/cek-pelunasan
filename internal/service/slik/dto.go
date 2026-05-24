@@ -18,6 +18,8 @@ type JsonDto struct {
 type Header struct {
 	KodeReferensiPengguna string `json:"kodeReferensiPengguna"`
 	TanggalPermintaan     string `json:"tanggalPermintaan"`
+	TujuanPenggunaan      string `json:"kodeTujuanPermintaan"`
+	PetugasPermintaan     string `json:"dibuatOleh"`
 }
 
 type Individual struct {
@@ -56,12 +58,19 @@ type KreditPembiayaan struct {
 	PlafonAwal               string `json:"plafonAwal"`
 	BakiDebet                string `json:"bakiDebet"`
 	KondisiKet               string `json:"kondisiKet"`
+	Kualitas                 string `json:"kualitas"`
 	KualitasKet              string `json:"kualitasKet"`
 	TanggalAkadAwal          string `json:"tanggalAkadAwal"`
 	TanggalJatuhTempo        string `json:"tanggalJatuhTempo"`
 	JenisKreditPembiayaanKet string `json:"jenisKreditPembiayaanKet"`
 	JenisPenggunaanKet       string `json:"jenisPenggunaanKet"`
 	SifatKreditPembiayaanKet string `json:"sifatKreditPembiayaanKet"`
+	SukuBunga                string `json:"sukuBungaImbalan"`
+	SukuBungaKet             string `json:"jenisSukuBungaImbalanKet"`
+	TunggakanBunga           string `json:"tunggakanBunga"`
+	TunggakanPokok           string `json:"tunggakanPokok"`
+	SektorEkonomiKet         string `json:"sektorEkonomiKet"`
+	RestrukturisasiKet       string `json:"restrukturisasiKet"`
 
 	// TahunBulan menampung semua field dinamis "tahunBulanNN", "tahunBulanNNKol",
 	// "tahunBulanNNHt". Diisi dari raw map saat UnmarshalJSON.

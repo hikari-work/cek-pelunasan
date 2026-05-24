@@ -1,6 +1,7 @@
 package slik
 
 import (
+	"strconv"
 	"strings"
 )
 
@@ -52,6 +53,40 @@ func CountBankTypes(facilities []KreditPembiayaan) (umum, bpr, lembaga, lainnya 
 		case BankTypeLainnya:
 			lainnya++
 		}
+	}
+	return
+}
+
+// GetWorstQualityPerType calculates the worst quality for each bank type
+func GetWorstQualityPerType(facilities []KreditPembiayaan) (umum, bpr, lainnya string) {
+	var maxUmum, maxBpr, maxLainnya int
+	for _, f := range facilities {
+		q, _ := strconv.Atoi(f.Kualitas)
+		switch ClassifyBank(f.LjkKet) {
+		case BankTypeUmum:
+			if q > maxUmum {
+				maxUmum = q
+			}
+		case BankTypeBPR:
+			if q > maxBpr {
+				maxBpr = q
+			}
+		case BankTypeLembagaPembiayaan, BankTypeLainnya:
+			if q > maxLainnya {
+				maxLainnya = q
+			}
+		}
+	}
+
+
+	if maxUmum > 0 {
+		umum = strconv.Itoa(maxUmum)
+	}
+	if maxBpr > 0 {
+		bpr = strconv.Itoa(maxBpr)
+	}
+	if maxLainnya > 0 {
+		lainnya = strconv.Itoa(maxLainnya)
 	}
 	return
 }

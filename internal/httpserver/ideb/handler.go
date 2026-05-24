@@ -63,6 +63,16 @@ func (h *Handler) Generate(c *fiber.Ctx) error {
 	// Get fasilitasAktif parameter
 	fasilitasAktif := strings.ToLower(strings.TrimSpace(c.FormValue("fasilitasAktif"))) == "y"
 
+	// Override footer fields if provided in form (legacy PHP compatibility)
+	tujuan := c.FormValue("tujuan")
+	if tujuan != "" {
+		dto.Header.TujuanPenggunaan = tujuan
+	}
+	petugas := c.FormValue("petugas")
+	if petugas != "" {
+		dto.Header.PetugasPermintaan = petugas
+	}
+
 	// Generate HTML
 	html := h.Generator.GenerateHTML(dto, fasilitasAktif)
 	if html == "" {

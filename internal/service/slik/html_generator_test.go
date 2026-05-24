@@ -11,7 +11,9 @@ func TestHTMLGenerator_GenerateHTML(t *testing.T) {
 	jsonData := []byte(`{
 		"header": {
 			"kodeReferensiPengguna": "REF-TEST-001",
-			"tanggalPermintaan": "20260524143000"
+			"tanggalPermintaan": "20260524143000",
+			"kodeTujuanPermintaan": "01",
+			"dibuatOleh": "ADMIN-01"
 		},
 		"individual": {
 			"dataPokokDebitur": [{
@@ -92,6 +94,12 @@ func TestHTMLGenerator_GenerateHTML(t *testing.T) {
 	}
 	if !strings.Contains(html, "Resume Informasi Debitur (iDeb)") {
 		t.Error("Missing header title")
+	}
+	if !strings.Contains(html, "Penilaian calon Debitur") {
+		t.Error("Missing mapped Tujuan Penggunaan")
+	}
+	if !strings.Contains(html, "ADMIN-01") {
+		t.Error("Missing Petugas Permintaan")
 	}
 
 	// Write to file for manual inspection
