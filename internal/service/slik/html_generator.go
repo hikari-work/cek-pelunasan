@@ -337,7 +337,7 @@ func (g *HTMLGenerator) writeFooter(b *strings.Builder, dto *JsonDto) {
 	b.WriteString("        \n")
 	tanggal := formatDateTimeSlash(dto.Header.TanggalPermintaan)
 	kodeRef := dto.Header.KodeReferensiPengguna
-	fmt.Fprintf(b, "        <small><i>Tanggal Permintaan <b>%s</b>, Kode Ref. Pengguna <b>%s</b></i></small><br>\n",
+	fmt.Fprintf(b, "        <small><i>Tanggal Permintaan <b>%s</b>, Kode Ref. Pengguna <b>%s</b>, Tujuan Penggunaan <b></b>, Petugas Permintaan <b></b></i></small><br>\n",
 		html.EscapeString(tanggal), html.EscapeString(kodeRef))
 	b.WriteString("        <small> - <i>PT Bank Perekonomian Rakyat Surya Yudhakencana</i></small><br>\n\n")
 	b.WriteString("\n\n")
