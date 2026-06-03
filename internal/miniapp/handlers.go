@@ -1,7 +1,6 @@
 package miniapp
 
 import (
-	"log/slog"
 	"regexp"
 	"strings"
 
@@ -270,10 +269,6 @@ func registerPayment(r fiber.Router, billSvc *bill.Service, pdSvc *paymentdetail
 		if err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
-		for _, pd := range records {
-			slog.Info("pd tanggal", "spk", spk, "tanggal", pd.Tanggal, "kodePosting", pd.KodePosting)
-		}
-
 		// Group by tanggal, agg pokok/bunga/denda/penalti/total per tanggal.
 		type dateBucket struct {
 			tanggal string
@@ -286,7 +281,7 @@ func registerPayment(r fiber.Router, billSvc *bill.Service, pdSvc *paymentdetail
 		buckets := map[string]*dateBucket{}
 		var ordered []string
 		for _, pd := range records {
-			tgl := pd.Tanggal
+			tgl := strings.TrimSpace(pd.Tanggal)
 			if _, ok := buckets[tgl]; !ok {
 				ordered = append(ordered, tgl)
 				buckets[tgl] = &dateBucket{tanggal: tgl}
