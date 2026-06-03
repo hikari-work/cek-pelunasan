@@ -270,21 +270,44 @@ func registerPayment(r fiber.Router, billSvc *bill.Service, pdSvc *paymentdetail
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 
-		rows := make([]fiber.Map, 0, len(records))
-		for i, pd := range records {
-			t := strings.ToUpper(strings.TrimSpace(pd.KodePosting))
-			pokok, bunga := int64(0), int64(0)
-			if t == "P" {
-				pokok = pd.NominalAngsuran
-			} else if t == "I" {
-				bunga = pd.NominalAngsuran
+		// Group by tanggal, agg pokok/bunga/denda/penalti/total per tanggal.
+		type dateBucket struct {
+			tanggal string
+			pokok   int64
+			bunga   int64
+			denda   int64
+			penalti int64
+			total   int64
+		}
+		buckets := map[string]*dateBucket{}
+		var ordered []string
+		for _, pd := range records {
+			tgl := pd.Tanggal
+			if _, ok := buckets[tgl]; !ok {
+				ordered = append(ordered, tgl)
+				buckets[tgl] = &dateBucket{tanggal: tgl}
 			}
-			total := pd.NominalAngsuran + pd.Denda + pd.Penalti
+			b := buckets[tgl]
+			tp := strings.ToUpper(strings.TrimSpace(pd.KodePosting))
+			switch tp {
+			case "P":
+				b.pokok += pd.NominalAngsuran
+			case "I":
+				b.bunga += pd.NominalAngsuran
+			}
+			b.denda += pd.Denda
+			b.penalti += pd.Penalti
+			b.total += pd.NominalAngsuran + pd.Denda + pd.Penalti
+		}
+
+		rows := make([]fiber.Map, 0, len(ordered))
+		for i, tgl := range ordered {
+			b := buckets[tgl]
 			rows = append(rows, fiber.Map{
-				"no": i + 1, "tanggal": pd.Tanggal, "typePosting": t,
-				"pokok": pokok, "bunga": bunga,
-				"denda": pd.Denda, "penalti": pd.Penalti,
-				"total": total, "highlight": pd.Denda+pd.Penalti > 0,
+				"no": i + 1, "tanggal": b.tanggal,
+				"pokok": b.pokok, "bunga": b.bunga,
+				"denda": b.denda, "penalti": b.penalti,
+				"total": b.total, "highlight": b.denda+b.penalti > 0,
 			})
 		}
 		return c.JSON(fiber.Map{

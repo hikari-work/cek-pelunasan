@@ -55,9 +55,10 @@ const Payment = (() => {
                   <tr>
                     <th>No</th>
                     <th>Tanggal</th>
-                    <th>Type</th>
                     <th class="num">Pokok</th>
                     <th class="num">Bunga</th>
+                    <th class="num">Denda</th>
+                    <th class="num">Penalti</th>
                     <th class="num">Total</th>
                   </tr>
                 </thead>
@@ -66,9 +67,10 @@ const Payment = (() => {
                     <tr class="${r.highlight ? 'is-alert' : ''}">
                       <td>${r.no}</td>
                       <td class="mono">${escHtml(formatTanggal(r.tanggal))}</td>
-                      <td><span class="type-badge type-${escHtml((r.typePosting || '').toLowerCase())}">${escHtml(r.typePosting || '-')}</span></td>
                       <td class="num mono">${formatRupiah(r.pokok)}</td>
                       <td class="num mono">${formatRupiah(r.bunga)}</td>
+                      <td class="num mono">${formatRupiah(r.denda)}</td>
+                      <td class="num mono">${formatRupiah(r.penalti)}</td>
                       <td class="num mono">${formatRupiah(r.total)}</td>
                     </tr>
                   `).join('')}
