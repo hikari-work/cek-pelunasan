@@ -1,6 +1,7 @@
 package miniapp
 
 import (
+	"log/slog"
 	"regexp"
 	"strings"
 
@@ -268,6 +269,9 @@ func registerPayment(r fiber.Router, billSvc *bill.Service, pdSvc *paymentdetail
 		records, err := pdSvc.FindByNoSpk(ctx, spk)
 		if err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+		for _, pd := range records {
+			slog.Info("pd tanggal", "spk", spk, "tanggal", pd.Tanggal, "kodePosting", pd.KodePosting)
 		}
 
 		// Group by tanggal, agg pokok/bunga/denda/penalti/total per tanggal.
