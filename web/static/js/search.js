@@ -40,6 +40,7 @@ const Search = (() => {
     titleEl.className    = 'search-title ' + meta.cls;
     hintEl.innerHTML     = meta.hint;
     serviceBar.style.background = meta.color;
+    filterBar.className  = 'filter-bar hidden ' + meta.cls;
 
     setStateIdle();
     setTimeout(() => input.focus(), 250);
@@ -78,7 +79,7 @@ const Search = (() => {
     allItems = items;
     activeFilter = null;
 
-    if (currentService === 'tabungan') {
+    if (currentService === 'tabungan' || currentService === 'tagihan' || currentService === 'pelunasan' || currentService === 'payment') {
       filterKey = 'branch';
       renderFilterBar(items);
     } else if (currentService === 'kolektas') {

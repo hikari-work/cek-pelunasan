@@ -424,6 +424,36 @@ html, body {
   box-shadow: none;
 }
 
+.filter-bar.is-tagihan .filter-chip.active {
+  background: var(--c-tagihan);
+  border-color: var(--c-tagihan);
+}
+
+.filter-bar.is-pelunasan .filter-chip.active {
+  background: var(--c-pelunasan);
+  border-color: var(--c-pelunasan);
+}
+
+.filter-bar.is-tabungan .filter-chip.active {
+  background: var(--c-tabungan);
+  border-color: var(--c-tabungan);
+}
+
+.filter-bar.is-canvas .filter-chip.active {
+  background: var(--c-canvas);
+  border-color: var(--c-canvas);
+}
+
+.filter-bar.is-kolektas .filter-chip.active {
+  background: var(--c-kolektas);
+  border-color: var(--c-kolektas);
+}
+
+.filter-bar.is-payment .filter-chip.active {
+  background: var(--c-payment);
+  border-color: var(--c-payment);
+}
+
 .filter-chip:active {
   transform: translate(2px, 2px);
   box-shadow: none;
