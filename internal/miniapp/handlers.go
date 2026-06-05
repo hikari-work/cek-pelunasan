@@ -2,7 +2,9 @@ package miniapp
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -252,6 +254,44 @@ func registerKolekTas(r fiber.Router, svc *kolektas.Service) {
 	})
 }
 
+// cleanTanggal strips all non-printable chars and trims whitespace from a date string.
+// It also normalizes various date formats (e.g. DD/MM/YYYY, YYYY-MM-DD) to a standard YYYYMMDD format.
+func cleanTanggal(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		if !unicode.IsPrint(r) {
+			continue
+		}
+		b.WriteRune(r)
+	}
+	cleaned := strings.TrimSpace(b.String())
+
+	// Remove common delimiters
+	norm := cleaned
+	norm = strings.ReplaceAll(norm, "/", "")
+	norm = strings.ReplaceAll(norm, "-", "")
+	norm = strings.ReplaceAll(norm, " ", "")
+
+	if len(norm) == 8 {
+		// Try parsing as YYYYMMDD
+		yearPrefix, errPrefix := strconv.Atoi(norm[:4])
+		yearSuffix, errSuffix := strconv.Atoi(norm[4:])
+
+		// If year is prefix (e.g., 20240328)
+		if errPrefix == nil && yearPrefix >= 1900 && yearPrefix <= 2100 {
+			return norm
+		}
+		// If year is suffix (e.g., 28032024)
+		if errSuffix == nil && yearSuffix >= 1900 && yearSuffix <= 2100 {
+			// DDMMYYYY -> YYYYMMDD
+			return norm[4:] + norm[2:4] + norm[:2]
+		}
+	}
+
+	return cleaned
+}
+
 func registerPayment(r fiber.Router, billSvc *bill.Service, pdSvc *paymentdetails.Service) {
 	g := r.Group("/payment")
 	g.Get("/search", searchBills(billSvc))
@@ -281,7 +321,7 @@ func registerPayment(r fiber.Router, billSvc *bill.Service, pdSvc *paymentdetail
 		buckets := map[string]*dateBucket{}
 		var ordered []string
 		for _, pd := range records {
-			tgl := strings.TrimSpace(pd.Tanggal)
+			tgl := cleanTanggal(pd.Tanggal)
 			if _, ok := buckets[tgl]; !ok {
 				ordered = append(ordered, tgl)
 				buckets[tgl] = &dateBucket{tanggal: tgl}
