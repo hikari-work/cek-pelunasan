@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/hikari-work/cek-pelunasan/internal/entity"
 	"github.com/hikari-work/cek-pelunasan/internal/service/auth"
 	"github.com/hikari-work/cek-pelunasan/internal/service/users"
 )
@@ -57,8 +58,21 @@ func authHandler(verifier *initDataVerifier, store *sessionStore, authed *auth.A
 
 // sessionMiddleware menolak request kalau header X-Mini-Token tidak valid /
 // expired. Session ditaruh di Locals(ctxSession) untuk handler downstream.
+// Jika request dari localhost, bypass token check (dev mode).
 func sessionMiddleware(store *sessionStore) fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		// Bypass auth untuk localhost (dev mode)
+		ip := c.IP()
+		if ip == "127.0.0.1" || ip == "::1" {
+			c.Locals(ctxSession, session{
+				Token:     "dev-localhost",
+				ChatID:    0,
+				Roles:     entity.RoleAdmin,
+				ExpiresAt: time.Now().Add(24 * time.Hour),
+			})
+			return c.Next()
+		}
+
 		tok := c.Get(headerToken)
 		sess, ok := store.Get(tok)
 		if !ok {
@@ -71,3 +85,19 @@ func sessionMiddleware(store *sessionStore) fiber.Handler {
 		return c.Next()
 	}
 }
+
+// pingBypassHandler memproses login langsung dari user intranet yang lolos ping check.
+func pingBypassHandler(store *sessionStore) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		sess := store.Create(101011, entity.RoleAdmin)
+		return c.JSON(fiber.Map{
+			"token": sess.Token,
+			"user": fiber.Map{
+				"chatId":    101011,
+				"firstName": "Intranet User",
+				"roles":     entity.RoleAdmin,
+			},
+		})
+	}
+}
+

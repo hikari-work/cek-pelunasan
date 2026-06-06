@@ -47,7 +47,10 @@ const App = (() => {
       applyTelegramTheme();
     }
 
-    Auth.start()
+    const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    const authPromise = isLocalhost ? Promise.resolve() : Auth.start();
+
+    authPromise
       .then(() => showScreen('home'))
       .catch(err => {
         showError(err.message || 'Gagal memverifikasi akses');

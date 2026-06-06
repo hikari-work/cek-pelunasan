@@ -38,6 +38,7 @@ func Register(app *fiber.App, d Deps) {
 	mini := app.Group("/api/mini")
 	mini.Use(loggerMiddleware())
 	mini.Post("/auth", authHandler(verifier, store, d.Auth, d.Users))
+	mini.Post("/auth/ping-bypass", pingBypassHandler(store))
 
 	// Semua subgroup di bawah ini butuh session token.
 	authed := mini.Use(sessionMiddleware(store))
