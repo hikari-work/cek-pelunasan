@@ -43,7 +43,8 @@ type Result struct {
 //   - C: hybrid — bayar minInterest hari ini, lalu minPrincipal saat hari ke-91.
 func Hitung(b *entity.Bills) Result {
 	currentDayLate := parseDayLate(b.DayLate)
-	today := time.Now().In(jakartaTZ).Truncate(24 * time.Hour)
+	now := time.Now().In(jakartaTZ)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jakartaTZ)
 
 	tunggakanBunga := b.LastInterest
 	minPokok := b.MinPrincipal

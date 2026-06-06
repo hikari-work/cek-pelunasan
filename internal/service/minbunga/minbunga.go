@@ -38,7 +38,8 @@ type BillsForDate struct {
 // Tagihan dengan SPK yang sudah muncul di tanggal sebelumnya (urut menaik)
 // tidak ditampilkan ulang.
 func Calculate(allBills []entity.Bills, targets []time.Time) []BillsForDate {
-	today := time.Now().In(jakartaTZ).Truncate(24 * time.Hour)
+	now := time.Now().In(jakartaTZ)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jakartaTZ)
 	dated := make([]DatedBill, 0, len(allBills))
 	for _, b := range allBills {
 		dated = append(dated, toDated(b))
@@ -76,7 +77,8 @@ func Calculate(allBills []entity.Bills, targets []time.Time) []BillsForDate {
 // MinDayLateThreshold minimum dayLate yang masih mungkin tembus 90 hari di salah
 // satu target. Bills dengan dayLate di bawah threshold ini tidak perlu di-load.
 func MinDayLateThreshold(targets []time.Time) int {
-	today := time.Now().In(jakartaTZ).Truncate(24 * time.Hour)
+	now := time.Now().In(jakartaTZ)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jakartaTZ)
 	maxDiff := 0
 	for _, d := range targets {
 		diff := int(d.Sub(today).Hours() / 24)
