@@ -17,15 +17,13 @@ const MaxMessageChars = 3800
 // Output bisa banyak pesan: satu kelompok tanggal mungkin perlu di-split
 // jika daftar tagihannya panjang.
 func FormatMessages(groups []BillsForDate, identifier string) []string {
-	wib := time.FixedZone("WIB", 7*3600)
-	today := time.Now().In(wib)
 	var messages []string
 
 	for _, g := range groups {
 		header := buildHeader(g.TargetDate, g.DaysDiff, identifier, len(g.Bills))
 		current := header
 		for _, db := range g.Bills {
-			entryStr := buildEntry(db, today)
+			entryStr := buildEntry(db, g.TargetDate, g.DaysDiff)
 			if len(current)+len(entryStr) > MaxMessageChars {
 				messages = append(messages, current)
 				current = "_Lanjutan " + formatTanggalID(g.TargetDate) + "_\n\n"
@@ -51,13 +49,11 @@ func buildHeader(date time.Time, daysDiff int, identifier string, count int) str
 		"─────────────────────\n\n"
 }
 
-func buildEntry(db DatedBill, today time.Time) string {
+func buildEntry(db DatedBill, targetDate time.Time, daysDiff int) string {
 	bill := db.Bill
-	threshold := 90 - db.DayLate
-	if threshold < 0 {
-		threshold = 0
-	}
-	maksBayar := today.AddDate(0, 0, threshold)
+	simulatedDayLate := db.DayLate + daysDiff
+	threshold := 90 - simulatedDayLate
+	maksBayar := targetDate.AddDate(0, 0, threshold)
 	jikaNotPay := bill.LastPrincipal + bill.Principal + bill.MinInterest
 
 	return "*" + bill.Name + "*\n" +
