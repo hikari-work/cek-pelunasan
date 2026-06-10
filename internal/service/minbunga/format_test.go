@@ -59,8 +59,11 @@ func TestFormatMessages_Reproduce(t *testing.T) {
 		if !strings.Contains(msg, "*Tagihan: 10 Juni 2026* (+0 hari)") {
 			t.Errorf("expected header to contain 10 Juni 2026 (+0 hari)")
 		}
-		if !strings.Contains(msg, "Maks. Bayar: Rabu, 10 Juni 2026") {
-			t.Errorf("expected Maks. Bayar to be Rabu, 10 Juni 2026")
+		if !strings.Contains(msg, "*Maks. Bayar: Rabu, 10 Juni 2026*") {
+			t.Errorf("expected Maks. Bayar to be bolded Rabu, 10 Juni 2026")
+		}
+		if !strings.Contains(msg, "*Min. Bunga: Rp256.100*") {
+			t.Errorf("expected Min. Bunga to be bolded Rp256.100")
 		}
 	})
 
@@ -82,10 +85,8 @@ func TestFormatMessages_Reproduce(t *testing.T) {
 		if !strings.Contains(msg, "*Tagihan: 11 Juni 2026* (+1 hari)") {
 			t.Errorf("expected header to contain 11 Juni 2026 (+1 hari)")
 		}
-		// Since DayLate is 90 on June 10, on June 11 they are 91 days late.
-		// Their Maks. Bayar must remain Wednesday, June 10, 2026!
-		if !strings.Contains(msg, "Maks. Bayar: Rabu, 10 Juni 2026") {
-			t.Errorf("expected Maks. Bayar to be Rabu, 10 Juni 2026, got:\n%s", msg)
+		if !strings.Contains(msg, "*Maks. Bayar: Rabu, 10 Juni 2026*") {
+			t.Errorf("expected Maks. Bayar to be bolded Rabu, 10 Juni 2026")
 		}
 	})
 }

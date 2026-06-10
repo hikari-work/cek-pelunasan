@@ -59,14 +59,14 @@ func buildEntry(db DatedBill, targetDate time.Time, daysDiff int) string {
 	return "*" + bill.Name + "*\n" +
 		"Alamat: " + bill.Address + "\n" +
 		"AO: " + bill.AccountOfficer + "\n\n" +
+		"*Maks. Bayar: " + formatTanggalDayID(maksBayar) + "*\n" +
+		"*Min. Bunga: " + utils.FormatRupiah(bill.MinInterest) + "*\n" +
+		"*Jika Tdk Bayar: " + utils.FormatRupiah(jikaNotPay) + "*\n\n" +
 		"Plafond: " + utils.FormatRupiah(bill.Plafond) + "\n" +
 		"Baki Debet: " + utils.FormatRupiah(bill.DebitTray) + "\n" +
 		"Tgg. Pokok: " + utils.FormatRupiah(bill.LastPrincipal) + "\n" +
 		"Tgg. Bunga: " + utils.FormatRupiah(bill.LastInterest) + "\n" +
 		"Min. Pokok: " + utils.FormatRupiah(bill.MinPrincipal) + "\n" +
-		"Min. Bunga: " + utils.FormatRupiah(bill.MinInterest) + "\n\n" +
-		"Maks. Bayar: " + formatTanggalDayID(maksBayar) + "\n" +
-		"Jika Tdk Bayar: " + utils.FormatRupiah(jikaNotPay) + "\n" +
 		"─────────────────────\n\n"
 }
 
